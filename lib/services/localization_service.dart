@@ -1,0 +1,79 @@
+// Localization service placeholder
+// TODO: Load translation files from assets/locales
+// TODO: Integrate with Flutter localization APIs
+import 'package:flutter/widgets.dart';
+
+class LocalizationService {
+  // Minimal in-app dictionary to avoid hardcoded strings in UI.
+  static const Map<String, Map<String, String>> _dict =
+      <String, Map<String, String>>{
+        'en': <String, String>{
+          'nav.home': 'Home',
+          'nav.categories': 'Categories',
+          'nav.cart': 'Cart',
+          'nav.profile': 'Profile',
+          'appBar.searchPlaceholder': 'Search',
+          'auth.login.title': 'Login to your account',
+          'auth.login.subtitle': "It's great to see you again.",
+          'auth.login.email': 'Email',
+          'auth.login.emailPlaceholder': 'Enter your email address',
+          'auth.login.password': 'Password',
+          'auth.login.passwordPlaceholder': 'Enter your password',
+          'auth.login.forgotPassword': 'Forgot your password?',
+          'auth.login.resetPassword': 'Reset your password',
+          'auth.login.loginButton': 'Login',
+          'auth.login.or': 'Or',
+          'auth.login.socialGoogle': 'Login with Google',
+          'auth.login.socialFacebook': 'Login with Facebook',
+          'auth.login.socialApple': 'Login with Apple',
+          'auth.login.noAccount': "Don't have an account?",
+          'auth.login.join': 'Join',
+          'auth.signup.title': 'Create an account.',
+          'auth.signup.subtitle': "Let's create your account.",
+          'auth.signup.fullName': 'Full Name',
+          'auth.signup.fullNamePlaceholder': 'Enter your full name',
+          'auth.signup.dateOfBirth': 'Date of birth',
+          'auth.signup.dateOfBirthPlaceholder': 'Enter your date of birth',
+          'auth.signup.email': 'Email',
+          'auth.signup.emailPlaceholder': 'Enter your email address',
+          'auth.signup.password': 'Password',
+          'auth.signup.passwordPlaceholder': 'Enter your password',
+          'auth.signup.termsText': 'By signing up you agree to our',
+          'auth.signup.terms': 'Terms,',
+          'auth.signup.privacy': 'Privacy',
+          'auth.signup.policy': 'Policy,',
+          'auth.signup.createAccountButton': 'Create an Account',
+          'auth.signup.or': 'Or',
+          'auth.signup.socialGoogle': 'Sign Up with Google',
+          'auth.signup.socialFacebook': 'Sign Up with Facebook',
+          'auth.signup.socialApple': 'Sign Up with Apple',
+          'auth.signup.alreadyHaveAccount': 'Already have an account?',
+          'auth.signup.logIn': 'Log In',
+          'profile.title': 'Profile',
+          'profile.searchPlaceholder': 'Search',
+          'profile.personalDetails': 'Personal Details',
+          'profile.termsConditions': 'Terms & Conditions',
+          'profile.orderHistory': 'Order History',
+          'profile.faqs': 'FAQs',
+          'profile.changePassword': 'Change Password',
+          'profile.changeCountry': 'Change Country',
+          'profile.changeCurrency': 'Change Currency',
+          'profile.helpDesk': 'Help Desk',
+          'profile.logOut': 'Log Out',
+          'profile.logOutConfirm': 'Are you sure you want to log out?',
+          'profile.cancel': 'Cancel',
+        },
+      };
+
+  static String _localeCode(BuildContext context) {
+    final String code = Localizations.localeOf(
+      context,
+    ).languageCode.toLowerCase();
+    return _dict.containsKey(code) ? code : 'en';
+  }
+
+  static String t(BuildContext context, String key) {
+    final String locale = _localeCode(context);
+    return _dict[locale]?[key] ?? _dict['en']?[key] ?? key;
+  }
+}
