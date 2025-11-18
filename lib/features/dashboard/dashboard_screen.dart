@@ -22,7 +22,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     CartPage(),
     ProfilePage(),
   ];
-  final List<int> _badges = <int>[0, 0, 2, 0];
+  final List<int> _badges = <int>[0, 0, 2, 1];
 
   void changeTab(int index) {
     if (index >= 0 && index < _pages.length) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/app/router/app_router.dart';
 
 class ProductCard extends StatelessWidget {
   const ProductCard({
@@ -23,12 +25,19 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
+      child: InkWell(
+        onTap: () {
+          context.push(
+            '${AppRoutes.productDetail}?name=${Uri.encodeComponent(description)}&price=${Uri.encodeComponent(price)}',
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // Product image placeholder
@@ -115,6 +124,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );

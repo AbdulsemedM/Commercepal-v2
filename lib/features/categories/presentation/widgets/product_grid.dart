@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/app/router/app_router.dart';
 
 class ProductGrid extends StatelessWidget {
   const ProductGrid({
@@ -86,6 +88,7 @@ class ProductGrid extends StatelessWidget {
                         return _ProductCard(
                           productName: productName,
                           imageUrl: '',
+                          productKey: productKey,
                         );
                       },
                     ),
@@ -101,21 +104,30 @@ class _ProductCard extends StatelessWidget {
   const _ProductCard({
     required this.productName,
     required this.imageUrl,
+    required this.productKey,
   });
 
   final String productName;
   final String imageUrl;
+  final String productKey;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+    return InkWell(
+      onTap: () {
+        context.push(
+          '${AppRoutes.productDetail}?name=${Uri.encodeComponent(productName)}&price=\$904.18',
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
           // Product image placeholder
           Expanded(
             child: Container(
@@ -161,6 +173,7 @@ class _ProductCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
