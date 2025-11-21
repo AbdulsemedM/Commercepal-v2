@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -196,7 +197,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.lock_outline,
         title: LocalizationService.t(context, 'profile.termsConditions'),
         onTap: () {
-          // TODO: Navigate to terms & conditions
+          context.push('/terms-conditions');
         },
       ),
       _MenuItem(

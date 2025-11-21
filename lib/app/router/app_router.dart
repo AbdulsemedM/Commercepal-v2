@@ -8,6 +8,7 @@ import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/products/presentation/screen/product_detail_screen.dart';
 import '../../features/products/presentation/screen/product_details_reviews_screen.dart';
+import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String productDetail = '/product-detail';
   static const String productDetailsReviews = '/product-details-reviews';
+  static const String termsConditions = '/terms-conditions';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -73,6 +75,12 @@ final GoRouter appRouter = GoRouter(
           productName: params['name'],
         );
       },
+    ),
+    GoRoute(
+      path: AppRoutes.termsConditions,
+      name: 'termsConditions',
+      builder: (BuildContext context, GoRouterState state) =>
+          const TermsConditionsScreen(),
     ),
   ],
 );
