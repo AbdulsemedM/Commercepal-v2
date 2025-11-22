@@ -5,6 +5,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
@@ -239,7 +240,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.info_outline,
         title: LocalizationService.t(context, 'profile.helpDesk'),
         onTap: () {
-          // TODO: Navigate to help desk
+          HelpDeskModal.show(context);
         },
       ),
       _MenuItem(
