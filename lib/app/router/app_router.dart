@@ -7,6 +7,7 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/products/presentation/screen/product_detail_screen.dart';
+import '../../features/products/presentation/screen/product_details_reviews_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String splash = '/splash';
   static const String dashboard = '/dashboard';
   static const String productDetail = '/product-detail';
+  static const String productDetailsReviews = '/product-details-reviews';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -58,6 +60,17 @@ final GoRouter appRouter = GoRouter(
           productId: params['id'],
           productName: params['name'],
           productPrice: params['price'],
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.productDetailsReviews,
+      name: 'productDetailsReviews',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        return ProductDetailsReviewsScreen(
+          productId: params['id'],
+          productName: params['name'],
         );
       },
     ),

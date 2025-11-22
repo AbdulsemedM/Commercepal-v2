@@ -144,7 +144,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   const SizedBox(height: Spacing.lg),
                   // Product details button
-                  const ProductDetailsButton(),
+                  ProductDetailsButton(
+                    productId: widget.productId,
+                    productName: productName,
+                  ),
                   const SizedBox(height: Spacing.xl),
                 ],
               ),

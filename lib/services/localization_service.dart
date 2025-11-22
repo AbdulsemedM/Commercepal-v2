@@ -113,6 +113,9 @@ class LocalizationService {
           'productDetail.spec.chipset': 'Chipset/ CPU',
           'productDetail.spec.ram': 'RAM',
           'productDetail.spec.os': 'Operating System',
+          'productDetails.description': 'Description',
+          'productDetails.technicalSpecifications': 'Technical Specifications',
+          'productDetails.comment': 'Comment',
         },
       };
 
