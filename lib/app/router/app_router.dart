@@ -9,6 +9,9 @@ import '../../features/splash/splash_screen.dart';
 import '../../features/products/presentation/screen/product_detail_screen.dart';
 import '../../features/products/presentation/screen/product_details_reviews_screen.dart';
 import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
+import '../../features/orders/presentation/screen/order_history_screen.dart';
+import '../../features/orders/presentation/screen/order_summary_screen.dart';
+import '../../features/orders/presentation/screen/order_tracking_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -19,6 +22,9 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String productDetailsReviews = '/product-details-reviews';
   static const String termsConditions = '/terms-conditions';
+  static const String orderHistory = '/order-history';
+  static const String orderSummary = '/order-summary';
+  static const String orderTracking = '/order-tracking';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -81,6 +87,33 @@ final GoRouter appRouter = GoRouter(
       name: 'termsConditions',
       builder: (BuildContext context, GoRouterState state) =>
           const TermsConditionsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.orderHistory,
+      name: 'orderHistory',
+      builder: (BuildContext context, GoRouterState state) =>
+          const OrderHistoryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.orderSummary,
+      name: 'orderSummary',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        return OrderSummaryScreen(
+          orderId: params['id'],
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.orderTracking,
+      name: 'orderTracking',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        return OrderTrackingScreen(
+          orderId: params['id'],
+          orderStatus: params['status'],
+        );
+      },
     ),
   ],
 );

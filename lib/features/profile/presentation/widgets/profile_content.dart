@@ -205,7 +205,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.shopping_cart_outlined,
         title: LocalizationService.t(context, 'profile.orderHistory'),
         onTap: () {
-          // TODO: Navigate to order history
+          context.push('/order-history');
         },
       ),
       _MenuItem(
