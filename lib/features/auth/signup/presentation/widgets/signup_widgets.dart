@@ -81,7 +81,8 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? now.subtract(const Duration(days: 365 * 18)),
+      initialDate:
+          _selectedDate ?? now.subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: now,
       builder: (BuildContext context, Widget? child) {
@@ -153,10 +154,7 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
               vertical: Spacing.md,
             ),
             suffixIcon: IconButton(
-              icon: const Icon(
-                Icons.calendar_today,
-                color: Colors.grey,
-              ),
+              icon: const Icon(Icons.calendar_today, color: Colors.grey),
               onPressed: () => _selectDate(context),
             ),
           ),
@@ -168,7 +166,12 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
 
 /// Terms and Privacy Policy text widget with clickable links
 class TermsAndPolicyText extends StatelessWidget {
-  const TermsAndPolicyText({super.key, this.onTermsTap, this.onPrivacyTap, this.onPolicyTap});
+  const TermsAndPolicyText({
+    super.key,
+    this.onTermsTap,
+    this.onPrivacyTap,
+    this.onPolicyTap,
+  });
 
   final VoidCallback? onTermsTap;
   final VoidCallback? onPrivacyTap;
@@ -182,53 +185,56 @@ class TermsAndPolicyText extends StatelessWidget {
           context,
         ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
         children: <TextSpan>[
-            TextSpan(
-              text: '${LocalizationService.t(context, 'auth.signup.termsText')} ',
+          TextSpan(
+            text: '${LocalizationService.t(context, 'auth.signup.termsText')} ',
+          ),
+          TextSpan(
+            text: LocalizationService.t(context, 'auth.signup.terms'),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
             ),
-            TextSpan(
-              text: LocalizationService.t(context, 'auth.signup.terms'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = onTermsTap ??
-                    () {
-                      // TODO: Navigate to terms screen
-                    },
+            recognizer: TapGestureRecognizer()
+              ..onTap =
+                  onTermsTap ??
+                  () {
+                    // TODO: Navigate to terms screen
+                  },
+          ),
+          const TextSpan(text: ' '),
+          TextSpan(
+            text: LocalizationService.t(context, 'auth.signup.privacy'),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
             ),
-            const TextSpan(text: ' '),
-            TextSpan(
-              text: LocalizationService.t(context, 'auth.signup.privacy'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = onPrivacyTap ??
-                    () {
-                      // TODO: Navigate to privacy screen
-                    },
+            recognizer: TapGestureRecognizer()
+              ..onTap =
+                  onPrivacyTap ??
+                  () {
+                    // TODO: Navigate to privacy screen
+                  },
+          ),
+          const TextSpan(text: ' '),
+          TextSpan(
+            text: LocalizationService.t(context, 'auth.signup.policy'),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
             ),
-            const TextSpan(text: ' '),
-            TextSpan(
-              text: LocalizationService.t(context, 'auth.signup.policy'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = onPolicyTap ??
-                    () {
-                      // TODO: Navigate to policy screen
-                    },
-            ),
-          ],
-        ),
-      );
+            recognizer: TapGestureRecognizer()
+              ..onTap =
+                  onPolicyTap ??
+                  () {
+                    // TODO: Navigate to policy screen
+                  },
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -292,13 +298,24 @@ class SignupEmailInputField extends StatelessWidget {
 
 /// Password input field widget with visibility toggle for signup
 class SignupPasswordInputField extends StatefulWidget {
-  const SignupPasswordInputField({super.key, this.controller, this.onChanged});
+  const SignupPasswordInputField({
+    super.key,
+    this.controller,
+    this.onChanged,
+    this.label,
+    this.hint,
+    this.validator,
+  });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final String? label;
+  final String? hint;
+  final String? Function(String?)? validator;
 
   @override
-  State<SignupPasswordInputField> createState() => _SignupPasswordInputFieldState();
+  State<SignupPasswordInputField> createState() =>
+      _SignupPasswordInputFieldState();
 }
 
 class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
@@ -310,23 +327,27 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          LocalizationService.t(context, 'auth.signup.password'),
+          widget.label ??
+              LocalizationService.t(context, 'auth.signup.password'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: Spacing.xs),
-        TextField(
+        TextFormField(
           controller: widget.controller,
           onChanged: widget.onChanged,
+          validator: widget.validator,
           obscureText: _obscureText,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
-            hintText: LocalizationService.t(
-              context,
-              'auth.signup.passwordPlaceholder',
-            ),
+            hintText:
+                widget.hint ??
+                LocalizationService.t(
+                  context,
+                  'auth.signup.passwordPlaceholder',
+                ),
             hintStyle: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
@@ -343,6 +364,14 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,
@@ -402,4 +431,3 @@ class LoginLink extends StatelessWidget {
     );
   }
 }
-

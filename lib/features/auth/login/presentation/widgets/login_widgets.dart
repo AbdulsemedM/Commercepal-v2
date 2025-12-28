@@ -5,10 +5,16 @@ import 'package:commercepal/services/localization_service.dart';
 
 /// Email input field widget
 class EmailInputField extends StatelessWidget {
-  const EmailInputField({super.key, this.controller, this.onChanged});
+  const EmailInputField({
+    super.key,
+    this.controller,
+    this.onChanged,
+    this.validator,
+  });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final FormFieldValidator<String>? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +29,20 @@ class EmailInputField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Spacing.xs),
-        TextField(
+        TextFormField(
           controller: controller,
           onChanged: onChanged,
+          validator:
+              validator ??
+              (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                if (!value.contains('@') || !value.contains('.')) {
+                  return 'Please enter a valid email address';
+                }
+                return null;
+              },
           keyboardType: TextInputType.emailAddress,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
@@ -50,6 +67,14 @@ class EmailInputField extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,
               vertical: Spacing.md,
@@ -63,10 +88,16 @@ class EmailInputField extends StatelessWidget {
 
 /// Password input field widget with visibility toggle
 class PasswordInputField extends StatefulWidget {
-  const PasswordInputField({super.key, this.controller, this.onChanged});
+  const PasswordInputField({
+    super.key,
+    this.controller,
+    this.onChanged,
+    this.validator,
+  });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final FormFieldValidator<String>? validator;
 
   @override
   State<PasswordInputField> createState() => _PasswordInputFieldState();
@@ -88,9 +119,20 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
           ),
         ),
         const SizedBox(height: Spacing.xs),
-        TextField(
+        TextFormField(
           controller: widget.controller,
           onChanged: widget.onChanged,
+          validator:
+              widget.validator ??
+              (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
           obscureText: _obscureText,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
@@ -114,6 +156,14 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,

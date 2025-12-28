@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -6,113 +7,168 @@ import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
+import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_dialog.dart';
+import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
+import 'package:commercepal/features/profile/data/models/profile_data.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBarWidget(
-        cartCount: 2,
-        userInitials: AuthService().userInitials ?? 'U',
-        onSearchSubmitted: (String query) {
-          // Handle search submission
-          return null;
-        },
-        onProfileTap: () {
-          // Already on profile page
-        },
-        hasNotification: false,
-        searchPlaceholder: LocalizationService.t(
-          context,
-          'profile.searchPlaceholder',
+    return BlocProvider(
+      create: (context) => ProfileBloc()..add(ProfileLoadRequested()),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBarWidget(
+          cartCount: 2,
+          userInitials: AuthService().userInitials ?? 'U',
+          onSearchSubmitted: (String query) {
+            // Handle search submission
+            return null;
+          },
+          onProfileTap: () {
+            // Already on profile page
+          },
+          hasNotification: false,
+          searchPlaceholder: LocalizationService.t(
+            context,
+            'profile.searchPlaceholder',
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Profile Title
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Spacing.lg,
-                Spacing.lg,
-                Spacing.lg,
-                Spacing.md,
-              ),
-              child: Text(
-                LocalizationService.t(context, 'profile.title'),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        body: BlocListener<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state is ProfileError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
                 ),
-              ),
-            ),
-            // Search Bar below title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-              child: Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: LocalizationService.t(
-                      context,
-                      'profile.searchPlaceholder',
-                    ),
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Icon(
-                        Icons.search,
-                        color: Colors.grey.shade700,
-                        size: 20,
+              );
+            }
+          },
+          child: BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, state) {
+              if (state is ProfileLoading && state is! ProfileLoaded) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final profile = state is ProfileLoaded ? state.profile : null;
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<ProfileBloc>().add(ProfileRefreshRequested());
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      // Profile Title
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          Spacing.lg,
+                          Spacing.lg,
+                          Spacing.lg,
+                          Spacing.md,
+                        ),
+                        child: Text(
+                          LocalizationService.t(context, 'profile.title'),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                        ),
                       ),
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.xs,
-                      vertical: Spacing.sm,
-                    ),
-                    isDense: true,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
+                      // Search Bar below title
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.lg,
+                        ),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: LocalizationService.t(
+                                context,
+                                'profile.searchPlaceholder',
+                              ),
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Icon(
+                                  Icons.search,
+                                  color: Colors.grey.shade700,
+                                  size: 20,
+                                ),
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.xs,
+                                vertical: Spacing.sm,
+                              ),
+                              isDense: true,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.lg),
+                      // User Info Card
+                      _buildUserInfoCard(context, profile),
+                      const SizedBox(height: Spacing.lg),
+                      // Profile Menu Items
+                      _buildMenuItems(context),
+                      const SizedBox(height: Spacing.xl),
+                    ],
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: Spacing.lg),
-            // User Info Card
-            _buildUserInfoCard(context),
-            const SizedBox(height: Spacing.lg),
-            // Profile Menu Items
-            _buildMenuItems(context),
-            const SizedBox(height: Spacing.xl),
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildUserInfoCard(BuildContext context) {
+  Widget _buildUserInfoCard(BuildContext context, ProfileData? profile) {
     final AuthService authService = AuthService();
-    final String? userName = authService.userName;
-    final String? userEmail = authService.userEmail;
+    final String? userName = profile?.fullName ?? authService.userName;
+    final String? userEmail = profile?.emailAddress ?? authService.userEmail;
     final String? userImageUrl = authService.userImageUrl;
-    final String userInitials = authService.userInitials ?? 'U';
+
+    // Generate initials from profile or auth service
+    String userInitials = 'U';
+    if (profile != null) {
+      final firstName = profile.firstName.isNotEmpty
+          ? profile.firstName[0].toUpperCase()
+          : '';
+      final lastName = profile.lastName.isNotEmpty
+          ? profile.lastName[0].toUpperCase()
+          : '';
+      userInitials = '$firstName$lastName';
+      if (userInitials.isEmpty) {
+        userInitials = userEmail?.isNotEmpty == true
+            ? userEmail![0].toUpperCase()
+            : 'U';
+      }
+    } else {
+      userInitials = authService.userInitials ?? 'U';
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
@@ -173,10 +229,19 @@ class ProfileContent extends StatelessWidget {
                 const SizedBox(height: Spacing.xs),
                 Text(
                   userEmail ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 ),
+                if (profile?.phoneNumber != null) ...[
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    profile!.phoneNumber,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                  ),
+                ],
               ],
             ),
           ),
@@ -191,7 +256,15 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.person_outline,
         title: LocalizationService.t(context, 'profile.personalDetails'),
         onTap: () {
-          // TODO: Navigate to personal details
+          final state = context.read<ProfileBloc>().state;
+          ProfileData? profile;
+          if (state is ProfileLoaded) {
+            profile = state.profile;
+          }
+          context.push('/edit-profile', extra: profile).then((_) {
+            // Refresh profile after returning from edit screen
+            context.read<ProfileBloc>().add(ProfileRefreshRequested());
+          });
         },
       ),
       _MenuItem(
@@ -219,7 +292,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.lock_reset_outlined,
         title: LocalizationService.t(context, 'profile.changePassword'),
         onTap: () {
-          // TODO: Navigate to change password
+          ChangePasswordDialog.show(context);
         },
       ),
       _MenuItem(
@@ -264,23 +337,31 @@ class ProfileContent extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text(
-          LocalizationService.t(context, 'profile.logOut'),
-        ),
-        content: Text(
-          LocalizationService.t(context, 'profile.logOutConfirm'),
-        ),
+        title: Text(LocalizationService.t(context, 'profile.logOut')),
+        content: Text(LocalizationService.t(context, 'profile.logOutConfirm')),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              LocalizationService.t(context, 'profile.cancel'),
-            ),
+            child: Text(LocalizationService.t(context, 'profile.cancel')),
           ),
           TextButton(
-            onPressed: () {
-              AuthService().logout();
+            onPressed: () async {
               Navigator.of(context).pop();
+              try {
+                await AuthService().logout();
+                // Navigation will be handled automatically by ProfilePage
+                // which listens to AuthService changes
+              } catch (e) {
+                // Show error message if logout fails
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Logout failed. Please try again.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: Text(
               LocalizationService.t(context, 'profile.logOut'),
@@ -321,19 +402,14 @@ class _MenuItemWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: Spacing.md),
         decoration: const BoxDecoration(
           border: Border(
-            bottom: BorderSide(
-              color: Color(0xFFF5F5F5),
-              width: 1,
-            ),
+            bottom: BorderSide(color: Color(0xFFF5F5F5), width: 1),
           ),
         ),
         child: Row(
           children: <Widget>[
             Icon(
               item.icon,
-              color: item.isDestructive
-                  ? AppColors.error
-                  : AppColors.primary,
+              color: item.isDestructive ? AppColors.error : AppColors.primary,
               size: 24,
             ),
             const SizedBox(width: Spacing.md),
@@ -341,24 +417,15 @@ class _MenuItemWidget extends StatelessWidget {
               child: Text(
                 item.title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: item.isDestructive
-                      ? AppColors.error
-                      : Colors.black,
+                  color: item.isDestructive ? AppColors.error : Colors.black,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
-              size: 24,
-            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
           ],
         ),
       ),
     );
   }
 }
-
-
-

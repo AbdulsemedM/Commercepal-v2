@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/auth/signup/presentation/widgets/signup_widgets.dart';
 import 'package:commercepal/features/auth/login/presentation/widgets/login_widgets.dart';
+import '../../bloc/signup_bloc.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,181 +17,477 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _dateOfBirthController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  String _selectedCountry = 'ET'; // Default to Ethiopia
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
-    _dateOfBirthController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const SizedBox(height: Spacing.md),
-              // Back button
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(Spacing.xs),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
+    return BlocProvider(
+      create: (context) => SignupBloc(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: BlocListener<SignupBloc, SignupState>(
+            listener: (context, state) {
+              if (state is SignupSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.green,
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 18,
-                    color: Colors.black,
+                );
+                // Navigate to login after showing success message
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted) {
+                    context.go(AppRoutes.login);
+                  }
+                });
+              } else if (state is SignupFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
                   ),
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              const SizedBox(height: Spacing.sm),
-              // Title
-              Text(
-                LocalizationService.t(context, 'auth.signup.title'),
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: Spacing.xs),
-              // Subtitle
-              Text(
-                LocalizationService.t(context, 'auth.signup.subtitle'),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: Spacing.lg),
-              // Full Name field
-              FullNameInputField(controller: _fullNameController),
-              const SizedBox(height: Spacing.md),
-              // Email field
-              SignupEmailInputField(controller: _emailController),
-              const SizedBox(height: Spacing.md),
-              // Date of birth field
-              DateOfBirthInputField(controller: _dateOfBirthController),
-              const SizedBox(height: Spacing.md),
-              // Password field
-              SignupPasswordInputField(controller: _passwordController),
-              const SizedBox(height: Spacing.md),
-              // Terms and Privacy Policy text
-              TermsAndPolicyText(
-                onTermsTap: () {
-                  // TODO: Navigate to terms screen
-                },
-                onPrivacyTap: () {
-                  // TODO: Navigate to privacy screen
-                },
-                onPolicyTap: () {
-                  // TODO: Navigate to policy screen
-                },
-              ),
-              const SizedBox(height: Spacing.lg),
-              // Create Account button with arrow icon
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    // TODO: Handle signup
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        LocalizationService.t(
-                          context,
-                          'auth.signup.createAccountButton',
+                );
+              }
+            },
+            child: BlocBuilder<SignupBloc, SignupState>(
+              builder: (context, state) {
+                final isLoading = state is SignupLoading;
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const SizedBox(height: Spacing.md),
+                        // Back button
+                        IconButton(
+                          icon: Container(
+                            padding: const EdgeInsets.all(Spacing.xs),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              size: 18,
+                              color: Colors.black,
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(height: Spacing.sm),
+                        // Title
+                        Text(
+                          LocalizationService.t(context, 'auth.signup.title'),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
-                      ),
-                      const SizedBox(width: Spacing.xs),
-                      const Icon(
-                        Icons.arrow_forward,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: Spacing.md),
-              // Or separator
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Divider(color: Colors.grey[300], thickness: 1),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                    child: Text(
-                      LocalizationService.t(context, 'auth.signup.or'),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                        const SizedBox(height: Spacing.xs),
+                        // Subtitle
+                        Text(
+                          LocalizationService.t(
+                            context,
+                            'auth.signup.subtitle',
+                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: Spacing.lg),
+                        // First Name field
+                        _buildTextField(
+                          controller: _firstNameController,
+                          label: 'First Name',
+                          hint: 'Enter your first name',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your first name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Last Name field
+                        _buildTextField(
+                          controller: _lastNameController,
+                          label: 'Last Name',
+                          hint: 'Enter your last name',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your last name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Email field
+                        _buildTextField(
+                          controller: _emailController,
+                          label: 'Email Address',
+                          hint: 'Enter your email address',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Please enter a valid email address';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Phone Number field
+                        _buildTextField(
+                          controller: _phoneController,
+                          label: 'Phone Number',
+                          hint: '+251912345678',
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your phone number';
+                            }
+                            if (!value.startsWith('+')) {
+                              return 'Phone number must start with +';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Country dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountry,
+                          decoration: InputDecoration(
+                            labelText: 'Country',
+                            hintText: 'Select your country',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.md,
+                              vertical: Spacing.md,
+                            ),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ET',
+                              child: Text('Ethiopia'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'US',
+                              child: Text('United States'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'GB',
+                              child: Text('United Kingdom'),
+                            ),
+                            DropdownMenuItem(value: 'KE', child: Text('Kenya')),
+                            DropdownMenuItem(
+                              value: 'NG',
+                              child: Text('Nigeria'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'ZA',
+                              child: Text('South Africa'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedCountry = value;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Password field
+                        SignupPasswordInputField(
+                          controller: _passwordController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Confirm Password field
+                        SignupPasswordInputField(
+                          controller: _confirmPasswordController,
+                          label: 'Confirm Password',
+                          hint: 'Confirm your password',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Terms and Privacy Policy text
+                        TermsAndPolicyText(
+                          onTermsTap: () {
+                            context.push(AppRoutes.termsConditions);
+                          },
+                          onPrivacyTap: () {
+                            // TODO: Navigate to privacy screen
+                          },
+                          onPolicyTap: () {
+                            // TODO: Navigate to policy screen
+                          },
+                        ),
+                        const SizedBox(height: Spacing.lg),
+                        // Create Account button with arrow icon
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    if (_formKey.currentState?.validate() ??
+                                        false) {
+                                      // Split full name if needed
+                                      final firstName = _firstNameController
+                                          .text
+                                          .trim();
+                                      final lastName = _lastNameController.text
+                                          .trim();
+
+                                      context.read<SignupBloc>().add(
+                                        SignupSubmitted(
+                                          emailAddress: _emailController.text
+                                              .trim(),
+                                          phoneNumber: _phoneController.text
+                                              .trim(),
+                                          password: _passwordController.text,
+                                          confirmPassword:
+                                              _confirmPasswordController.text,
+                                          firstName: firstName,
+                                          lastName: lastName,
+                                          country: _selectedCountry,
+                                          registrationChannel: 'WEB',
+                                        ),
+                                      );
+                                    }
+                                  },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: const StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: Spacing.md,
+                              ),
+                              disabledBackgroundColor: Colors.grey[300],
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      Text(
+                                        LocalizationService.t(
+                                          context,
+                                          'auth.signup.createAccountButton',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(width: Spacing.xs),
+                                      const Icon(
+                                        Icons.arrow_forward,
+                                        size: 20,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        // Or separator
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Divider(
+                                color: Colors.grey[300],
+                                thickness: 1,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                              ),
+                              child: Text(
+                                LocalizationService.t(
+                                  context,
+                                  'auth.signup.or',
+                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.grey[600]),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.grey[300],
+                                thickness: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Spacing.xl),
+                        // Social signup buttons
+                        SocialSignupButton(
+                          type: SocialLoginType.google,
+                          onPressed: () {
+                            // TODO: Handle Google signup
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        SocialSignupButton(
+                          type: SocialLoginType.facebook,
+                          onPressed: () {
+                            // TODO: Handle Facebook signup
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        SocialSignupButton(
+                          type: SocialLoginType.apple,
+                          onPressed: () {
+                            // TODO: Handle Apple signup
+                          },
+                        ),
+                        const SizedBox(height: Spacing.xxl),
+                        // Login link
+                        LoginLink(
+                          onTap: () {
+                            context.go(AppRoutes.login);
+                          },
+                        ),
+                        const SizedBox(height: Spacing.xl),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Divider(color: Colors.grey[300], thickness: 1),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.xl),
-              // Social signup buttons
-              SocialSignupButton(
-                type: SocialLoginType.google,
-                onPressed: () {
-                  // TODO: Handle Google signup
-                },
-              ),
-              const SizedBox(height: Spacing.md),
-              SocialSignupButton(
-                type: SocialLoginType.facebook,
-                onPressed: () {
-                  // TODO: Handle Facebook signup
-                },
-              ),
-              const SizedBox(height: Spacing.md),
-              SocialSignupButton(
-                type: SocialLoginType.apple,
-                onPressed: () {
-                  // TODO: Handle Apple signup
-                },
-              ),
-              const SizedBox(height: Spacing.xxl),
-              // Login link
-              LoginLink(
-                onTap: () {
-                  // TODO: Navigate to login screen
-                  Navigator.of(context).pop();
-                },
-              ),
-              const SizedBox(height: Spacing.xl),
-            ],
+                );
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: Theme.of(context).textTheme.bodyLarge,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.md,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -265,4 +565,3 @@ class SocialSignupButton extends StatelessWidget {
     );
   }
 }
-
