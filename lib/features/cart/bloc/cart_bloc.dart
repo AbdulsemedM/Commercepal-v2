@@ -1,0 +1,186 @@
+import 'package:bloc/bloc.dart';
+import 'package:meta/meta.dart';
+
+import 'package:commercepal/features/cart/data/models/add_to_cart_request.dart';
+import 'package:commercepal/features/cart/data/models/cart.dart';
+import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
+import 'package:commercepal/features/cart/data/models/update_cart_item_request.dart';
+import 'package:commercepal/features/cart/data/repository/cart_repository.dart';
+
+part 'cart_event.dart';
+part 'cart_state.dart';
+
+class CartBloc extends Bloc<CartEvent, CartState> {
+  CartBloc({CartRepository? repository})
+    : _repository = repository ?? CartRepository(),
+      super(CartInitial()) {
+    on<CartLoadRequested>(_onCartLoadRequested);
+    on<CartAddItemRequested>(_onCartAddItemRequested);
+    on<CartUpdateItemRequested>(_onCartUpdateItemRequested);
+    on<CartDeleteItemRequested>(_onCartDeleteItemRequested);
+    on<CartClearRequested>(_onCartClearRequested);
+    on<CartRefreshRequested>(_onCartRefreshRequested);
+  }
+
+  final CartRepository _repository;
+
+  Future<void> _onCartLoadRequested(
+    CartLoadRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+
+    try {
+      final cart = await _repository.getCart();
+      emit(CartLoaded(cart));
+    } catch (e) {
+      String errorMessage = 'Failed to load cart. Please try again.';
+
+      if (e is Exception) {
+        errorMessage =
+            e.toString().contains('401') ||
+                e.toString().contains('Unauthorized')
+            ? 'Session expired. Please login again.'
+            : errorMessage;
+      }
+
+      emit(CartError(errorMessage));
+    }
+  }
+
+  Future<void> _onCartAddItemRequested(
+    CartAddItemRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+
+    try {
+      final request = AddToCartRequest(
+        items: [
+          AddToCartItem(
+            productId: event.productId,
+            configId: event.configId,
+            quantity: event.quantity,
+            currency: event.currency,
+            country: event.country,
+          ),
+        ],
+      );
+
+      final cart = await _repository.addToCart(request);
+      emit(CartItemAdded(cart));
+    } catch (e) {
+      String errorMessage = 'Failed to add item to cart. Please try again.';
+
+      if (e is Exception) {
+        errorMessage =
+            e.toString().contains('400') || e.toString().contains('Bad Request')
+            ? 'Invalid item information'
+            : e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+            ? 'Session expired. Please login again.'
+            : errorMessage;
+      }
+
+      emit(CartError(errorMessage));
+    }
+  }
+
+  Future<void> _onCartUpdateItemRequested(
+    CartUpdateItemRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+
+    try {
+      final request = UpdateCartItemRequest(
+        quantity: event.quantity,
+        replaceConfigId: event.replaceConfigId,
+      );
+
+      final cart = await _repository.updateCartItem(event.itemId, request);
+      emit(CartItemUpdated(cart));
+    } catch (e) {
+      String errorMessage = 'Failed to update cart item. Please try again.';
+
+      if (e is Exception) {
+        errorMessage =
+            e.toString().contains('400') || e.toString().contains('Bad Request')
+            ? 'Invalid update information'
+            : e.toString().contains('404') || e.toString().contains('Not Found')
+            ? 'Cart item not found'
+            : errorMessage;
+      }
+
+      emit(CartError(errorMessage));
+    }
+  }
+
+  Future<void> _onCartDeleteItemRequested(
+    CartDeleteItemRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+
+    try {
+      final cart = await _repository.deleteCartItem(event.itemId);
+      emit(CartItemDeleted(cart));
+    } catch (e) {
+      String errorMessage = 'Failed to delete cart item. Please try again.';
+
+      if (e is Exception) {
+        errorMessage =
+            e.toString().contains('404') || e.toString().contains('Not Found')
+            ? 'Cart item not found'
+            : errorMessage;
+      }
+
+      emit(CartError(errorMessage));
+    }
+  }
+
+  Future<void> _onCartClearRequested(
+    CartClearRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+
+    try {
+      final response = await _repository.clearCart();
+      emit(CartCleared(response));
+      // After clearing, load empty cart
+      final cart = await _repository.getCart();
+      emit(CartLoaded(cart));
+    } catch (e) {
+      String errorMessage = 'Failed to clear cart. Please try again.';
+
+      if (e is Exception) {
+        errorMessage =
+            e.toString().contains('401') ||
+                e.toString().contains('Unauthorized')
+            ? 'Session expired. Please login again.'
+            : errorMessage;
+      }
+
+      emit(CartError(errorMessage));
+    }
+  }
+
+  Future<void> _onCartRefreshRequested(
+    CartRefreshRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    try {
+      final cart = await _repository.getCart();
+      if (state is CartLoaded) {
+        emit(CartLoaded(cart));
+      } else {
+        emit(CartLoaded(cart));
+      }
+    } catch (e) {
+      // Don't emit error on refresh, just log it
+      // The cart state remains unchanged
+    }
+  }
+}
+
