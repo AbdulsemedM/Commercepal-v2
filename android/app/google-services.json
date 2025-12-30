@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "842396421818",
+    "project_id": "my-commercepal-signin",
+    "storage_bucket": "my-commercepal-signin.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842396421818:android:1aff8838e27450d04dfc83",
+        "android_client_info": {
+          "package_name": "com.commercepal.commercepal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "842396421818-2l6rpl7nebrbrcro3ouefqrqhap966du.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.commercepal.commercepal",
+            "certificate_hash": "2a4b482b82ef7aee68222d8c431cf66f543cf525"
+          }
+        },
+        {
+          "client_id": "842396421818-hv3n0ulcogs6m5crucv8ssvgftq95v64.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.commercepal.commercepal",
+            "certificate_hash": "122779ad7ac5ddd095efe5472d084494d16e91ff"
+          }
+        },
+        {
+          "client_id": "842396421818-618itcu1kukf7lag8q1tvv29gb70lb6o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFmy_gc6sZn7f011kIT6FPPa87mtxpU_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "842396421818-618itcu1kukf7lag8q1tvv29gb70lb6o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
