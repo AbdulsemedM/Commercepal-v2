@@ -16,7 +16,7 @@ class SignupRequest {
     required this.firstName,
     required this.lastName,
     required this.country,
-    this.registrationChannel = 'WEB',
+    required this.registrationChannel,
   });
 
   Map<String, dynamic> toJson() => {

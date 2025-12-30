@@ -6,12 +6,12 @@ sealed class LoginEvent {}
 final class LoginSubmitted extends LoginEvent {
   final String loginIdentifier;
   final String password;
-  final String channel;
+  final String? channel;
 
   LoginSubmitted({
     required this.loginIdentifier,
     required this.password,
-    this.channel = 'WEB',
+    this.channel,
   });
 }
 

@@ -15,14 +15,17 @@ class DioClient {
         headers: {'Content-Type': 'application/json'},
       ),
     );
-    _dio.interceptors.addAll([
-      AuthInterceptor(dio: _dio),
-      LoggingInterceptor(),
-    ]);
+    // Add auth interceptor first
+    _dio.interceptors.add(AuthInterceptor(dio: _dio));
+    // Add logging interceptor last to log final requests/responses
+    _dio.interceptors.add(LoggingInterceptor());
   }
 
-  static final DioClient _instance = DioClient._internal();
-  factory DioClient() => _instance;
+  static DioClient? _instance;
+  factory DioClient() {
+    _instance ??= DioClient._internal();
+    return _instance!;
+  }
 
   late final Dio _dio;
 

@@ -9,15 +9,20 @@ class AuthInterceptor extends Interceptor {
     RefreshTokenRepository? refreshTokenRepository,
     Dio? dio,
   }) : _storage = storage ?? Storage(),
-       _refreshTokenRepository =
-           refreshTokenRepository ?? RefreshTokenRepository(),
+       _refreshTokenRepository = refreshTokenRepository,
        _dio = dio;
 
   final Storage _storage;
-  final RefreshTokenRepository _refreshTokenRepository;
+  RefreshTokenRepository? _refreshTokenRepository;
   final Dio? _dio;
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
+
+  // Lazy initialization of RefreshTokenRepository to avoid circular dependency
+  RefreshTokenRepository get _refreshTokenRepo {
+    _refreshTokenRepository ??= RefreshTokenRepository();
+    return _refreshTokenRepository!;
+  }
 
   @override
   void onRequest(
@@ -64,7 +69,7 @@ class AuthInterceptor extends Interceptor {
         }
 
         // Refresh the token
-        await _refreshTokenRepository.refreshToken(refreshToken);
+        await _refreshTokenRepo.refreshToken(refreshToken);
 
         // Retry the original request with new token
         final opts = requestOptions;
@@ -118,7 +123,7 @@ class AuthInterceptor extends Interceptor {
       opts.headers['Authorization'] = '$tokenType $accessToken';
 
       try {
-        final response = await _dio!.request(
+        final response = await _dio.request(
           opts.path,
           data: opts.data,
           queryParameters: opts.queryParameters,

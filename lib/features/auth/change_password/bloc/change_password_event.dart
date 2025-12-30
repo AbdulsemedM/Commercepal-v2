@@ -7,13 +7,13 @@ final class ChangePasswordSubmitted extends ChangePasswordEvent {
   final String currentPassword;
   final String newPassword;
   final String confirmPassword;
-  final String channel;
+  final String? channel;
 
   ChangePasswordSubmitted({
     required this.currentPassword,
     required this.newPassword,
     required this.confirmPassword,
-    this.channel = 'WEB',
+    this.channel,
   });
 }
 

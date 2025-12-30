@@ -11,7 +11,7 @@ final class SignupSubmitted extends SignupEvent {
   final String firstName;
   final String lastName;
   final String country;
-  final String registrationChannel;
+  final String? registrationChannel;
 
   SignupSubmitted({
     required this.emailAddress,
@@ -21,7 +21,7 @@ final class SignupSubmitted extends SignupEvent {
     required this.firstName,
     required this.lastName,
     required this.country,
-    this.registrationChannel = 'WEB',
+    this.registrationChannel,
   });
 }
 

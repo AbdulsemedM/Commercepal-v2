@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/platform_utils.dart';
 import '../../bloc/change_password_bloc.dart';
 
 class ChangePasswordDialog extends StatefulWidget {
@@ -320,7 +321,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                                                 _newPasswordController.text,
                                             confirmPassword:
                                                 _confirmPasswordController.text,
-                                            channel: 'WEB',
+                                            channel: PlatformUtils.getChannel(),
                                           ),
                                         );
                                       }

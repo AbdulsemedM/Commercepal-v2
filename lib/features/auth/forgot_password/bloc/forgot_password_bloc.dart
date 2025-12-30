@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/forgot_password/data/models/forgot_password_request.dart';
 import 'package:commercepal/features/auth/forgot_password/data/repository/forgot_password_repository.dart';
 
@@ -27,7 +28,7 @@ class ForgotPasswordBloc
     try {
       final request = ForgotPasswordRequest(
         emailOrPhone: event.emailOrPhone,
-        channel: event.channel,
+        channel: event.channel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.forgotPassword(request);

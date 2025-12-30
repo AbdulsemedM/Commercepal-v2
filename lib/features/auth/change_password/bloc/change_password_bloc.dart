@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/change_password/data/models/change_password_request.dart';
 import 'package:commercepal/features/auth/change_password/data/repository/change_password_repository.dart';
 
@@ -29,7 +30,7 @@ class ChangePasswordBloc
         currentPassword: event.currentPassword,
         newPassword: event.newPassword,
         confirmPassword: event.confirmPassword,
-        channel: event.channel,
+        channel: event.channel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.changePassword(request);

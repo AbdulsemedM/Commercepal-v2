@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/login/data/models/login_request.dart';
 import 'package:commercepal/features/auth/login/data/repository/login_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -30,7 +31,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final request = LoginRequest(
         loginIdentifier: event.loginIdentifier,
         password: event.password,
-        channel: event.channel,
+        channel: event.channel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.login(request);

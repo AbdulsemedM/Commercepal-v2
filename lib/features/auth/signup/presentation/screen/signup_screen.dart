@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/auth/signup/presentation/widgets/signup_widgets.dart';
@@ -25,7 +28,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  String _selectedCountry = 'ET'; // Default to Ethiopia
+  Country _selectedCountry = Country.parse('ET'); // Default to Ethiopia
+  String _completePhoneNumber = ''; // Full phone number with country code
 
   @override
   void dispose() {
@@ -117,30 +121,37 @@ class _SignupScreenState extends State<SignupScreen> {
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // First Name field
-                        _buildTextField(
-                          controller: _firstNameController,
-                          label: 'First Name',
-                          hint: 'Enter your first name',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your first name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        // Last Name field
-                        _buildTextField(
-                          controller: _lastNameController,
-                          label: 'Last Name',
-                          hint: 'Enter your last name',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your last name';
-                            }
-                            return null;
-                          },
+                        // First Name and Last Name fields in a row
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _firstNameController,
+                                label: 'First Name',
+                                hint: 'Enter your first name',
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your first name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.md),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _lastNameController,
+                                label: 'Last Name',
+                                hint: 'Enter your last name',
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your last name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: Spacing.md),
                         // Email field
@@ -160,82 +171,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           },
                         ),
                         const SizedBox(height: Spacing.md),
-                        // Phone Number field
-                        _buildTextField(
-                          controller: _phoneController,
-                          label: 'Phone Number',
-                          hint: '+251912345678',
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your phone number';
-                            }
-                            if (!value.startsWith('+')) {
-                              return 'Phone number must start with +';
-                            }
-                            return null;
-                          },
-                        ),
+                        // Phone Number field with country code selector
+                        _buildPhoneNumberField(),
                         const SizedBox(height: Spacing.md),
-                        // Country dropdown
-                        DropdownButtonFormField<String>(
-                          value: _selectedCountry,
-                          decoration: InputDecoration(
-                            labelText: 'Country',
-                            hintText: 'Select your country',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'ET',
-                              child: Text('Ethiopia'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'US',
-                              child: Text('United States'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'GB',
-                              child: Text('United Kingdom'),
-                            ),
-                            DropdownMenuItem(value: 'KE', child: Text('Kenya')),
-                            DropdownMenuItem(
-                              value: 'NG',
-                              child: Text('Nigeria'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'ZA',
-                              child: Text('South Africa'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedCountry = value;
-                              });
-                            }
-                          },
-                        ),
+                        // Country picker
+                        _buildCountryPickerField(),
                         const SizedBox(height: Spacing.md),
                         // Password field
                         SignupPasswordInputField(
@@ -296,19 +236,25 @@ class _SignupScreenState extends State<SignupScreen> {
                                       final lastName = _lastNameController.text
                                           .trim();
 
+                                      // Use the complete phone number from IntlPhoneField
+                                      final phoneNumber =
+                                          _completePhoneNumber.isNotEmpty
+                                          ? _completePhoneNumber
+                                          : _phoneController.text.trim();
+
                                       context.read<SignupBloc>().add(
                                         SignupSubmitted(
                                           emailAddress: _emailController.text
                                               .trim(),
-                                          phoneNumber: _phoneController.text
-                                              .trim(),
+                                          phoneNumber: phoneNumber,
                                           password: _passwordController.text,
                                           confirmPassword:
                                               _confirmPasswordController.text,
                                           firstName: firstName,
                                           lastName: lastName,
-                                          country: _selectedCountry,
-                                          registrationChannel: 'WEB',
+                                          country: _selectedCountry.countryCode,
+                                          registrationChannel:
+                                              PlatformUtils.getChannel(),
                                         ),
                                       );
                                     }
@@ -484,6 +430,165 @@ class _SignupScreenState extends State<SignupScreen> {
             contentPadding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,
               vertical: Spacing.md,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhoneNumberField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          'Phone Number',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        IntlPhoneField(
+          controller: _phoneController,
+          initialCountryCode: 'ET',
+          flagsButtonPadding: const EdgeInsets.symmetric(
+            horizontal: Spacing.sm,
+          ),
+          dropdownIconPosition: IconPosition.trailing,
+          decoration: InputDecoration(
+            hintText: '912345678',
+            hintStyle: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.md,
+            ),
+          ),
+          style: Theme.of(context).textTheme.bodyLarge,
+          onChanged: (phone) {
+            setState(() {
+              _completePhoneNumber = phone.completeNumber;
+              // Update country picker when phone field country changes
+              try {
+                _selectedCountry = Country.parse(phone.countryCode);
+              } catch (e) {
+                // If country code is not valid, keep current selection
+              }
+            });
+          },
+          onCountryChanged: (country) {
+            // Update country picker when phone field country changes
+            setState(() {
+              _selectedCountry = Country.parse(country.code);
+            });
+          },
+          validator: (phone) {
+            if (phone == null || phone.number.isEmpty) {
+              return 'Please enter your phone number';
+            }
+            if (phone.number.length < 6) {
+              return 'Please enter a valid phone number';
+            }
+            return null;
+          },
+          searchText: 'Search country',
+          invalidNumberMessage: 'Invalid phone number',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCountryPickerField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          'Country',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        InkWell(
+          onTap: () {
+            showCountryPicker(
+              context: context,
+              favorite: ['ET'], // Ethiopia as favorite
+              showPhoneCode: false,
+              onSelect: (Country country) {
+                setState(() {
+                  _selectedCountry = country;
+                });
+              },
+              countryListTheme: CountryListThemeData(
+                flagSize: 25,
+                backgroundColor: Colors.white,
+                textStyle: Theme.of(context).textTheme.bodyLarge,
+                inputDecoration: InputDecoration(
+                  labelText: 'Search',
+                  hintText: 'Start typing to search',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                searchTextStyle: Theme.of(context).textTheme.bodyLarge,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  _selectedCountry.flagEmoji,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: Text(
+                    _selectedCountry.name,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+                Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+              ],
             ),
           ),
         ),
