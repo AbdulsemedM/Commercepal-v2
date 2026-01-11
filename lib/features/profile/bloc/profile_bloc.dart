@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
-import 'package:commercepal/features/profile/data/models/profile_response.dart';
+// import 'package:commercepal/features/profile/data/models/profile_response.dart';
 import 'package:commercepal/features/profile/data/models/update_profile_request.dart';
 import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
