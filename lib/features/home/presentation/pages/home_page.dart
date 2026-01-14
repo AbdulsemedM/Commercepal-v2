@@ -42,10 +42,10 @@ class HomePage extends StatelessWidget {
           final cart = cartState is CartLoaded
               ? cartState.cart
               : cartState is CartItemAdded
-                  ? cartState.cart
-                  : cartState is CartItemUpdated
-                      ? cartState.cart
-                      : (cartState as CartItemDeleted).cart;
+              ? cartState.cart
+              : cartState is CartItemUpdated
+              ? cartState.cart
+              : (cartState as CartItemDeleted).cart;
           cartCount = cart.totalItems;
         }
 
