@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
+import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
+import 'package:commercepal/services/auth_service.dart';
 import '../widgets/product_image_section.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
@@ -51,6 +55,75 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
+  String _getCurrency(BuildContext context) {
+    // Try to get from ProfileBloc if available
+    try {
+      final profileState = context.read<ProfileBloc>().state;
+      if (profileState is ProfileLoaded) {
+        return profileState.profile.preferredCurrency ?? 'USD';
+      }
+    } catch (e) {
+      // ProfileBloc not available
+    }
+    // Default currency
+    return 'USD';
+  }
+
+  String _getCountry(BuildContext context) {
+    // Try to get from ProfileBloc if available
+    try {
+      final profileState = context.read<ProfileBloc>().state;
+      if (profileState is ProfileLoaded) {
+        return profileState.profile.country;
+      }
+    } catch (e) {
+      // ProfileBloc not available
+    }
+    // Default country
+    return 'US';
+  }
+
+  String _getConfigId() {
+    // Use selected color index as configId (or generate from color)
+    // For now, use a simple string representation
+    return 'config_$_selectedColorIndex';
+  }
+
+  void _handleAddToCart(BuildContext context) {
+    if (widget.productId == null || widget.productId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product ID is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Get or create CartBloc
+    CartBloc cartBloc;
+    try {
+      cartBloc = context.read<CartBloc>();
+    } catch (e) {
+      // CartBloc not in context, create new one
+      cartBloc = CartBloc();
+    }
+
+    final String currency = _getCurrency(context);
+    final String country = _getCountry(context);
+    final String configId = _getConfigId();
+
+    cartBloc.add(
+      CartAddItemRequested(
+        productId: widget.productId!,
+        configId: configId,
+        quantity: _quantity,
+        currency: currency,
+        country: country,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Sample product data
@@ -64,26 +137,73 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       'Operating System': 'iOS 13',
     };
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBarWidget(
-        cartCount: 2,
-        userInitials: 'AW',
-        onSearchSubmitted: (String query) {
-          debugPrint('Search query: $query');
-          return null;
+    // Get or create CartBloc
+    CartBloc cartBloc;
+    try {
+      cartBloc = context.read<CartBloc>();
+    } catch (e) {
+      cartBloc = CartBloc();
+    }
+
+    return BlocProvider.value(
+      value: cartBloc,
+      child: BlocListener<CartBloc, CartState>(
+        listener: (context, state) {
+          if (state is CartItemAdded) {
+            setState(() {
+              _isInCart = true;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Item added to cart'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else if (state is CartError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         },
-        onLogoTap: () {
-          Navigator.of(context).pop();
-        },
-        onCartTap: () {
-          _navigateToTab(context, 2);
-        },
-        onProfileTap: () {
-          _navigateToTab(context, 3);
-        },
-        hasNotification: true,
-      ),
+        child: BlocBuilder<CartBloc, CartState>(
+          builder: (context, cartState) {
+            int cartCount = 0;
+            if (cartState is CartLoaded ||
+                cartState is CartItemAdded ||
+                cartState is CartItemUpdated ||
+                cartState is CartItemDeleted) {
+              final cart = cartState is CartLoaded
+                  ? cartState.cart
+                  : cartState is CartItemAdded
+                      ? cartState.cart
+                      : cartState is CartItemUpdated
+                          ? cartState.cart
+                          : (cartState as CartItemDeleted).cart;
+              cartCount = cart.totalItems;
+            }
+            return Scaffold(
+              backgroundColor: Colors.white,
+              appBar: AppBarWidget(
+                cartCount: cartCount,
+                userInitials: AuthService().userInitials ?? 'U',
+                onSearchSubmitted: (String query) {
+                  debugPrint('Search query: $query');
+                  return null;
+                },
+                onLogoTap: () {
+                  Navigator.of(context).pop();
+                },
+                onCartTap: () {
+                  _navigateToTab(context, 2);
+                },
+                onProfileTap: () {
+                  _navigateToTab(context, 3);
+                },
+                hasNotification: true,
+              ),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -154,26 +274,87 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
           // Add to cart section (fixed at bottom)
-          AddToCartSection(
-            isInCart: _isInCart,
-            quantity: _quantity,
-            unitPrice: productPrice,
-            onAddToCart: () {
-              setState(() {
-                _isInCart = true;
-                _quantity = 1;
-              });
-            },
-            onQuantityChanged: (int newQuantity) {
-              setState(() {
-                _quantity = newQuantity;
-              });
-            },
-            onToggleFavorite: () {
-              // TODO: Handle favorite toggle
+          BlocBuilder<CartBloc, CartState>(
+            builder: (context, cartState) {
+              // Check if item is in cart
+              bool itemInCart = _isInCart;
+              if (cartState is CartLoaded ||
+                  cartState is CartItemAdded ||
+                  cartState is CartItemUpdated ||
+                  cartState is CartItemDeleted) {
+                final cart = cartState is CartLoaded
+                    ? cartState.cart
+                    : cartState is CartItemAdded
+                        ? cartState.cart
+                        : cartState is CartItemUpdated
+                            ? cartState.cart
+                            : (cartState as CartItemDeleted).cart;
+                itemInCart = cart.items.any(
+                  (item) => item.productId == widget.productId,
+                );
+                if (itemInCart && !_isInCart) {
+                  // Update local state if item was just added
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _isInCart = true;
+                      });
+                    }
+                  });
+                }
+              }
+
+              return AddToCartSection(
+                isInCart: itemInCart,
+                quantity: _quantity,
+                unitPrice: productPrice,
+                onAddToCart: () {
+                  _handleAddToCart(context);
+                },
+                onQuantityChanged: (int newQuantity) {
+                  if (itemInCart && widget.productId != null) {
+                    // Update quantity in cart
+                    final cartState = context.read<CartBloc>().state;
+                    if (cartState is CartLoaded ||
+                        cartState is CartItemAdded ||
+                        cartState is CartItemUpdated ||
+                        cartState is CartItemDeleted) {
+                      final cart = cartState is CartLoaded
+                          ? cartState.cart
+                          : cartState is CartItemAdded
+                              ? cartState.cart
+                              : cartState is CartItemUpdated
+                                  ? cartState.cart
+                                  : (cartState as CartItemDeleted).cart;
+                      final cartItem = cart.items.firstWhere(
+                        (item) => item.productId == widget.productId,
+                        orElse: () => throw StateError('Item not found'),
+                      );
+                      context.read<CartBloc>().add(
+                            CartUpdateItemRequested(
+                              itemId: cartItem.id,
+                              quantity: newQuantity,
+                            ),
+                          );
+                    }
+                  } else {
+                    // Just update local quantity if not in cart yet
+                    setState(() {
+                      _quantity = newQuantity;
+                    });
+                  }
+                },
+                onToggleFavorite: () {
+                  // TODO: Handle favorite toggle
+                },
+              );
             },
           ),
         ],
+      ),
+            );
+          },
+        ),
       ),
     );
   }
