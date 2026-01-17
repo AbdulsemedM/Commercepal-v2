@@ -9,13 +9,17 @@ class AuthInterceptor extends Interceptor {
     RefreshTokenRepository? refreshTokenRepository,
     Dio? dio,
   }) : _storage = storage ?? Storage(),
-       _refreshTokenRepository =
-           refreshTokenRepository ?? RefreshTokenRepository(),
+       _refreshTokenRepository = refreshTokenRepository,
        _dio = dio;
 
   final Storage _storage;
-  final RefreshTokenRepository _refreshTokenRepository;
+  RefreshTokenRepository? _refreshTokenRepository;
   final Dio? _dio;
+  
+  RefreshTokenRepository get refreshTokenRepository {
+    _refreshTokenRepository ??= RefreshTokenRepository();
+    return _refreshTokenRepository!;
+  }
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
 
@@ -64,7 +68,7 @@ class AuthInterceptor extends Interceptor {
         }
 
         // Refresh the token
-        await _refreshTokenRepository.refreshToken(refreshToken);
+        await refreshTokenRepository.refreshToken(refreshToken);
 
         // Retry the original request with new token
         final opts = requestOptions;

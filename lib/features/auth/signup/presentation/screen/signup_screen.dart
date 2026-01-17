@@ -117,30 +117,37 @@ class _SignupScreenState extends State<SignupScreen> {
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // First Name field
-                        _buildTextField(
-                          controller: _firstNameController,
-                          label: 'First Name',
-                          hint: 'Enter your first name',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your first name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        // Last Name field
-                        _buildTextField(
-                          controller: _lastNameController,
-                          label: 'Last Name',
-                          hint: 'Enter your last name',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your last name';
-                            }
-                            return null;
-                          },
+                        // First Name and Last Name in a row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _firstNameController,
+                                label: 'First Name',
+                                hint: 'Enter your first name',
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your first name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.md),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _lastNameController,
+                                label: 'Last Name',
+                                hint: 'Enter your last name',
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your last name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: Spacing.md),
                         // Email field
