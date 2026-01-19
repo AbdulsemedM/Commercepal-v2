@@ -6,6 +6,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
 import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_dialog.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
@@ -23,8 +24,15 @@ class ProfileContent extends StatelessWidget {
         appBar: AppBarWidget(
           cartCount: 2,
           userInitials: AuthService().userInitials ?? 'U',
+          onSearchTap: () {
+            // Navigate to search screen when search bar is tapped
+            context.push(AppRoutes.productSearch);
+          },
           onSearchSubmitted: (String query) {
-            // Handle search submission
+            // Navigate to search screen with query
+            context.push(
+              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+            );
             return null;
           },
           onProfileTap: () {
@@ -272,6 +280,13 @@ class ProfileContent extends StatelessWidget {
         title: LocalizationService.t(context, 'profile.termsConditions'),
         onTap: () {
           context.push('/terms-conditions');
+        },
+      ),
+      _MenuItem(
+        icon: Icons.receipt_outlined,
+        title: LocalizationService.t(context, 'profile.refundPolicy'),
+        onTap: () {
+          context.push('/refund-policy');
         },
       ),
       _MenuItem(

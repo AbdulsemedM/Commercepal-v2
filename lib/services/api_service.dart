@@ -8,9 +8,20 @@ class ApiService {
 
   final Dio _dio;
 
-  Future<Response<T>> get<T>(String path, {Map<String, dynamic>? query}) async {
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async {
     try {
-      return await _dio.get<T>(path, queryParameters: query);
+      final options = headers != null && headers.isNotEmpty
+          ? Options(headers: headers)
+          : null;
+      return await _dio.get<T>(
+        path,
+        queryParameters: query,
+        options: options,
+      );
     } on DioException catch (e) {
       AppLogger.e('GET failed: $path', error: e, stack: e.stackTrace);
       rethrow;

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/product_image_section.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
@@ -189,8 +191,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               appBar: AppBarWidget(
                 cartCount: cartCount,
                 userInitials: AuthService().userInitials ?? 'U',
+                onSearchTap: () {
+                  // Navigate to search screen when search bar is tapped
+                  context.push(AppRoutes.productSearch);
+                },
                 onSearchSubmitted: (String query) {
-                  debugPrint('Search query: $query');
+                  // Navigate to search screen with query
+                  context.push(
+                    '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                  );
                   return null;
                 },
                 onLogoTap: () {

@@ -46,18 +46,22 @@ class RecentlyViewedSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
           child: Row(
             children: <Widget>[
-              ProductCard(
-                imageUrl: '',
-                description: 'Apple-Watch Ultra-2-49-mm-titanium-smart-watch',
-                price: '\$504.18',
-                showProgressBar: false,
+              Expanded(
+                child: ProductCard(
+                  imageUrl: '',
+                  description: 'Apple-Watch Ultra-2-49-mm-titanium-smart-watch',
+                  price: '\$504.18',
+                  showProgressBar: false,
+                ),
               ),
               const SizedBox(width: Spacing.md),
-              ProductCard(
-                imageUrl: '',
-                description: 'iPad Pro 13 Inch M4 MQR243/A Titanium (2025)',
-                price: '\$1100.18',
-                showProgressBar: false,
+              Expanded(
+                child: ProductCard(
+                  imageUrl: '',
+                  description: 'iPad Pro 13 Inch M4 MQR243/A Titanium (2025)',
+                  price: '\$1100.18',
+                  showProgressBar: false,
+                ),
               ),
             ],
           ),

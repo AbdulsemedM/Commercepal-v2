@@ -24,21 +24,21 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          context.push(
-            '${AppRoutes.productDetail}?name=${Uri.encodeComponent(description)}&price=${Uri.encodeComponent(price)}',
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
+    return InkWell(
+      onTap: () {
+        context.push(
+          '${AppRoutes.productDetail}?name=${Uri.encodeComponent(description)}&price=${Uri.encodeComponent(price)}',
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             // Product image placeholder
             Container(
@@ -75,6 +75,7 @@ class ProductCard extends StatelessWidget {
               padding: const EdgeInsets.all(Spacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   // Product description
                   Text(
@@ -124,7 +125,6 @@ class ProductCard extends StatelessWidget {
               ),
             ),
           ],
-          ),
         ),
       ),
     );

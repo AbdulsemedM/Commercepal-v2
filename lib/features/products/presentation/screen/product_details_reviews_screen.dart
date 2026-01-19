@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/app/router/app_router.dart';
 
 class ProductDetailsReviewsScreen extends StatefulWidget {
   const ProductDetailsReviewsScreen({
@@ -30,7 +32,17 @@ class _ProductDetailsReviewsScreenState
       appBar: AppBarWidget(
         cartCount: 0,
         userInitials: 'U',
-        onSearchSubmitted: (String query) => null,
+        onSearchTap: () {
+          // Navigate to search screen when search bar is tapped
+          context.push(AppRoutes.productSearch);
+        },
+        onSearchSubmitted: (String query) {
+          // Navigate to search screen with query
+          context.push(
+            '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+          );
+          return null;
+        },
         onLogoTap: () => Navigator.of(context).pop(),
         onCartTap: null,
         onProfileTap: null,

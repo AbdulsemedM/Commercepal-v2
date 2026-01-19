@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/cart_bloc.dart';
 import '../../data/models/cart.dart';
 import '../widgets/cart_item_widget.dart';
@@ -69,7 +71,15 @@ class CartPage extends StatelessWidget {
           appBar: AppBarWidget(
             cartCount: 0,
             userInitials: AuthService().userInitials ?? 'U',
+            onSearchTap: () {
+              // Navigate to search screen when search bar is tapped
+              context.push(AppRoutes.productSearch);
+            },
             onSearchSubmitted: (String query) {
+              // Navigate to search screen with query
+              context.push(
+                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+              );
               return null;
             },
             onCartTap: () {

@@ -61,8 +61,7 @@ class LoggingInterceptor extends Interceptor {
       logBuffer.writeln('└─────────────────────────────────────────────────');
       // Log directly to console for better visibility
       if (kDebugMode) {
-        print(logBuffer.toString());
-        dev.log(logBuffer.toString(), name: 'API_REQUEST');
+        _logFullMessage(logBuffer.toString(), 'API_REQUEST');
       }
     }
     super.onRequest(options, handler);
@@ -106,8 +105,7 @@ class LoggingInterceptor extends Interceptor {
       logBuffer.writeln('└─────────────────────────────────────────────────');
       // Log directly to console for better visibility
       if (kDebugMode) {
-        print(logBuffer.toString());
-        dev.log(logBuffer.toString(), name: 'API_RESPONSE');
+        _logFullMessage(logBuffer.toString(), 'API_RESPONSE');
       }
     }
     super.onResponse(response, handler);
@@ -145,8 +143,7 @@ class LoggingInterceptor extends Interceptor {
 
     logBuffer.writeln('└─────────────────────────────────────────────────');
     // Log directly to console for better visibility
-    print(logBuffer.toString());
-    dev.log(logBuffer.toString(), name: 'API_ERROR');
+    _logFullMessage(logBuffer.toString(), 'API_ERROR');
     AppLogger.e(
       'API Error: ${err.requestOptions.method} ${err.requestOptions.uri}',
       error: err,
@@ -189,5 +186,46 @@ class LoggingInterceptor extends Interceptor {
       }
     });
     return sanitized;
+  }
+
+  /// Logs a message in chunks to avoid truncation
+  /// Dart's print() and dev.log() have limitations on string length
+  void _logFullMessage(String message, String name) {
+    const int chunkSize = 800; // Safe chunk size for most consoles
+    
+    if (message.length <= chunkSize) {
+      // Message is short enough, log it normally
+      print(message);
+      dev.log(message, name: name);
+      return;
+    }
+    
+    // Split message into chunks
+    final lines = message.split('\n');
+    final chunks = <String>[];
+    StringBuffer currentChunk = StringBuffer();
+    
+    for (final line in lines) {
+      // If adding this line would exceed chunk size, save current chunk and start new one
+      if (currentChunk.length + line.length + 1 > chunkSize && currentChunk.length > 0) {
+        chunks.add(currentChunk.toString());
+        currentChunk = StringBuffer();
+      }
+      currentChunk.writeln(line);
+    }
+    
+    // Add the last chunk if it has content
+    if (currentChunk.length > 0) {
+      chunks.add(currentChunk.toString());
+    }
+    
+    // Log each chunk separately
+    for (int i = 0; i < chunks.length; i++) {
+      final chunkHeader = chunks.length > 1 
+          ? '[$name - Part ${i + 1}/${chunks.length}]' 
+          : name;
+      print(chunks[i]);
+      dev.log(chunks[i], name: chunkHeader);
+    }
   }
 }

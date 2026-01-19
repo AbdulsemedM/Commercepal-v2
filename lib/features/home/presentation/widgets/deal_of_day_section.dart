@@ -134,22 +134,26 @@ class _DealOfDaySectionState extends State<DealOfDaySection> {
           ),
           child: Row(
             children: <Widget>[
-              ProductCard(
-                imageUrl: '',
-                description: 'Apple Macbook Air MQD32SA/A Silver (2017)',
-                price: '\$904.18',
-                sold: 700,
-                inStock: 300,
-                showProgressBar: true,
+              Expanded(
+                child: ProductCard(
+                  imageUrl: '',
+                  description: 'Apple Macbook Air MQD32SA/A Silver (2017)',
+                  price: '\$904.18',
+                  sold: 700,
+                  inStock: 300,
+                  showProgressBar: true,
+                ),
               ),
               const SizedBox(width: Spacing.md),
-              ProductCard(
-                imageUrl: '',
-                description: 'Apple Macbook Air MQD32SA/A Silver (2017)',
-                price: '\$904.18',
-                sold: 700,
-                inStock: 300,
-                showProgressBar: true,
+              Expanded(
+                child: ProductCard(
+                  imageUrl: '',
+                  description: 'Apple Macbook Air MQD32SA/A Silver (2017)',
+                  price: '\$904.18',
+                  sold: 700,
+                  inStock: 300,
+                  showProgressBar: true,
+                ),
               ),
             ],
           ),

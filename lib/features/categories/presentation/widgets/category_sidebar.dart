@@ -1,30 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/features/categories/data/models/category.dart';
 
 class CategorySidebar extends StatelessWidget {
   const CategorySidebar({
     super.key,
+    required this.categories,
     required this.selectedCategory,
     required this.onCategorySelected,
   });
 
-  final String selectedCategory;
-  final ValueChanged<String> onCategorySelected;
-
-  static const List<String> categories = <String>[
-    'categories.technology',
-    'categories.realEstate',
-    'categories.watch',
-    'categories.homeLife',
-    'categories.cosmeticSurgery',
-    'categories.fashion',
-    'categories.homeAppliances',
-    'categories.jewelry',
-    'categories.babyProducts',
-    'categories.sporting',
-  ];
+  final List<Category> categories;
+  final Category? selectedCategory;
+  final ValueChanged<Category> onCategorySelected;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +24,8 @@ class CategorySidebar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: Spacing.md),
         itemCount: categories.length,
         itemBuilder: (BuildContext context, int index) {
-          final String categoryKey = categories[index];
-          final String categoryName =
-              LocalizationService.t(context, categoryKey);
-          final bool isSelected = selectedCategory == categoryKey;
+          final Category category = categories[index];
+          final bool isSelected = selectedCategory?.slug == category.slug;
 
           return Padding(
             padding: const EdgeInsets.symmetric(
@@ -46,7 +33,7 @@ class CategorySidebar extends StatelessWidget {
               vertical: Spacing.xs,
             ),
             child: InkWell(
-              onTap: () => onCategorySelected(categoryKey),
+              onTap: () => onCategorySelected(category),
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -58,12 +45,14 @@ class CategorySidebar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  categoryName,
+                  category.name,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: isSelected ? Colors.white : Colors.black,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                         fontSize: 14,
                       ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
