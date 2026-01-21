@@ -8,6 +8,8 @@ import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/services/auth_service.dart';
 import '../data_provider/local_cart_data_provider.dart';
 
+import 'package:commercepal/features/products/data/models/product.dart';
+
 class CartRepository {
   CartRepository({
     CartDataProvider? dataProvider,
@@ -21,11 +23,11 @@ class CartRepository {
   final LocalCartDataProvider _localDataProvider;
   final AuthService _authService;
 
-  Future<Cart> addToCart(AddToCartRequest request) async {
+  Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
     if (_authService.isLoggedIn) {
       return await _dataProvider.addToCart(request);
     } else {
-      return await _localDataProvider.addToCart(request);
+      return await _localDataProvider.addToCart(request, product: product);
     }
   }
 

@@ -11,6 +11,7 @@ final class CartAddItemRequested extends CartEvent {
   final int quantity;
   final String currency;
   final String country;
+  final Product? product;
 
   CartAddItemRequested({
     required this.productId,
@@ -18,6 +19,7 @@ final class CartAddItemRequested extends CartEvent {
     required this.quantity,
     required this.currency,
     required this.country,
+    this.product,
   });
 }
 

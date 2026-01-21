@@ -7,6 +7,7 @@ import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
 import 'package:commercepal/features/cart/data/models/update_cart_item_request.dart';
 import 'package:commercepal/features/cart/data/repository/cart_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/features/products/data/models/product.dart';
 
 part 'cart_event.dart';
 part 'cart_state.dart';
@@ -94,7 +95,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         ],
       );
 
-      final cart = await _repository.addToCart(request);
+      final cart = await _repository.addToCart(request, product: event.product);
       emit(CartItemAdded(cart));
     } catch (e) {
       String errorMessage = 'Failed to add item to cart. Please try again.';

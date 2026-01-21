@@ -12,6 +12,7 @@ import '../../bloc/product_details_bloc.dart';
 import '../../bloc/product_details_event.dart';
 import '../../bloc/product_details_state.dart';
 import '../../data/repository/product_details_repository.dart';
+import '../../data/models/product.dart';
 import '../widgets/product_image_gallery.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
@@ -75,7 +76,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return 'US';
   }
 
-  void _handleAddToCart(BuildContext context, String configId) {
+  void _handleAddToCart(BuildContext context, String configId, Product product) {
     if (widget.productId == null || widget.productId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -103,6 +104,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         quantity: _quantity,
         currency: currency,
         country: country,
+        product: product,
       ),
     );
   }
@@ -401,7 +403,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               unitPrice: currentPrice,
                               onAddToCart: () {
                                 final configId = selectedVariant?.configId ?? '';
-                                _handleAddToCart(context, configId);
+                                final cartProduct = Product.fromProductDetails(
+                                  product,
+                                  variantIndex: state.selectedVariantIndex,
+                                );
+                                _handleAddToCart(context, configId, cartProduct);
                               },
                               onQuantityChanged: (int newQuantity) {
                                 if (itemInCart && widget.productId != null) {

@@ -1,3 +1,5 @@
+import 'product_details.dart';
+
 class Product {
   final String id;
   final String name;
@@ -42,6 +44,31 @@ class Product {
     this.isOnDiscount = false,
     this.discountPercentage,
   });
+
+  factory Product.fromProductDetails(ProductDetails details, {int? variantIndex}) {
+    final pricing = variantIndex != null && details.variants.length > variantIndex
+        ? details.variants[variantIndex].pricing
+        : details.pricing;
+
+    return Product(
+      id: details.id,
+      name: details.title,
+      description: details.description.isNotEmpty ? details.description.join('\n') : null,
+      price: pricing.currentPrice,
+      originalPrice: pricing.originalPrice,
+      imageUrl: details.mainImage.url,
+      provider: details.provider,
+      brandName: details.brandName,
+      categoryId: details.categoryId,
+      currency: pricing.currency,
+      stockStatus: details.status,
+      isAvailable: details.isSellAllowed,
+      rating: details.meta.rating,
+      reviewCount: details.meta.reviewCount,
+      isOnDiscount: pricing.isOnDiscount,
+      discountPercentage: pricing.discountPercentage,
+    );
+  }
 
   factory Product.fromJson(Map<String, dynamic> json) {
     // Handle nested pricing structure
