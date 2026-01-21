@@ -6,23 +6,50 @@ import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
 import 'package:commercepal/features/cart/data/models/update_cart_item_request.dart';
 import 'package:commercepal/features/cart/data/repository/cart_repository.dart';
+import 'package:commercepal/services/auth_service.dart';
 
 part 'cart_event.dart';
 part 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
-  CartBloc({CartRepository? repository})
-    : _repository = repository ?? CartRepository(),
-      super(CartInitial()) {
+  CartBloc({CartRepository? repository, AuthService? authService})
+      : _repository = repository ?? CartRepository(),
+        _authService = authService ?? AuthService(),
+        super(CartInitial()) {
     on<CartLoadRequested>(_onCartLoadRequested);
     on<CartAddItemRequested>(_onCartAddItemRequested);
     on<CartUpdateItemRequested>(_onCartUpdateItemRequested);
     on<CartDeleteItemRequested>(_onCartDeleteItemRequested);
     on<CartClearRequested>(_onCartClearRequested);
     on<CartRefreshRequested>(_onCartRefreshRequested);
+    on<CartSyncRequested>(_onCartSyncRequested);
+    on<CartReset>(_onCartReset);
+
+    _authService.addListener(_onAuthStatusChanged);
   }
 
   final CartRepository _repository;
+  final AuthService _authService;
+  bool _wasLoggedIn = false;
+
+  @override
+  Future<void> close() {
+    _authService.removeListener(_onAuthStatusChanged);
+    return super.close();
+  }
+
+  void _onAuthStatusChanged() {
+    final isLoggedIn = _authService.isLoggedIn;
+    if (isLoggedIn && !_wasLoggedIn) {
+      // User just logged in
+      add(CartSyncRequested());
+    } else if (!isLoggedIn && _wasLoggedIn) {
+      // User just logged out
+      add(CartReset());
+      add(CartLoadRequested()); // Load guest cart (empty or previous)
+    }
+    _wasLoggedIn = isLoggedIn;
+  }
 
   Future<void> _onCartLoadRequested(
     CartLoadRequested event,
@@ -181,6 +208,23 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       // Don't emit error on refresh, just log it
       // The cart state remains unchanged
     }
+  }
+
+  Future<void> _onCartSyncRequested(
+    CartSyncRequested event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+    try {
+      await _repository.syncLocalCartToRemote();
+      add(CartLoadRequested());
+    } catch (e) {
+      emit(CartError("Failed to sync cart"));
+    }
+  }
+
+  void _onCartReset(CartReset event, Emitter<CartState> emit) {
+    emit(CartInitial());
   }
 }
 

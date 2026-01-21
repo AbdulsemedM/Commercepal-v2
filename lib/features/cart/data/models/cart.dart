@@ -45,5 +45,20 @@ class Cart {
       totalSavings: (json['totalSavings'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'cartId': cartId,
+      'totalItems': totalItems,
+      'subtotal': subtotal,
+      'estimatedTotal': estimatedTotal,
+      'currency': currency,
+      'lastActivityAt': lastActivityAt.toIso8601String(),
+      'items': items.map((e) => e.toJson()).toList(),
+      'priceDropItems': priceDropItems.map((e) => e.toJson()).toList(),
+      'unavailableItems': unavailableItems.map((e) => e.toJson()).toList(),
+      'totalSavings': totalSavings,
+    };
+  }
 }
 

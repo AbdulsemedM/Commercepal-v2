@@ -43,3 +43,7 @@ final class CartClearRequested extends CartEvent {}
 
 final class CartRefreshRequested extends CartEvent {}
 
+class CartSyncRequested extends CartEvent {}
+
+class CartReset extends CartEvent {}
+

@@ -77,7 +77,7 @@ class ProductSearchResponse {
                           products.length;
     
     final totalPages = json['totalPages'] as int? ?? 
-                       (totalElements / pageSize).ceil();
+                       (pageSize > 0 ? (totalElements / pageSize).ceil() : 0);
 
     return ProductSearchResponse(
       products: products,

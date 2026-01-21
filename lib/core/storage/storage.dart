@@ -73,4 +73,17 @@ class Storage {
     final accessToken = await getAccessToken();
     return accessToken != null && accessToken.isNotEmpty;
   }
+
+  // Generic storage methods
+  Future<void> writeData({required String key, required String value}) async {
+    await _storage.write(key: key, value: value);
+  }
+
+  Future<String?> readData(String key) async {
+    return await _storage.read(key: key);
+  }
+
+  Future<void> deleteData(String key) async {
+    await _storage.delete(key: key);
+  }
 }

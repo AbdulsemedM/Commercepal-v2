@@ -52,5 +52,25 @@ class CartItem {
       savingsAmount: (json['savingsAmount'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productId': productId,
+      'productName': productName,
+      'productImageUrl': productImageUrl,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+      'subtotal': subtotal,
+      'currency': currency,
+      'provider': provider,
+      'stockStatus': stockStatus,
+      'isAvailable': isAvailable,
+      'priceWhenAdded': priceWhenAdded,
+      'currentPrice': currentPrice,
+      'priceDropped': priceDropped,
+      'savingsAmount': savingsAmount,
+    };
+  }
 }
 
