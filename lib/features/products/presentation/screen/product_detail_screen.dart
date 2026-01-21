@@ -8,14 +8,20 @@ import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import '../widgets/product_image_section.dart';
+import '../../bloc/product_details_bloc.dart';
+import '../../bloc/product_details_event.dart';
+import '../../bloc/product_details_state.dart';
+import '../../data/repository/product_details_repository.dart';
+import '../widgets/product_image_gallery.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
 import '../widgets/share_section.dart';
 import '../widgets/special_offer_section.dart';
-import '../widgets/color_selector.dart';
 import '../widgets/product_details_button.dart';
 import '../widgets/add_to_cart_section.dart';
+import '../widgets/variant_selector_widget.dart';
+import '../widgets/reviews_section_widget.dart';
+import '../widgets/recommended_products_section.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -34,31 +40,18 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _selectedImageIndex = 0;
-  int _selectedColorIndex = 1; // Default to grey
   int _quantity = 1;
   bool _isInCart = false;
 
-  // Sample data - in real app, this would come from API
-  final List<String> _images = <String>['', '', ''];
-  final List<Color> _colors = <Color>[
-    Colors.white,
-    Colors.grey,
-    Colors.pink,
-    Colors.yellow,
-    Colors.lightBlue,
-  ];
-
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState = context
-        .findAncestorStateOfType<DashboardScreenState>();
+    final DashboardScreenState? dashboardState =
+        context.findAncestorStateOfType<DashboardScreenState>();
     if (dashboardState != null) {
       dashboardState.changeTab(tabIndex);
     }
   }
 
   String _getCurrency(BuildContext context) {
-    // Try to get from ProfileBloc if available
     try {
       final profileState = context.read<ProfileBloc>().state;
       if (profileState is ProfileLoaded) {
@@ -67,12 +60,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (e) {
       // ProfileBloc not available
     }
-    // Default currency
     return 'USD';
   }
 
   String _getCountry(BuildContext context) {
-    // Try to get from ProfileBloc if available
     try {
       final profileState = context.read<ProfileBloc>().state;
       if (profileState is ProfileLoaded) {
@@ -81,17 +72,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (e) {
       // ProfileBloc not available
     }
-    // Default country
     return 'US';
   }
 
-  String _getConfigId() {
-    // Use selected color index as configId (or generate from color)
-    // For now, use a simple string representation
-    return 'config_$_selectedColorIndex';
-  }
-
-  void _handleAddToCart(BuildContext context) {
+  void _handleAddToCart(BuildContext context, String configId) {
     if (widget.productId == null || widget.productId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -102,18 +86,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
-    // Get or create CartBloc
     CartBloc cartBloc;
     try {
       cartBloc = context.read<CartBloc>();
     } catch (e) {
-      // CartBloc not in context, create new one
       cartBloc = CartBloc();
     }
 
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
-    final String configId = _getConfigId();
 
     cartBloc.add(
       CartAddItemRequested(
@@ -128,17 +109,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sample product data
-    final String productName = widget.productName ??
-        'Apple iPad Pro 11" (2020) Wifi 128Gb (Silver)- 128Gb/ 11Inch/ Wifi';
-    final String productPrice = widget.productPrice ?? '\$904.18';
-    final Map<String, String> specifications = <String, String>{
-      'Destop': 'LED-Backlit, 11Inch',
-      'Chipset/ CPU': 'Apple A12Z Bionic 2.3Ghz',
-      'RAM': '128Gb',
-      'Operating System': 'iOS 13',
-    };
-
     // Get or create CartBloc
     CartBloc cartBloc;
     try {
@@ -147,8 +117,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       cartBloc = CartBloc();
     }
 
-    return BlocProvider.value(
-      value: cartBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => ProductDetailsBloc(
+            repository: ProductDetailsRepository(),
+          )..add(
+              ProductDetailsFetchRequested(
+                productId: widget.productId ?? '',
+                country: _getCountry(context),
+                currency: _getCurrency(context),
+              ),
+            ),
+        ),
+        BlocProvider.value(value: cartBloc),
+      ],
       child: BlocListener<CartBloc, CartState>(
         listener: (context, state) {
           if (state is CartItemAdded) {
@@ -186,17 +169,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           : (cartState as CartItemDeleted).cart;
               cartCount = cart.totalItems;
             }
+
             return Scaffold(
               backgroundColor: Colors.white,
               appBar: AppBarWidget(
                 cartCount: cartCount,
                 userInitials: AuthService().userInitials ?? 'U',
                 onSearchTap: () {
-                  // Navigate to search screen when search bar is tapped
                   context.push(AppRoutes.productSearch);
                 },
                 onSearchSubmitted: (String query) {
-                  // Navigate to search screen with query
                   context.push(
                     '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
                   );
@@ -213,154 +195,259 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 },
                 hasNotification: true,
               ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: Spacing.sm),
-                  // Product images
-                  ProductImageSection(
-                    images: _images,
-                    selectedImageIndex: _selectedImageIndex,
-                    onImageSelected: (int index) {
-                      setState(() {
-                        _selectedImageIndex = index;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  // Product info
-                  ProductInfoSection(
-                    title: productName,
-                    price: productPrice,
-                    rating: 4.5,
-                    reviewCount: 832,
-                    code: 'Apple iPad Pro 11" (2020) Wifi 128Gb Silver',
-                    category: 'Technology',
-                    keywords: 'Apple, Technology, Tablet',
-                  ),
-                  const SizedBox(height: Spacing.lg),
-                  // Specifications
-                  ProductSpecifications(specifications: specifications),
-                  const SizedBox(height: Spacing.lg),
-                  // Share section
-                  const ShareSection(),
-                  const SizedBox(height: Spacing.lg),
-                  // Special offer
-                  SpecialOfferSection(
-                    sold: 700,
-                    inStock: 300,
-                    initialDuration: const Duration(
-                      days: 10,
-                      hours: 42,
-                      minutes: 0,
-                      seconds: 8,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.lg),
-                  // Color selector
-                  ColorSelector(
-                    colors: _colors,
-                    selectedColorIndex: _selectedColorIndex,
-                    onColorSelected: (int index) {
-                      setState(() {
-                        _selectedColorIndex = index;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: Spacing.lg),
-                  // Product details button
-                  ProductDetailsButton(
-                    productId: widget.productId,
-                    productName: productName,
-                  ),
-                  const SizedBox(height: Spacing.xl),
-                ],
-              ),
-            ),
-          ),
-          // Add to cart section (fixed at bottom)
-          BlocBuilder<CartBloc, CartState>(
-            builder: (context, cartState) {
-              // Check if item is in cart
-              bool itemInCart = _isInCart;
-              if (cartState is CartLoaded ||
-                  cartState is CartItemAdded ||
-                  cartState is CartItemUpdated ||
-                  cartState is CartItemDeleted) {
-                final cart = cartState is CartLoaded
-                    ? cartState.cart
-                    : cartState is CartItemAdded
-                        ? cartState.cart
-                        : cartState is CartItemUpdated
-                            ? cartState.cart
-                            : (cartState as CartItemDeleted).cart;
-                itemInCart = cart.items.any(
-                  (item) => item.productId == widget.productId,
-                );
-                if (itemInCart && !_isInCart) {
-                  // Update local state if item was just added
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      setState(() {
-                        _isInCart = true;
-                      });
-                    }
-                  });
-                }
-              }
-
-              return AddToCartSection(
-                isInCart: itemInCart,
-                quantity: _quantity,
-                unitPrice: productPrice,
-                onAddToCart: () {
-                  _handleAddToCart(context);
-                },
-                onQuantityChanged: (int newQuantity) {
-                  if (itemInCart && widget.productId != null) {
-                    // Update quantity in cart
-                    final cartState = context.read<CartBloc>().state;
-                    if (cartState is CartLoaded ||
-                        cartState is CartItemAdded ||
-                        cartState is CartItemUpdated ||
-                        cartState is CartItemDeleted) {
-                      final cart = cartState is CartLoaded
-                          ? cartState.cart
-                          : cartState is CartItemAdded
-                              ? cartState.cart
-                              : cartState is CartItemUpdated
-                                  ? cartState.cart
-                                  : (cartState as CartItemDeleted).cart;
-                      final cartItem = cart.items.firstWhere(
-                        (item) => item.productId == widget.productId,
-                        orElse: () => throw StateError('Item not found'),
-                      );
-                      context.read<CartBloc>().add(
-                            CartUpdateItemRequested(
-                              itemId: cartItem.id,
-                              quantity: newQuantity,
-                            ),
-                          );
-                    }
-                  } else {
-                    // Just update local quantity if not in cart yet
-                    setState(() {
-                      _quantity = newQuantity;
-                    });
+              body: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
+                builder: (context, state) {
+                  if (state is ProductDetailsLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
                   }
+
+                  if (state is ProductDetailsError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(Spacing.lg),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red[300],
+                            ),
+                            const SizedBox(height: Spacing.md),
+                            Text(
+                              state.message,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: Spacing.lg),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                context.read<ProductDetailsBloc>().add(
+                                      ProductDetailsFetchRequested(
+                                        productId: widget.productId ?? '',
+                                        country: _getCountry(context),
+                                        currency: _getCurrency(context),
+                                      ),
+                                    );
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (state is ProductDetailsLoaded) {
+                    final product = state.productDetails;
+                    final selectedVariant = product.variants.isNotEmpty
+                        ? product.variants[state.selectedVariantIndex]
+                        : null;
+                    final currentPrice = selectedVariant?.pricing?.formattedCurrentPrice ??
+                        product.pricing.formattedCurrentPrice;
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: () async {
+                              context.read<ProductDetailsBloc>().add(
+                                    ProductDetailsRefreshRequested(
+                                      productId: widget.productId ?? '',
+                                      country: _getCountry(context),
+                                      currency: _getCurrency(context),
+                                    ),
+                                  );
+                            },
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: Spacing.sm),
+                                  // Product images
+                                  ProductImageGallery(
+                                    images: product.images,
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                  // Product info
+                                  ProductInfoSection(
+                                    title: product.title,
+                                    price: currentPrice,
+                                    rating: product.meta.rating,
+                                    reviewCount: product.meta.reviewCount,
+                                    code: product.id,
+                                    category: product.categoryId,
+                                    keywords: product.brandName,
+                                  ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Variant selector
+                                  if (product.variants.isNotEmpty)
+                                    VariantSelectorWidget(
+                                      variants: product.variants,
+                                      selectedIndex: state.selectedVariantIndex,
+                                      onVariantSelected: (index) {
+                                        context.read<ProductDetailsBloc>().add(
+                                              ProductDetailsVariantSelected(
+                                                variantIndex: index,
+                                              ),
+                                            );
+                                      },
+                                    ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Specifications (if available)
+                                  if (product.physicalParameters.weight > 0 ||
+                                      product.physicalParameters.length > 0)
+                                    ProductSpecifications(
+                                      specifications: {
+                                        if (product.physicalParameters.length > 0)
+                                          'Length':
+                                              '${product.physicalParameters.length}cm',
+                                        if (product.physicalParameters.width > 0)
+                                          'Width':
+                                              '${product.physicalParameters.width}cm',
+                                        if (product.physicalParameters.height > 0)
+                                          'Height':
+                                              '${product.physicalParameters.height}cm',
+                                        if (product.physicalParameters.weight > 0)
+                                          'Weight':
+                                              '${product.physicalParameters.weight}g',
+                                      },
+                                    ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Share section
+                                  const ShareSection(),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Special offer (if in stock)
+                                  if (product.stockLevel > 0)
+                                    SpecialOfferSection(
+                                      sold: product.variants.fold<int>(
+                                        0,
+                                        (sum, v) => sum + v.salesCount,
+                                      ),
+                                      inStock: product.stockLevel,
+                                      initialDuration: const Duration(
+                                        days: 10,
+                                        hours: 42,
+                                        minutes: 0,
+                                        seconds: 8,
+                                      ),
+                                    ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Reviews section
+                                  if (product.customerReviews.isNotEmpty)
+                                    ReviewsSectionWidget(
+                                      reviews: product.customerReviews,
+                                      averageRating: product.meta.rating,
+                                      totalReviews: product.meta.reviewCount,
+                                      onViewAllTap: () {
+                                        context.push(
+                                          '${AppRoutes.productDetailsReviews}?productId=${widget.productId}',
+                                        );
+                                      },
+                                    ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Product details button
+                                  ProductDetailsButton(
+                                    productId: widget.productId,
+                                    productName: product.title,
+                                  ),
+                                  const SizedBox(height: Spacing.lg),
+                                  // Recommended products
+                                  if (product.recommendedProducts.isNotEmpty)
+                                    RecommendedProductsSection(
+                                      products: product.recommendedProducts,
+                                    ),
+                                  const SizedBox(height: Spacing.xl),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Add to cart section (fixed at bottom)
+                        BlocBuilder<CartBloc, CartState>(
+                          builder: (context, cartState) {
+                            bool itemInCart = _isInCart;
+                            if (cartState is CartLoaded ||
+                                cartState is CartItemAdded ||
+                                cartState is CartItemUpdated ||
+                                cartState is CartItemDeleted) {
+                              final cart = cartState is CartLoaded
+                                  ? cartState.cart
+                                  : cartState is CartItemAdded
+                                      ? cartState.cart
+                                      : cartState is CartItemUpdated
+                                          ? cartState.cart
+                                          : (cartState as CartItemDeleted).cart;
+                              itemInCart = cart.items.any(
+                                (item) => item.productId == widget.productId,
+                              );
+                              if (itemInCart && !_isInCart) {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _isInCart = true;
+                                    });
+                                  }
+                                });
+                              }
+                            }
+
+                            return AddToCartSection(
+                              isInCart: itemInCart,
+                              quantity: _quantity,
+                              unitPrice: currentPrice,
+                              onAddToCart: () {
+                                final configId = selectedVariant?.configId ?? '';
+                                _handleAddToCart(context, configId);
+                              },
+                              onQuantityChanged: (int newQuantity) {
+                                if (itemInCart && widget.productId != null) {
+                                  final cartState = context.read<CartBloc>().state;
+                                  if (cartState is CartLoaded ||
+                                      cartState is CartItemAdded ||
+                                      cartState is CartItemUpdated ||
+                                      cartState is CartItemDeleted) {
+                                    final cart = cartState is CartLoaded
+                                        ? cartState.cart
+                                        : cartState is CartItemAdded
+                                            ? cartState.cart
+                                            : cartState is CartItemUpdated
+                                                ? cartState.cart
+                                                : (cartState as CartItemDeleted).cart;
+                                    final cartItem = cart.items.firstWhere(
+                                      (item) => item.productId == widget.productId,
+                                      orElse: () => throw StateError('Item not found'),
+                                    );
+                                    context.read<CartBloc>().add(
+                                          CartUpdateItemRequested(
+                                            itemId: cartItem.id,
+                                            quantity: newQuantity,
+                                          ),
+                                        );
+                                  }
+                                } else {
+                                  setState(() {
+                                    _quantity = newQuantity;
+                                  });
+                                }
+                              },
+                              onToggleFavorite: () {
+                                // TODO: Handle favorite toggle
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  }
+
+                  // Initial state
+                  return const SizedBox.shrink();
                 },
-                onToggleFavorite: () {
-                  // TODO: Handle favorite toggle
-                },
-              );
-            },
-          ),
-        ],
-      ),
+              ),
             );
           },
         ),
@@ -368,4 +455,3 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 }
-

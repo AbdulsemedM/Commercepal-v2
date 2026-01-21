@@ -5,14 +5,14 @@ class Variant {
   final String configId;
   final int quantity;
   final int salesCount;
-  final Pricing pricing;
+  final Pricing? pricing;
   final List<Configurator> configurators;
 
   Variant({
     required this.configId,
     required this.quantity,
     required this.salesCount,
-    required this.pricing,
+    this.pricing,
     required this.configurators,
   });
 
@@ -21,9 +21,9 @@ class Variant {
       configId: json['configId'] as String? ?? '',
       quantity: json['quantity'] as int? ?? 0,
       salesCount: json['salesCount'] as int? ?? 0,
-      pricing: Pricing.fromJson(
-        json['pricing'] as Map<String, dynamic>,
-      ),
+      pricing: json['pricing'] != null
+          ? Pricing.fromJson(json['pricing'] as Map<String, dynamic>)
+          : null,
       configurators: (json['configurators'] as List<dynamic>?)
               ?.map((item) => Configurator.fromJson(item as Map<String, dynamic>))
               .toList() ??
@@ -36,7 +36,7 @@ class Variant {
       'configId': configId,
       'quantity': quantity,
       'salesCount': salesCount,
-      'pricing': pricing.toJson(),
+      'pricing': pricing?.toJson(),
       'configurators': configurators.map((c) => c.toJson()).toList(),
     };
   }

@@ -281,10 +281,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               final product = state.products[index];
                               return ProductCard(
                                 key: ValueKey('product_${product.id}_$index'),
+                                productId: product.id,
                                 imageUrl: product.imageUrl ?? '',
                                 description: product.name,
                                 price:
                                     '${product.currency} ${product.price.toStringAsFixed(2)}',
+                                originalPrice: product.originalPrice != null
+                                    ? '${product.currency} ${product.originalPrice!.toStringAsFixed(2)}'
+                                    : null,
+                                rating: product.rating,
+                                reviewCount: product.reviewCount,
+                                discountPercentage: product.discountPercentage,
                               );
                             },
                           ),

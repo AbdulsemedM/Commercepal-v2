@@ -20,23 +20,57 @@ class ProductSearchResponse {
   });
 
   factory ProductSearchResponse.fromJson(Map<String, dynamic> json) {
-    final content = json['content'] as List<dynamic>? ?? 
-                    json['products'] as List<dynamic>? ?? 
-                    json['data'] as List<dynamic>? ?? 
-                    <dynamic>[];
+    // Handle nested structure: { data: { items: [...], pagination: {...} } }
+    List<dynamic> content;
+    Map<String, dynamic>? paginationData;
+    
+    final data = json['data'];
+    if (data is Map<String, dynamic>) {
+      // Nested structure with data.items
+      content = data['items'] as List<dynamic>? ?? <dynamic>[];
+      paginationData = data['pagination'] as Map<String, dynamic>?;
+    } else if (data is List) {
+      // data is directly a list
+      content = data;
+      paginationData = null;
+    } else {
+      // Fallback to other possible locations
+      content = json['content'] as List<dynamic>? ?? 
+                json['products'] as List<dynamic>? ?? 
+                <dynamic>[];
+      paginationData = null;
+    }
     
     final products = content
         .map((item) => Product.fromJson(item as Map<String, dynamic>))
         .toList();
 
-    final pageable = json['pageable'] as Map<String, dynamic>?;
-    final pageNumber = pageable?['pageNumber'] as int? ?? 
-                       json['page'] as int? ?? 
-                       json['currentPage'] as int? ?? 0;
+    // Extract pagination info
+    int pageNumber;
+    int pageSize;
+    bool hasNext;
+    bool hasPrevious;
     
-    final pageSize = pageable?['pageSize'] as int? ?? 
-                     json['size'] as int? ?? 
-                     json['pageSize'] as int? ?? 36;
+    if (paginationData != null) {
+      // Use pagination object from data.pagination
+      pageNumber = paginationData['page'] as int? ?? 0;
+      pageSize = paginationData['size'] as int? ?? 36;
+      hasNext = paginationData['hasNext'] as bool? ?? false;
+      hasPrevious = paginationData['hasPrevious'] as bool? ?? false;
+    } else {
+      // Fallback to old logic
+      final pageable = json['pageable'] as Map<String, dynamic>?;
+      pageNumber = pageable?['pageNumber'] as int? ?? 
+                   json['page'] as int? ?? 
+                   json['currentPage'] as int? ?? 0;
+      
+      pageSize = pageable?['pageSize'] as int? ?? 
+                 json['size'] as int? ?? 
+                 json['pageSize'] as int? ?? 36;
+      
+      hasNext = json['hasNext'] as bool? ?? false;
+      hasPrevious = json['hasPrevious'] as bool? ?? false;
+    }
 
     final totalElements = json['totalElements'] as int? ?? 
                           json['total'] as int? ?? 
@@ -51,8 +85,8 @@ class ProductSearchResponse {
       totalPages: totalPages,
       currentPage: pageNumber,
       size: pageSize,
-      hasNext: json['hasNext'] as bool? ?? pageNumber < totalPages - 1,
-      hasPrevious: json['hasPrevious'] as bool? ?? pageNumber > 0,
+      hasNext: hasNext,
+      hasPrevious: hasPrevious,
     );
   }
 
