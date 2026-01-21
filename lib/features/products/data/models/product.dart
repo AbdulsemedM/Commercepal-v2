@@ -47,7 +47,7 @@ class Product {
 
   factory Product.fromProductDetails(ProductDetails details, {int? variantIndex}) {
     final pricing = variantIndex != null && details.variants.length > variantIndex
-        ? details.variants[variantIndex].pricing
+        ? details.variants[variantIndex].pricing ?? details.pricing
         : details.pricing;
 
     return Product(
@@ -56,7 +56,7 @@ class Product {
       description: details.description.isNotEmpty ? details.description.join('\n') : null,
       price: pricing.currentPrice,
       originalPrice: pricing.originalPrice,
-      imageUrl: details.mainImage.url,
+      imageUrl: details.mainImage.main,
       provider: details.provider,
       brandName: details.brandName,
       categoryId: details.categoryId,
@@ -66,7 +66,7 @@ class Product {
       rating: details.meta.rating,
       reviewCount: details.meta.reviewCount,
       isOnDiscount: pricing.isOnDiscount,
-      discountPercentage: pricing.discountPercentage,
+      discountPercentage: pricing.discountPercentage.round(),
     );
   }
 

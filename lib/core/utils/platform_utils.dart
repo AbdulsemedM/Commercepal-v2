@@ -9,9 +9,9 @@ class PlatformUtils {
     if (kIsWeb) {
       return 'WEB';
     } else if (Platform.isAndroid) {
-      return 'ANDROID';
+      return 'MOBILE_APP_ANDROID';
     } else if (Platform.isIOS) {
-      return 'IOS';
+      return 'MOBILE_APP_IOS';
     } else {
       return 'WEB';
     }

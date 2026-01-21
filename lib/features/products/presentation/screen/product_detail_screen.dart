@@ -23,6 +23,7 @@ import '../widgets/add_to_cart_section.dart';
 import '../widgets/variant_selector_widget.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
+import '../widgets/product_detail_shimmer.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -87,17 +88,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
-    CartBloc cartBloc;
-    try {
-      cartBloc = context.read<CartBloc>();
-    } catch (e) {
-      cartBloc = CartBloc();
-    }
-
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
 
-    cartBloc.add(
+    context.read<CartBloc>().add(
       CartAddItemRequested(
         productId: widget.productId!,
         configId: configId,
@@ -111,29 +105,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get or create CartBloc
-    CartBloc cartBloc;
-    try {
-      cartBloc = context.read<CartBloc>();
-    } catch (e) {
-      cartBloc = CartBloc();
-    }
-
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => ProductDetailsBloc(
-            repository: ProductDetailsRepository(),
-          )..add(
-              ProductDetailsFetchRequested(
-                productId: widget.productId ?? '',
-                country: _getCountry(context),
-                currency: _getCurrency(context),
-              ),
-            ),
+    // Use the CartBloc provided at the app level
+    return BlocProvider(
+      create: (context) => ProductDetailsBloc(
+        repository: ProductDetailsRepository(),
+      )..add(
+          ProductDetailsFetchRequested(
+            productId: widget.productId ?? '',
+            country: _getCountry(context),
+            currency: _getCurrency(context),
+          ),
         ),
-        BlocProvider.value(value: cartBloc),
-      ],
       child: BlocListener<CartBloc, CartState>(
         listener: (context, state) {
           if (state is CartItemAdded) {
@@ -200,9 +182,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               body: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
                 builder: (context, state) {
                   if (state is ProductDetailsLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
+                    return const ProductDetailShimmer();
                   }
 
                   if (state is ProductDetailsError) {

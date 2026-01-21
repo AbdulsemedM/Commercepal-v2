@@ -35,48 +35,38 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get or create CartBloc
-    CartBloc cartBloc;
-    try {
-      cartBloc = context.read<CartBloc>();
-    } catch (e) {
-      cartBloc = CartBloc()..add(CartLoadRequested());
-    }
+    // Use the CartBloc provided at the app level
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, cartState) {
+        // Calculate badge counts
+        int cartCount = 0;
+        if (cartState is CartLoaded ||
+            cartState is CartItemAdded ||
+            cartState is CartItemUpdated ||
+            cartState is CartItemDeleted) {
+          final cart = cartState is CartLoaded
+              ? cartState.cart
+              : cartState is CartItemAdded
+                  ? cartState.cart
+                  : cartState is CartItemUpdated
+                      ? cartState.cart
+                      : (cartState as CartItemDeleted).cart;
+          cartCount = cart.totalItems;
+        }
 
-    return BlocProvider.value(
-      value: cartBloc,
-      child: BlocBuilder<CartBloc, CartState>(
-        builder: (context, cartState) {
-          // Calculate badge counts
-          int cartCount = 0;
-          if (cartState is CartLoaded ||
-              cartState is CartItemAdded ||
-              cartState is CartItemUpdated ||
-              cartState is CartItemDeleted) {
-            final cart = cartState is CartLoaded
-                ? cartState.cart
-                : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
-            cartCount = cart.totalItems;
-          }
+        final List<int> badges = <int>[0, 0, cartCount, 0];
 
-          final List<int> badges = <int>[0, 0, cartCount, 0];
-
-          return Scaffold(
-            backgroundColor: AppColors.lightGrey,
-            body: IndexedStack(index: _currentIndex, children: _pages),
-            bottomNavigationBar: PillBottomNavBar(
-              // activeColor: Theme.of(context).colorScheme.primary,
-              currentIndex: _currentIndex,
-              badgeCounts: badges,
-              onTap: (int i) => setState(() => _currentIndex = i),
-            ),
-          );
-        },
-      ),
+        return Scaffold(
+          backgroundColor: AppColors.lightGrey,
+          body: IndexedStack(index: _currentIndex, children: _pages),
+          bottomNavigationBar: PillBottomNavBar(
+            // activeColor: Theme.of(context).colorScheme.primary,
+            currentIndex: _currentIndex,
+            badgeCounts: badges,
+            onTap: (int i) => setState(() => _currentIndex = i),
+          ),
+        );
+      },
     );
   }
 }

@@ -209,9 +209,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Social login buttons
                         SocialLoginButton(
                           type: SocialLoginType.google,
-                          onPressed: () {
-                            // TODO: Handle Google login
-                          },
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  context.read<LoginBloc>().add(
+                                    GoogleSignInRequested(
+                                      channel: PlatformUtils.getChannel(),
+                                    ),
+                                  );
+                                },
                         ),
                         const SizedBox(height: Spacing.md),
                         SocialLoginButton(

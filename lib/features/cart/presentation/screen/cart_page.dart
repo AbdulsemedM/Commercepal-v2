@@ -25,48 +25,48 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CartBloc()..add(CartLoadRequested()),
-      child: BlocListener<CartBloc, CartState>(
-        listener: (context, state) {
-          if (state is CartError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is CartItemAdded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item added to cart'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartItemUpdated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cart updated'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartItemDeleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item removed from cart'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartCleared) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cart cleared'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-        child: Scaffold(
+    // Use the existing CartBloc from parent context (DashboardScreen)
+    // instead of creating a new one
+    return BlocListener<CartBloc, CartState>(
+      listener: (context, state) {
+        if (state is CartError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (state is CartItemAdded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Item added to cart'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is CartItemUpdated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cart updated'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is CartItemDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Item removed from cart'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is CartCleared) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cart cleared'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
           backgroundColor: AppColors.lightGrey,
           appBar: AppBarWidget(
             cartCount: 0,
@@ -133,8 +133,10 @@ class CartPage extends StatelessWidget {
                 );
               }
 
-              if (state is CartLoaded || state is CartItemAdded ||
-                  state is CartItemUpdated || state is CartItemDeleted) {
+              if (state is CartLoaded || 
+                  state is CartItemAdded ||
+                  state is CartItemUpdated || 
+                  state is CartItemDeleted) {
                 final Cart cart = state is CartLoaded
                     ? state.cart
                     : state is CartItemAdded
@@ -155,8 +157,7 @@ class CartPage extends StatelessWidget {
             },
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildEmptyCart(BuildContext context) {

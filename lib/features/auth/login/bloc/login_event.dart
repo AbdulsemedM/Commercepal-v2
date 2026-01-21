@@ -15,4 +15,10 @@ final class LoginSubmitted extends LoginEvent {
   });
 }
 
+final class GoogleSignInRequested extends LoginEvent {
+  final String? channel;
+
+  GoogleSignInRequested({this.channel});
+}
+
 final class LoginReset extends LoginEvent {}

@@ -32,9 +32,18 @@ class ApiService {
     String path, {
     Object? data,
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
   }) async {
     try {
-      return await _dio.post<T>(path, data: data, queryParameters: query);
+      final options = headers != null && headers.isNotEmpty
+          ? Options(headers: headers)
+          : null;
+      return await _dio.post<T>(
+        path, 
+        data: data, 
+        queryParameters: query,
+        options: options,
+      );
     } on DioException catch (e) {
       AppLogger.e('POST failed: $path', error: e, stack: e.stackTrace);
       rethrow;
