@@ -226,13 +226,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             // TODO: Handle Facebook login
                           },
                         ),
-                        const SizedBox(height: Spacing.md),
-                        SocialLoginButton(
-                          type: SocialLoginType.apple,
-                          onPressed: () {
-                            // TODO: Handle Apple login
-                          },
-                        ),
                         const SizedBox(height: Spacing.xxl),
                         // Sign up link
                         SignUpLink(
