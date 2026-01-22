@@ -21,6 +21,8 @@ import '../../features/orders/presentation/screen/order_history_screen.dart';
 import '../../features/orders/presentation/screen/order_summary_screen.dart';
 import '../../features/orders/presentation/screen/order_tracking_screen.dart';
 import '../../features/contact_us/contact_us_page.dart';
+import '../../features/addresses/presentation/screen/addresses_screen.dart';
+import '../../features/addresses/bloc/address_bloc.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -40,6 +42,7 @@ class AppRoutes {
   static const String orderSummary = '/order-summary';
   static const String orderTracking = '/order-tracking';
   static const String contactUs = '/contact-us';
+  static const String addresses = '/addresses';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -178,6 +181,14 @@ final GoRouter appRouter = GoRouter(
       name: 'contactUs',
       builder: (BuildContext context, GoRouterState state) =>
           const ContactUsPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.addresses,
+      name: 'addresses',
+      builder: (BuildContext context, GoRouterState state) => BlocProvider(
+        create: (context) => AddressBloc(),
+        child: const AddressesScreen(),
+      ),
     ),
   ],
 );

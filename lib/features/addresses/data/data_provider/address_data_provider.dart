@@ -32,7 +32,20 @@ class AddressDataProvider {
         );
       }
 
-      return Address.fromJson(response.data!);
+      // Extract nested data field
+      final responseData = response.data!;
+      final addressData = responseData['data'] as Map<String, dynamic>?;
+      
+      if (addressData == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response format from server',
+        );
+      }
+
+      return Address.fromJson(addressData);
     } on DioException catch (e) {
       AppLogger.e('Add address failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -110,7 +123,20 @@ class AddressDataProvider {
         );
       }
 
-      return Address.fromJson(response.data!);
+      // Extract nested data field
+      final responseData = response.data!;
+      final addressData = responseData['data'] as Map<String, dynamic>?;
+      
+      if (addressData == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response format from server',
+        );
+      }
+
+      return Address.fromJson(addressData);
     } on DioException catch (e) {
       AppLogger.e('Update address failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -139,7 +165,20 @@ class AddressDataProvider {
         );
       }
 
-      return Address.fromJson(response.data!);
+      // Extract nested data field
+      final responseData = response.data!;
+      final addressData = responseData['data'] as Map<String, dynamic>?;
+      
+      if (addressData == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response format from server',
+        );
+      }
+
+      return Address.fromJson(addressData);
     } on DioException catch (e) {
       AppLogger.e('Set default address failed', error: e, stack: e.stackTrace);
       rethrow;

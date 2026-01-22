@@ -300,6 +300,13 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.location_on_outlined,
+        title: 'My Addresses',
+        onTap: () {
+          context.push(AppRoutes.addresses);
+        },
+      ),
+      _MenuItem(
         icon: Icons.help_outline,
         title: LocalizationService.t(context, 'profile.faqs'),
         onTap: () {
