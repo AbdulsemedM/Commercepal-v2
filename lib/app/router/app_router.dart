@@ -23,6 +23,8 @@ import '../../features/orders/presentation/screen/order_tracking_screen.dart';
 import '../../features/contact_us/contact_us_page.dart';
 import '../../features/addresses/presentation/screen/addresses_screen.dart';
 import '../../features/addresses/bloc/address_bloc.dart';
+import '../../features/checkout/presentation/screen/checkout_summary_screen.dart';
+import '../../features/checkout/presentation/screen/payment_selection_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -43,6 +45,8 @@ class AppRoutes {
   static const String orderTracking = '/order-tracking';
   static const String contactUs = '/contact-us';
   static const String addresses = '/addresses';
+  static const String checkoutSummary = '/checkout-summary';
+  static const String paymentSelection = '/payment-selection';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -189,6 +193,18 @@ final GoRouter appRouter = GoRouter(
         create: (context) => AddressBloc(),
         child: const AddressesScreen(),
       ),
+    ),
+    GoRoute(
+      path: AppRoutes.checkoutSummary,
+      name: 'checkoutSummary',
+      builder: (BuildContext context, GoRouterState state) =>
+          const CheckoutSummaryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.paymentSelection,
+      name: 'paymentSelection',
+      builder: (BuildContext context, GoRouterState state) =>
+          const PaymentSelectionScreen(),
     ),
   ],
 );

@@ -353,11 +353,9 @@ class CartPage extends StatelessWidget {
                 flex: 2,
                 child: FilledButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Checkout functionality coming soon!'),
-                        backgroundColor: Colors.blue,
-                      ),
+                    context.push(
+                      AppRoutes.checkoutSummary,
+                      extra: cart,
                     );
                   },
                   style: FilledButton.styleFrom(

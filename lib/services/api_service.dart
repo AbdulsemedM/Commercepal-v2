@@ -63,6 +63,28 @@ class ApiService {
     }
   }
 
+  Future<Response<T>> patch<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? query,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final options = headers != null && headers.isNotEmpty
+          ? Options(headers: headers)
+          : null;
+      return await _dio.patch<T>(
+        path,
+        data: data,
+        queryParameters: query,
+        options: options,
+      );
+    } on DioException catch (e) {
+      AppLogger.e('PATCH failed: $path', error: e, stack: e.stackTrace);
+      rethrow;
+    }
+  }
+
   Future<Response<T>> delete<T>(
     String path, {
     Object? data,

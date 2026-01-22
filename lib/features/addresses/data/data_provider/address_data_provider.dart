@@ -152,7 +152,7 @@ class AddressDataProvider {
 
   Future<Address> setDefaultAddress(int addressId) async {
     try {
-      final response = await _apiService.put<Map<String, dynamic>>(
+      final response = await _apiService.patch<Map<String, dynamic>>(
         '$_endpoint/$addressId/default',
       );
 
