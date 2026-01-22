@@ -31,7 +31,20 @@ class CartDataProvider {
         );
       }
 
-      return Cart.fromJson(response.data!);
+      // Extract data from nested response structure
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return Cart.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Add to cart failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -54,7 +67,20 @@ class CartDataProvider {
         );
       }
 
-      return Cart.fromJson(response.data!);
+      // Extract data from nested response structure
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return Cart.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Get cart failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -80,7 +106,20 @@ class CartDataProvider {
         );
       }
 
-      return Cart.fromJson(response.data!);
+      // Extract data from nested response structure
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return Cart.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Update cart item failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -105,7 +144,20 @@ class CartDataProvider {
         );
       }
 
-      return Cart.fromJson(response.data!);
+      // Extract data from nested response structure
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return Cart.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Delete cart item failed', error: e, stack: e.stackTrace);
       rethrow;

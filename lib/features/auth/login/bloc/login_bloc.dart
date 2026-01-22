@@ -16,9 +16,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     AuthService? authService,
     Storage? storage,
   })  : _repository = repository ?? LoginRepository(),
-        _authService = authService ?? AuthService(),
+      _authService = authService ?? AuthService(),
         _storage = storage ?? Storage(),
-        super(LoginInitial()) {
+      super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
     on<GoogleSignInRequested>(_onGoogleSignInRequested);
     on<LoginReset>(_onLoginReset);

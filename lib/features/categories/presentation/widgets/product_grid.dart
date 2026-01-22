@@ -33,71 +33,60 @@ class ProductGrid extends StatelessWidget {
               child: Text(
                 '$categoryName Subcategories',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             // Subcategories grid
             Expanded(
               child: isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(),
-                    )
+                  ? const Center(child: CircularProgressIndicator())
                   : errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: Spacing.md),
-                              Text(
-                                errorMessage!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
                           ),
-                        )
-                      : subCategories.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No subcategories available',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                              ),
-                            )
-                          : GridView.builder(
-                              padding: const EdgeInsets.all(Spacing.md),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: Spacing.md,
-                                mainAxisSpacing: Spacing.md,
-                                childAspectRatio: 0.85,
-                              ),
-                              itemCount: subCategories.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                final subCategory = subCategories[index];
+                          const SizedBox(height: Spacing.md),
+                          Text(
+                            errorMessage!,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey[600]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : subCategories.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No subcategories available',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(Spacing.md),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: Spacing.md,
+                            mainAxisSpacing: Spacing.md,
+                            childAspectRatio: 0.85,
+                          ),
+                      itemCount: subCategories.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final subCategory = subCategories[index];
 
-                                return _SubCategoryCard(
-                                  subCategory: subCategory,
-                                );
-                              },
-                            ),
+                        return _SubCategoryCard(subCategory: subCategory);
+                      },
+                    ),
             ),
           ],
         ),
@@ -107,9 +96,7 @@ class ProductGrid extends StatelessWidget {
 }
 
 class _SubCategoryCard extends StatelessWidget {
-  const _SubCategoryCard({
-    required this.subCategory,
-  });
+  const _SubCategoryCard({required this.subCategory});
 
   final SubCategory subCategory;
 
@@ -140,7 +127,8 @@ class _SubCategoryCard extends StatelessWidget {
                     topRight: Radius.circular(12),
                   ),
                 ),
-                child: subCategory.imageUrl != null &&
+                child:
+                    subCategory.imageUrl != null &&
                         subCategory.imageUrl!.isNotEmpty
                     ? ClipRRect(
                         borderRadius: const BorderRadius.only(
@@ -150,13 +138,14 @@ class _SubCategoryCard extends StatelessWidget {
                         child: Image.network(
                           subCategory.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (
-                            BuildContext context,
-                            Object error,
-                            StackTrace? stackTrace,
-                          ) {
-                            return _buildPlaceholder();
-                          },
+                          errorBuilder:
+                              (
+                                BuildContext context,
+                                Object error,
+                                StackTrace? stackTrace,
+                              ) {
+                                return _buildPlaceholder();
+                              },
                         ),
                       )
                     : _buildPlaceholder(),
@@ -168,10 +157,10 @@ class _SubCategoryCard extends StatelessWidget {
               child: Text(
                 subCategory.name,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -187,13 +176,8 @@ class _SubCategoryCard extends StatelessWidget {
     return Container(
       color: Colors.grey[300],
       child: const Center(
-        child: Icon(
-          Icons.category,
-          color: Colors.grey,
-          size: 40,
-        ),
+        child: Icon(Icons.category, color: Colors.grey, size: 40),
       ),
     );
   }
 }
-

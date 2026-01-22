@@ -107,15 +107,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     // Use the CartBloc provided at the app level
     return BlocProvider(
-      create: (context) => ProductDetailsBloc(
-        repository: ProductDetailsRepository(),
-      )..add(
-          ProductDetailsFetchRequested(
-            productId: widget.productId ?? '',
-            country: _getCountry(context),
-            currency: _getCurrency(context),
-          ),
-        ),
+          create: (context) => ProductDetailsBloc(
+            repository: ProductDetailsRepository(),
+          )..add(
+              ProductDetailsFetchRequested(
+                productId: widget.productId ?? '',
+                country: _getCountry(context),
+                currency: _getCurrency(context),
+              ),
+            ),
       child: BlocListener<CartBloc, CartState>(
         listener: (context, state) {
           if (state is CartItemAdded) {

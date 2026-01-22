@@ -21,17 +21,14 @@ class LoggingInterceptor extends Interceptor {
   });
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
       final StringBuffer logBuffer = StringBuffer();
       logBuffer.writeln('┌─────────────────────────────────────────────────');
       logBuffer.writeln('│ 📤 REQUEST');
       logBuffer.writeln('├─────────────────────────────────────────────────');
       logBuffer.writeln('│ ${options.method} ${options.uri}');
-      
+
       if (requestHeader && options.headers.isNotEmpty) {
         logBuffer.writeln('│');
         logBuffer.writeln('│ Headers:');
@@ -68,10 +65,7 @@ class LoggingInterceptor extends Interceptor {
   }
 
   @override
-  void onResponse(
-    Response response,
-    ResponseInterceptorHandler handler,
-  ) {
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
       final StringBuffer logBuffer = StringBuffer();
       logBuffer.writeln('┌─────────────────────────────────────────────────');
@@ -81,9 +75,7 @@ class LoggingInterceptor extends Interceptor {
         '│ ${response.requestOptions.method} ${response.requestOptions.uri}',
       );
       logBuffer.writeln('│ Status Code: ${response.statusCode}');
-      logBuffer.writeln(
-        '│ Status Message: ${response.statusMessage ?? 'N/A'}',
-      );
+      logBuffer.writeln('│ Status Message: ${response.statusMessage ?? 'N/A'}');
 
       if (responseHeader && response.headers.map.isNotEmpty) {
         logBuffer.writeln('│');
@@ -154,7 +146,7 @@ class LoggingInterceptor extends Interceptor {
 
   String _formatData(dynamic data) {
     if (data == null) return 'null';
-    
+
     try {
       if (data is String) {
         // Try to parse as JSON for pretty printing
@@ -192,37 +184,38 @@ class LoggingInterceptor extends Interceptor {
   /// Dart's print() and dev.log() have limitations on string length
   void _logFullMessage(String message, String name) {
     const int chunkSize = 800; // Safe chunk size for most consoles
-    
+
     if (message.length <= chunkSize) {
       // Message is short enough, log it normally
       print(message);
       dev.log(message, name: name);
       return;
     }
-    
+
     // Split message into chunks
     final lines = message.split('\n');
     final chunks = <String>[];
     StringBuffer currentChunk = StringBuffer();
-    
+
     for (final line in lines) {
       // If adding this line would exceed chunk size, save current chunk and start new one
-      if (currentChunk.length + line.length + 1 > chunkSize && currentChunk.length > 0) {
+      if (currentChunk.length + line.length + 1 > chunkSize &&
+          currentChunk.length > 0) {
         chunks.add(currentChunk.toString());
         currentChunk = StringBuffer();
       }
       currentChunk.writeln(line);
     }
-    
+
     // Add the last chunk if it has content
     if (currentChunk.length > 0) {
       chunks.add(currentChunk.toString());
     }
-    
+
     // Log each chunk separately
     for (int i = 0; i < chunks.length; i++) {
-      final chunkHeader = chunks.length > 1 
-          ? '[$name - Part ${i + 1}/${chunks.length}]' 
+      final chunkHeader = chunks.length > 1
+          ? '[$name - Part ${i + 1}/${chunks.length}]'
           : name;
       print(chunks[i]);
       dev.log(chunks[i], name: chunkHeader);

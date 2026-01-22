@@ -10,9 +10,7 @@ class CategoriesLoading extends CategoriesState {}
 class CategoriesLoaded extends CategoriesState {
   final List<Category> categories;
 
-  CategoriesLoaded({
-    required this.categories,
-  });
+  CategoriesLoaded({required this.categories});
 }
 
 class CategoriesError extends CategoriesState {

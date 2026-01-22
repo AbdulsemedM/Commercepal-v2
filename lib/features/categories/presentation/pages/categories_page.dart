@@ -7,7 +7,7 @@ import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
-import 'package:commercepal/features/categories/data/models/sub_category.dart';
+// import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/services/auth_service.dart';
 import '../widgets/category_sidebar.dart';
 import '../widgets/product_grid.dart';
@@ -66,9 +66,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         body: BlocBuilder<CategoriesBloc, CategoriesState>(
           builder: (context, state) {
             if (state is CategoriesLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (state is CategoriesError) {
@@ -84,10 +82,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     const SizedBox(height: 16),
                     Text(
                       state.message,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 16),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -157,6 +152,3 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 }
-
-
-

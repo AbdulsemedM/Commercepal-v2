@@ -34,16 +34,16 @@ class _MyAppState extends State<MyApp> {
     return BlocProvider<CartBloc>.value(
       value: _cartBloc,
       child: AnimatedBuilder(
-        animation: _themeController,
-        builder: (BuildContext context, Widget? _) {
-          return MaterialApp.router(
-            routerConfig: appRouter,
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: _themeController.themeMode,
-            debugShowCheckedModeBanner: false,
-          );
-        },
+      animation: _themeController,
+      builder: (BuildContext context, Widget? _) {
+        return MaterialApp.router(
+          routerConfig: appRouter,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: _themeController.themeMode,
+          debugShowCheckedModeBanner: false,
+        );
+      },
       ),
     );
   }

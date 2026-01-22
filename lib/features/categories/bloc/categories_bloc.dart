@@ -10,8 +10,8 @@ part 'categories_state.dart';
 
 class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
   CategoriesBloc({CategoriesRepository? repository})
-      : _repository = repository ?? CategoriesRepository(),
-        super(CategoriesInitial()) {
+    : _repository = repository ?? CategoriesRepository(),
+      super(CategoriesInitial()) {
     on<FetchCategories>(_onFetchCategories);
   }
 
@@ -25,13 +25,14 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
 
     try {
       final response = await _repository.getCategories();
-      
+
       // Sort categories by displayOrder and sort subcategories within each category
       final sortedCategories = response.data.map((category) {
         // Sort subcategories by displayOrder
-        final sortedSubCategories = List<SubCategory>.from(category.subCategories)
-          ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
-        
+        final sortedSubCategories = List<SubCategory>.from(
+          category.subCategories,
+        )..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
         // Create a new category with sorted subcategories
         return Category(
           id: category.id,
@@ -44,20 +45,20 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
           providerId: category.providerId,
           subCategories: sortedSubCategories,
         );
-      }).toList()
-        ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
-      
+      }).toList()..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
       emit(CategoriesLoaded(categories: sortedCategories));
     } catch (e) {
       String errorMessage = 'Failed to fetch categories. Please try again.';
 
       if (e is Exception) {
-        errorMessage = e.toString().contains('401') ||
+        errorMessage =
+            e.toString().contains('401') ||
                 e.toString().contains('Unauthorized')
             ? 'Session expired. Please login again.'
             : e.toString().contains('404') || e.toString().contains('Not Found')
-                ? 'No categories found.'
-                : errorMessage;
+            ? 'No categories found.'
+            : errorMessage;
       }
 
       emit(CategoriesError(message: errorMessage));

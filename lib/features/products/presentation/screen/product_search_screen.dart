@@ -29,7 +29,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   void _performSearch() {
     final query = _searchController.text.trim();
-    
+
     // Allow search if either query or providerId is provided
     if (query.isEmpty && widget.providerId == null) {
       return;
@@ -163,7 +163,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                         widget.providerId != null
                             ? 'Loading products...'
                             : 'Enter a search query to find products',
-                        style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
                       ),
                     );
                   }

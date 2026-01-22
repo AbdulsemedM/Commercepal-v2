@@ -10,7 +10,7 @@ class LogoutRepository {
     Storage? storage,
   })  : _dataProvider = dataProvider ?? LogoutDataProvider(),
         _googleSignInDataProvider = googleSignInDataProvider ?? GoogleSignInDataProvider(),
-        _storage = storage ?? Storage();
+      _storage = storage ?? Storage();
 
   final LogoutDataProvider _dataProvider;
   final GoogleSignInDataProvider _googleSignInDataProvider;

@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 
 import '../data/models/product.dart';
 import '../data/models/product_search_request.dart';
-import '../data/models/product_search_response.dart';
+// import '../data/models/product_search_response.dart';
 import '../data/repository/product_search_repository.dart';
 
 part 'product_search_event.dart';

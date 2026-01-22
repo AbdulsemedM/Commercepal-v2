@@ -122,18 +122,18 @@ class _ContactUsPageState extends State<ContactUsPage> {
                       Text(
                         title,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Colors.grey[800],
-                            ),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Colors.grey[800],
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
@@ -243,10 +243,10 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     child: Text(
                       "Contact Methods",
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 20,
-                            color: Colors.black87,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
 
@@ -315,9 +315,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                       const SizedBox(width: Spacing.sm),
                       Text(
                         "Social Media",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
+                        style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
                               fontSize: 20,

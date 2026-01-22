@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -72,11 +72,7 @@ class SocialMediaLink extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: AppColors.primary, size: 24),
                 ),
                 const SizedBox(width: Spacing.md),
                 Expanded(
@@ -86,10 +82,10 @@ class SocialMediaLink extends StatelessWidget {
                       Text(
                         text,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                              height: 1.4,
-                            ),
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),

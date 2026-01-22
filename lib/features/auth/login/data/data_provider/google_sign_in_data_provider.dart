@@ -79,7 +79,20 @@ class GoogleSignInDataProvider {
         );
       }
 
-      return LoginResponse.fromJson(response.data!);
+      // Extract data from nested response structure
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return LoginResponse.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Google Sign In failed', error: e, stack: e.stackTrace);
       
