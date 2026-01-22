@@ -8,9 +8,12 @@ import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
+import 'package:commercepal/features/profile/presentation/widgets/country_selection_dialog.dart';
+import 'package:commercepal/features/profile/presentation/widgets/currency_selection_dialog.dart';
 import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_dialog.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
@@ -313,15 +316,37 @@ class ProfileContent extends StatelessWidget {
       _MenuItem(
         icon: Icons.flag_outlined,
         title: LocalizationService.t(context, 'profile.changeCountry'),
-        onTap: () {
-          // TODO: Navigate to change country
+        onTap: () async {
+          final selectedCountry = await CountrySelectionDialog.show(context);
+          if (selectedCountry != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Country changed to ${CountryCurrencyConstants.getCountryName(selectedCountry)}',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         },
       ),
       _MenuItem(
         icon: Icons.attach_money_outlined,
         title: LocalizationService.t(context, 'profile.changeCurrency'),
-        onTap: () {
-          // TODO: Navigate to change currency
+        onTap: () async {
+          final selectedCurrency = await CurrencySelectionDialog.show(context);
+          if (selectedCurrency != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Currency changed to ${CountryCurrencyConstants.getCurrencyName(selectedCurrency)}',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         },
       ),
       _MenuItem(

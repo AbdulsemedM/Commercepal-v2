@@ -307,42 +307,44 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               child: const Text('Cancel'),
                             ),
                             const SizedBox(width: Spacing.sm),
-                            FilledButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      if (_formKey.currentState?.validate() ??
-                                          false) {
-                                        context.read<ChangePasswordBloc>().add(
-                                          ChangePasswordSubmitted(
-                                            currentPassword:
-                                                _currentPasswordController.text,
-                                            newPassword:
-                                                _newPasswordController.text,
-                                            confirmPassword:
-                                                _confirmPasswordController.text,
-                                            channel: PlatformUtils.getChannel(),
-                                          ),
-                                        );
-                                      }
-                                    },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                disabledBackgroundColor: Colors.grey[300],
-                              ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
+                            Flexible(
+                              child: FilledButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        if (_formKey.currentState?.validate() ??
+                                            false) {
+                                          context.read<ChangePasswordBloc>().add(
+                                            ChangePasswordSubmitted(
+                                              currentPassword:
+                                                  _currentPasswordController.text,
+                                              newPassword:
+                                                  _newPasswordController.text,
+                                              confirmPassword:
+                                                  _confirmPasswordController.text,
+                                              channel: PlatformUtils.getChannel(),
                                             ),
-                                      ),
-                                    )
-                                  : const Text('Change Password'),
+                                          );
+                                        }
+                                      },
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  disabledBackgroundColor: Colors.grey[300],
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                      )
+                                    : const Text('Change Password'),
+                              ),
                             ),
                           ],
                         ),
