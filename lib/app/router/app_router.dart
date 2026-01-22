@@ -20,6 +20,7 @@ import '../../features/profile/data/models/profile_data.dart';
 import '../../features/orders/presentation/screen/order_history_screen.dart';
 import '../../features/orders/presentation/screen/order_summary_screen.dart';
 import '../../features/orders/presentation/screen/order_tracking_screen.dart';
+import '../../features/contact_us/contact_us_page.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -38,6 +39,7 @@ class AppRoutes {
   static const String orderHistory = '/order-history';
   static const String orderSummary = '/order-summary';
   static const String orderTracking = '/order-tracking';
+  static const String contactUs = '/contact-us';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -170,6 +172,12 @@ final GoRouter appRouter = GoRouter(
           orderStatus: params['status'],
         );
       },
+    ),
+    GoRoute(
+      path: AppRoutes.contactUs,
+      name: 'contactUs',
+      builder: (BuildContext context, GoRouterState state) =>
+          const ContactUsPage(),
     ),
   ],
 );

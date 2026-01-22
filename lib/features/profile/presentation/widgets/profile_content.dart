@@ -350,6 +350,13 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.contact_support_outlined,
+        title: 'Contact Us',
+        onTap: () {
+          context.push(AppRoutes.contactUs);
+        },
+      ),
+      _MenuItem(
         icon: Icons.info_outline,
         title: LocalizationService.t(context, 'profile.helpDesk'),
         onTap: () {

@@ -48,24 +48,32 @@ class _ContactUsPageState extends State<ContactUsPage> {
   Future<void> _openWebsite() async {
     try {
       final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not launch $url'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+
+      // Try platform default first, then external if needed
+      bool launched = false;
+
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (e) {
+        // Fallback to external application mode
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch $url'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error launching URL: ${e.toString()}'),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
