@@ -6,7 +6,7 @@ class LoginRequest {
   LoginRequest({
     required this.loginIdentifier,
     required this.password,
-    this.channel = 'WEB',
+    required this.channel,
   });
 
   Map<String, dynamic> toJson() => {

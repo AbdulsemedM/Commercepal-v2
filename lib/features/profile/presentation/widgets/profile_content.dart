@@ -6,37 +6,80 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
+import 'package:commercepal/features/profile/presentation/widgets/country_selection_dialog.dart';
+import 'package:commercepal/features/profile/presentation/widgets/currency_selection_dialog.dart';
 import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_dialog.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
+
+  void _navigateToTab(BuildContext context, int tabIndex) {
+    final DashboardScreenState? dashboardState = context
+        .findAncestorStateOfType<DashboardScreenState>();
+    if (dashboardState != null) {
+      dashboardState.changeTab(tabIndex);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => ProfileBloc()..add(ProfileLoadRequested()),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBarWidget(
-          cartCount: 2,
-          userInitials: AuthService().userInitials ?? 'U',
-          onSearchSubmitted: (String query) {
-            // Handle search submission
-            return null;
-          },
-          onProfileTap: () {
-            // Already on profile page
-          },
-          hasNotification: false,
-          searchPlaceholder: LocalizationService.t(
-            context,
-            'profile.searchPlaceholder',
-          ),
-        ),
-        body: BlocListener<ProfileBloc, ProfileState>(
+      child: BlocBuilder<CartBloc, CartState>(
+        builder: (context, cartState) {
+          int cartCount = 0;
+          if (cartState is CartLoaded ||
+              cartState is CartItemAdded ||
+              cartState is CartItemUpdated ||
+              cartState is CartItemDeleted) {
+            final cart = cartState is CartLoaded
+                ? cartState.cart
+                : cartState is CartItemAdded
+                    ? cartState.cart
+                    : cartState is CartItemUpdated
+                        ? cartState.cart
+                        : (cartState as CartItemDeleted).cart;
+            cartCount = cart.totalItems;
+          }
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBarWidget(
+              cartCount: cartCount,
+              userInitials: AuthService().userInitials ?? 'U',
+              onSearchTap: () {
+                // Navigate to search screen when search bar is tapped
+                context.push(AppRoutes.productSearch);
+              },
+              onSearchSubmitted: (String query) {
+                // Navigate to search screen with query
+                context.push(
+                  '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                );
+                return null;
+              },
+              onCartTap: () {
+                // Navigate to cart tab
+                _navigateToTab(context, 2);
+              },
+              onProfileTap: () {
+                // Navigate to profile tab
+                _navigateToTab(context, 3);
+              },
+              hasNotification: false,
+              searchPlaceholder: LocalizationService.t(
+                context,
+                'profile.searchPlaceholder',
+              ),
+            ),
+            body: BlocListener<ProfileBloc, ProfileState>(
           listener: (context, state) {
             if (state is ProfileError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -141,6 +184,8 @@ class ProfileContent extends StatelessWidget {
             },
           ),
         ),
+          );
+        },
       ),
     );
   }
@@ -275,10 +320,24 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.receipt_outlined,
+        title: LocalizationService.t(context, 'profile.refundPolicy'),
+        onTap: () {
+          context.push('/refund-policy');
+        },
+      ),
+      _MenuItem(
         icon: Icons.shopping_cart_outlined,
         title: LocalizationService.t(context, 'profile.orderHistory'),
         onTap: () {
           context.push('/order-history');
+        },
+      ),
+      _MenuItem(
+        icon: Icons.location_on_outlined,
+        title: 'My Addresses',
+        onTap: () {
+          context.push(AppRoutes.addresses);
         },
       ),
       _MenuItem(
@@ -298,15 +357,44 @@ class ProfileContent extends StatelessWidget {
       _MenuItem(
         icon: Icons.flag_outlined,
         title: LocalizationService.t(context, 'profile.changeCountry'),
-        onTap: () {
-          // TODO: Navigate to change country
+        onTap: () async {
+          final selectedCountry = await CountrySelectionDialog.show(context);
+          if (selectedCountry != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Country changed to ${CountryCurrencyConstants.getCountryName(selectedCountry)}',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         },
       ),
       _MenuItem(
         icon: Icons.attach_money_outlined,
         title: LocalizationService.t(context, 'profile.changeCurrency'),
+        onTap: () async {
+          final selectedCurrency = await CurrencySelectionDialog.show(context);
+          if (selectedCurrency != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Currency changed to ${CountryCurrencyConstants.getCurrencyName(selectedCurrency)}',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+      ),
+      _MenuItem(
+        icon: Icons.contact_support_outlined,
+        title: 'Contact Us',
         onTap: () {
-          // TODO: Navigate to change currency
+          context.push(AppRoutes.contactUs);
         },
       ),
       _MenuItem(

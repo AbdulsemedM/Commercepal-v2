@@ -8,14 +8,14 @@ final class ResetPasswordSubmitted extends ResetPasswordEvent {
   final String verificationToken;
   final String newPassword;
   final String confirmPassword;
-  final String channel;
+  final String? channel;
 
   ResetPasswordSubmitted({
     required this.target,
     required this.verificationToken,
     required this.newPassword,
     required this.confirmPassword,
-    this.channel = 'WEB',
+    this.channel,
   });
 }
 

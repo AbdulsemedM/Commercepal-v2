@@ -5,9 +5,9 @@ sealed class ForgotPasswordEvent {}
 
 final class ForgotPasswordSubmitted extends ForgotPasswordEvent {
   final String emailOrPhone;
-  final String channel;
+  final String? channel;
 
-  ForgotPasswordSubmitted({required this.emailOrPhone, this.channel = 'WEB'});
+  ForgotPasswordSubmitted({required this.emailOrPhone, this.channel});
 }
 
 final class ForgotPasswordReset extends ForgotPasswordEvent {}

@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/reset_password/data/models/reset_password_request.dart';
 import 'package:commercepal/features/auth/reset_password/data/repository/reset_password_repository.dart';
 
@@ -29,7 +30,7 @@ class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
         verificationToken: event.verificationToken,
         newPassword: event.newPassword,
         confirmPassword: event.confirmPassword,
-        channel: event.channel,
+        channel: event.channel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.resetPassword(request);

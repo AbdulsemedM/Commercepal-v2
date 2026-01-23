@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/login_bloc.dart';
@@ -126,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           loginIdentifier: _emailController.text
                                               .trim(),
                                           password: _passwordController.text,
-                                          channel: 'WEB',
+                                          channel: PlatformUtils.getChannel(),
                                         ),
                                       );
                                     }
@@ -208,22 +209,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Social login buttons
                         SocialLoginButton(
                           type: SocialLoginType.google,
-                          onPressed: () {
-                            // TODO: Handle Google login
-                          },
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  context.read<LoginBloc>().add(
+                                    GoogleSignInRequested(
+                                      channel: PlatformUtils.getChannel(),
+                                    ),
+                                  );
+                                },
                         ),
                         const SizedBox(height: Spacing.md),
                         SocialLoginButton(
                           type: SocialLoginType.facebook,
                           onPressed: () {
                             // TODO: Handle Facebook login
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        SocialLoginButton(
-                          type: SocialLoginType.apple,
-                          onPressed: () {
-                            // TODO: Handle Apple login
                           },
                         ),
                         const SizedBox(height: Spacing.xxl),

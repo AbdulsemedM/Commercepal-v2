@@ -14,6 +14,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.onProfileTap,
     this.hasNotification = false,
     this.searchPlaceholder,
+    this.onSearchTap,
   });
 
   final int cartCount;
@@ -24,6 +25,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onProfileTap;
   final bool hasNotification;
   final String? searchPlaceholder;
+  final VoidCallback? onSearchTap;
 
   @override
   Size get preferredSize {
@@ -82,44 +84,49 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: Spacing.sm),
               // Search bar in the center
               Expanded(
-                child: Container(
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: placeholder,
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade500,
+                child: InkWell(
+                  onTap: onSearchTap,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      enabled: onSearchTap == null,
+                      decoration: InputDecoration(
+                        hintText: placeholder,
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.search,
+                            color: Colors.grey.shade500,
+                            size: 20,
+                          ),
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.xs,
+                          vertical: Spacing.sm,
+                        ),
+                        isDense: true,
+                      ),
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                       ),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.grey.shade500,
-                          size: 20,
-                        ),
-                      ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.xs,
-                        vertical: Spacing.sm,
-                      ),
-                      isDense: true,
+                      onSubmitted: (String value) {
+                        onSearchSubmitted(value);
+                      },
                     ),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    onSubmitted: (String value) {
-                      onSearchSubmitted(value);
-                    },
                   ),
                 ),
               ),

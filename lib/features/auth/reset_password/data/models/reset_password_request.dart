@@ -10,7 +10,7 @@ class ResetPasswordRequest {
     required this.verificationToken,
     required this.newPassword,
     required this.confirmPassword,
-    this.channel = 'WEB',
+    required this.channel,
   });
 
   Map<String, dynamic> toJson() => {

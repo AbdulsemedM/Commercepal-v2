@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
+import 'package:commercepal/services/navigation_service.dart';
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
@@ -23,11 +24,23 @@ class AuthInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
 
+  // Lazy initialization of RefreshTokenRepository to avoid circular dependency
+  RefreshTokenRepository get _refreshTokenRepo {
+    _refreshTokenRepository ??= RefreshTokenRepository();
+    return _refreshTokenRepository!;
+  }
+
   @override
   void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // Skip adding token for categories endpoint (public endpoint)
+    if (options.path.contains('/api/v1/categories') && 
+        !options.path.contains('/subcategories')) {
+      return super.onRequest(options, handler);
+    }
+
     final accessToken = await _storage.getAccessToken();
     final tokenType = await _storage.getTokenType() ?? 'Bearer';
 
@@ -64,11 +77,15 @@ class AuthInterceptor extends Interceptor {
           _isRefreshing = false;
           _rejectPendingRequests(err);
           await _storage.clearTokens();
+          // Redirect to login if not already on login page
+          if (!NavigationService.instance.isOnLoginPage) {
+            NavigationService.instance.redirectToLogin();
+          }
           return super.onError(err, handler);
         }
 
         // Refresh the token
-        await refreshTokenRepository.refreshToken(refreshToken);
+        await _refreshTokenRepo.refreshToken(refreshToken);
 
         // Retry the original request with new token
         final opts = requestOptions;
@@ -98,8 +115,12 @@ class AuthInterceptor extends Interceptor {
         _isRefreshing = false;
         _rejectPendingRequests(err);
 
-        // If refresh fails, clear tokens and reject
+        // If refresh fails, clear tokens and redirect to login
         await _storage.clearTokens();
+        // Redirect to login if not already on login page
+        if (!NavigationService.instance.isOnLoginPage) {
+          NavigationService.instance.redirectToLogin();
+        }
         return super.onError(err, handler);
       }
     } else {
@@ -122,7 +143,7 @@ class AuthInterceptor extends Interceptor {
       opts.headers['Authorization'] = '$tokenType $accessToken';
 
       try {
-        final response = await _dio!.request(
+        final response = await _dio.request(
           opts.path,
           data: opts.data,
           queryParameters: opts.queryParameters,

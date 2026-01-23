@@ -2,46 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/app/router/app_router.dart';
 
 class ProductGrid extends StatelessWidget {
   const ProductGrid({
     super.key,
-    required this.categoryKey,
+    required this.categoryName,
+    required this.subCategories,
+    this.isLoading = false,
+    this.errorMessage,
   });
 
-  final String categoryKey;
-
-  static const Map<String, List<String>> categoryProducts = <String, List<String>>{
-    'categories.technology': <String>[
-      'products.smartphones',
-      'products.headphones',
-      'products.smartwatches',
-      'products.tablets',
-      'products.laptops',
-      'products.desktops',
-      'products.powerbanks',
-      'products.iosPhones',
-    ],
-    'categories.realEstate': <String>[],
-    'categories.watch': <String>[],
-    'categories.homeLife': <String>[],
-    'categories.cosmeticSurgery': <String>[],
-    'categories.fashion': <String>[],
-    'categories.homeAppliances': <String>[],
-    'categories.jewelry': <String>[],
-    'categories.babyProducts': <String>[],
-    'categories.sporting': <String>[],
-  };
+  final String categoryName;
+  final List<SubCategory> subCategories;
+  final bool isLoading;
+  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final String categoryName =
-        LocalizationService.t(context, categoryKey);
-    final List<String> products =
-        categoryProducts[categoryKey] ?? <String>[];
-
     return Expanded(
       child: Container(
         color: AppColors.lightGrey,
@@ -52,44 +31,60 @@ class ProductGrid extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(Spacing.md),
               child: Text(
-                '$categoryName ${LocalizationService.t(context, 'categories.products')}',
+                '$categoryName Subcategories',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            // Product grid
+            // Subcategories grid
             Expanded(
-              child: products.isEmpty
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : errorMessage != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          Text(
+                            errorMessage!,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey[600]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : subCategories.isEmpty
                   ? Center(
                       child: Text(
-                        'No products available',
+                        'No subcategories available',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                          color: Colors.grey[600],
+                        ),
                       ),
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.all(Spacing.md),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: Spacing.md,
-                        mainAxisSpacing: Spacing.md,
-                        childAspectRatio: 0.85,
-                      ),
-                      itemCount: products.length,
+                            crossAxisCount: 2,
+                            crossAxisSpacing: Spacing.md,
+                            mainAxisSpacing: Spacing.md,
+                            childAspectRatio: 0.85,
+                          ),
+                      itemCount: subCategories.length,
                       itemBuilder: (BuildContext context, int index) {
-                        final String productKey = products[index];
-                        final String productName =
-                            LocalizationService.t(context, productKey);
+                        final subCategory = subCategories[index];
 
-                        return _ProductCard(
-                          productName: productName,
-                          imageUrl: '',
-                          productKey: productKey,
-                        );
+                        return _SubCategoryCard(subCategory: subCategory);
                       },
                     ),
             ),
@@ -100,23 +95,17 @@ class ProductGrid extends StatelessWidget {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({
-    required this.productName,
-    required this.imageUrl,
-    required this.productKey,
-  });
+class _SubCategoryCard extends StatelessWidget {
+  const _SubCategoryCard({required this.subCategory});
 
-  final String productName;
-  final String imageUrl;
-  final String productKey;
+  final SubCategory subCategory;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
         context.push(
-          '${AppRoutes.productDetail}?name=${Uri.encodeComponent(productName)}&price=\$904.18',
+          '${AppRoutes.productSearch}?provider=${Uri.encodeComponent(subCategory.providerId)}',
         );
       },
       borderRadius: BorderRadius.circular(12),
@@ -128,51 +117,56 @@ class _ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-          // Product image placeholder
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.lightGrey,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
-              child: imageUrl.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.asset(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return _buildPlaceholder();
-                        },
-                      ),
-                    )
-                  : _buildPlaceholder(),
-            ),
-          ),
-          // Product name
-          Padding(
-            padding: const EdgeInsets.all(Spacing.sm),
-            child: Text(
-              productName,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
+            // Subcategory image
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.lightGrey,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
                   ),
-              textAlign: TextAlign.center,
+                ),
+                child:
+                    subCategory.imageUrl != null &&
+                        subCategory.imageUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: Image.network(
+                          subCategory.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (
+                                BuildContext context,
+                                Object error,
+                                StackTrace? stackTrace,
+                              ) {
+                                return _buildPlaceholder();
+                              },
+                        ),
+                      )
+                    : _buildPlaceholder(),
+              ),
             ),
-          ),
-        ],
+            // Subcategory name
+            Padding(
+              padding: const EdgeInsets.all(Spacing.sm),
+              child: Text(
+                subCategory.name,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -182,13 +176,8 @@ class _ProductCard extends StatelessWidget {
     return Container(
       color: Colors.grey[300],
       child: const Center(
-        child: Icon(
-          Icons.image,
-          color: Colors.grey,
-          size: 40,
-        ),
+        child: Icon(Icons.category, color: Colors.grey, size: 40),
       ),
     );
   }
 }
-

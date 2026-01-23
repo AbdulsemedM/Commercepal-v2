@@ -53,6 +53,7 @@ class LocalizationService {
           'profile.searchPlaceholder': 'Search',
           'profile.personalDetails': 'Personal Details',
           'profile.termsConditions': 'Terms & Conditions',
+          'profile.refundPolicy': 'Refund Policy',
           'profile.orderHistory': 'Order History',
           'profile.faqs': 'FAQs',
           'profile.changePassword': 'Change Password',

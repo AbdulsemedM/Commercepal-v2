@@ -1,4 +1,4 @@
-package com.example.commercepal
+package com.commercepal.commercepal
 
 import io.flutter.embedding.android.FlutterActivity
 

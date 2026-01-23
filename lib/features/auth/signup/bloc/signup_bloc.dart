@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/signup/data/models/signup_request.dart';
 import 'package:commercepal/features/auth/signup/data/repository/signup_repository.dart';
 
@@ -32,7 +33,7 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
         firstName: event.firstName,
         lastName: event.lastName,
         country: event.country,
-        registrationChannel: event.registrationChannel,
+        registrationChannel: event.registrationChannel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.signup(request);
