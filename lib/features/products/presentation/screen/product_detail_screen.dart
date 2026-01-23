@@ -58,7 +58,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
-    NavigationService.instance.navigateToDashboardTab(tabIndex);
+    NavigationService.instance.navigateToDashboardTab(context, tabIndex);
   }
 
   String _getCurrency(BuildContext context) {

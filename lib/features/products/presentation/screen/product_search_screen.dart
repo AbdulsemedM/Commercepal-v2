@@ -51,7 +51,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
-    NavigationService.instance.navigateToDashboardTab(tabIndex);
+    NavigationService.instance.navigateToDashboardTab(context, tabIndex);
   }
 
   @override
