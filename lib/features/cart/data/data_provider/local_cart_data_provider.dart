@@ -46,6 +46,7 @@ class LocalCartDataProvider {
         currentPrice: existingItem.currentPrice,
         priceDropped: existingItem.priceDropped,
         savingsAmount: existingItem.savingsAmount,
+        configId: existingItem.configId ?? newItemRequest.configId,
       );
       await _dbHelper.updateItem(updatedItem);
     } else {
@@ -67,6 +68,7 @@ class LocalCartDataProvider {
           currentPrice: product.price,
           priceDropped: false, // Default
           savingsAmount: 0.0, // Default
+          configId: newItemRequest.configId,
         );
         await _dbHelper.insertItem(newItem);
       } else {
@@ -88,6 +90,7 @@ class LocalCartDataProvider {
           currentPrice: 0.0,
           priceDropped: false,
           savingsAmount: 0.0,
+          configId: newItemRequest.configId,
         );
         await _dbHelper.insertItem(newItem);
       }
@@ -127,6 +130,7 @@ class LocalCartDataProvider {
           currentPrice: existingItem.currentPrice,
           priceDropped: existingItem.priceDropped,
           savingsAmount: existingItem.savingsAmount,
+          configId: existingItem.configId ?? request.replaceConfigId,
         );
         await _dbHelper.updateItem(updatedItem);
       }
@@ -143,6 +147,18 @@ class LocalCartDataProvider {
   Future<ClearCartResponse> clearCart() async {
     await _dbHelper.clearCart();
     return ClearCartResponse(status: 200, message: "Cart cleared locally");
+  }
+
+  /// Saves a complete cart from the backend to local storage
+  /// Replaces all existing local cart items with items from the provided cart
+  Future<void> saveCart(Cart cart) async {
+    // Clear existing local cart
+    await _dbHelper.clearCart();
+    
+    // Insert all items from the backend cart
+    for (final item in cart.items) {
+      await _dbHelper.insertItem(item);
+    }
   }
 
   Cart _createCartFromItems(List<CartItem> items) {

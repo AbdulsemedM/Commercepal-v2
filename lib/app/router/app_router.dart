@@ -61,8 +61,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.dashboard,
       name: 'dashboard',
-      builder: (BuildContext context, GoRouterState state) =>
-          const DashboardScreen(),
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        final int? initialTab = params['tab'] != null 
+            ? int.tryParse(params['tab']!) 
+            : null;
+        return DashboardScreen(initialTab: initialTab);
+      },
     ),
     GoRoute(
       path: AppRoutes.login,

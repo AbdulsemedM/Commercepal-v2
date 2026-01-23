@@ -5,6 +5,7 @@ import '../models/clear_cart_response.dart';
 import '../models/update_cart_item_request.dart';
 
 import 'package:commercepal/core/logging/app_logger.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/auth_service.dart';
 import '../data_provider/local_cart_data_provider.dart';
 
@@ -66,42 +67,47 @@ class CartRepository {
   }
 
   Future<void> syncLocalCartToRemote() async {
-    try {
-      final localCart = await _localDataProvider.getCart();
-      if (localCart.items.isNotEmpty) {
-        for (final item in localCart.items) {
-           // Create request for each item
-           // Note: AddToCartRequest expects List<AddToCartItem>
-           // AddToCartItem expects: productId (int), configId, quantity, etc.
-           // However, CartItem has productId as String. 
-           // We need to parse it. If it fails, we skip.
-           
-           if (item.productId == null) {
-             AppLogger.e("Skipping sync for item with invalid ID");
-             continue;
-           }
-
-           final request = AddToCartRequest(
-             items: [
-               AddToCartItem(
-                 productId: item.productId,
-                 configId: "0", // Default to "0" or empty if not available
-                 quantity: item.quantity,
-                 currency: item.currency,
-                 country: "ET", // Default to ET or empty string if not available
-               )
-             ]
-           );
-           
-           await _dataProvider.addToCart(request);
-        }
-        // Clear local cart after successful sync
-        await _localDataProvider.clearCart();
+    // Get local cart items
+    final localCart = await _localDataProvider.getCart();
+    
+    // Upload local items to backend if any exist
+    if (localCart.items.isNotEmpty) {
+      // Get saved country code from settings
+      final storage = Storage();
+      final savedCountry = await storage.getSelectedCountry();
+      
+      AppLogger.i("Syncing ${localCart.items.length} local cart items to backend");
+      
+      for (final item in localCart.items) {
+         // Create request for each item
+         final request = AddToCartRequest(
+           items: [
+             AddToCartItem(
+               productId: item.productId,
+               configId: item.configId ?? "0", // Use item's configId if available, default to "0"
+               quantity: item.quantity,
+               currency: item.currency,
+               country: savedCountry, // Use saved country from settings
+             )
+           ]
+         );
+         
+         // Upload item to backend (let errors propagate)
+         await _dataProvider.addToCart(request);
       }
-    } catch (e, s) {
-      AppLogger.e("Failed to sync local cart", error: e, stack: s);
-      // We don't rethrow, to not block the main flow.
+      
+      AppLogger.i("Successfully uploaded local cart items to backend");
     }
+    
+    // Fetch complete merged cart from backend (includes local + pre-existing items)
+    final mergedCart = await _dataProvider.getCart();
+    AppLogger.i("Fetched merged cart with ${mergedCart.items.length} items from backend");
+    
+    // Save merged cart locally for offline access
+    await _localDataProvider.saveCart(mergedCart);
+    AppLogger.i("Saved merged cart locally");
+    
+    // Note: No catch block - errors propagate to CartBloc for proper handling
   }
 }
 

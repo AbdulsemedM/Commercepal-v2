@@ -83,7 +83,8 @@ class CartPage extends StatelessWidget {
               return null;
             },
             onCartTap: () {
-              // Already on cart page
+              // Navigate to cart tab
+              _navigateToTab(context, 2);
             },
             onProfileTap: () {
               _navigateToTab(context, 3);

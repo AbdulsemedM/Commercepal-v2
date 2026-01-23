@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 
 class ProductDetailsReviewsScreen extends StatefulWidget {
   const ProductDetailsReviewsScreen({
@@ -25,30 +29,70 @@ class _ProductDetailsReviewsScreenState
     extends State<ProductDetailsReviewsScreen> {
   int _selectedTabIndex = 0;
 
+  void _navigateToTab(BuildContext context, int tabIndex) {
+    final DashboardScreenState? dashboardState = context
+        .findAncestorStateOfType<DashboardScreenState>();
+    if (dashboardState != null) {
+      dashboardState.changeTab(tabIndex);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBarWidget(
-        cartCount: 0,
-        userInitials: 'U',
-        onSearchTap: () {
-          // Navigate to search screen when search bar is tapped
-          context.push(AppRoutes.productSearch);
-        },
-        onSearchSubmitted: (String query) {
-          // Navigate to search screen with query
-          context.push(
-            '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-          );
-          return null;
-        },
-        onLogoTap: () => Navigator.of(context).pop(),
-        onCartTap: null,
-        onProfileTap: null,
-        hasNotification: false,
-      ),
-      body: Column(
+    // Get or create CartBloc
+    CartBloc? cartBloc;
+    try {
+      cartBloc = context.read<CartBloc>();
+    } catch (e) {
+      cartBloc = null;
+    }
+
+    return BlocBuilder<CartBloc, CartState>(
+      bloc: cartBloc,
+      builder: (context, cartState) {
+        int cartCount = 0;
+        if (cartState is CartLoaded ||
+            cartState is CartItemAdded ||
+            cartState is CartItemUpdated ||
+            cartState is CartItemDeleted) {
+          final cart = cartState is CartLoaded
+              ? cartState.cart
+              : cartState is CartItemAdded
+                  ? cartState.cart
+                  : cartState is CartItemUpdated
+                      ? cartState.cart
+                      : (cartState as CartItemDeleted).cart;
+          cartCount = cart.totalItems;
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBarWidget(
+            cartCount: cartCount,
+            userInitials: AuthService().userInitials ?? 'U',
+            onSearchTap: () {
+              // Navigate to search screen when search bar is tapped
+              context.push(AppRoutes.productSearch);
+            },
+            onSearchSubmitted: (String query) {
+              // Navigate to search screen with query
+              context.push(
+                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+              );
+              return null;
+            },
+            onLogoTap: () => Navigator.of(context).pop(),
+            onCartTap: () {
+              // Navigate to cart tab
+              _navigateToTab(context, 2);
+            },
+            onProfileTap: () {
+              // Navigate to profile tab
+              _navigateToTab(context, 3);
+            },
+            hasNotification: false,
+          ),
+          body: Column(
         children: <Widget>[
           // White navigation bar with tabs
           Container(
@@ -138,6 +182,8 @@ class _ProductDetailsReviewsScreenState
           Expanded(child: _buildContent(context)),
         ],
       ),
+        );
+      },
     );
   }
 

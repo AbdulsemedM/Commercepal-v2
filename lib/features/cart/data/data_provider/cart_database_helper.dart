@@ -24,8 +24,9 @@ class CartDatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -46,9 +47,17 @@ class CartDatabaseHelper {
         priceWhenAdded REAL,
         currentPrice REAL,
         priceDropped INTEGER,
-        savingsAmount REAL
+        savingsAmount REAL,
+        configId TEXT
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add configId column to existing database
+      await db.execute('ALTER TABLE cart_items ADD COLUMN configId TEXT');
+    }
   }
 
   Future<int> insertItem(CartItem item) async {
@@ -117,6 +126,7 @@ class CartDatabaseHelper {
       'currentPrice': item.currentPrice,
       'priceDropped': item.priceDropped ? 1 : 0,
       'savingsAmount': item.savingsAmount,
+      if (item.configId != null) 'configId': item.configId,
     };
   }
 
@@ -137,6 +147,7 @@ class CartDatabaseHelper {
       currentPrice: (map['currentPrice'] as num?)?.toDouble() ?? 0.0,
       priceDropped: (map['priceDropped'] as int) == 1,
       savingsAmount: (map['savingsAmount'] as num?)?.toDouble() ?? 0.0,
+      configId: map['configId'] as String?,
     );
   }
 }

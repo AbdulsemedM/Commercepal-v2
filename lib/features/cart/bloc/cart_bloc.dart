@@ -7,6 +7,7 @@ import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
 import 'package:commercepal/features/cart/data/models/update_cart_item_request.dart';
 import 'package:commercepal/features/cart/data/repository/cart_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/services/navigation_service.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 
 part 'cart_event.dart';
@@ -65,11 +66,15 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to load cart. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(CartError(errorMessage));
@@ -101,13 +106,17 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to add item to cart. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('400') || e.toString().contains('Bad Request')
-            ? 'Invalid item information'
-            : e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('400') || e.toString().contains('Bad Request')
+              ? 'Invalid item information'
+              : e.toString().contains('401') ||
+                    e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(CartError(errorMessage));
@@ -183,11 +192,15 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to clear cart. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(CartError(errorMessage));

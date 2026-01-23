@@ -14,40 +14,72 @@ import 'package:commercepal/features/auth/change_password/presentation/widgets/c
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
+
+  void _navigateToTab(BuildContext context, int tabIndex) {
+    final DashboardScreenState? dashboardState = context
+        .findAncestorStateOfType<DashboardScreenState>();
+    if (dashboardState != null) {
+      dashboardState.changeTab(tabIndex);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => ProfileBloc()..add(ProfileLoadRequested()),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBarWidget(
-          cartCount: 2,
-          userInitials: AuthService().userInitials ?? 'U',
-          onSearchTap: () {
-            // Navigate to search screen when search bar is tapped
-            context.push(AppRoutes.productSearch);
-          },
-          onSearchSubmitted: (String query) {
-            // Navigate to search screen with query
-            context.push(
-              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-            );
-            return null;
-          },
-          onProfileTap: () {
-            // Already on profile page
-          },
-          hasNotification: false,
-          searchPlaceholder: LocalizationService.t(
-            context,
-            'profile.searchPlaceholder',
-          ),
-        ),
-        body: BlocListener<ProfileBloc, ProfileState>(
+      child: BlocBuilder<CartBloc, CartState>(
+        builder: (context, cartState) {
+          int cartCount = 0;
+          if (cartState is CartLoaded ||
+              cartState is CartItemAdded ||
+              cartState is CartItemUpdated ||
+              cartState is CartItemDeleted) {
+            final cart = cartState is CartLoaded
+                ? cartState.cart
+                : cartState is CartItemAdded
+                    ? cartState.cart
+                    : cartState is CartItemUpdated
+                        ? cartState.cart
+                        : (cartState as CartItemDeleted).cart;
+            cartCount = cart.totalItems;
+          }
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBarWidget(
+              cartCount: cartCount,
+              userInitials: AuthService().userInitials ?? 'U',
+              onSearchTap: () {
+                // Navigate to search screen when search bar is tapped
+                context.push(AppRoutes.productSearch);
+              },
+              onSearchSubmitted: (String query) {
+                // Navigate to search screen with query
+                context.push(
+                  '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                );
+                return null;
+              },
+              onCartTap: () {
+                // Navigate to cart tab
+                _navigateToTab(context, 2);
+              },
+              onProfileTap: () {
+                // Navigate to profile tab
+                _navigateToTab(context, 3);
+              },
+              hasNotification: false,
+              searchPlaceholder: LocalizationService.t(
+                context,
+                'profile.searchPlaceholder',
+              ),
+            ),
+            body: BlocListener<ProfileBloc, ProfileState>(
           listener: (context, state) {
             if (state is ProfileError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -152,6 +184,8 @@ class ProfileContent extends StatelessWidget {
             },
           ),
         ),
+          );
+        },
       ),
     );
   }

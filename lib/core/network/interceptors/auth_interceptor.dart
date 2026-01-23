@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
+import 'package:commercepal/services/navigation_service.dart';
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
@@ -29,6 +30,12 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // Skip adding token for categories endpoint (public endpoint)
+    if (options.path.contains('/api/v1/categories') && 
+        !options.path.contains('/subcategories')) {
+      return super.onRequest(options, handler);
+    }
+
     final accessToken = await _storage.getAccessToken();
     final tokenType = await _storage.getTokenType() ?? 'Bearer';
 
@@ -65,6 +72,10 @@ class AuthInterceptor extends Interceptor {
           _isRefreshing = false;
           _rejectPendingRequests(err);
           await _storage.clearTokens();
+          // Redirect to login if not already on login page
+          if (!NavigationService.instance.isOnLoginPage) {
+            NavigationService.instance.redirectToLogin();
+          }
           return super.onError(err, handler);
         }
 
@@ -99,8 +110,12 @@ class AuthInterceptor extends Interceptor {
         _isRefreshing = false;
         _rejectPendingRequests(err);
 
-        // If refresh fails, clear tokens and reject
+        // If refresh fails, clear tokens and redirect to login
         await _storage.clearTokens();
+        // Redirect to login if not already on login page
+        if (!NavigationService.instance.isOnLoginPage) {
+          NavigationService.instance.redirectToLogin();
+        }
         return super.onError(err, handler);
       }
     } else {

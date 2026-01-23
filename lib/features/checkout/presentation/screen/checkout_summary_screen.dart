@@ -18,6 +18,7 @@ class CheckoutSummaryScreen extends StatefulWidget {
 
 class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
   int? _selectedAddressId;
+  String? _selectedAddressPhoneNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +65,10 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                     const SizedBox(height: Spacing.sm),
                     // Address Selection
                     AddressSelectionSection(
-                      onAddressSelected: (addressId) {
+                      onAddressSelected: (addressId, phoneNumber) {
                         setState(() {
                           _selectedAddressId = addressId;
+                          _selectedAddressPhoneNumber = phoneNumber;
                         });
                       },
                     ),
@@ -101,6 +103,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                               extra: {
                                 'cart': cart,
                                 'addressId': _selectedAddressId,
+                                'phoneNumber': _selectedAddressPhoneNumber,
                               },
                             );
                           },

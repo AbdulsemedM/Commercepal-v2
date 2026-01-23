@@ -6,6 +6,7 @@ import '../data/models/add_address_request.dart';
 import '../data/models/update_address_request.dart';
 import '../data/models/delete_address_response.dart';
 import '../data/repository/address_repository.dart';
+import '../../../services/navigation_service.dart';
 
 part 'address_event.dart';
 part 'address_state.dart';
@@ -37,11 +38,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to load addresses. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));
@@ -65,11 +70,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to add address. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));
@@ -96,11 +105,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to update address. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));
@@ -124,11 +137,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to set default address. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));
@@ -152,11 +169,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to delete address. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));
@@ -174,11 +195,15 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       String errorMessage = 'Failed to refresh addresses. Please try again.';
 
       if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+        if (NavigationService.instance.handleSessionExpired(e)) {
+          errorMessage = 'Session expired. Please login again.';
+        } else {
+          errorMessage =
+              e.toString().contains('401') ||
+                  e.toString().contains('Unauthorized')
+              ? 'Session expired. Please login again.'
+              : errorMessage;
+        }
       }
 
       emit(AddressError(errorMessage));

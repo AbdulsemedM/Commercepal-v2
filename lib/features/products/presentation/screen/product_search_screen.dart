@@ -6,9 +6,10 @@ import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/shimmer_loading.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/services/navigation_service.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/products/bloc/product_search_bloc.dart';
 import 'package:commercepal/features/products/data/models/product_search_request.dart';
 import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
@@ -50,11 +51,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState = context
-        .findAncestorStateOfType<DashboardScreenState>();
-    if (dashboardState != null) {
-      dashboardState.changeTab(tabIndex);
-    }
+    NavigationService.instance.navigateToDashboardTab(tabIndex);
   }
 
   @override
@@ -91,13 +88,43 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
     return BlocProvider.value(
       value: cartBloc,
-      child: Scaffold(
-        appBar: _CartAppBar(
-          cartBloc: cartBloc,
-          onLogo: () => context.pop(),
-          onCart: () => _navigateToTab(context, 2),
-          onProfile: () => _navigateToTab(context, 3),
-        ),
+      child: BlocBuilder<CartBloc, CartState>(
+        builder: (context, cartState) {
+          int cartCount = 0;
+          if (cartState is CartLoaded ||
+              cartState is CartItemAdded ||
+              cartState is CartItemUpdated ||
+              cartState is CartItemDeleted) {
+            final cart = cartState is CartLoaded
+                ? cartState.cart
+                : cartState is CartItemAdded
+                ? cartState.cart
+                : cartState is CartItemUpdated
+                ? cartState.cart
+                : (cartState as CartItemDeleted).cart;
+            cartCount = cart.totalItems;
+          }
+
+          return Scaffold(
+            appBar: AppBarWidget(
+              cartCount: cartCount,
+              userInitials: AuthService().userInitials ?? 'U',
+              onSearchTap: () {
+                // Navigate to search screen when search bar is tapped
+                context.push(AppRoutes.productSearch);
+              },
+              onSearchSubmitted: (String query) {
+                // Navigate to search screen with query
+                context.push(
+                  '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                );
+                return null;
+              },
+              onLogoTap: () => context.pop(),
+              onCartTap: () => _navigateToTab(context, 2),
+              onProfileTap: () => _navigateToTab(context, 3),
+              hasNotification: true,
+            ),
         body: Column(
           children: <Widget>[
             // Search bar
@@ -307,95 +334,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                 },
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CartAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _CartAppBar({
-    required this.cartBloc,
-    required this.onLogo,
-    required this.onCart,
-    required this.onProfile,
-  });
-
-  final CartBloc? cartBloc;
-  final VoidCallback onLogo;
-  final VoidCallback onCart;
-  final VoidCallback onProfile;
-
-  @override
-  Size get preferredSize {
-    return const Size.fromHeight(kToolbarHeight + 20);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<CartBloc, CartState>(
-      bloc: cartBloc,
-      buildWhen: (previous, current) {
-        int prevCount = 0;
-        int currCount = 0;
-        if (previous is CartLoaded ||
-            previous is CartItemAdded ||
-            previous is CartItemUpdated ||
-            previous is CartItemDeleted) {
-          final prevCart = previous is CartLoaded
-              ? previous.cart
-              : previous is CartItemAdded
-              ? previous.cart
-              : previous is CartItemUpdated
-              ? previous.cart
-              : (previous as CartItemDeleted).cart;
-          prevCount = prevCart.totalItems;
-        }
-        if (current is CartLoaded ||
-            current is CartItemAdded ||
-            current is CartItemUpdated ||
-            current is CartItemDeleted) {
-          final currCart = current is CartLoaded
-              ? current.cart
-              : current is CartItemAdded
-              ? current.cart
-              : current is CartItemUpdated
-              ? current.cart
-              : (current as CartItemDeleted).cart;
-          currCount = currCart.totalItems;
-        }
-        return prevCount != currCount;
-      },
-      builder: (context, cartState) {
-        int cartCount = 0;
-        if (cartState is CartLoaded ||
-            cartState is CartItemAdded ||
-            cartState is CartItemUpdated ||
-            cartState is CartItemDeleted) {
-          final cart = cartState is CartLoaded
-              ? cartState.cart
-              : cartState is CartItemAdded
-              ? cartState.cart
-              : cartState is CartItemUpdated
-              ? cartState.cart
-              : (cartState as CartItemDeleted).cart;
-          cartCount = cart.totalItems;
-        }
-
-        return AppBarWidget(
-          cartCount: cartCount,
-          userInitials: AuthService().userInitials ?? 'U',
-          onSearchSubmitted: (String query) {
-            // This won't be used since we're already on search screen
-            return null;
-          },
-          onLogoTap: onLogo,
-          onCartTap: onCart,
-          onProfileTap: onProfile,
-          hasNotification: true,
+            ],
+          ),
         );
-      },
+        },
+      ),
     );
   }
 }

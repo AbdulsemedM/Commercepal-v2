@@ -9,14 +9,16 @@ import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/presentation/screen/profile_page.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.initialTab});
+
+  final int? initialTab;
 
   @override
   State<DashboardScreen> createState() => DashboardScreenState();
 }
 
 class DashboardScreenState extends State<DashboardScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   final List<Widget> _pages = const <Widget>[
     HomePage(),
@@ -24,6 +26,16 @@ class DashboardScreenState extends State<DashboardScreen> {
     CartPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialTab ?? 0;
+    // Ensure the initial tab is within valid range
+    if (_currentIndex < 0 || _currentIndex >= _pages.length) {
+      _currentIndex = 0;
+    }
+  }
 
   void changeTab(int index) {
     if (index >= 0 && index < _pages.length) {

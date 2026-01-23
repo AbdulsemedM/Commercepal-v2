@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/services/navigation_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/product_details_bloc.dart';
 import '../../bloc/product_details_event.dart';
@@ -20,7 +21,8 @@ import '../widgets/share_section.dart';
 import '../widgets/special_offer_section.dart';
 import '../widgets/product_details_button.dart';
 import '../widgets/add_to_cart_section.dart';
-import '../widgets/variant_selector_widget.dart';
+import '../widgets/multi_variant_selector_widget.dart';
+import '../../data/models/product_details.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
@@ -44,13 +46,19 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _quantity = 1;
   bool _isInCart = false;
+  String _cachedCountry = 'US'; // Default, will be loaded in initState
+  // Map to track multiple variants with their quantities
+  // Key: variant index, Value: quantity
+  final Map<int, int> _selectedVariants = <int, int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCountry();
+  }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState =
-        context.findAncestorStateOfType<DashboardScreenState>();
-    if (dashboardState != null) {
-      dashboardState.changeTab(tabIndex);
-    }
+    NavigationService.instance.navigateToDashboardTab(tabIndex);
   }
 
   String _getCurrency(BuildContext context) {
@@ -65,19 +73,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return 'USD';
   }
 
-  String _getCountry(BuildContext context) {
+  Future<void> _loadCountry() async {
     try {
       final profileState = context.read<ProfileBloc>().state;
       if (profileState is ProfileLoaded) {
-        return profileState.profile.country;
+        setState(() {
+          _cachedCountry = profileState.profile.country;
+        });
+        return;
       }
     } catch (e) {
       // ProfileBloc not available
     }
-    return 'US';
+    // Fallback to saved country from settings
+    final storage = Storage();
+    final country = await storage.getSelectedCountry();
+    if (mounted) {
+      setState(() {
+        _cachedCountry = country;
+      });
+    }
   }
 
-  void _handleAddToCart(BuildContext context, String configId, Product product) {
+  String _getCountry(BuildContext context) {
+    return _cachedCountry;
+  }
+
+  void _handleAddToCart(
+    BuildContext context,
+    ProductDetails productDetails,
+  ) {
     if (widget.productId == null || widget.productId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -88,34 +113,85 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
+    if (_selectedVariants.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one variant'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
 
-    context.read<CartBloc>().add(
-      CartAddItemRequested(
-        productId: widget.productId!,
-        configId: configId,
-        quantity: _quantity,
-        currency: currency,
-        country: country,
-        product: product,
-      ),
-    );
+    // Add all selected variants to cart
+    for (final entry in _selectedVariants.entries) {
+      final variantIndex = entry.key;
+      final quantity = entry.value;
+      
+      if (quantity > 0 && variantIndex < productDetails.variants.length) {
+        final variant = productDetails.variants[variantIndex];
+        final cartProduct = Product.fromProductDetails(
+          productDetails,
+          variantIndex: variantIndex,
+        );
+        
+        context.read<CartBloc>().add(
+          CartAddItemRequested(
+            productId: widget.productId!,
+            configId: variant.configId,
+            quantity: quantity,
+            currency: currency,
+            country: country,
+            product: cartProduct,
+          ),
+        );
+      }
+    }
+    
+    // Clear selections after adding to cart
+    setState(() {
+      _selectedVariants.clear();
+    });
+  }
+  
+  void _handleVariantToggled(int variantIndex) {
+    setState(() {
+      if (_selectedVariants.containsKey(variantIndex)) {
+        // Remove variant if already selected
+        _selectedVariants.remove(variantIndex);
+      } else {
+        // Add variant with quantity 1
+        _selectedVariants[variantIndex] = 1;
+      }
+    });
+  }
+  
+  void _handleQuantityChanged((int, int) data) {
+    final (variantIndex, newQuantity) = data;
+    setState(() {
+      if (newQuantity <= 0) {
+        _selectedVariants.remove(variantIndex);
+      } else {
+        _selectedVariants[variantIndex] = newQuantity;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     // Use the CartBloc provided at the app level
     return BlocProvider(
-          create: (context) => ProductDetailsBloc(
-            repository: ProductDetailsRepository(),
-          )..add(
-              ProductDetailsFetchRequested(
-                productId: widget.productId ?? '',
-                country: _getCountry(context),
-                currency: _getCurrency(context),
-              ),
+      create: (context) =>
+          ProductDetailsBloc(repository: ProductDetailsRepository())..add(
+            ProductDetailsFetchRequested(
+              productId: widget.productId ?? '',
+              country: _getCountry(context),
+              currency: _getCurrency(context),
             ),
+          ),
       child: BlocListener<CartBloc, CartState>(
         listener: (context, state) {
           if (state is CartItemAdded) {
@@ -147,10 +223,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               final cart = cartState is CartLoaded
                   ? cartState.cart
                   : cartState is CartItemAdded
-                      ? cartState.cart
-                      : cartState is CartItemUpdated
-                          ? cartState.cart
-                          : (cartState as CartItemDeleted).cart;
+                  ? cartState.cart
+                  : cartState is CartItemUpdated
+                  ? cartState.cart
+                  : (cartState as CartItemDeleted).cart;
               cartCount = cart.totalItems;
             }
 
@@ -207,12 +283,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ElevatedButton.icon(
                               onPressed: () {
                                 context.read<ProductDetailsBloc>().add(
-                                      ProductDetailsFetchRequested(
-                                        productId: widget.productId ?? '',
-                                        country: _getCountry(context),
-                                        currency: _getCurrency(context),
-                                      ),
-                                    );
+                                  ProductDetailsFetchRequested(
+                                    productId: widget.productId ?? '',
+                                    country: _getCountry(context),
+                                    currency: _getCurrency(context),
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.refresh),
                               label: const Text('Retry'),
@@ -228,7 +304,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     final selectedVariant = product.variants.isNotEmpty
                         ? product.variants[state.selectedVariantIndex]
                         : null;
-                    final currentPrice = selectedVariant?.pricing?.formattedCurrentPrice ??
+                    final currentPrice =
+                        selectedVariant?.pricing?.formattedCurrentPrice ??
                         product.pricing.formattedCurrentPrice;
 
                     return Column(
@@ -237,12 +314,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           child: RefreshIndicator(
                             onRefresh: () async {
                               context.read<ProductDetailsBloc>().add(
-                                    ProductDetailsRefreshRequested(
-                                      productId: widget.productId ?? '',
-                                      country: _getCountry(context),
-                                      currency: _getCurrency(context),
-                                    ),
-                                  );
+                                ProductDetailsRefreshRequested(
+                                  productId: widget.productId ?? '',
+                                  country: _getCountry(context),
+                                  currency: _getCurrency(context),
+                                ),
+                              );
                             },
                             child: SingleChildScrollView(
                               child: Column(
@@ -250,9 +327,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 children: [
                                   const SizedBox(height: Spacing.sm),
                                   // Product images
-                                  ProductImageGallery(
-                                    images: product.images,
-                                  ),
+                                  ProductImageGallery(images: product.images),
                                   const SizedBox(height: Spacing.md),
                                   // Product info
                                   ProductInfoSection(
@@ -265,18 +340,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     keywords: product.brandName,
                                   ),
                                   const SizedBox(height: Spacing.lg),
-                                  // Variant selector
+                                  // Multi-variant selector
                                   if (product.variants.isNotEmpty)
-                                    VariantSelectorWidget(
+                                    MultiVariantSelectorWidget(
                                       variants: product.variants,
-                                      selectedIndex: state.selectedVariantIndex,
-                                      onVariantSelected: (index) {
-                                        context.read<ProductDetailsBloc>().add(
-                                              ProductDetailsVariantSelected(
-                                                variantIndex: index,
-                                              ),
-                                            );
-                                      },
+                                      selectedVariants: _selectedVariants,
+                                      onVariantToggled: _handleVariantToggled,
+                                      onQuantityChanged: _handleQuantityChanged,
                                     ),
                                   const SizedBox(height: Spacing.lg),
                                   // Specifications (if available)
@@ -284,16 +354,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       product.physicalParameters.length > 0)
                                     ProductSpecifications(
                                       specifications: {
-                                        if (product.physicalParameters.length > 0)
+                                        if (product.physicalParameters.length >
+                                            0)
                                           'Length':
                                               '${product.physicalParameters.length}cm',
-                                        if (product.physicalParameters.width > 0)
+                                        if (product.physicalParameters.width >
+                                            0)
                                           'Width':
                                               '${product.physicalParameters.width}cm',
-                                        if (product.physicalParameters.height > 0)
+                                        if (product.physicalParameters.height >
+                                            0)
                                           'Height':
                                               '${product.physicalParameters.height}cm',
-                                        if (product.physicalParameters.weight > 0)
+                                        if (product.physicalParameters.weight >
+                                            0)
                                           'Weight':
                                               '${product.physicalParameters.weight}g',
                                       },
@@ -359,15 +433,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               final cart = cartState is CartLoaded
                                   ? cartState.cart
                                   : cartState is CartItemAdded
-                                      ? cartState.cart
-                                      : cartState is CartItemUpdated
-                                          ? cartState.cart
-                                          : (cartState as CartItemDeleted).cart;
+                                  ? cartState.cart
+                                  : cartState is CartItemUpdated
+                                  ? cartState.cart
+                                  : (cartState as CartItemDeleted).cart;
                               itemInCart = cart.items.any(
                                 (item) => item.productId == widget.productId,
                               );
                               if (itemInCart && !_isInCart) {
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
                                   if (mounted) {
                                     setState(() {
                                       _isInCart = true;
@@ -377,44 +453,37 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               }
                             }
 
+                            // Calculate total quantity and price for selected variants
+                            int totalQuantity = _selectedVariants.values.fold(0, (sum, qty) => sum + qty);
+                            double totalPrice = 0.0;
+                            for (final entry in _selectedVariants.entries) {
+                              final variantIndex = entry.key;
+                              final quantity = entry.value;
+                              if (variantIndex < product.variants.length) {
+                                final variant = product.variants[variantIndex];
+                                final price = variant.pricing?.currentPrice ?? product.pricing.currentPrice;
+                                totalPrice += price * quantity;
+                              }
+                            }
+                            
+                            final hasSelectedVariants = _selectedVariants.isNotEmpty;
+                            final formattedTotalPrice = product.variants.isNotEmpty && product.variants.first.pricing != null
+                                ? product.variants.first.pricing!.currency
+                                : product.pricing.currency;
+                            
                             return AddToCartSection(
-                              isInCart: itemInCart,
-                              quantity: _quantity,
-                              unitPrice: currentPrice,
+                              isInCart: itemInCart && !hasSelectedVariants,
+                              quantity: totalQuantity > 0 ? totalQuantity : _quantity,
+                              unitPrice: hasSelectedVariants 
+                                  ? '$formattedTotalPrice ${totalPrice.toStringAsFixed(2)}'
+                                  : currentPrice,
                               onAddToCart: () {
-                                final configId = selectedVariant?.configId ?? '';
-                                final cartProduct = Product.fromProductDetails(
-                                  product,
-                                  variantIndex: state.selectedVariantIndex,
-                                );
-                                _handleAddToCart(context, configId, cartProduct);
+                                _handleAddToCart(context, product);
                               },
                               onQuantityChanged: (int newQuantity) {
-                                if (itemInCart && widget.productId != null) {
-                                  final cartState = context.read<CartBloc>().state;
-                                  if (cartState is CartLoaded ||
-                                      cartState is CartItemAdded ||
-                                      cartState is CartItemUpdated ||
-                                      cartState is CartItemDeleted) {
-                                    final cart = cartState is CartLoaded
-                                        ? cartState.cart
-                                        : cartState is CartItemAdded
-                                            ? cartState.cart
-                                            : cartState is CartItemUpdated
-                                                ? cartState.cart
-                                                : (cartState as CartItemDeleted).cart;
-                                    final cartItem = cart.items.firstWhere(
-                                      (item) => item.productId == widget.productId,
-                                      orElse: () => throw StateError('Item not found'),
-                                    );
-                                    context.read<CartBloc>().add(
-                                          CartUpdateItemRequested(
-                                            itemId: cartItem.id,
-                                            quantity: newQuantity,
-                                          ),
-                                        );
-                                  }
-                                } else {
+                                // This is handled by the multi-variant selector
+                                // Keep for backward compatibility
+                                if (!hasSelectedVariants) {
                                   setState(() {
                                     _quantity = newQuantity;
                                   });

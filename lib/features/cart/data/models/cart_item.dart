@@ -14,6 +14,7 @@ class CartItem {
   final double currentPrice;
   final bool priceDropped;
   final double savingsAmount;
+  final String? configId;
 
   CartItem({
     required this.id,
@@ -31,6 +32,7 @@ class CartItem {
     required this.currentPrice,
     required this.priceDropped,
     required this.savingsAmount,
+    this.configId,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class CartItem {
       currentPrice: (json['currentPrice'] as num).toDouble(),
       priceDropped: json['priceDropped'] as bool,
       savingsAmount: (json['savingsAmount'] as num).toDouble(),
+      configId: json['configId'] as String?,
     );
   }
 
@@ -70,6 +73,7 @@ class CartItem {
       'currentPrice': currentPrice,
       'priceDropped': priceDropped,
       'savingsAmount': savingsAmount,
+      if (configId != null) 'configId': configId,
     };
   }
 }
