@@ -8,9 +8,9 @@ import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
-import 'package:commercepal/features/profile/presentation/widgets/country_selection_dialog.dart';
-import 'package:commercepal/features/profile/presentation/widgets/currency_selection_dialog.dart';
-import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_dialog.dart';
+import 'package:commercepal/features/profile/presentation/widgets/country_selection_bottom_sheet.dart';
+import 'package:commercepal/features/profile/presentation/widgets/currency_selection_bottom_sheet.dart';
+import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_bottom_sheet.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
@@ -351,14 +351,14 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.lock_reset_outlined,
         title: LocalizationService.t(context, 'profile.changePassword'),
         onTap: () {
-          ChangePasswordDialog.show(context);
+          ChangePasswordBottomSheet.show(context);
         },
       ),
       _MenuItem(
         icon: Icons.flag_outlined,
         title: LocalizationService.t(context, 'profile.changeCountry'),
         onTap: () async {
-          final selectedCountry = await CountrySelectionDialog.show(context);
+          final selectedCountry = await CountrySelectionBottomSheet.show(context);
           if (selectedCountry != null && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -376,7 +376,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.attach_money_outlined,
         title: LocalizationService.t(context, 'profile.changeCurrency'),
         onTap: () async {
-          final selectedCurrency = await CurrencySelectionDialog.show(context);
+          final selectedCurrency = await CurrencySelectionBottomSheet.show(context);
           if (selectedCurrency != null && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
