@@ -7,15 +7,20 @@ import 'package:commercepal/features/profile/data/models/update_profile_request.
 import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
+import 'package:commercepal/core/storage/storage.dart';
 
 part 'profile_event.dart';
 part 'profile_state.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  ProfileBloc({ProfileRepository? repository, AuthService? authService})
-    : _repository = repository ?? ProfileRepository(),
-      _authService = authService ?? AuthService(),
-      super(ProfileInitial()) {
+  ProfileBloc({
+    ProfileRepository? repository,
+    AuthService? authService,
+    Storage? storage,
+  })  : _repository = repository ?? ProfileRepository(),
+        _authService = authService ?? AuthService(),
+        _storage = storage ?? Storage(),
+        super(ProfileInitial()) {
     on<ProfileLoadRequested>(_onProfileLoadRequested);
     on<ProfileRefreshRequested>(_onProfileRefreshRequested);
     on<ProfileUpdateRequested>(_onProfileUpdateRequested);
@@ -23,6 +28,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   final ProfileRepository _repository;
   final AuthService _authService;
+  final Storage _storage;
 
   Future<void> _onProfileLoadRequested(
     ProfileLoadRequested event,
@@ -32,6 +38,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     try {
       final response = await _repository.getProfile();
+      print('🟣 ProfileBloc._onProfileLoadRequested: Profile loaded, customerId: ${response.data.customerId}');
+
+      // Save customerId if available
+      if (response.data.customerId != null) {
+        print('🟣 ProfileBloc._onProfileLoadRequested: Saving customerId to storage: ${response.data.customerId}');
+        await _storage.saveCustomerId(response.data.customerId!);
+        print('🟣 ProfileBloc._onProfileLoadRequested: customerId saved successfully');
+      } else {
+        print('⚠️ ProfileBloc._onProfileLoadRequested: customerId is null in profile response!');
+      }
 
       // Update auth service with profile data
       _authService.updateProfile(
@@ -69,6 +85,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     try {
       final response = await _repository.getProfile();
+      print('🟣 ProfileBloc._onProfileRefreshRequested: Profile loaded, customerId: ${response.data.customerId}');
+
+      // Save customerId if available
+      if (response.data.customerId != null) {
+        print('🟣 ProfileBloc._onProfileRefreshRequested: Saving customerId to storage: ${response.data.customerId}');
+        await _storage.saveCustomerId(response.data.customerId!);
+        print('🟣 ProfileBloc._onProfileRefreshRequested: customerId saved successfully');
+      } else {
+        print('⚠️ ProfileBloc._onProfileRefreshRequested: customerId is null in profile response!');
+      }
 
       // Update auth service with profile data
       _authService.updateProfile(
@@ -104,6 +130,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     try {
       final response = await _repository.updateProfile(event.request);
+      print('🟣 ProfileBloc._onProfileUpdateRequested: Profile updated, customerId: ${response.data.customerId}');
+
+      // Save customerId if available
+      if (response.data.customerId != null) {
+        print('🟣 ProfileBloc._onProfileUpdateRequested: Saving customerId to storage: ${response.data.customerId}');
+        await _storage.saveCustomerId(response.data.customerId!);
+        print('🟣 ProfileBloc._onProfileUpdateRequested: customerId saved successfully');
+      } else {
+        print('⚠️ ProfileBloc._onProfileUpdateRequested: customerId is null in profile response!');
+      }
 
       // Update auth service with profile data
       _authService.updateProfile(

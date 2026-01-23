@@ -12,6 +12,7 @@ class ProfileData {
   final String registrationChannel;
   final String? customerNotes;
   final String? createdAt;
+  final int? customerId;
 
   ProfileData({
     required this.firstName,
@@ -27,6 +28,7 @@ class ProfileData {
     required this.registrationChannel,
     this.customerNotes,
     this.createdAt,
+    this.customerId,
   });
 
   factory ProfileData.fromJson(Map<String, dynamic> json) => ProfileData(
@@ -43,6 +45,7 @@ class ProfileData {
     registrationChannel: json['registrationChannel'] as String,
     customerNotes: json['customerNotes'] as String?,
     createdAt: json['createdAt'] as String?,
+    customerId: json['customerId'] as int? ?? json['id'] as int?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -59,6 +62,7 @@ class ProfileData {
     'registrationChannel': registrationChannel,
     if (customerNotes != null) 'customerNotes': customerNotes,
     if (createdAt != null) 'createdAt': createdAt,
+    if (customerId != null) 'customerId': customerId,
   };
 
   String get fullName => '$firstName $lastName';

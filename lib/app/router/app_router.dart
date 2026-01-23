@@ -20,6 +20,7 @@ import '../../features/profile/data/models/profile_data.dart';
 import '../../features/orders/presentation/screen/order_history_screen.dart';
 import '../../features/orders/presentation/screen/order_summary_screen.dart';
 import '../../features/orders/presentation/screen/order_tracking_screen.dart';
+import '../../features/orders/bloc/orders_bloc.dart';
 import '../../features/contact_us/contact_us_page.dart';
 import '../../features/addresses/presentation/screen/addresses_screen.dart';
 import '../../features/addresses/bloc/address_bloc.dart';
@@ -163,8 +164,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.orderHistory,
       name: 'orderHistory',
-      builder: (BuildContext context, GoRouterState state) =>
-          const OrderHistoryScreen(),
+      builder: (BuildContext context, GoRouterState state) => BlocProvider(
+        create: (context) => OrdersBloc(),
+        child: const OrderHistoryScreen(),
+      ),
     ),
     GoRoute(
       path: AppRoutes.orderSummary,

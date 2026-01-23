@@ -24,6 +24,7 @@ class Storage {
   static const String _keyDeviceId = 'device_id';
   static const String _keySelectedCountry = 'selected_country_code';
   static const String _keySelectedCurrency = 'selected_currency_code';
+  static const String _keyCustomerId = 'customer_id';
 
   // Token management
   Future<void> saveTokens({
@@ -72,6 +73,7 @@ class Storage {
       _storage.delete(key: _keyTokenType),
       _storage.delete(key: _keyExpiresIn),
       _storage.delete(key: _keyUserEmail),
+      _storage.delete(key: _keyCustomerId),
     ]);
   }
 
@@ -127,5 +129,15 @@ class Storage {
   Future<String> getSelectedCurrency() async {
     final currencyCode = await _storage.read(key: _keySelectedCurrency);
     return currencyCode ?? 'USD'; // Default to USD
+  }
+
+  // Customer ID management
+  Future<void> saveCustomerId(int customerId) async {
+    await _storage.write(key: _keyCustomerId, value: customerId.toString());
+  }
+
+  Future<int?> getCustomerId() async {
+    final value = await _storage.read(key: _keyCustomerId);
+    return value != null ? int.tryParse(value) : null;
   }
 }
