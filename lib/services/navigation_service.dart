@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app/router/app_router.dart';
 
 /// Global navigation service for accessing router from anywhere
@@ -34,8 +36,8 @@ class NavigationService {
     return false;
   }
 
-  /// Navigate to dashboard with a specific tab
-  void navigateToDashboardTab(int tabIndex) {
-    appRouter.go('${AppRoutes.dashboard}?tab=$tabIndex');
+  /// Navigate to dashboard with a specific tab using context
+  void navigateToDashboardTab(BuildContext context, int tabIndex) {
+    context.go('${AppRoutes.dashboard}?tab=$tabIndex');
   }
 }

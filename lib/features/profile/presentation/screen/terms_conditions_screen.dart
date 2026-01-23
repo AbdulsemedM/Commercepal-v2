@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class TermsConditionsScreen extends StatelessWidget {
@@ -9,79 +9,40 @@ class TermsConditionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: <Widget>[
-          // Dark magenta background extending behind status bar
-          Container(
-            decoration: const BoxDecoration(color: AppColors.primary),
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    // Back button
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    // Help icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.secondary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.help_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(Spacing.xs),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.black,
             ),
           ),
-          // Content area
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Title
-                  const Text(
-                    'Privacy Policy',
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Privacy Policy',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // Title
+            const Text(
+              'Privacy Policy',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -262,12 +223,9 @@ class TermsConditionsScreen extends StatelessWidget {
                     'If you are an author, you can access your account and other information, and update your accounts, on the Kindle Direct Publishing (KDP) or Author Central website, as applicable.\n\n'
                     'If you are a developer participating in our Developer Services Program, you can access your account and other information, and adjust your communications preferences, by updating your accounts in the Developer Services Portal.',
                   ),
-                  const SizedBox(height: Spacing.xl),
-                ],
-              ),
-            ),
-          ),
-        ],
+            const SizedBox(height: Spacing.xl),
+          ],
+        ),
       ),
     );
   }

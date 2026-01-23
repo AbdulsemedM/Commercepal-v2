@@ -25,95 +25,55 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightGrey,
-      body: Column(
-        children: <Widget>[
-          // Dark magenta background extending behind status bar
-          Container(
-            decoration: const BoxDecoration(color: AppColors.primary),
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    // Back button
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black,
-                          size: 20,
-                        ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(Spacing.xs),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.black,
+            ),
+          ),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Order History',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List<Widget>.generate(
+                  _tabs.length,
+                  (int index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.xs,
                       ),
-                    ),
-                    const SizedBox(width: Spacing.sm),
-                    // Tabs
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: List<Widget>.generate(
-                            _tabs.length,
-                            (int index) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Spacing.xs,
-                                ),
-                                child: _buildTab(index, _tabs[index]),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Spacing.sm),
-                    // Help icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.secondary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.help_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ],
+                      child: _buildTab(index, _tabs[index]),
+                    );
+                  },
                 ),
               ),
             ),
           ),
-          // Content area
-          Expanded(
-            child: _buildOrderList(),
-          ),
-        ],
+        ),
       ),
+      body: _buildOrderList(),
     );
   }
 

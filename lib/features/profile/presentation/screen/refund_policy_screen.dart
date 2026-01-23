@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class RefundPolicyScreen extends StatelessWidget {
@@ -9,79 +9,40 @@ class RefundPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: <Widget>[
-          // Dark magenta background extending behind status bar
-          Container(
-            decoration: const BoxDecoration(color: AppColors.primary),
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    // Back button
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    // Help icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.secondary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.help_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(Spacing.xs),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 18,
+              color: Colors.black,
             ),
           ),
-          // Content area
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Title
-                  const Text(
-                    'CommercePal Refund Policy',
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Refund Policy',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // Title
+            const Text(
+              'CommercePal Refund Policy',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -208,12 +169,9 @@ class RefundPolicyScreen extends StatelessWidget {
                     'Conclusion',
                     'At CommercePal, we strive to provide high-quality products and services while ensuring customer satisfaction. This Refund Policy is designed to protect both our customers and our business interests. We appreciate your understanding and cooperation in adhering to these guidelines.',
                   ),
-                  const SizedBox(height: Spacing.xl),
-                ],
-              ),
-            ),
-          ),
-        ],
+            const SizedBox(height: Spacing.xl),
+          ],
+        ),
       ),
     );
   }
