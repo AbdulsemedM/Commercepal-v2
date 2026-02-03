@@ -26,6 +26,7 @@ import '../../features/addresses/presentation/screen/addresses_screen.dart';
 import '../../features/addresses/bloc/address_bloc.dart';
 import '../../features/checkout/presentation/screen/checkout_summary_screen.dart';
 import '../../features/checkout/presentation/screen/payment_selection_screen.dart';
+import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -48,6 +49,7 @@ class AppRoutes {
   static const String addresses = '/addresses';
   static const String checkoutSummary = '/checkout-summary';
   static const String paymentSelection = '/payment-selection';
+  static const String affiliateRegister = '/affiliate-register';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -64,8 +66,8 @@ final GoRouter appRouter = GoRouter(
       name: 'dashboard',
       builder: (BuildContext context, GoRouterState state) {
         final Map<String, String> params = state.uri.queryParameters;
-        final int? initialTab = params['tab'] != null 
-            ? int.tryParse(params['tab']!) 
+        final int? initialTab = params['tab'] != null
+            ? int.tryParse(params['tab']!)
             : null;
         return DashboardScreen(initialTab: initialTab);
       },
@@ -213,6 +215,14 @@ final GoRouter appRouter = GoRouter(
       name: 'paymentSelection',
       builder: (BuildContext context, GoRouterState state) =>
           const PaymentSelectionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.affiliateRegister,
+      name: 'affiliateRegister',
+      builder: (BuildContext context, GoRouterState state) {
+        final onSuccess = state.extra as VoidCallback?;
+        return AffiliateRegisterScreen(onRegistrationSuccess: onSuccess);
+      },
     ),
   ],
 );

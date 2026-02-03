@@ -16,6 +16,8 @@ import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
+import 'package:commercepal/features/affiliate_register/presentation/widgets/affiliate_registration_modal.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
@@ -42,10 +44,10 @@ class ProfileContent extends StatelessWidget {
             final cart = cartState is CartLoaded
                 ? cartState.cart
                 : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
+                ? cartState.cart
+                : cartState is CartItemUpdated
+                ? cartState.cart
+                : (cartState as CartItemDeleted).cart;
             cartCount = cart.totalItems;
           }
 
@@ -80,110 +82,112 @@ class ProfileContent extends StatelessWidget {
               ),
             ),
             body: BlocListener<ProfileBloc, ProfileState>(
-          listener: (context, state) {
-            if (state is ProfileError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          child: BlocBuilder<ProfileBloc, ProfileState>(
-            builder: (context, state) {
-              if (state is ProfileLoading && state is! ProfileLoaded) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              listener: (context, state) {
+                if (state is ProfileError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: BlocBuilder<ProfileBloc, ProfileState>(
+                builder: (context, state) {
+                  if (state is ProfileLoading && state is! ProfileLoaded) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-              final profile = state is ProfileLoaded ? state.profile : null;
+                  final profile = state is ProfileLoaded ? state.profile : null;
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<ProfileBloc>().add(ProfileRefreshRequested());
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      // Profile Title
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          Spacing.lg,
-                          Spacing.lg,
-                          Spacing.lg,
-                          Spacing.md,
-                        ),
-                        child: Text(
-                          LocalizationService.t(context, 'profile.title'),
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                        ),
-                      ),
-                      // Search Bar below title
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.lg,
-                        ),
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<ProfileBloc>().add(
+                        ProfileRefreshRequested(),
+                      );
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          // Profile Title
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              Spacing.lg,
+                              Spacing.lg,
+                              Spacing.lg,
+                              Spacing.md,
+                            ),
+                            child: Text(
+                              LocalizationService.t(context, 'profile.title'),
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                            ),
                           ),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: LocalizationService.t(
-                                context,
-                                'profile.searchPlaceholder',
+                          // Search Bar below title
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.lg,
+                            ),
+                            child: Container(
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              hintStyle: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              prefixIcon: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Icon(
-                                  Icons.search,
-                                  color: Colors.grey.shade700,
-                                  size: 20,
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: LocalizationService.t(
+                                    context,
+                                    'profile.searchPlaceholder',
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  prefixIcon: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Icon(
+                                      Icons.search,
+                                      color: Colors.grey.shade700,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: Spacing.xs,
+                                    vertical: Spacing.sm,
+                                  ),
+                                  isDense: true,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.xs,
-                                vertical: Spacing.sm,
-                              ),
-                              isDense: true,
-                            ),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: Spacing.lg),
+                          // User Info Card
+                          _buildUserInfoCard(context, profile),
+                          const SizedBox(height: Spacing.lg),
+                          // Profile Menu Items
+                          _buildMenuItems(context),
+                          const SizedBox(height: Spacing.xl),
+                        ],
                       ),
-                      const SizedBox(height: Spacing.lg),
-                      // User Info Card
-                      _buildUserInfoCard(context, profile),
-                      const SizedBox(height: Spacing.lg),
-                      // Profile Menu Items
-                      _buildMenuItems(context),
-                      const SizedBox(height: Spacing.xl),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+                    ),
+                  );
+                },
+              ),
+            ),
           );
         },
       ),
@@ -296,7 +300,37 @@ class ProfileContent extends StatelessWidget {
   }
 
   Widget _buildMenuItems(BuildContext context) {
+    final state = context.read<ProfileBloc>().state;
+    final isAffiliate =
+        state is ProfileLoaded && state.affiliateProfile != null;
+
     final List<_MenuItem> menuItems = <_MenuItem>[
+      if (isAffiliate)
+        _MenuItem(
+          icon: Icons.dashboard_outlined,
+          title: LocalizationService.t(context, 'affiliate.affiliateDashboard'),
+          onTap: () async {
+            final uri = Uri.parse(
+              'https://affiliate.commercepal.com/auth/login',
+            );
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+        )
+      else
+        _MenuItem(
+          icon: Icons.star_outline,
+          title: LocalizationService.t(context, 'affiliate.becomeAffiliate'),
+          onTap: () {
+            AffiliateRegistrationModal.show(
+              context,
+              onRegistrationComplete: () {
+                context.read<ProfileBloc>().add(ProfileRefreshRequested());
+              },
+            );
+          },
+        ),
       _MenuItem(
         icon: Icons.person_outline,
         title: LocalizationService.t(context, 'profile.personalDetails'),
@@ -358,7 +392,9 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.flag_outlined,
         title: LocalizationService.t(context, 'profile.changeCountry'),
         onTap: () async {
-          final selectedCountry = await CountrySelectionBottomSheet.show(context);
+          final selectedCountry = await CountrySelectionBottomSheet.show(
+            context,
+          );
           if (selectedCountry != null && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -376,7 +412,9 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.attach_money_outlined,
         title: LocalizationService.t(context, 'profile.changeCurrency'),
         onTap: () async {
-          final selectedCurrency = await CurrencySelectionBottomSheet.show(context);
+          final selectedCurrency = await CurrencySelectionBottomSheet.show(
+            context,
+          );
           if (selectedCurrency != null && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

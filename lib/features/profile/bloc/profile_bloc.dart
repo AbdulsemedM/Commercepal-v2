@@ -1,8 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/features/affiliate/data/models/affiliate_profile_data.dart';
+import 'package:commercepal/features/affiliate/data/repository/affiliate_repository.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
-// import 'package:commercepal/features/profile/data/models/profile_response.dart';
 import 'package:commercepal/features/profile/data/models/update_profile_request.dart';
 import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -15,9 +16,11 @@ part 'profile_state.dart';
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ProfileBloc({
     ProfileRepository? repository,
+    AffiliateRepository? affiliateRepository,
     AuthService? authService,
     Storage? storage,
   })  : _repository = repository ?? ProfileRepository(),
+        _affiliateRepository = affiliateRepository ?? AffiliateRepository(),
         _authService = authService ?? AuthService(),
         _storage = storage ?? Storage(),
         super(ProfileInitial()) {
@@ -27,6 +30,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   final ProfileRepository _repository;
+  final AffiliateRepository _affiliateRepository;
   final AuthService _authService;
   final Storage _storage;
 
@@ -55,7 +59,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         userEmail: response.data.emailAddress,
       );
 
-      emit(ProfileLoaded(response.data));
+      AffiliateProfileData? affiliateProfile;
+      try {
+        final affiliateResponse = await _affiliateRepository.getMyProfile();
+        affiliateProfile = affiliateResponse?.data;
+      } catch (_) {
+        // User is not an affiliate or request failed
+      }
+
+      emit(ProfileLoaded(response.data, affiliateProfile: affiliateProfile));
     } catch (e) {
       String errorMessage = 'Failed to load profile. Please try again.';
 
@@ -102,7 +114,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         userEmail: response.data.emailAddress,
       );
 
-      emit(ProfileLoaded(response.data));
+      AffiliateProfileData? affiliateProfile;
+      try {
+        final affiliateResponse = await _affiliateRepository.getMyProfile();
+        affiliateProfile = affiliateResponse?.data;
+      } catch (_) {
+        // User is not an affiliate or request failed
+      }
+
+      emit(ProfileLoaded(response.data, affiliateProfile: affiliateProfile));
     } catch (e) {
       String errorMessage = 'Failed to refresh profile. Please try again.';
 
@@ -147,7 +167,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         userEmail: response.data.emailAddress,
       );
 
-      emit(ProfileLoaded(response.data));
+      final affiliateProfile = state is ProfileLoaded
+          ? (state as ProfileLoaded).affiliateProfile
+          : null;
+      emit(ProfileLoaded(response.data, affiliateProfile: affiliateProfile));
     } catch (e) {
       String errorMessage = 'Failed to update profile. Please try again.';
 

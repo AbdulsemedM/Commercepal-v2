@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
+// import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class ShimmerLoading extends StatefulWidget {

@@ -9,8 +9,9 @@ final class ProfileLoading extends ProfileState {}
 
 final class ProfileLoaded extends ProfileState {
   final ProfileData profile;
+  final AffiliateProfileData? affiliateProfile;
 
-  ProfileLoaded(this.profile);
+  ProfileLoaded(this.profile, {this.affiliateProfile});
 }
 
 final class ProfileError extends ProfileState {

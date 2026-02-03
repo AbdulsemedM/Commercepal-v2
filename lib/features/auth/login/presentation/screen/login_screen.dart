@@ -233,6 +233,51 @@ class _LoginScreenState extends State<LoginScreen> {
                             context.push(AppRoutes.signup);
                           },
                         ),
+                        const SizedBox(height: Spacing.md),
+                        // Become Affiliate Partner button
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    context.push(
+                                      AppRoutes.affiliateRegister,
+                                      extra: () {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                LocalizationService.t(
+                                                  context,
+                                                  'affiliate.registrationSuccessMessage',
+                                                ),
+                                              ),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    );
+                                  },
+                            icon: Icon(
+                              Icons.star_outline,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                            label: Text(
+                              LocalizationService.t(
+                                context,
+                                'affiliate.becomeAffiliatePartner',
+                              ),
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: Spacing.xl),
                       ],
                     ),
