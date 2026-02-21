@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 
-class ProductInfoSection extends StatelessWidget {
+class ProductInfoSection extends StatefulWidget {
   const ProductInfoSection({
     super.key,
     required this.title,
@@ -23,42 +23,58 @@ class ProductInfoSection extends StatelessWidget {
   final String keywords;
 
   @override
+  State<ProductInfoSection> createState() => _ProductInfoSectionState();
+}
+
+class _ProductInfoSectionState extends State<ProductInfoSection> {
+  bool _titleExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Product title
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
+          // Product title: 2 lines by default, tap to expand/collapse
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _titleExpanded = !_titleExpanded;
+              });
+            },
+            child: Text(
+              widget.title,
+              maxLines: _titleExpanded ? null : 2,
+              overflow: _titleExpanded ? null : TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
           ),
           const SizedBox(height: Spacing.xs),
           // Price (large red)
           Text(
-            price,
+            widget.price,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+            ),
           ),
           const SizedBox(height: Spacing.sm),
           // Rating and reviews
           Row(
             children: <Widget>[
-              _buildStarRating(rating),
+              _buildStarRating(widget.rating),
               const SizedBox(width: Spacing.xs),
               Text(
-                '($reviewCount ${reviewCount == 1 ? LocalizationService.t(context, 'productDetail.review') : LocalizationService.t(context, 'productDetail.reviews')})',
+                '(${widget.reviewCount} ${widget.reviewCount == 1 ? LocalizationService.t(context, 'productDetail.review') : LocalizationService.t(context, 'productDetail.reviews')})',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -67,14 +83,14 @@ class ProductInfoSection extends StatelessWidget {
           _buildDetailRow(
             context,
             LocalizationService.t(context, 'productDetail.code'),
-            code,
+            widget.code,
           ),
           const SizedBox(height: Spacing.xs),
           // Category
           _buildDetailRow(
             context,
             LocalizationService.t(context, 'productDetail.category'),
-            category,
+            widget.category,
             isHighlighted: true,
           ),
           const SizedBox(height: Spacing.xs),
@@ -82,7 +98,7 @@ class ProductInfoSection extends StatelessWidget {
           _buildDetailRow(
             context,
             LocalizationService.t(context, 'productDetail.keyword'),
-            keywords,
+            widget.keywords,
             isHighlighted: true,
           ),
         ],
@@ -113,9 +129,7 @@ class ProductInfoSection extends StatelessWidget {
   }) {
     return RichText(
       text: TextSpan(
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 14,
-            ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
         children: <TextSpan>[
           TextSpan(
             text: '$label: ',
@@ -133,4 +147,3 @@ class ProductInfoSection extends StatelessWidget {
     );
   }
 }
-

@@ -113,7 +113,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
-    if (_selectedVariants.isEmpty) {
+    final bool hasVariants = productDetails.variants.isNotEmpty;
+
+    // If product has variants, user must select at least one
+    if (hasVariants && _selectedVariants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one variant'),
@@ -126,18 +129,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
 
-    // Add all selected variants to cart
+    if (!hasVariants) {
+      // No variants: add product with default config (no variant selection needed)
+      final cartProduct = Product.fromProductDetails(productDetails);
+      context.read<CartBloc>().add(
+        CartAddItemRequested(
+          productId: widget.productId!,
+          configId: '',
+          quantity: _quantity,
+          currency: currency,
+          country: country,
+          product: cartProduct,
+        ),
+      );
+      return;
+    }
+
+    // Has variants: add all selected variants to cart
     for (final entry in _selectedVariants.entries) {
       final variantIndex = entry.key;
       final quantity = entry.value;
-      
+
       if (quantity > 0 && variantIndex < productDetails.variants.length) {
         final variant = productDetails.variants[variantIndex];
         final cartProduct = Product.fromProductDetails(
           productDetails,
           variantIndex: variantIndex,
         );
-        
+
         context.read<CartBloc>().add(
           CartAddItemRequested(
             productId: widget.productId!,
@@ -150,8 +169,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         );
       }
     }
-    
-    // Clear selections after adding to cart
+
     setState(() {
       _selectedVariants.clear();
     });

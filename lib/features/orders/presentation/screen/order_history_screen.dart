@@ -96,17 +96,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List<Widget>.generate(
-                  _tabs.length,
-                  (int index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.xs,
-                      ),
-                      child: _buildTab(index, _tabs[index]),
-                    );
-                  },
-                ),
+                children: List<Widget>.generate(_tabs.length, (int index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+                    child: _buildTab(index, _tabs[index]),
+                  );
+                }),
               ),
             ),
           ),
@@ -114,11 +109,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       ),
       body: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
-          print('🔵 OrderHistoryScreen: BlocBuilder rebuild - state: ${state.runtimeType}');
+          print(
+            '🔵 OrderHistoryScreen: BlocBuilder rebuild - state: ${state.runtimeType}',
+          );
           if (state is OrdersLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (state is OrdersError) {
@@ -134,20 +129,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   const SizedBox(height: Spacing.md),
                   Text(
                     state.message,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: Spacing.md),
                   ElevatedButton(
                     onPressed: () {
                       context.read<OrdersBloc>().add(
-                            OrdersLoadRequested(
-                              stageCategory: _getStageCategoryForTab(_selectedTabIndex),
-                            ),
-                          );
+                        OrdersLoadRequested(
+                          stageCategory: _getStageCategoryForTab(
+                            _selectedTabIndex,
+                          ),
+                        ),
+                      );
                     },
                     child: const Text('Retry'),
                   ),
@@ -160,9 +154,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             return _buildOrderList(state.response.content);
           }
 
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -177,10 +169,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         });
         // Reload orders with the selected filter
         context.read<OrdersBloc>().add(
-              OrdersLoadRequested(
-                stageCategory: _getStageCategoryForTab(index),
-              ),
-            );
+          OrdersLoadRequested(stageCategory: _getStageCategoryForTab(index)),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
@@ -227,10 +217,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             const SizedBox(height: Spacing.md),
             Text(
               'No orders found',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -240,10 +227,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<OrdersBloc>().add(
-              OrdersRefreshRequested(
-                stageCategory: _getStageCategoryForTab(_selectedTabIndex),
-              ),
-            );
+          OrdersRefreshRequested(
+            stageCategory: _getStageCategoryForTab(_selectedTabIndex),
+          ),
+        );
         // Wait a bit for the refresh to complete
         await Future.delayed(const Duration(milliseconds: 500));
       },
@@ -278,17 +265,38 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ? order.stageCategory.toLowerCase()
         : order.currentStage.toLowerCase();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: Spacing.md),
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    void goToOrderDetails() {
+      if (order.stageCategory.toLowerCase() == 'delivered' ||
+          order.currentStage.toLowerCase() == 'delivered') {
+        context.push('/order-summary?id=${order.orderNumber}');
+      } else {
+        context.pushNamed(
+          'orderTracking',
+          queryParameters: {
+            'id': order.orderNumber,
+            'status': status,
+          },
+          extra: order,
+        );
+      }
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: goToOrderDetails,
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: <Widget>[
-          // Product image
-          Container(
+        child: Container(
+          margin: const EdgeInsets.only(bottom: Spacing.md),
+          padding: const EdgeInsets.all(Spacing.md),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: <Widget>[
+              // Product image
+              Container(
             width: 80,
             height: 80,
             decoration: BoxDecoration(
@@ -310,11 +318,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       },
                     ),
                   )
-                : Icon(
-                    Icons.image,
-                    size: 40,
-                    color: Colors.grey.shade400,
-                  ),
+                : Icon(Icons.image, size: 40, color: Colors.grey.shade400),
           ),
           const SizedBox(width: Spacing.md),
           // Product details
@@ -361,10 +365,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 // Order number
                 Text(
                   'Order #${order.orderNumber}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: Spacing.xs),
                 // Date and total
@@ -388,29 +389,70 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ),
                   ],
                 ),
+                // Actions: Pay and Track (from API actions.canPay / actions.canTrack)
+                if (order.canPay || order.canTrack) ...[
+                  const SizedBox(height: Spacing.sm),
+                  Row(
+                    children: [
+                      if (order.canPay)
+                        Padding(
+                          padding: const EdgeInsets.only(right: Spacing.xs),
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // Prevent card tap when pressing Pay
+                              context.push(
+                                '/payment-selection?orderNumber=${order.orderNumber}',
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.sm,
+                                vertical: 4,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Pay'),
+                          ),
+                        ),
+                      if (order.canTrack)
+                        OutlinedButton(
+                          onPressed: () {
+                            // Prevent card tap when pressing Track
+                            context.pushNamed(
+                              'orderTracking',
+                              queryParameters: {
+                                'id': order.orderNumber,
+                                'status': status,
+                              },
+                              extra: order,
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.sm,
+                              vertical: 4,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Track'),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-          // Arrow icon
-          InkWell(
-            onTap: () {
-              // Check if order is delivered
-              if (order.stageCategory.toLowerCase() == 'delivered' ||
-                  status == 'delivered') {
-                context.push('/order-summary?id=${order.orderNumber}');
-              } else {
-                context.push(
-                  '/order-tracking?id=${order.orderNumber}&status=$status',
-                );
-              }
-            },
-            child: const Icon(
-              Icons.chevron_right,
-              color: Colors.grey,
-              size: 24,
-            ),
+              // Chevron (same as card tap: go to details)
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey,
+                size: 24,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -457,4 +499,3 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 }
-

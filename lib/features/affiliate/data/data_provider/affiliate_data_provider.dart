@@ -46,11 +46,12 @@ class AffiliateDataProvider {
     required String deviceId,
   }) async {
     try {
+      final trimmedCode = referralCode.trim();
       await _apiService.post<Map<String, dynamic>>(
         _registerFromCustomerEndpoint,
         data: {
           'commissionType': commissionType,
-          'referralCode': referralCode,
+          if (trimmedCode.isNotEmpty) 'referralCode': trimmedCode,
           'registrationChannel': registrationChannel,
           'deviceId': deviceId,
         },

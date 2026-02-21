@@ -1,6 +1,36 @@
 import 'order_item.dart';
 import 'delivery_address.dart';
 
+/// Single entry from order detail API orderStageHistory.
+class OrderStageHistoryEntry {
+  final String stage;
+  final String stageLabel;
+  final String previousStage;
+  final String previousStageLabel;
+  final String enteredAt;
+  final String changedBy;
+
+  OrderStageHistoryEntry({
+    required this.stage,
+    required this.stageLabel,
+    required this.previousStage,
+    required this.previousStageLabel,
+    required this.enteredAt,
+    required this.changedBy,
+  });
+
+  factory OrderStageHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return OrderStageHistoryEntry(
+      stage: json['stage'] as String? ?? '',
+      stageLabel: json['stageLabel'] as String? ?? '',
+      previousStage: json['previousStage'] as String? ?? '',
+      previousStageLabel: json['previousStageLabel'] as String? ?? '',
+      enteredAt: json['enteredAt'] as String? ?? '',
+      changedBy: json['changedBy'] as String? ?? '',
+    );
+  }
+}
+
 class Order {
   final String orderNumber;
   final String orderDate;
@@ -27,6 +57,8 @@ class Order {
   final String paymentStatusLabel;
   final bool hasException;
   final String exceptionMessage;
+  final String? paidAt;
+  final List<OrderStageHistoryEntry>? orderStageHistory;
 
   Order({
     required this.orderNumber,
@@ -54,6 +86,8 @@ class Order {
     required this.paymentStatusLabel,
     required this.hasException,
     required this.exceptionMessage,
+    this.paidAt,
+    this.orderStageHistory,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -62,34 +96,63 @@ class Order {
         .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
         .toList();
 
+    // New API: orderedAt (ISO date), status, actions{ canPay, canTrack }
+    final orderedAt = json['orderedAt'] as String?;
+    final orderDate = json['orderDate'] as String? ?? orderedAt ?? '';
+    final status = json['status'] as String? ?? '';
+    final actions = json['actions'] as Map<String, dynamic>?;
+    final canPay = json['canPay'] as bool? ?? (actions?['canPay'] == true);
+    final canTrack = json['canTrack'] as bool? ?? (actions?['canTrack'] == true);
+
+    // Detail API: payment { status, paidAt }
+    final payment = json['payment'] as Map<String, dynamic>?;
+    final paymentStatus = payment?['status'] as String? ?? json['paymentStatus'] as String? ?? '';
+    final paidAt = payment?['paidAt'] as String?;
+
+    // Detail API: summary { subtotal, delivery, discount, total }
+    final summary = json['summary'] as Map<String, dynamic>?;
+    final subtotalVal = summary?['subtotal'] as num? ?? json['subtotal'] as num?;
+    final totalVal = summary?['total'] as num? ?? json['totalAmount'] as num?;
+    final subtotal = (subtotalVal != null) ? subtotalVal.toDouble() : 0.0;
+    final totalAmount = (totalVal != null) ? totalVal.toDouble() : 0.0;
+
+    // Detail API: orderStageHistory
+    final historyJson = json['orderStageHistory'] as List<dynamic>? ?? [];
+    final orderStageHistory = historyJson
+        .map((e) => OrderStageHistoryEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final orderStageHistoryOrNull = orderStageHistory.isEmpty ? null : orderStageHistory;
+
     return Order(
-      orderNumber: json['orderNumber'] as String,
-      orderDate: json['orderDate'] as String,
-      orderId: json['orderId'] as int,
-      currentStage: json['currentStage'] as String? ?? '',
-      stageLabel: json['stageLabel'] as String? ?? '',
+      orderNumber: json['orderNumber'] as String? ?? '',
+      orderDate: orderDate,
+      orderId: json['orderId'] as int? ?? 0,
+      currentStage: json['currentStage'] as String? ?? status,
+      stageLabel: json['stageLabel'] as String? ?? status,
       stageCategory: json['stageCategory'] as String? ?? 'ALL',
-      statusDescription: json['statusDescription'] as String? ?? '',
+      statusDescription: json['statusDescription'] as String? ?? status,
       items: items,
-      totalItemsCount: json['totalItemsCount'] as int? ?? 0,
-      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
-      currency: json['currency'] as String? ?? '',
+      totalItemsCount: json['totalItemsCount'] as int? ?? items.length,
+      subtotal: subtotal,
+      totalAmount: totalAmount,
+      currency: json['currency'] as String? ?? 'ETB',
       deliveryAddress: DeliveryAddress.fromJson(
         json['deliveryAddress'] as Map<String, dynamic>? ?? {},
       ),
       storeName: json['storeName'] as String? ?? '',
       storeIconUrl: json['storeIconUrl'] as String? ?? '',
       canConfirmReceived: json['canConfirmReceived'] as bool? ?? false,
-      canTrack: json['canTrack'] as bool? ?? false,
+      canTrack: canTrack,
       canCancel: json['canCancel'] as bool? ?? false,
       canReturn: json['canReturn'] as bool? ?? false,
-      canPay: json['canPay'] as bool? ?? false,
+      canPay: canPay,
       canReview: json['canReview'] as bool? ?? false,
-      paymentStatus: json['paymentStatus'] as String? ?? '',
-      paymentStatusLabel: json['paymentStatusLabel'] as String? ?? '',
+      paymentStatus: paymentStatus,
+      paymentStatusLabel: json['paymentStatusLabel'] as String? ?? paymentStatus,
       hasException: json['hasException'] as bool? ?? false,
       exceptionMessage: json['exceptionMessage'] as String? ?? '',
+      paidAt: paidAt,
+      orderStageHistory: orderStageHistoryOrNull,
     );
   }
 
@@ -119,5 +182,16 @@ class Order {
         'paymentStatusLabel': paymentStatusLabel,
         'hasException': hasException,
         'exceptionMessage': exceptionMessage,
+        if (paidAt != null) 'paidAt': paidAt,
+        if (orderStageHistory != null)
+          'orderStageHistory':
+              orderStageHistory!.map((e) => {
+                    'stage': e.stage,
+                    'stageLabel': e.stageLabel,
+                    'previousStage': e.previousStage,
+                    'previousStageLabel': e.previousStageLabel,
+                    'enteredAt': e.enteredAt,
+                    'changedBy': e.changedBy,
+                  }).toList(),
       };
 }

@@ -21,17 +21,20 @@ class DeliveryAddress {
     required this.formattedAddress,
   });
 
-  factory DeliveryAddress.fromJson(Map<String, dynamic> json) => DeliveryAddress(
-        fullName: json['fullName'] as String? ?? '',
-        streetAddress: json['streetAddress'] as String? ?? '',
-        city: json['city'] as String? ?? '',
-        subcity: json['subcity'] as String? ?? '',
-        region: json['region'] as String? ?? '',
-        phoneNumber: json['phoneNumber'] as String? ?? '',
-        postalCode: json['postalCode'] as String? ?? '',
-        country: json['country'] as String? ?? '',
-        formattedAddress: json['formattedAddress'] as String? ?? '',
-      );
+  factory DeliveryAddress.fromJson(Map<String, dynamic> json) {
+    final fullAddress = json['fullAddress'] as String? ?? json['formattedAddress'] as String? ?? '';
+    return DeliveryAddress(
+      fullName: json['fullName'] as String? ?? '',
+      streetAddress: json['streetAddress'] as String? ?? fullAddress,
+      city: json['city'] as String? ?? '',
+      subcity: json['subcity'] as String? ?? '',
+      region: json['region'] as String? ?? '',
+      phoneNumber: json['phoneNumber'] as String? ?? json['phone'] as String? ?? '',
+      postalCode: json['postalCode'] as String? ?? '',
+      country: json['country'] as String? ?? '',
+      formattedAddress: fullAddress.isNotEmpty ? fullAddress : (json['formattedAddress'] as String? ?? ''),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'fullName': fullName,

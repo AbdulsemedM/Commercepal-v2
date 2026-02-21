@@ -21,6 +21,8 @@ import '../../features/orders/presentation/screen/order_history_screen.dart';
 import '../../features/orders/presentation/screen/order_summary_screen.dart';
 import '../../features/orders/presentation/screen/order_tracking_screen.dart';
 import '../../features/orders/bloc/orders_bloc.dart';
+import '../../features/orders/bloc/order_tracking_cubit.dart';
+import '../../features/orders/data/models/order.dart';
 import '../../features/contact_us/contact_us_page.dart';
 import '../../features/addresses/presentation/screen/addresses_screen.dart';
 import '../../features/addresses/bloc/address_bloc.dart';
@@ -184,9 +186,14 @@ final GoRouter appRouter = GoRouter(
       name: 'orderTracking',
       builder: (BuildContext context, GoRouterState state) {
         final Map<String, String> params = state.uri.queryParameters;
-        return OrderTrackingScreen(
-          orderId: params['id'],
-          orderStatus: params['status'],
+        final Order? order = state.extra is Order ? state.extra as Order : null;
+        return BlocProvider(
+          create: (_) => OrderTrackingCubit(),
+          child: OrderTrackingScreen(
+            order: order,
+            orderId: params['id'],
+            orderStatus: params['status'],
+          ),
         );
       },
     ),

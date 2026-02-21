@@ -1,215 +1,102 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
+import 'package:commercepal/features/orders/data/models/order.dart';
+import 'package:commercepal/features/orders/data/models/order_item.dart';
+import 'package:intl/intl.dart';
 
-class OrderTrackingScreen extends StatelessWidget {
+class OrderTrackingScreen extends StatefulWidget {
   const OrderTrackingScreen({
     super.key,
+    this.order,
     this.orderId,
     this.orderStatus,
   });
 
+  /// When coming from order history, pass the full [Order] to avoid an extra API call.
+  final Order? order;
   final String? orderId;
-  final String? orderStatus; // 'pending', 'confirmed', 'shipped', 'delivered'
+  final String? orderStatus;
+
+  @override
+  State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
+}
+
+class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<OrderTrackingCubit>();
+      if (widget.order != null) {
+        cubit.setOrder(widget.order!);
+      } else if (widget.orderId != null && widget.orderId!.isNotEmpty) {
+        cubit.loadOrderByOrderNumber(widget.orderId!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Determine current status index (0: placed, 1: pending, 2: waiting, 3: shipped, 4: delivered)
-    final int currentStatusIndex = _getCurrentStatusIndex();
-
     return Scaffold(
       backgroundColor: AppColors.lightGrey,
       body: Column(
         children: <Widget>[
-          // Dark magenta background extending behind status bar
-          Container(
-            decoration: const BoxDecoration(color: AppColors.primary),
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    // Back button
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    // App logo
-                    Image.asset(
-                      'assets/images/app_icon.png',
-                      width: 40,
-                      height: 40,
-                      errorBuilder: (BuildContext context, Object error,
-                          StackTrace? stackTrace) {
-                        return Container(
-                          width: 40,
-                          height: 40,
-                          decoration: const BoxDecoration(
-                            color: AppColors.secondary,
-                            shape: BoxShape.circle,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Content area
+          _buildAppBar(context),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Order Placed section
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      // Status indicator
-                      Column(
+            child: BlocBuilder<OrderTrackingCubit, OrderTrackingState>(
+              builder: (context, state) {
+                if (state is OrderTrackingLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
+                }
+                if (state is OrderTrackingError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(Spacing.lg),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 20,
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                          const SizedBox(height: Spacing.sm),
+                          const SizedBox(height: Spacing.lg),
+                          TextButton.icon(
+                            onPressed: () {
+                              if (widget.orderId != null) {
+                                context
+                                    .read<OrderTrackingCubit>()
+                                    .loadOrderByOrderNumber(widget.orderId!);
+                              }
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                          ),
                         ],
                       ),
-                      const SizedBox(width: Spacing.sm),
-                      // Status text
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              'Order Placed',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.xs),
-                            Text(
-                              'Tuesday, 28 May 2025',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Product card
-                      Container(
-                        width: 140,
-                        padding: const EdgeInsets.all(Spacing.sm),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            // Product image placeholder
-                            Container(
-                              width: double.infinity,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.image,
-                                size: 40,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.xs),
-                            const Text(
-                              'Apple iPhone 17 Pro Max',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              '1TB',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Price \$ 1,500',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'QTY 1',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.xl),
-                  // Timeline
-                  _buildTimeline(currentStatusIndex),
-                ],
-              ),
+                    ),
+                  );
+                }
+                if (state is OrderTrackingLoaded) {
+                  return _buildContent(context, state.order);
+                }
+                return const SizedBox.shrink();
+              },
             ),
           ),
         ],
@@ -217,49 +104,284 @@ class OrderTrackingScreen extends StatelessWidget {
     );
   }
 
-  int _getCurrentStatusIndex() {
-    switch (orderStatus?.toLowerCase()) {
-      case 'pending':
-      case 'pending_confirmation':
+  Widget _buildAppBar(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(color: AppColors.primary),
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.md,
+            vertical: Spacing.sm,
+          ),
+          child: Row(
+            children: <Widget>[
+              InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Image.asset(
+                'assets/images/app_icon.png',
+                width: 40,
+                height: 40,
+                errorBuilder:
+                    (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: AppColors.secondary,
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, Order order) {
+    final currentStatusIndex = _getCurrentStatusIndex(order);
+    final statusLabel = order.stageLabel.isNotEmpty
+        ? order.stageLabel
+        : _defaultStageLabel(currentStatusIndex);
+    final orderDateFormatted = _formatOrderDate(order.orderDate);
+    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(Spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                ],
+              ),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      statusLabel,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      orderDateFormatted,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    if (order.orderNumber.isNotEmpty) ...[
+                      const SizedBox(height: Spacing.xs),
+                      Text(
+                        'Order #${order.orderNumber}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (firstItem != null)
+                _buildProductCard(firstItem, order.currency),
+            ],
+          ),
+          const SizedBox(height: Spacing.xl),
+          _buildTimeline(currentStatusIndex),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(OrderItem item, String currency) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(Spacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: double.infinity,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: item.productImageUrl.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.productImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.image,
+                        size: 40,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  )
+                : Icon(Icons.image, size: 40, color: Colors.grey.shade400),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            item.productName,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (item.productConfiguration.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              item.productConfiguration,
+              style: const TextStyle(fontSize: 11, color: Colors.black87),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: 2),
+          Text(
+            '${currency} ${item.unitPrice.toStringAsFixed(2)}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'QTY ${item.quantity}',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _getCurrentStatusIndex(Order order) {
+    final category = order.stageCategory.toUpperCase();
+    switch (category) {
+      case 'PENDING_CONFIRMATION':
+      case 'PENDING':
         return 1;
-      case 'confirmed':
-      case 'waiting':
+      case 'CONFIRMED':
+      case 'ONGOING':
+      case 'WAITING':
         return 2;
-      case 'shipped':
+      case 'SHIPPED':
         return 3;
-      case 'delivered':
+      case 'DELIVERED':
         return 4;
       default:
-        return 1; // Default to pending confirmation
+        return 1;
+    }
+  }
+
+  String _defaultStageLabel(int index) {
+    const labels = <String>[
+      'Order Placed',
+      'Pending Confirmation',
+      'Waiting to be shipped',
+      'Shipped',
+      'Delivered',
+    ];
+    if (index >= 0 && index < labels.length) return labels[index];
+    return 'Order Placed';
+  }
+
+  String _formatOrderDate(String orderDate) {
+    if (orderDate.isEmpty) return '';
+    try {
+      final parsed = DateTime.tryParse(orderDate);
+      if (parsed != null) {
+        return DateFormat('EEEE, d MMM y').format(parsed);
+      }
+      return orderDate;
+    } catch (_) {
+      return orderDate;
     }
   }
 
   Widget _buildTimeline(int currentIndex) {
     final List<_TimelineItem> items = <_TimelineItem>[
-      _TimelineItem(
-        title: 'Order Placed',
-        tips: '',
-        isCompleted: true,
-      ),
-      _TimelineItem(
+      const _TimelineItem(title: 'Order Placed', tips: '', isCompleted: true),
+      const _TimelineItem(
         title: 'Pending Confirmation',
         tips:
             'Your order is awaiting a confirmation from the vendor in order to be shipped to your address',
         isCompleted: false,
       ),
-      _TimelineItem(
+      const _TimelineItem(
         title: 'Waiting to be shipped',
         tips:
             'Once your order has been accepted it will be packaged and shipped to your address',
         isCompleted: false,
       ),
-      _TimelineItem(
+      const _TimelineItem(
         title: 'Shipped',
         tips:
             'Once your order has been packaged it will be dispatched to your delivery address this may take a while depending on your address',
         isCompleted: false,
       ),
-      _TimelineItem(
+      const _TimelineItem(
         title: 'Delivered',
         tips:
             'Once your order has been shipped and you have received it the delivery will be complete',
@@ -270,127 +392,20 @@ class OrderTrackingScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // Timeline line
         Column(
           children: <Widget>[
-            // First completed circle
-            Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-            // Line between circles
-            Container(
-              width: 2,
-              height: 60,
-              color: currentIndex > 1
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-            ),
-            // Second circle (current)
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: currentIndex >= 1
-                    ? AppColors.primary
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: currentIndex >= 1
-                      ? AppColors.primary
-                      : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-            ),
-            // Line
-            Container(
-              width: 2,
-              height: 60,
-              color: currentIndex > 2
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-            ),
-            // Third circle
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: currentIndex >= 2
-                    ? AppColors.primary
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: currentIndex >= 2
-                      ? AppColors.primary
-                      : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-            ),
-            // Line
-            Container(
-              width: 2,
-              height: 60,
-              color: currentIndex > 3
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-            ),
-            // Fourth circle
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: currentIndex >= 3
-                    ? AppColors.primary
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: currentIndex >= 3
-                      ? AppColors.primary
-                      : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-            ),
-            // Line
-            Container(
-              width: 2,
-              height: 60,
-              color: currentIndex > 4
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-            ),
-            // Fifth circle
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: currentIndex >= 4
-                    ? AppColors.primary
-                    : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: currentIndex >= 4
-                      ? AppColors.primary
-                      : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-            ),
+            _timelineCircle(true),
+            _timelineLine(currentIndex > 1),
+            _timelineCircle(currentIndex >= 1),
+            _timelineLine(currentIndex > 2),
+            _timelineCircle(currentIndex >= 2),
+            _timelineLine(currentIndex > 3),
+            _timelineCircle(currentIndex >= 3),
+            _timelineLine(currentIndex > 4),
+            _timelineCircle(currentIndex >= 4),
           ],
         ),
         const SizedBox(width: Spacing.md),
-        // Timeline content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,6 +422,32 @@ class OrderTrackingScreen extends StatelessWidget {
     );
   }
 
+  Widget _timelineCircle(bool filled) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: filled ? AppColors.primary : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: filled ? AppColors.primary : Colors.grey.shade300,
+          width: 2,
+        ),
+      ),
+      child: filled
+          ? const Icon(Icons.check, color: Colors.white, size: 16)
+          : null,
+    );
+  }
+
+  Widget _timelineLine(bool filled) {
+    return Container(
+      width: 2,
+      height: 60,
+      color: filled ? AppColors.primary : Colors.grey.shade300,
+    );
+  }
+
   Widget _buildTimelineItem(
     _TimelineItem item,
     int index,
@@ -418,9 +459,7 @@ class OrderTrackingScreen extends StatelessWidget {
     final bool isCompleted = index < currentIndex;
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: isLast ? 0 : Spacing.lg,
-      ),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : Spacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -462,4 +501,3 @@ class _TimelineItem {
   final String tips;
   final bool isCompleted;
 }
-
