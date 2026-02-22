@@ -16,6 +16,11 @@ class AuthInterceptor extends Interceptor {
   final Storage _storage;
   RefreshTokenRepository? _refreshTokenRepository;
   final Dio? _dio;
+  
+  RefreshTokenRepository get refreshTokenRepository {
+    _refreshTokenRepository ??= RefreshTokenRepository();
+    return _refreshTokenRepository!;
+  }
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
 
