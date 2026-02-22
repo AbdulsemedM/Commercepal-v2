@@ -10,11 +10,11 @@ class ProfileDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/customers/profile';
+  static const String _profileEndpoint = '/api/v1/customers/me';
 
   Future<ProfileResponse> getProfile() async {
     try {
-      final response = await _apiService.get<Map<String, dynamic>>(_endpoint);
+      final response = await _apiService.get<Map<String, dynamic>>(_profileEndpoint);
 
       if (response.data == null) {
         throw DioException(
@@ -42,7 +42,7 @@ class ProfileDataProvider {
   Future<ProfileResponse> updateProfile(UpdateProfileRequest request) async {
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
-        '/api/v1/customers/me',
+        _profileEndpoint,
         data: request.toJson(),
       );
 

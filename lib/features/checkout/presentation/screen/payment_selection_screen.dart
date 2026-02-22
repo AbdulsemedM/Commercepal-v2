@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
@@ -62,15 +64,62 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   bool _isPlacingOrder = false;
   bool _isLoadingPaymentMethods = true;
   String? _errorMessage;
+  String? _cartCurrency; // Cart currency for filtering payment methods (e.g. ETB, USD)
   final CheckoutRepository _checkoutRepository = CheckoutRepository();
   final PaymentMethodsRepository _paymentMethodsRepository =
       PaymentMethodsRepository();
   List<_PaymentMethodCategory> _paymentMethodCategories = [];
+  bool _paymentMethodsLoadStarted = false;
+  final TextEditingController _paymentPhoneController =
+      TextEditingController(text: '9');
+  String? _paymentPhoneNumber;
 
   @override
   void initState() {
     super.initState();
-    _loadPaymentMethods();
+  }
+
+  @override
+  void dispose() {
+    _paymentPhoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Read cart currency from route extra here (not in initState) because
+    // GoRouterState.of(context) uses inherited widgets.
+    if (_cartCurrency == null) {
+      final extra = GoRouterState.of(context).extra;
+      if (extra is Map<String, dynamic>) {
+        final cart = extra['cart'];
+        if (cart is Cart) {
+          _cartCurrency = cart.currency;
+        }
+      }
+    }
+    if (!_paymentMethodsLoadStarted) {
+      _paymentMethodsLoadStarted = true;
+      _loadPaymentMethods();
+    }
+  }
+
+  bool _currencyMatches(String? methodCurrency) {
+    if (_cartCurrency == null || methodCurrency == null) return true;
+    return _cartCurrency!.toUpperCase() == methodCurrency.toUpperCase();
+  }
+
+  _SelectablePaymentMethod? _getSelectedMethod() {
+    if (_selectedPaymentMethodId == null) return null;
+    for (final category in _paymentMethodCategories) {
+      try {
+        return category.methods.firstWhere(
+          (m) => m.id == _selectedPaymentMethodId,
+        );
+      } catch (_) {}
+    }
+    return null;
   }
 
   Future<void> _loadPaymentMethods() async {
@@ -82,7 +131,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     try {
       final response = await _paymentMethodsRepository.getPaymentMethods();
 
-      // Build payment methods structure grouped by categories
+      // Build payment methods structure grouped by categories, filtered by cart currency
       final List<_PaymentMethodCategory> categories = [];
 
       for (final paymentMethod in response.data) {
@@ -90,22 +139,26 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
           if (item.hasVariants) {
-            // If item has variants, show only the parent item
+            // Filter variants by cart currency; only show method if at least one variant matches
+            final matchingVariants = item.paymentMethodItemResponses
+                .where((v) => _currencyMatches(v.currency))
+                .toList();
+            if (matchingVariants.isEmpty) continue;
             categoryMethods.add(
               _SelectablePaymentMethod(
                 id: item.itemCode,
                 displayName: item.displayName,
                 iconUrl: item.iconUrl,
                 providerCode: paymentMethod.code,
-                variantCode:
-                    item.itemCode, // Will be updated when variant is selected
+                variantCode: item.itemCode,
                 currency: item.currency,
                 hasVariants: true,
-                variants: item.paymentMethodItemResponses,
+                variants: matchingVariants,
               ),
             );
           } else {
-            // If no variants, use the item itself
+            // No variants: only show if method currency matches cart currency
+            if (!_currencyMatches(item.currency)) continue;
             categoryMethods.add(
               _SelectablePaymentMethod(
                 id: item.itemCode,
@@ -236,8 +289,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         throw Exception('Selected payment method not found');
       }
 
-      // Use selected variant code if available, otherwise use method's variant code
-      final variantCode = _selectedVariantCode ?? selectedMethod.variantCode;
+      // paymentProviderCode = payment item code (itemCode)
+      // paymentProviderVariantCode = variant code only when the payment has a variant
+      final paymentItemCode = selectedMethod.id; // id is item.itemCode (payment item code)
+      final variantCode = selectedMethod.hasVariants && _selectedVariantCode != null
+          ? _selectedVariantCode!
+          : '';
 
       // Convert cart items to checkout items
       final checkoutItems = cart.items.map((item) {
@@ -260,7 +317,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         currency: cart.currency,
         deliveryAddressId: addressId,
         items: checkoutItems,
-        paymentProviderCode: selectedMethod.providerCode,
+        paymentProviderCode: paymentItemCode,
         paymentProviderVariantCode: variantCode,
         paymentAccount: isMobileMoney && phoneNumber != null
             ? phoneNumber
@@ -275,21 +332,18 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           _isPlacingOrder = false;
         });
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response.message ?? 'Order placed successfully!'),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        // Navigate back to dashboard/home
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            context.go(AppRoutes.dashboard);
-          }
-        });
+        // Show order placed screen with backend response data and payment
+        // codes (for retry payment if needed)
+        if (context.mounted) {
+          context.go(
+            AppRoutes.orderPlaced,
+            extra: <String, dynamic>{
+              'checkoutResponse': response,
+              'paymentProviderCode': paymentItemCode,
+              'paymentProviderVariantCode': variantCode,
+            },
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -297,34 +351,41 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           _isPlacingOrder = false;
         });
 
-        // Extract error message
+        // Extract error message, preferring API response body when available
         String errorMessage = 'Failed to place order. Please try again.';
-        if (e.toString().contains('401') ||
-            e.toString().contains('Unauthorized')) {
-          errorMessage = 'Session expired. Please login again.';
-        } else if (e.toString().contains('400') ||
-            e.toString().contains('Bad Request')) {
-          errorMessage =
-              'Invalid order data. Please check your cart and try again.';
-        } else if (e.toString().contains('500') ||
-            e.toString().contains('Server Error')) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (e.toString().isNotEmpty) {
-          // Try to extract meaningful error message
-          final errorStr = e.toString();
-          if (errorStr.contains('Exception:')) {
-            errorMessage = errorStr.split('Exception:').last.trim();
-          } else {
-            errorMessage = errorStr;
+        if (e is DioException && e.response?.data is Map<String, dynamic>) {
+          final data = e.response!.data! as Map<String, dynamic>;
+          final apiMessage = data['message'] as String?;
+          if (apiMessage != null && apiMessage.isNotEmpty) {
+            errorMessage = apiMessage;
+          }
+        }
+        if (errorMessage == 'Failed to place order. Please try again.') {
+          if (e.toString().contains('401') ||
+              e.toString().contains('Unauthorized')) {
+            errorMessage = 'Session expired. Please login again.';
+          } else if (e.toString().contains('400') ||
+              e.toString().contains('Bad Request')) {
+            errorMessage =
+                'Invalid order data. Please check your cart and try again.';
+          } else if (e.toString().contains('500') ||
+              e.toString().contains('Server Error')) {
+            errorMessage = 'Server error. Please try again later.';
+          } else if (e.toString().isNotEmpty) {
+            final errorStr = e.toString();
+            if (errorStr.contains('Exception:')) {
+              errorMessage = errorStr.split('Exception:').last.trim();
+            } else {
+              errorMessage = errorStr;
+            }
           }
         }
 
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
             backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -349,6 +410,15 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         body: const Center(child: Text('Missing checkout data')),
       );
     }
+
+    final selectedMethod = _getSelectedMethod();
+    final requiresPhone = selectedMethod != null &&
+        ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode);
+    final isETB = cart.currency.toUpperCase() == 'ETB';
+    final showPhoneField = requiresPhone && isETB;
+    final effectivePhone = showPhoneField
+        ? (_paymentPhoneNumber ?? phoneNumber)
+        : phoneNumber;
 
     return Scaffold(
       backgroundColor: AppColors.lightGrey,
@@ -490,6 +560,78 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               ],
             ),
           ),
+          // Phone number for payment (ETB mobile money only)
+          if (showPhoneField)
+            Container(
+              padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Mobile number for payment',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                  IntlPhoneField(
+                    controller: _paymentPhoneController,
+                    initialCountryCode: 'ET',
+                    flagsButtonPadding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.sm,
+                    ),
+                    dropdownIconPosition: IconPosition.trailing,
+                    decoration: InputDecoration(
+                      hintText: '912345678',
+                      hintStyle: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Colors.red, width: 1),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Colors.red, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.md,
+                        vertical: Spacing.md,
+                      ),
+                    ),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    onChanged: (phone) {
+                      setState(() {
+                        _paymentPhoneNumber = phone.completeNumber.isNotEmpty
+                            ? phone.completeNumber
+                            : null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
           // Place Order Button
           Container(
             padding: const EdgeInsets.all(Spacing.md),
@@ -507,11 +649,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed:
-                      (_selectedPaymentMethodId == null || _isPlacingOrder)
+                  onPressed: (_selectedPaymentMethodId == null ||
+                          _isPlacingOrder ||
+                          (showPhoneField &&
+                              (effectivePhone == null ||
+                                  effectivePhone.isEmpty)))
                       ? null
                       : () {
-                          _placeOrder(cart, addressId, phoneNumber);
+                          _placeOrder(cart, addressId, effectivePhone);
                         },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,

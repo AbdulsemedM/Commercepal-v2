@@ -43,8 +43,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       provider: widget.providerId,
       page: 0,
       size: 36,
-      country: 'ET',
-      currency: 'USD',
     );
 
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
@@ -52,6 +50,12 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   void _navigateToTab(BuildContext context, int tabIndex) {
     NavigationService.instance.navigateToDashboardTab(context, tabIndex);
+  }
+
+  /// True when opened from subcategories (query + provider in URL).
+  bool _isFromSubcategories() {
+    return (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) &&
+        (widget.providerId != null && widget.providerId!.isNotEmpty);
   }
 
   @override
@@ -127,59 +131,60 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             ),
         body: Column(
           children: <Widget>[
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 15,
-                  ),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Icon(
-                      Icons.search,
+            // Search bar (hidden when coming from subcategories with query + provider)
+            if (!_isFromSubcategories())
+              Padding(
+                padding: const EdgeInsets.all(Spacing.md),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search products...',
+                    hintStyle: TextStyle(
                       color: Colors.grey.shade500,
-                      size: 20,
+                      fontSize: 15,
+                    ),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade500,
+                        size: 20,
+                      ),
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.sm,
+                      vertical: Spacing.sm,
                     ),
                   ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.sm,
-                    vertical: Spacing.sm,
-                  ),
+                  onSubmitted: (_) => _performSearch(),
+                  onChanged: (_) => setState(() {}),
                 ),
-                onSubmitted: (_) => _performSearch(),
-                onChanged: (_) => setState(() {}),
               ),
-            ),
             // Results
             Expanded(
               child: BlocBuilder<ProductSearchBloc, ProductSearchState>(

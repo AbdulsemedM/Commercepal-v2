@@ -26,7 +26,22 @@ class CartRepository {
 
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
     if (_authService.isLoggedIn) {
-      return await _dataProvider.addToCart(request);
+      final storage = Storage();
+      final country = await storage.getSelectedCountry();
+      final currency = await storage.getSelectedCurrency();
+      final resolvedRequest = AddToCartRequest(
+        items: [
+          for (final item in request.items)
+            AddToCartItem(
+              productId: item.productId,
+              configId: item.configId,
+              quantity: item.quantity,
+              currency: currency,
+              country: country,
+            ),
+        ],
+      );
+      return await _dataProvider.addToCart(resolvedRequest);
     } else {
       return await _localDataProvider.addToCart(request, product: product);
     }
@@ -78,18 +93,18 @@ class CartRepository {
       
       AppLogger.i("Syncing ${localCart.items.length} local cart items to backend");
       
+      final savedCurrency = await storage.getSelectedCurrency();
       for (final item in localCart.items) {
-         // Create request for each item
          final request = AddToCartRequest(
            items: [
              AddToCartItem(
                productId: item.productId,
-               configId: item.configId ?? "0", // Use item's configId if available, default to "0"
+               configId: item.configId ?? "0",
                quantity: item.quantity,
-               currency: item.currency,
-               country: savedCountry, // Use saved country from settings
+               currency: savedCurrency,
+               country: savedCountry,
              )
-           ]
+           ],
          );
          
          // Upload item to backend (let errors propagate)

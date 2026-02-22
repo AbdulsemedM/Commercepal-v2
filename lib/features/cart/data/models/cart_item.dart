@@ -52,7 +52,7 @@ class CartItem {
       currentPrice: (json['currentPrice'] as num).toDouble(),
       priceDropped: json['priceDropped'] as bool,
       savingsAmount: (json['savingsAmount'] as num).toDouble(),
-      configId: json['configId'] as String?,
+      configId: (json['configId'] ?? json['config_id']) as String?,
     );
   }
 

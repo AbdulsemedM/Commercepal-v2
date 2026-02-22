@@ -12,6 +12,14 @@ class ProductInfoSection extends StatefulWidget {
     required this.code,
     required this.category,
     required this.keywords,
+    this.vendorName,
+    this.provider,
+    this.stockLevel,
+    this.status,
+    this.stuffStatus,
+    this.createdTime,
+    this.updatedTime,
+    this.isSellAllowed = true,
   });
 
   final String title;
@@ -21,6 +29,14 @@ class ProductInfoSection extends StatefulWidget {
   final String code;
   final String category;
   final String keywords;
+  final String? vendorName;
+  final String? provider;
+  final int? stockLevel;
+  final String? status;
+  final String? stuffStatus;
+  final String? createdTime;
+  final String? updatedTime;
+  final bool isSellAllowed;
 
   @override
   State<ProductInfoSection> createState() => _ProductInfoSectionState();
@@ -101,9 +117,54 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
             widget.keywords,
             isHighlighted: true,
           ),
+          if (widget.vendorName != null && widget.vendorName!.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(
+              context,
+              'Vendor',
+              widget.vendorName!,
+            ),
+          ],
+          if (widget.provider != null && widget.provider!.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(
+              context,
+              'Provider',
+              widget.provider!,
+            ),
+          ],
+          if (widget.stockLevel != null || widget.status != null || (widget.stuffStatus != null && widget.stuffStatus!.isNotEmpty) || !widget.isSellAllowed) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(
+              context,
+              'Availability',
+              [
+                if (!widget.isSellAllowed) 'Sales not allowed',
+                if (widget.stockLevel != null && widget.stockLevel! >= 0) '${widget.stockLevel} in stock',
+                if (widget.status != null && widget.status!.isNotEmpty) widget.status!,
+                if (widget.stuffStatus != null && widget.stuffStatus!.isNotEmpty) widget.stuffStatus!,
+              ].where((e) => e.isNotEmpty).join(' • '),
+            ),
+          ],
+          if (widget.createdTime != null && widget.createdTime!.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(context, 'Listed', _formatDate(widget.createdTime!)),
+          ],
+          if (widget.updatedTime != null && widget.updatedTime!.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(context, 'Updated', _formatDate(widget.updatedTime!)),
+          ],
         ],
       ),
     );
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final d = DateTime.tryParse(isoDate);
+      if (d != null) return '${d.day}/${d.month}/${d.year}';
+    } catch (_) {}
+    return isoDate;
   }
 
   Widget _buildStarRating(double rating) {

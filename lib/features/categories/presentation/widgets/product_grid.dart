@@ -104,8 +104,10 @@ class _SubCategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
+        final query = Uri.encodeComponent(subCategory.name);
+        final provider = Uri.encodeComponent(subCategory.providerId);
         context.push(
-          '${AppRoutes.productSearch}?provider=${Uri.encodeComponent(subCategory.providerId)}',
+          '${AppRoutes.productSearch}?query=$query&provider=$provider',
         );
       },
       borderRadius: BorderRadius.circular(12),

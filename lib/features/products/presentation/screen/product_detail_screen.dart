@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
@@ -17,9 +19,6 @@ import '../../data/models/product.dart';
 import '../widgets/product_image_gallery.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
-import '../widgets/share_section.dart';
-import '../widgets/special_offer_section.dart';
-import '../widgets/product_details_button.dart';
 import '../widgets/add_to_cart_section.dart';
 import '../widgets/multi_variant_selector_widget.dart';
 import '../../data/models/product_details.dart';
@@ -97,6 +96,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   String _getCountry(BuildContext context) {
     return _cachedCountry;
+  }
+
+  Future<void> _launchUrlString(String url) async {
+    if (url.trim().isEmpty) return;
+    String normalized = url.trim();
+    if (!normalized.toLowerCase().startsWith('http://') &&
+        !normalized.toLowerCase().startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    try {
+      final uri = Uri.parse(normalized);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (_) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open link'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open link'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _handleAddToCart(
@@ -344,8 +378,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: Spacing.sm),
-                                  // Product images
-                                  ProductImageGallery(images: product.images),
+                                  // Product images (use mainImage when images list is empty)
+                                  ProductImageGallery(
+                                    images: product.images.isNotEmpty
+                                        ? product.images
+                                        : (product.mainImage.main.isNotEmpty
+                                            ? [product.mainImage]
+                                            : []),
+                                  ),
                                   const SizedBox(height: Spacing.md),
                                   // Product info
                                   ProductInfoSection(
@@ -356,8 +396,47 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     code: product.id,
                                     category: product.categoryId,
                                     keywords: product.brandName,
+                                    vendorName: product.vendorName.isNotEmpty ? product.vendorName : null,
+                                    provider: product.provider.isNotEmpty ? product.provider : null,
+                                    stockLevel: product.stockLevel,
+                                    status: product.status.isNotEmpty ? product.status : null,
+                                    stuffStatus: product.stuffStatus.isNotEmpty ? product.stuffStatus : null,
+                                    createdTime: product.createdTime.isNotEmpty ? product.createdTime : null,
+                                    updatedTime: product.updatedTime.isNotEmpty ? product.updatedTime : null,
+                                    isSellAllowed: product.isSellAllowed,
                                   ),
                                   const SizedBox(height: Spacing.lg),
+                                  // Description
+                                  if (product.description.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Description',
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: Spacing.sm),
+                                          ...product.description.map(
+                                            (paragraph) => Padding(
+                                              padding: const EdgeInsets.only(bottom: Spacing.xs),
+                                              child: Text(
+                                                paragraph,
+                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: Colors.grey[800],
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: Spacing.lg),
+                                  ],
                                   // Multi-variant selector
                                   if (product.variants.isNotEmpty)
                                     MultiVariantSelectorWidget(
@@ -369,47 +448,86 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   const SizedBox(height: Spacing.lg),
                                   // Specifications (if available)
                                   if (product.physicalParameters.weight > 0 ||
-                                      product.physicalParameters.length > 0)
+                                      product.physicalParameters.length > 0 ||
+                                      product.physicalParameters.width > 0 ||
+                                      product.physicalParameters.height > 0 ||
+                                      product.minOrderQuantity > 1 ||
+                                      product.quantityStep > 1 ||
+                                      product.hasHierarchicalConfigurators)
                                     ProductSpecifications(
                                       specifications: {
-                                        if (product.physicalParameters.length >
-                                            0)
-                                          'Length':
-                                              '${product.physicalParameters.length}cm',
-                                        if (product.physicalParameters.width >
-                                            0)
-                                          'Width':
-                                              '${product.physicalParameters.width}cm',
-                                        if (product.physicalParameters.height >
-                                            0)
-                                          'Height':
-                                              '${product.physicalParameters.height}cm',
-                                        if (product.physicalParameters.weight >
-                                            0)
-                                          'Weight':
-                                              '${product.physicalParameters.weight}g',
+                                        if (product.physicalParameters.length > 0)
+                                          'Length': '${product.physicalParameters.length}cm',
+                                        if (product.physicalParameters.width > 0)
+                                          'Width': '${product.physicalParameters.width}cm',
+                                        if (product.physicalParameters.height > 0)
+                                          'Height': '${product.physicalParameters.height}cm',
+                                        if (product.physicalParameters.weight > 0)
+                                          'Weight': '${product.physicalParameters.weight}g',
+                                        if (product.minOrderQuantity > 1)
+                                          'Min. order quantity': '${product.minOrderQuantity}',
+                                        if (product.quantityStep > 1)
+                                          'Quantity step': '${product.quantityStep}',
+                                        if (product.hasHierarchicalConfigurators)
+                                          'Configurable options': 'Yes',
                                       },
                                     ),
                                   const SizedBox(height: Spacing.lg),
-                                  // Share section
-                                  const ShareSection(),
-                                  const SizedBox(height: Spacing.lg),
-                                  // Special offer (if in stock)
-                                  if (product.stockLevel > 0)
-                                    SpecialOfferSection(
-                                      sold: product.variants.fold<int>(
-                                        0,
-                                        (sum, v) => sum + v.salesCount,
-                                      ),
-                                      inStock: product.stockLevel,
-                                      initialDuration: const Duration(
-                                        days: 10,
-                                        hours: 42,
-                                        minutes: 0,
-                                        seconds: 8,
+                                  // Videos
+                                  if (product.videos.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Videos',
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: Spacing.sm),
+                                          ...product.videos.asMap().entries.map((entry) {
+                                            final i = entry.key + 1;
+                                            final video = entry.value;
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: Spacing.sm),
+                                              child: InkWell(
+                                                onTap: () => _launchUrlString(video.url),
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.play_circle_outline, size: 32, color: Theme.of(context).colorScheme.primary),
+                                                    const SizedBox(width: Spacing.sm),
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Video $i',
+                                                        style: Theme.of(context).textTheme.bodyMedium,
+                                                      ),
+                                                    ),
+                                                    const Icon(Icons.open_in_new, size: 18),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          }),
+                                        ],
                                       ),
                                     ),
-                                  const SizedBox(height: Spacing.lg),
+                                    const SizedBox(height: Spacing.lg),
+                                  ],
+                                  // External link
+                                  if (product.externalUrl.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _launchUrlString(product.externalUrl),
+                                        icon: const Icon(Icons.open_in_new, size: 18),
+                                        label: const Text('View on seller site'),
+                                      ),
+                                    ),
+                                    const SizedBox(height: Spacing.lg),
+                                  ],
                                   // Reviews section
                                   if (product.customerReviews.isNotEmpty)
                                     ReviewsSectionWidget(
@@ -422,12 +540,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         );
                                       },
                                     ),
-                                  const SizedBox(height: Spacing.lg),
-                                  // Product details button
-                                  ProductDetailsButton(
-                                    productId: widget.productId,
-                                    productName: product.title,
-                                  ),
                                   const SizedBox(height: Spacing.lg),
                                   // Recommended products
                                   if (product.recommendedProducts.isNotEmpty)

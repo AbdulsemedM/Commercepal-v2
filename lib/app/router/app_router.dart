@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,10 @@ import '../../features/addresses/presentation/screen/addresses_screen.dart';
 import '../../features/addresses/bloc/address_bloc.dart';
 import '../../features/checkout/presentation/screen/checkout_summary_screen.dart';
 import '../../features/checkout/presentation/screen/payment_selection_screen.dart';
+import '../../features/checkout/presentation/screen/payment_webview_screen.dart';
+import '../../features/checkout/presentation/screen/order_placed_screen.dart';
+import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
+import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
 
 class AppRoutes {
@@ -51,6 +56,9 @@ class AppRoutes {
   static const String addresses = '/addresses';
   static const String checkoutSummary = '/checkout-summary';
   static const String paymentSelection = '/payment-selection';
+  static const String paymentWebView = '/payment-webview';
+  static const String orderPlaced = '/order-placed';
+  static const String retryPaymentMethod = '/retry-payment-method';
   static const String affiliateRegister = '/affiliate-register';
 }
 
@@ -222,6 +230,58 @@ final GoRouter appRouter = GoRouter(
       name: 'paymentSelection',
       builder: (BuildContext context, GoRouterState state) =>
           const PaymentSelectionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.paymentWebView,
+      name: 'paymentWebView',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final paymentUrl = extra?['paymentUrl'] as String? ?? '';
+        final orderNumber = extra?['orderNumber'] as String?;
+        return PaymentWebViewScreen(
+          paymentUrl: paymentUrl,
+          orderNumber: orderNumber,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.orderPlaced,
+      name: 'orderPlaced',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final response = extra?['checkoutResponse'] as CheckoutResponse?;
+        if (response == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Order')),
+            body: const Center(child: Text('Missing order data')),
+          );
+        }
+        final paymentProviderCode =
+            extra?['paymentProviderCode'] as String? ?? '';
+        final paymentProviderVariantCode =
+            extra?['paymentProviderVariantCode'] as String? ?? '';
+        return OrderPlacedScreen(
+          response: response,
+          paymentProviderCode: paymentProviderCode,
+          paymentProviderVariantCode: paymentProviderVariantCode,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.retryPaymentMethod,
+      name: 'retryPaymentMethod',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final paymentReference =
+            extra?['paymentReference'] as String? ?? '';
+        final currency = extra?['currency'] as String? ?? '';
+        final orderNumber = extra?['orderNumber'] as String?;
+        return RetryPaymentMethodScreen(
+          paymentReference: paymentReference,
+          currency: currency,
+          orderNumber: orderNumber,
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.affiliateRegister,

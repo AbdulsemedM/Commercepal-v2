@@ -71,17 +71,14 @@ class ProductDetailShimmer extends StatelessWidget {
                 const SizedBox(height: Spacing.sm),
                 SizedBox(
                   height: 50,
-                  child: Row(
-                    children: List.generate(
-                      4,
-                      (index) => Padding(
-                        padding: const EdgeInsets.only(right: Spacing.sm),
-                        child: _buildShimmerBox(
-                          width: 80,
-                          height: 40,
-                          borderRadius: 8,
-                        ),
-                      ),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+                    itemBuilder: (_, index) => _buildShimmerBox(
+                      width: 80,
+                      height: 40,
+                      borderRadius: 8,
                     ),
                   ),
                 ),
@@ -138,55 +135,6 @@ class ProductDetailShimmer extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.lg),
           
-          // Share Section Shimmer
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(
-                4,
-                (index) => _buildShimmerBox(
-                  width: 60,
-                  height: 60,
-                  borderRadius: 30,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: Spacing.lg),
-          
-          // Special Offer Shimmer
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Container(
-              padding: const EdgeInsets.all(Spacing.md),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildShimmerBox(width: 150, height: 20, borderRadius: 4),
-                  const SizedBox(height: Spacing.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildShimmerBox(width: 100, height: 16, borderRadius: 4),
-                      _buildShimmerBox(width: 100, height: 16, borderRadius: 4),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.sm),
-                  _buildShimmerBox(
-                    width: double.infinity,
-                    height: 8,
-                    borderRadius: 4,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: Spacing.lg),
-          
           // Reviews Shimmer
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
@@ -219,14 +167,11 @@ class ProductDetailShimmer extends StatelessWidget {
                 const SizedBox(height: Spacing.md),
                 SizedBox(
                   height: 250,
-                  child: Row(
-                    children: List.generate(
-                      3,
-                      (index) => Padding(
-                        padding: const EdgeInsets.only(right: Spacing.sm),
-                        child: _buildProductCardShimmer(),
-                      ),
-                    ),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+                    itemBuilder: (_, index) => _buildProductCardShimmer(),
                   ),
                 ),
               ],
