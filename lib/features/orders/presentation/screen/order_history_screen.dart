@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/orders/bloc/orders_bloc.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
+import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
 import 'package:intl/intl.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -42,6 +44,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
+  final OrdersRepository _ordersRepository = OrdersRepository();
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +62,48 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         }
       }
     });
+  }
+
+  /// Opens payment method selection to pay for an order (Waiting for Payment).
+  /// Fetches order detail if paymentReference is not in the list item.
+  Future<void> _openPayForOrder(BuildContext context, Order order) async {
+    String? paymentRef = order.paymentReference;
+    if (paymentRef == null || paymentRef.isEmpty) {
+      try {
+        final detail = await _ordersRepository.getOrderByOrderNumber(order.orderNumber);
+        paymentRef = detail.paymentReference;
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to load payment details. Please try again.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+    }
+    if (paymentRef == null || paymentRef.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment is not available for this order.'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    context.push<void>(
+      AppRoutes.retryPaymentMethod,
+      extra: <String, dynamic>{
+        'paymentReference': paymentRef,
+        'currency': order.currency,
+        'orderNumber': order.orderNumber,
+      },
+    );
   }
 
   @override
@@ -398,12 +444,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         Padding(
                           padding: const EdgeInsets.only(right: Spacing.xs),
                           child: OutlinedButton(
-                            onPressed: () {
-                              // Prevent card tap when pressing Pay
-                              context.push(
-                                '/payment-selection?orderNumber=${order.orderNumber}',
-                              );
-                            },
+                            onPressed: () => _openPayForOrder(context, order),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: Spacing.sm,

@@ -53,6 +53,8 @@ class Order {
   final bool canReturn;
   final bool canPay;
   final bool canReview;
+  /// Payment reference for retry/initiate payment (e.g. CP-20260222-XXX).
+  final String? paymentReference;
   final String paymentStatus;
   final String paymentStatusLabel;
   final bool hasException;
@@ -82,6 +84,7 @@ class Order {
     required this.canReturn,
     required this.canPay,
     required this.canReview,
+    this.paymentReference,
     required this.paymentStatus,
     required this.paymentStatusLabel,
     required this.hasException,
@@ -101,11 +104,15 @@ class Order {
     final orderDate = json['orderDate'] as String? ?? orderedAt ?? '';
     final status = json['status'] as String? ?? '';
     final actions = json['actions'] as Map<String, dynamic>?;
-    final canPay = json['canPay'] as bool? ?? (actions?['canPay'] == true);
+    final canPayFromApi = json['canPay'] as bool? ?? (actions?['canPay'] == true);
+    final isWaitingForPayment = status.toLowerCase().contains('waiting') && status.toLowerCase().contains('payment');
+    final canPay = canPayFromApi || isWaitingForPayment;
     final canTrack = json['canTrack'] as bool? ?? (actions?['canTrack'] == true);
 
-    // Detail API: payment { status, paidAt }
     final payment = json['payment'] as Map<String, dynamic>?;
+    final paymentReference = json['paymentReference'] as String? ?? payment?['reference'] as String?;
+
+    // Detail API: payment { status, paidAt, reference }
     final paymentStatus = payment?['status'] as String? ?? json['paymentStatus'] as String? ?? '';
     final paidAt = payment?['paidAt'] as String?;
 
@@ -147,6 +154,7 @@ class Order {
       canReturn: json['canReturn'] as bool? ?? false,
       canPay: canPay,
       canReview: json['canReview'] as bool? ?? false,
+      paymentReference: paymentReference,
       paymentStatus: paymentStatus,
       paymentStatusLabel: json['paymentStatusLabel'] as String? ?? paymentStatus,
       hasException: json['hasException'] as bool? ?? false,
@@ -178,6 +186,7 @@ class Order {
         'canReturn': canReturn,
         'canPay': canPay,
         'canReview': canReview,
+        if (paymentReference != null) 'paymentReference': paymentReference,
         'paymentStatus': paymentStatus,
         'paymentStatusLabel': paymentStatusLabel,
         'hasException': hasException,
