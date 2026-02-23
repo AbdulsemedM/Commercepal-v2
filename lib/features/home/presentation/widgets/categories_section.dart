@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
+import 'package:commercepal/features/categories/data/models/sub_category.dart';
+import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:shimmer/shimmer.dart';
 
-class CategoriesSection extends StatelessWidget {
+class CategoriesSection extends StatefulWidget {
   const CategoriesSection({super.key});
+
+  @override
+  State<CategoriesSection> createState() => _CategoriesSectionState();
+}
+
+class _CategoriesSectionState extends State<CategoriesSection> {
+  Category? _selectedCategory;
 
   // Icon mapping for categories
   static IconData _getCategoryIcon(String categoryName) {
@@ -64,6 +75,10 @@ class CategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedCategory != null) {
+      return _buildSubcategoriesView(context, _selectedCategory!);
+    }
+
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),
       child: Column(
@@ -84,7 +99,7 @@ class CategoriesSection extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () {
-                    // TODO: Navigate to all categories
+                    context.findAncestorStateOfType<DashboardScreenState>()?.changeTab(1);
                   },
                   child: Text(
                     LocalizationService.t(context, 'home.categories.seeAll'),
@@ -118,6 +133,68 @@ class CategoriesSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSubcategoriesView(BuildContext context, Category category) {
+    final subCategories = category.subCategories;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          child: Row(
+            children: <Widget>[
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => setState(() => _selectedCategory = null),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              ),
+              const SizedBox(width: Spacing.xs),
+              Expanded(
+                child: Text(
+                  category.name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Spacing.sm),
+        if (subCategories.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.lg),
+            child: Text(
+              'No subcategories',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ),
+          )
+        else
+          SizedBox(
+            height: 160,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+              itemCount: subCategories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+              itemBuilder: (BuildContext context, int index) {
+                final subCategory = subCategories[index];
+                return SizedBox(
+                  width: 140,
+                  child: _SubCategoryTile(
+                    subCategory: subCategory,
+                    icon: _getCategoryIcon(subCategory.name),
+                    color: _getCategoryColor(index),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -202,7 +279,7 @@ class CategoriesSection extends StatelessWidget {
 
           return InkWell(
             onTap: () {
-              // TODO: Navigate to category with subcategories
+              setState(() => _selectedCategory = category);
             },
             borderRadius: BorderRadius.circular(12),
             child: Column(
@@ -244,6 +321,89 @@ class CategoriesSection extends StatelessWidget {
       color: color.withOpacity(0.1),
       child: Center(
         child: Icon(icon, color: color, size: 40),
+      ),
+    );
+  }
+}
+
+class _SubCategoryTile extends StatelessWidget {
+  const _SubCategoryTile({
+    required this.subCategory,
+    required this.icon,
+    required this.color,
+  });
+
+  final SubCategory subCategory;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
+    return InkWell(
+      onTap: () {
+        final query = Uri.encodeComponent(subCategory.name);
+        final provider = Uri.encodeComponent(subCategory.providerId);
+        context.push(
+          '${AppRoutes.productSearch}?query=$query&provider=$provider',
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: hasImage
+                    ? Image.network(
+                        subCategory.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                      )
+                    : _buildPlaceholder(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.xs, vertical: Spacing.sm),
+              child: Text(
+                subCategory.name,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      color: Colors.grey[800],
+                      fontWeight: FontWeight.w500,
+                    ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: color.withOpacity(0.12),
+      child: Center(
+        child: Icon(icon, color: color, size: 36),
       ),
     );
   }
