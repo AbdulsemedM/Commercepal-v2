@@ -8,6 +8,7 @@ import 'package:commercepal/core/utils/platform_utils.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
+import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
@@ -23,6 +24,7 @@ class _SelectablePaymentMethod {
   final String currency;
   final bool hasVariants;
   final List<PaymentMethodVariant> variants;
+  final String? paymentInstruction;
 
   _SelectablePaymentMethod({
     required this.id,
@@ -33,6 +35,7 @@ class _SelectablePaymentMethod {
     required this.currency,
     required this.hasVariants,
     this.variants = const [],
+    this.paymentInstruction,
   });
 }
 
@@ -73,6 +76,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   final TextEditingController _paymentPhoneController =
       TextEditingController(text: '9');
   String? _paymentPhoneNumber;
+  final TextEditingController _methodSpecificDigitsController =
+      TextEditingController();
+  String? _ipayPhoneNumber;
 
   @override
   void initState() {
@@ -82,6 +88,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   @override
   void dispose() {
     _paymentPhoneController.dispose();
+    _methodSpecificDigitsController.dispose();
     super.dispose();
   }
 
@@ -154,6 +161,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 currency: item.currency,
                 hasVariants: true,
                 variants: matchingVariants,
+                paymentInstruction: item.paymentInstruction,
               ),
             );
           } else {
@@ -168,6 +176,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 variantCode: item.itemCode,
                 currency: item.currency,
                 hasVariants: false,
+                paymentInstruction: item.paymentInstruction,
               ),
             );
           }
@@ -260,6 +269,40 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     }
   }
 
+  String? _getCategoryNameForSelectedMethod() {
+    if (_selectedPaymentMethodId == null) return null;
+    for (final category in _paymentMethodCategories) {
+      final found = category.methods.any((m) => m.id == _selectedPaymentMethodId);
+      if (found) return category.categoryName;
+    }
+    return null;
+  }
+
+  String? _getSelectedVariantDisplayName() {
+    final method = _getSelectedMethod();
+    if (method == null || _selectedVariantCode == null) return null;
+    try {
+      final v = method.variants.firstWhere(
+        (e) => e.variantCode == _selectedVariantCode,
+      );
+      return v.displayName;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  PaymentMethodVariant? _getSelectedVariant() {
+    final method = _getSelectedMethod();
+    if (method == null || _selectedVariantCode == null) return null;
+    try {
+      return method.variants.firstWhere(
+        (e) => e.variantCode == _selectedVariantCode,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _placeOrder(
     Cart cart,
     int addressId,
@@ -305,11 +348,20 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         );
       }).toList();
 
-      // Determine if payment account is needed (for mobile money methods)
-      // Check if the provider code indicates mobile money
+      // Determine if payment account is needed (mobile money or Waafi/Edahab/iPay)
       final isMobileMoney =
           ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode) ||
           selectedMethod.providerCode == 'MOBILE_MONEY';
+
+      final categoryName = _getCategoryNameForSelectedMethod();
+      final variantDisplayName = _getSelectedVariantDisplayName();
+      final methodType = getPaymentMethodType(
+        categoryName,
+        selectedMethod.displayName,
+        variantDisplayName,
+      );
+      final needsPaymentAccount = (isMobileMoney && phoneNumber != null) ||
+          (phoneNumber != null && requiresMethodSpecificPhone(methodType));
 
       // Create checkout request
       final checkoutRequest = CheckoutRequest(
@@ -319,9 +371,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         items: checkoutItems,
         paymentProviderCode: paymentItemCode,
         paymentProviderVariantCode: variantCode,
-        paymentAccount: isMobileMoney && phoneNumber != null
-            ? phoneNumber
-            : null,
+        paymentAccount: needsPaymentAccount ? phoneNumber : null,
       );
 
       // Call checkout API
@@ -412,13 +462,60 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     }
 
     final selectedMethod = _getSelectedMethod();
+    final categoryName = _getCategoryNameForSelectedMethod();
+    final variantDisplayName = _getSelectedVariantDisplayName();
+    final methodType = getPaymentMethodType(
+      categoryName,
+      selectedMethod?.displayName,
+      variantDisplayName,
+    );
+    final waafiPrefix = getWaafiPrefix(
+      categoryName,
+      selectedMethod?.displayName,
+      variantDisplayName,
+    );
+
     final requiresPhone = selectedMethod != null &&
         ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode);
     final isETB = cart.currency.toUpperCase() == 'ETB';
-    final showPhoneField = requiresPhone && isETB;
-    final effectivePhone = showPhoneField
-        ? (_paymentPhoneNumber ?? phoneNumber)
-        : phoneNumber;
+    final requiresMethodPhone = selectedMethod != null &&
+        requiresMethodSpecificPhone(methodType);
+    final showPhoneField = (requiresPhone && isETB) || requiresMethodPhone;
+
+    final digits = _methodSpecificDigitsController.text.trim();
+    final digitsValid = digits.length == 7 && RegExp(r'^\d{7}$').hasMatch(digits);
+
+    String? effectivePhone;
+    if (requiresMethodPhone) {
+      if (methodType == PaymentMethodType.waafi && waafiPrefix != null && digitsValid) {
+        effectivePhone = waafiPrefix + digits;
+      } else if (methodType == PaymentMethodType.edahab && digitsValid) {
+        effectivePhone = '65$digits';
+      } else if (methodType == PaymentMethodType.ipay &&
+          _ipayPhoneNumber != null &&
+          _ipayPhoneNumber!.isNotEmpty) {
+        effectivePhone = _ipayPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
+        if (effectivePhone.isEmpty) effectivePhone = null;
+      } else {
+        effectivePhone = null;
+      }
+    } else {
+      effectivePhone = showPhoneField
+          ? (_paymentPhoneNumber ?? phoneNumber)
+          : phoneNumber;
+    }
+
+    final methodPhoneValid = !requiresMethodPhone ||
+        (methodType == PaymentMethodType.waafi && digitsValid) ||
+        (methodType == PaymentMethodType.edahab && digitsValid) ||
+        (methodType == PaymentMethodType.ipay &&
+            (_ipayPhoneNumber?.isNotEmpty ?? false));
+
+    final paymentInstructionText = requiresMethodPhone
+        ? (_getSelectedVariant()?.paymentInstruction ??
+            selectedMethod.paymentInstruction ??
+            '')
+        : '';
 
     return Scaffold(
       backgroundColor: AppColors.lightGrey,
@@ -560,7 +657,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               ],
             ),
           ),
-          // Phone number for payment (ETB mobile money only)
+          // Phone number for payment (ETB mobile money or Waafi/Edahab/iPay)
           if (showPhoneField)
             Container(
               padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
@@ -569,66 +666,221 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (requiresMethodPhone) ...[
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (paymentInstructionText.isNotEmpty) ...[
+                            Text(
+                              'Instructions',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                            ),
+                            const SizedBox(height: Spacing.xs),
+                            Text(
+                              paymentInstructionText,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.black87,
+                                  ),
+                            ),
+                            const SizedBox(height: Spacing.md),
+                          ],
+                        ],
+                      ),
+                  ],
                   Text(
-                    'Mobile number for payment',
+                    requiresMethodPhone
+                        ? 'Phone number for payment'
+                        : 'Mobile number for payment',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
                   ),
                   const SizedBox(height: Spacing.sm),
-                  IntlPhoneField(
-                    controller: _paymentPhoneController,
-                    initialCountryCode: 'ET',
-                    flagsButtonPadding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.sm,
+                  if (methodType == PaymentMethodType.waafi && waafiPrefix != null)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                            '+$waafiPrefix ',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _methodSpecificDigitsController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 7,
+                            decoration: InputDecoration(
+                              hintText: '1234567',
+                              counterText: '',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: AppColors.primary, width: 2),
+                              ),
+                              errorText: digits.isNotEmpty && !digitsValid
+                                  ? 'Enter exactly 7 digits'
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                                vertical: Spacing.md,
+                              ),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (methodType == PaymentMethodType.edahab)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                            '+25265 ',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _methodSpecificDigitsController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 7,
+                            decoration: InputDecoration(
+                              hintText: '1234567',
+                              counterText: '',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: AppColors.primary, width: 2),
+                              ),
+                              errorText: digits.isNotEmpty && !digitsValid
+                                  ? 'Enter exactly 7 digits'
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                                vertical: Spacing.md,
+                              ),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (methodType == PaymentMethodType.ipay)
+                    IntlPhoneField(
+                      onChanged: (phone) {
+                        setState(() {
+                          _ipayPhoneNumber = phone.completeNumber.isNotEmpty
+                              ? phone.completeNumber
+                              : null;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Phone number',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.md,
+                          vertical: Spacing.md,
+                        ),
+                      ),
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    )
+                  else
+                    IntlPhoneField(
+                      controller: _paymentPhoneController,
+                      initialCountryCode: 'ET',
+                      flagsButtonPadding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.sm,
+                      ),
+                      dropdownIconPosition: IconPosition.trailing,
+                      decoration: InputDecoration(
+                        hintText: '912345678',
+                        hintStyle: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Colors.red, width: 1),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Colors.red, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.md,
+                          vertical: Spacing.md,
+                        ),
+                      ),
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      onChanged: (phone) {
+                        setState(() {
+                          _paymentPhoneNumber = phone.completeNumber.isNotEmpty
+                              ? phone.completeNumber
+                              : null;
+                        });
+                      },
                     ),
-                    dropdownIconPosition: IconPosition.trailing,
-                    decoration: InputDecoration(
-                      hintText: '912345678',
-                      hintStyle: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: Colors.grey[400]),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: AppColors.primary, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Colors.red, width: 1),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Colors.red, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.md,
-                        vertical: Spacing.md,
-                      ),
-                    ),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    onChanged: (phone) {
-                      setState(() {
-                        _paymentPhoneNumber = phone.completeNumber.isNotEmpty
-                            ? phone.completeNumber
-                            : null;
-                      });
-                    },
-                  ),
                 ],
               ),
             ),
@@ -652,7 +904,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                   onPressed: (_selectedPaymentMethodId == null ||
                           _isPlacingOrder ||
                           (showPhoneField &&
-                              (effectivePhone == null ||
+                              (!methodPhoneValid ||
+                                  effectivePhone == null ||
                                   effectivePhone.isEmpty)))
                       ? null
                       : () {
