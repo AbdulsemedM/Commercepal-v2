@@ -225,39 +225,111 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.address != null;
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: 24),
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 600),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.lightGrey,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
+            // Header with icon and title
             Container(
-              padding: const EdgeInsets.all(Spacing.md),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                left: Spacing.lg,
+                right: Spacing.sm,
+                top: Spacing.lg,
+                bottom: Spacing.lg,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.85),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
               child: Row(
                 children: [
-                  Text(
-                    widget.address == null ? 'Add Address' : 'Edit Address',
-                    style: const TextStyle(
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.location_on_rounded,
                       color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      size: 26,
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
+                  const SizedBox(width: Spacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEdit ? 'Edit Address' : 'Add New Address',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isEdit
+                              ? 'Update your delivery details'
+                              : 'Save a delivery location',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(Spacing.sm),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -265,163 +337,186 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
             // Form
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(Spacing.md),
+                padding: const EdgeInsets.all(Spacing.lg),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTextField(
-                        controller: _receiverNameController,
-                        label: 'Receiver Name',
-                        icon: Icons.person_outline,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter receiver name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _phoneNumberController,
-                        label: 'Phone Number',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        hintText: _selectedCountryCode == 'ET' 
-                            ? 'e.g., 0911223344 or 911223344' 
-                            : null,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter phone number';
-                          }
-                          // For Ethiopia, validate format
-                          if (_selectedCountryCode == 'ET') {
-                            final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
-                            final withoutLeadingZero = cleaned.startsWith('0') 
-                                ? cleaned.substring(1) 
-                                : cleaned;
-                            if (withoutLeadingZero.length != 9) {
-                              return 'Phone number must be 9 digits (e.g., 911223344)';
-                            }
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildCountryDropdown(),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _stateController,
-                        label: 'State/Province',
-                        icon: Icons.map_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter state';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _cityController,
-                        label: 'City',
-                        icon: Icons.location_city_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter city';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _districtController,
-                        label: 'District',
-                        icon: Icons.place_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter district';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _streetController,
-                        label: 'Street',
-                        icon: Icons.streetview_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter street';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _houseNumberController,
-                        label: 'House Number',
-                        icon: Icons.home_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter house number';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _landmarkController,
-                        label: 'Landmark (Optional)',
-                        icon: Icons.flag_outlined,
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _addressLine1Controller,
-                        label: 'Address Line 1 (Optional)',
-                        icon: Icons.description_outlined,
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      _buildTextField(
-                        controller: _addressLine2Controller,
-                        label: 'Address Line 2 (Optional)',
-                        icon: Icons.description_outlined,
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      CheckboxListTile(
-                        value: _isDefault,
-                        onChanged: (value) {
-                          setState(() => _isDefault = value ?? false);
-                        },
-                        title: const Text('Set as default address'),
-                        controlAffinity: ListTileControlAffinity.leading,
+                      _buildSectionLabel('Contact'),
+                      _buildCard(
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _receiverNameController,
+                              label: 'Receiver Name',
+                              icon: Icons.person_outline_rounded,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter receiver name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _phoneNumberController,
+                              label: 'Phone Number',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              hintText: _selectedCountryCode == 'ET'
+                                  ? 'e.g., 0911223344'
+                                  : null,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter phone number';
+                                }
+                                if (_selectedCountryCode == 'ET') {
+                                  final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+                                  final withoutLeadingZero =
+                                      cleaned.startsWith('0') ? cleaned.substring(1) : cleaned;
+                                  if (withoutLeadingZero.length != 9) {
+                                    return 'Phone must be 9 digits (e.g., 911223344)';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: Spacing.lg),
+                      _buildSectionLabel('Location'),
+                      _buildCard(
+                        child: Column(
+                          children: [
+                            _buildCountryDropdown(),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _stateController,
+                              label: 'State / Province',
+                              icon: Icons.map_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter state';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _cityController,
+                              label: 'City',
+                              icon: Icons.location_city_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter city';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _districtController,
+                              label: 'District',
+                              icon: Icons.place_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter district';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.lg),
+                      _buildSectionLabel('Street & building'),
+                      _buildCard(
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _streetController,
+                              label: 'Street',
+                              icon: Icons.streetview_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter street';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _houseNumberController,
+                              label: 'House / Building number',
+                              icon: Icons.home_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter house number';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _landmarkController,
+                              label: 'Landmark (optional)',
+                              icon: Icons.flag_outlined,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.lg),
+                      _buildSectionLabel('Additional (optional)'),
+                      _buildCard(
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _addressLine1Controller,
+                              label: 'Address line 1',
+                              icon: Icons.description_outlined,
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            _buildTextField(
+                              controller: _addressLine2Controller,
+                              label: 'Address line 2',
+                              icon: Icons.description_outlined,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.lg),
+                      _buildDefaultSwitch(),
+                      const SizedBox(height: Spacing.xl),
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
+                        height: 52,
+                        child: FilledButton(
                           onPressed: _isLoading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
+                          style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
+                            elevation: 0,
                           ),
                           child: _isLoading
                               ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
+                                  height: 22,
+                                  width: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
                               : Text(
-                                  widget.address == null ? 'Add Address' : 'Update Address',
+                                  isEdit ? 'Update Address' : 'Save Address',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                         ),
                       ),
@@ -432,6 +527,90 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: Spacing.xs, bottom: Spacing.sm),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[700],
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildDefaultSwitch() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(Spacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.star_outline_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: Spacing.md),
+          Expanded(
+            child: Text(
+              'Set as default address',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+          Switch(
+            value: _isDefault,
+            onChanged: (value) => setState(() => _isDefault = value),
+            activeColor: AppColors.primary,
+          ),
+        ],
       ),
     );
   }
@@ -448,15 +627,49 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      style: TextStyle(
+        fontSize: 15,
+        color: Colors.grey[800],
+        fontWeight: FontWeight.w500,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        prefixIcon: Icon(icon),
+        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+        prefixIcon: Container(
+          margin: const EdgeInsets.only(right: Spacing.sm),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppColors.primary,
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
         ),
         filled: true,
         fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: 14),
       ),
     );
   }
@@ -466,20 +679,48 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
       value: _selectedCountryCode,
       decoration: InputDecoration(
         labelText: 'Country',
-        prefixIcon: const Icon(Icons.flag_outlined),
+        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        prefixIcon: Container(
+          margin: const EdgeInsets.only(right: Spacing.sm),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.flag_outlined,
+            size: 20,
+            color: AppColors.primary,
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         filled: true,
         fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: 14),
       ),
       selectedItemBuilder: (BuildContext context) {
         return CountryCurrencyConstants.supportedCountries.map((country) {
-          // Show only country name in selected display to avoid overflow
           return Text(
             country.name,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+            ),
           );
         }).toList();
       },
@@ -487,9 +728,10 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
         return DropdownMenuItem(
           value: country.code,
           child: Text(
-            '${country.flagEmoji} ${country.name}',
+            '${country.flagEmoji}  ${country.name}',
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
+            style: const TextStyle(fontSize: 15),
           ),
         );
       }).toList(),

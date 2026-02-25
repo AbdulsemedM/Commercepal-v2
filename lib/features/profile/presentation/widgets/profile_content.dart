@@ -111,70 +111,7 @@ class ProfileContent extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          // Profile Title
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              Spacing.lg,
-                              Spacing.lg,
-                              Spacing.lg,
-                              Spacing.md,
-                            ),
-                            child: Text(
-                              LocalizationService.t(context, 'profile.title'),
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                            ),
-                          ),
-                          // Search Bar below title
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.lg,
-                            ),
-                            child: Container(
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: LocalizationService.t(
-                                    context,
-                                    'profile.searchPlaceholder',
-                                  ),
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  prefixIcon: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Icon(
-                                      Icons.search,
-                                      color: Colors.grey.shade700,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: Spacing.xs,
-                                    vertical: Spacing.sm,
-                                  ),
-                                  isDense: true,
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.lg),
+                          const SizedBox(height: Spacing.md),
                           // User Info Card
                           _buildUserInfoCard(context, profile),
                           const SizedBox(height: Spacing.lg),
@@ -221,14 +158,14 @@ class ProfileContent extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-      padding: const EdgeInsets.all(Spacing.md),
+      padding: const EdgeInsets.all(Spacing.sm),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -237,8 +174,8 @@ class ProfileContent extends StatelessWidget {
         children: <Widget>[
           // Profile Picture
           Container(
-            width: 60,
-            height: 60,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.primary.withOpacity(0.1),
@@ -255,40 +192,51 @@ class ProfileContent extends StatelessWidget {
                       userInitials,
                       style: TextStyle(
                         color: AppColors.primary,
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   )
                 : null,
           ),
-          const SizedBox(width: Spacing.md),
-          // User Name and Email
+          const SizedBox(width: Spacing.sm),
+          // User Name, Email, Phone
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
                   userName ?? 'User',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
+                    fontSize: 16,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: Spacing.xs),
+                const SizedBox(height: 2),
                 Text(
                   userEmail ?? '',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (profile?.phoneNumber != null) ...[
-                  const SizedBox(height: Spacing.xs),
+                if (profile?.phoneNumber != null && profile!.phoneNumber.isNotEmpty) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    profile!.phoneNumber,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+                    profile.phoneNumber,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ],

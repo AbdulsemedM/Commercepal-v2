@@ -223,24 +223,25 @@ class _AddressesScreenState extends State<AddressesScreen> {
   }
 
   void _showDeleteConfirmation(BuildContext context, Address address) {
+    final addressBloc = context.read<AddressBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Address'),
         content: Text(
           'Are you sure you want to delete this address?\n\n${address.receiverName}\n${address.street}, ${address.city}',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              context.read<AddressBloc>().add(
-                    AddressDeleteRequested(addressId: address.id),
-                  );
+              Navigator.of(dialogContext).pop();
+              addressBloc.add(
+                AddressDeleteRequested(addressId: address.id),
+              );
             },
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
