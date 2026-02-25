@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
@@ -114,6 +115,14 @@ class ProfileContent extends StatelessWidget {
                           const SizedBox(height: Spacing.md),
                           // User Info Card
                           _buildUserInfoCard(context, profile),
+                          if (profile != null &&
+                              (profile.referralCode ?? '').isNotEmpty) ...[
+                            const SizedBox(height: Spacing.md),
+                            _buildReferralCodeCard(
+                              context,
+                              profile.referralCode!,
+                            ),
+                          ],
                           const SizedBox(height: Spacing.lg),
                           // Profile Menu Items
                           _buildMenuItems(context),
@@ -275,6 +284,74 @@ class ProfileContent extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReferralCodeCard(BuildContext context, String referralCode) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            Icons.card_giftcard_rounded,
+            size: 20,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'Referral code',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  referralCode,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    letterSpacing: 1.2,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: referralCode));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Referral code copied'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(Icons.copy_rounded),
+            color: AppColors.primary,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+            ),
+            tooltip: 'Copy code',
           ),
         ],
       ),
