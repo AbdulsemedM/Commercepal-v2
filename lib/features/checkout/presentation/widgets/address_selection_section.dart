@@ -344,26 +344,18 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
 
   String _formatAddress(Address address) {
     final parts = <String>[];
-    
-    if (address.street.isNotEmpty) {
-      parts.add(address.street);
+    if (address.addressLine1 != null && address.addressLine1!.isNotEmpty) {
+      parts.add(address.addressLine1!);
     }
-    if (address.houseNumber.isNotEmpty) {
-      parts.add(address.houseNumber);
+    if (address.addressLine2 != null && address.addressLine2!.isNotEmpty) {
+      parts.add(address.addressLine2!);
     }
-    if (address.district.isNotEmpty) {
-      parts.add(address.district);
-    }
-    if (address.city.isNotEmpty) {
-      parts.add(address.city);
-    }
-    if (address.state.isNotEmpty) {
-      parts.add(address.state);
-    }
-    if (address.country.isNotEmpty) {
-      parts.add(address.country);
-    }
-    
-    return parts.join(', ');
+    if (address.street.isNotEmpty) parts.add(address.street);
+    if (address.houseNumber.isNotEmpty) parts.add(address.houseNumber);
+    if (address.district.isNotEmpty) parts.add(address.district);
+    if (address.city.isNotEmpty) parts.add(address.city);
+    if (address.state.isNotEmpty) parts.add(address.state);
+    if (address.country.isNotEmpty) parts.add(address.country);
+    return parts.isNotEmpty ? parts.join(', ') : 'No address details';
   }
 }

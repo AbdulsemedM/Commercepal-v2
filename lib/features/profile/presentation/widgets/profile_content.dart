@@ -368,6 +368,13 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.favorite_border,
+        title: 'Wishlist',
+        onTap: () {
+          context.push(AppRoutes.wishlist);
+        },
+      ),
+      _MenuItem(
         icon: Icons.location_on_outlined,
         title: 'My Addresses',
         onTap: () {
@@ -378,7 +385,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.help_outline,
         title: LocalizationService.t(context, 'profile.faqs'),
         onTap: () {
-          // TODO: Navigate to FAQs
+          context.push(AppRoutes.faqs);
         },
       ),
       _MenuItem(

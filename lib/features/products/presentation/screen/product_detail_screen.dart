@@ -25,6 +25,7 @@ import '../../data/models/product_details.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
+import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -45,6 +46,8 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _quantity = 1;
   bool _isInCart = false;
+  bool _isInWishlist = false;
+  String? _wishlistStateLoadedForProductId;
   String _cachedCountry = 'US'; // Default, will be loaded in initState
   // Map to track multiple variants with their quantities
   // Key: variant index, Value: quantity
@@ -353,6 +356,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   if (state is ProductDetailsLoaded) {
                     final product = state.productDetails;
+                    if (product.id != _wishlistStateLoadedForProductId) {
+                      _wishlistStateLoadedForProductId = product.id;
+                      Storage().isInWishlist(product.id).then((bool inList) {
+                        if (mounted) {
+                          setState(() => _isInWishlist = inList);
+                        }
+                      });
+                    }
                     final selectedVariant = product.variants.isNotEmpty
                         ? product.variants[state.selectedVariantIndex]
                         : null;
@@ -603,6 +614,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             
                             return AddToCartSection(
                               isInCart: itemInCart && !hasSelectedVariants,
+                              isInWishlist: _isInWishlist,
                               quantity: totalQuantity > 0 ? totalQuantity : _quantity,
                               unitPrice: hasSelectedVariants 
                                   ? '$formattedTotalPrice ${totalPrice.toStringAsFixed(2)}'
@@ -619,8 +631,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   });
                                 }
                               },
-                              onToggleFavorite: () {
-                                // TODO: Handle favorite toggle
+                              onToggleFavorite: () async {
+                                final storage = Storage();
+                                if (_isInWishlist) {
+                                  await storage.removeWishlistItem(product.id);
+                                } else {
+                                  final imageUrl = product.mainImage.main.isNotEmpty
+                                      ? product.mainImage.main
+                                      : product.mainImage.thumbnail;
+                                  await storage.addWishlistItem(WishlistItem(
+                                    productId: product.id,
+                                    productName: product.title,
+                                    imageUrl: imageUrl,
+                                  ));
+                                }
+                                if (mounted) {
+                                  setState(() => _isInWishlist = !_isInWishlist);
+                                }
                               },
                             );
                           },

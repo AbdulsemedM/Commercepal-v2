@@ -4,6 +4,7 @@ class PaymentMethodVariant {
   final String currency;
   final String iconUrl;
   final String? paymentInstruction;
+  final bool? requireAccountNumberOnInitiation;
 
   PaymentMethodVariant({
     required this.displayName,
@@ -11,6 +12,7 @@ class PaymentMethodVariant {
     required this.currency,
     required this.iconUrl,
     this.paymentInstruction,
+    this.requireAccountNumberOnInitiation,
   });
 
   factory PaymentMethodVariant.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,8 @@ class PaymentMethodVariant {
       currency: json['currency'] as String? ?? '',
       iconUrl: json['iconUrl'] as String? ?? '',
       paymentInstruction: json['paymentInstruction'] as String?,
+      requireAccountNumberOnInitiation:
+          json['requireAccountNumberOnInitiation'] as bool?,
     );
   }
 
@@ -29,5 +33,7 @@ class PaymentMethodVariant {
         'currency': currency,
         'iconUrl': iconUrl,
         if (paymentInstruction != null) 'paymentInstruction': paymentInstruction,
+        if (requireAccountNumberOnInitiation != null)
+          'requireAccountNumberOnInitiation': requireAccountNumberOnInitiation,
       };
 }

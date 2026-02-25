@@ -12,6 +12,7 @@ class AddToCartSection extends StatelessWidget {
     required this.onAddToCart,
     required this.onQuantityChanged,
     required this.onToggleFavorite,
+    this.isInWishlist = false,
   });
 
   final bool isInCart;
@@ -20,6 +21,7 @@ class AddToCartSection extends StatelessWidget {
   final VoidCallback onAddToCart;
   final ValueChanged<int> onQuantityChanged;
   final VoidCallback onToggleFavorite;
+  final bool isInWishlist;
 
   String _calculateTotal() {
     // For testing, just return a simple number
@@ -150,8 +152,8 @@ class AddToCartSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(
-                icon: const Icon(
-                  Icons.favorite_border,
+                icon: Icon(
+                  isInWishlist ? Icons.favorite : Icons.favorite_border,
                   color: AppColors.primary,
                 ),
                 onPressed: onToggleFavorite,

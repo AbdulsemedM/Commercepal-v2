@@ -10,6 +10,7 @@ import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
 import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
+import '../../data/models/payment_constants.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
@@ -25,6 +26,7 @@ class _SelectablePaymentMethod {
   final bool hasVariants;
   final List<PaymentMethodVariant> variants;
   final String? paymentInstruction;
+  final bool? requireAccountNumberOnInitiation;
 
   _SelectablePaymentMethod({
     required this.id,
@@ -36,6 +38,7 @@ class _SelectablePaymentMethod {
     required this.hasVariants,
     this.variants = const [],
     this.paymentInstruction,
+    this.requireAccountNumberOnInitiation,
   });
 }
 
@@ -162,6 +165,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 hasVariants: true,
                 variants: matchingVariants,
                 paymentInstruction: item.paymentInstruction,
+                requireAccountNumberOnInitiation:
+                    item.requireAccountNumberOnInitiation,
               ),
             );
           } else {
@@ -177,6 +182,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 currency: item.currency,
                 hasVariants: false,
                 paymentInstruction: item.paymentInstruction,
+                requireAccountNumberOnInitiation:
+                    item.requireAccountNumberOnInitiation,
               ),
             );
           }
@@ -332,12 +339,40 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         throw Exception('Selected payment method not found');
       }
 
-      // paymentProviderCode = payment item code (itemCode)
-      // paymentProviderVariantCode = variant code only when the payment has a variant
-      final paymentItemCode = selectedMethod.id; // id is item.itemCode (payment item code)
-      final variantCode = selectedMethod.hasVariants && _selectedVariantCode != null
+      // paymentProviderCode = selected option's item code (variant itemCode when has variants, else payment item's itemCode)
+      final paymentProviderCode = selectedMethod.hasVariants && _selectedVariantCode != null
           ? _selectedVariantCode!
-          : '';
+          : selectedMethod.id;
+
+      // Sahay: verify phone and account holder before placing order
+      if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
+        if (phoneNumber == null || phoneNumber.isEmpty) {
+          if (mounted) {
+            setState(() => _isPlacingOrder = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please enter a valid phone number for SahayPay.'),
+                backgroundColor: AppColors.warning,
+              ),
+            );
+          }
+          return;
+        }
+        final verification = await _checkoutRepository.verifySahayAccount(phoneNumber);
+        if (!mounted) return;
+        if (!verification.success) {
+          setState(() => _isPlacingOrder = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                verification.message ?? 'Phone number could not be verified. Please check and try again.',
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      }
 
       // Convert cart items to checkout items
       final checkoutItems = cart.items.map((item) {
@@ -369,8 +404,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         currency: cart.currency,
         deliveryAddressId: addressId,
         items: checkoutItems,
-        paymentProviderCode: paymentItemCode,
-        paymentProviderVariantCode: variantCode,
+        paymentProviderCode: paymentProviderCode,
         paymentAccount: needsPaymentAccount ? phoneNumber : null,
       );
 
@@ -389,8 +423,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             AppRoutes.orderPlaced,
             extra: <String, dynamic>{
               'checkoutResponse': response,
-              'paymentProviderCode': paymentItemCode,
-              'paymentProviderVariantCode': variantCode,
+              'paymentProviderCode': paymentProviderCode,
             },
           );
         }
@@ -475,12 +508,17 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       variantDisplayName,
     );
 
+    final effectiveRequireAccount = _getSelectedVariant()
+            ?.requireAccountNumberOnInitiation ??
+        selectedMethod?.requireAccountNumberOnInitiation;
     final requiresPhone = selectedMethod != null &&
         ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode);
     final isETB = cart.currency.toUpperCase() == 'ETB';
     final requiresMethodPhone = selectedMethod != null &&
         requiresMethodSpecificPhone(methodType);
-    final showPhoneField = (requiresPhone && isETB) || requiresMethodPhone;
+    final showPhoneField = effectiveRequireAccount == true ||
+        (effectiveRequireAccount != false &&
+            ((requiresPhone && isETB) || requiresMethodPhone));
 
     final digits = _methodSpecificDigitsController.text.trim();
     final digitsValid = digits.length == 7 && RegExp(r'^\d{7}$').hasMatch(digits);
@@ -500,16 +538,31 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         effectivePhone = null;
       }
     } else {
-      effectivePhone = showPhoneField
-          ? (_paymentPhoneNumber ?? phoneNumber)
-          : phoneNumber;
+      if (showPhoneField && effectiveRequireAccount == true) {
+        // requireAccountNumberOnInitiation: user must enter a valid phone number (no address fallback)
+        if (_paymentPhoneNumber != null && _paymentPhoneNumber!.isNotEmpty) {
+          effectivePhone = _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
+          if (effectivePhone.isEmpty || effectivePhone.length < 9) {
+            effectivePhone = null;
+          }
+        } else {
+          effectivePhone = null;
+        }
+      } else {
+        effectivePhone = showPhoneField
+            ? (_paymentPhoneNumber ?? phoneNumber)
+            : phoneNumber;
+      }
     }
 
-    final methodPhoneValid = !requiresMethodPhone ||
-        (methodType == PaymentMethodType.waafi && digitsValid) ||
-        (methodType == PaymentMethodType.edahab && digitsValid) ||
-        (methodType == PaymentMethodType.ipay &&
-            (_ipayPhoneNumber?.isNotEmpty ?? false));
+    final methodPhoneValid = !showPhoneField ||
+        (requiresMethodPhone &&
+            ((methodType == PaymentMethodType.waafi && digitsValid) ||
+                (methodType == PaymentMethodType.edahab && digitsValid) ||
+                (methodType == PaymentMethodType.ipay &&
+                    (_ipayPhoneNumber?.isNotEmpty ?? false)))) ||
+        (!requiresMethodPhone &&
+            (effectivePhone != null && effectivePhone.isNotEmpty));
 
     final paymentInstructionText = requiresMethodPhone
         ? (_getSelectedVariant()?.paymentInstruction ??
@@ -660,12 +713,85 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           // Phone number for payment (ETB mobile money or Waafi/Edahab/iPay)
           if (showPhoneField)
             Container(
-              padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
-              color: Colors.white,
+              margin: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, 0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.md, Spacing.md, Spacing.xs),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.06),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.phone_android_rounded,
+                            size: 22,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                requiresMethodPhone
+                                    ? 'Phone number for payment'
+                                    : 'Mobile number for payment',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                      letterSpacing: 0.2,
+                                    ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Enter the number linked to your payment account',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                      height: 1.3,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   if (requiresMethodPhone) ...[
                     Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,16 +817,6 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                         ],
                       ),
                   ],
-                  Text(
-                    requiresMethodPhone
-                        ? 'Phone number for payment'
-                        : 'Mobile number for payment',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                  ),
-                  const SizedBox(height: Spacing.sm),
                   if (methodType == PaymentMethodType.waafi && waafiPrefix != null)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,6 +997,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                         });
                       },
                     ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

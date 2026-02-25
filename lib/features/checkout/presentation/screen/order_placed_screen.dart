@@ -19,12 +19,10 @@ class OrderPlacedScreen extends StatefulWidget {
     super.key,
     required this.response,
     this.paymentProviderCode = '',
-    this.paymentProviderVariantCode = '',
   });
 
   final CheckoutResponse response;
   final String paymentProviderCode;
-  final String paymentProviderVariantCode;
 
   @override
   State<OrderPlacedScreen> createState() => _OrderPlacedScreenState();
@@ -64,7 +62,6 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
       final request = PaymentRetryRequest(
         paymentReference: ref,
         paymentProviderCode: widget.paymentProviderCode,
-        paymentProviderVariantCode: widget.paymentProviderVariantCode,
       );
       final updated = await _checkoutRepository.retryPayment(request);
       if (!mounted) return;

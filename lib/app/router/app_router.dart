@@ -34,6 +34,8 @@ import '../../features/checkout/presentation/screen/order_placed_screen.dart';
 import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
 import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
+import '../../features/faqs/presentation/screen/faqs_screen.dart';
+import '../../features/wishlist/presentation/screen/wishlist_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -60,6 +62,8 @@ class AppRoutes {
   static const String orderPlaced = '/order-placed';
   static const String retryPaymentMethod = '/retry-payment-method';
   static const String affiliateRegister = '/affiliate-register';
+  static const String faqs = '/faqs';
+  static const String wishlist = '/wishlist';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -258,12 +262,9 @@ final GoRouter appRouter = GoRouter(
         }
         final paymentProviderCode =
             extra?['paymentProviderCode'] as String? ?? '';
-        final paymentProviderVariantCode =
-            extra?['paymentProviderVariantCode'] as String? ?? '';
         return OrderPlacedScreen(
           response: response,
           paymentProviderCode: paymentProviderCode,
-          paymentProviderVariantCode: paymentProviderVariantCode,
         );
       },
     ),
@@ -290,6 +291,18 @@ final GoRouter appRouter = GoRouter(
         final onSuccess = state.extra as VoidCallback?;
         return AffiliateRegisterScreen(onRegistrationSuccess: onSuccess);
       },
+    ),
+    GoRoute(
+      path: AppRoutes.faqs,
+      name: 'faqs',
+      builder: (BuildContext context, GoRouterState state) =>
+          const FaqsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.wishlist,
+      name: 'wishlist',
+      builder: (BuildContext context, GoRouterState state) =>
+          const WishlistScreen(),
     ),
   ],
 );

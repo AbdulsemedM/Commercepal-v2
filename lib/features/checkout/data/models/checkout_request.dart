@@ -11,7 +11,9 @@ class CheckoutItem {
 
   Map<String, dynamic> toJson() => {
         'itemId': itemId,
-        if (configId != null && configId!.isNotEmpty) 'configId': configId,
+        if (configId != null &&
+            configId!.isNotEmpty &&
+            configId != '0') 'configId': configId,
         'quantity': quantity,
       };
 }
@@ -22,7 +24,6 @@ class CheckoutRequest {
   final int deliveryAddressId;
   final List<CheckoutItem> items;
   final String paymentProviderCode;
-  final String paymentProviderVariantCode;
   final String? paymentAccount;
   final String? promoCode;
   final String? referralCode;
@@ -33,7 +34,6 @@ class CheckoutRequest {
     required this.deliveryAddressId,
     required this.items,
     required this.paymentProviderCode,
-    required this.paymentProviderVariantCode,
     this.paymentAccount,
     this.promoCode,
     this.referralCode,
@@ -45,7 +45,6 @@ class CheckoutRequest {
         'deliveryAddressId': deliveryAddressId,
         'items': items.map((item) => item.toJson()).toList(),
         'paymentProviderCode': paymentProviderCode,
-        'paymentProviderVariantCode': paymentProviderVariantCode,
         if (paymentAccount != null) 'paymentAccount': paymentAccount,
         if (promoCode != null) 'promoCode': promoCode,
         if (referralCode != null) 'referralCode': referralCode,

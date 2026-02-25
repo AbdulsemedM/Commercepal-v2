@@ -219,13 +219,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                                 },
                         ),
-                        const SizedBox(height: Spacing.md),
-                        SocialLoginButton(
-                          type: SocialLoginType.facebook,
-                          onPressed: () {
-                            // TODO: Handle Facebook login
-                          },
-                        ),
+                        // const SizedBox(height: Spacing.md),
+                        // SocialLoginButton(
+                        //   type: SocialLoginType.facebook,
+                        //   onPressed: () {
+                        //     // TODO: Handle Facebook login
+                        //   },
+                        // ),
                         const SizedBox(height: Spacing.xxl),
                         // Sign up link
                         SignUpLink(

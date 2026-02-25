@@ -6,6 +6,7 @@ class PaymentMethodItem {
   final String currency;
   final String iconUrl;
   final String? paymentInstruction;
+  final bool? requireAccountNumberOnInitiation;
   final List<PaymentMethodVariant> paymentMethodItemResponses;
 
   PaymentMethodItem({
@@ -14,6 +15,7 @@ class PaymentMethodItem {
     required this.currency,
     required this.iconUrl,
     this.paymentInstruction,
+    this.requireAccountNumberOnInitiation,
     required this.paymentMethodItemResponses,
   });
 
@@ -29,6 +31,8 @@ class PaymentMethodItem {
       currency: json['currency'] as String? ?? '',
       iconUrl: json['iconUrl'] as String? ?? '',
       paymentInstruction: json['paymentInstruction'] as String?,
+      requireAccountNumberOnInitiation:
+          json['requireAccountNumberOnInitiation'] as bool?,
       paymentMethodItemResponses: variants,
     );
   }
@@ -39,6 +43,8 @@ class PaymentMethodItem {
         'currency': currency,
         'iconUrl': iconUrl,
         if (paymentInstruction != null) 'paymentInstruction': paymentInstruction,
+        if (requireAccountNumberOnInitiation != null)
+          'requireAccountNumberOnInitiation': requireAccountNumberOnInitiation,
         'paymentMethodItemResponses':
             paymentMethodItemResponses.map((v) => v.toJson()).toList(),
       };

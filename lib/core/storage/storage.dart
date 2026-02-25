@@ -1,5 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:convert';
+
+import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 
 class Storage {
   Storage._internal();
@@ -25,6 +28,7 @@ class Storage {
   static const String _keySelectedCountry = 'selected_country_code';
   static const String _keySelectedCurrency = 'selected_currency_code';
   static const String _keyCustomerId = 'customer_id';
+  static const String _keyWishlist = 'wishlist';
 
   // Token management
   Future<void> saveTokens({
@@ -139,5 +143,44 @@ class Storage {
   Future<int?> getCustomerId() async {
     final value = await _storage.read(key: _keyCustomerId);
     return value != null ? int.tryParse(value) : null;
+  }
+
+  // Wishlist management
+  Future<List<WishlistItem>> getWishlist() async {
+    final raw = await _storage.read(key: _keyWishlist);
+    if (raw == null || raw.isEmpty) return <WishlistItem>[];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>?;
+      if (list == null) return <WishlistItem>[];
+      return list
+          .map((e) => WishlistItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return <WishlistItem>[];
+    }
+  }
+
+  Future<void> addWishlistItem(WishlistItem item) async {
+    final list = await getWishlist();
+    if (list.any((e) => e.productId == item.productId)) return;
+    list.add(item);
+    await _storage.write(
+      key: _keyWishlist,
+      value: jsonEncode(list.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> removeWishlistItem(String productId) async {
+    final list = await getWishlist();
+    list.removeWhere((e) => e.productId == productId);
+    await _storage.write(
+      key: _keyWishlist,
+      value: jsonEncode(list.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<bool> isInWishlist(String productId) async {
+    final list = await getWishlist();
+    return list.any((e) => e.productId == productId);
   }
 }
