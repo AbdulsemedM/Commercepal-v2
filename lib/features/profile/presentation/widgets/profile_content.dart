@@ -23,8 +23,8 @@ class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
 
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState = context
-        .findAncestorStateOfType<DashboardScreenState>();
+    final DashboardScreenState? dashboardState =
+        context.findAncestorStateOfType<DashboardScreenState>();
     if (dashboardState != null) {
       dashboardState.changeTab(tabIndex);
     }
@@ -44,10 +44,10 @@ class ProfileContent extends StatelessWidget {
             final cart = cartState is CartLoaded
                 ? cartState.cart
                 : cartState is CartItemAdded
-                ? cartState.cart
-                : cartState is CartItemUpdated
-                ? cartState.cart
-                : (cartState as CartItemDeleted).cart;
+                    ? cartState.cart
+                    : cartState is CartItemUpdated
+                        ? cartState.cart
+                        : (cartState as CartItemDeleted).cart;
             cartCount = cart.totalItems;
           }
 
@@ -103,8 +103,8 @@ class ProfileContent extends StatelessWidget {
                   return RefreshIndicator(
                     onRefresh: () async {
                       context.read<ProfileBloc>().add(
-                        ProfileRefreshRequested(),
-                      );
+                            ProfileRefreshRequested(),
+                          );
                     },
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -143,14 +143,12 @@ class ProfileContent extends StatelessWidget {
       final firstName = profile.firstName.isNotEmpty
           ? profile.firstName[0].toUpperCase()
           : '';
-      final lastName = profile.lastName.isNotEmpty
-          ? profile.lastName[0].toUpperCase()
-          : '';
+      final lastName =
+          profile.lastName.isNotEmpty ? profile.lastName[0].toUpperCase() : '';
       userInitials = '$firstName$lastName';
       if (userInitials.isEmpty) {
-        userInitials = userEmail?.isNotEmpty == true
-            ? userEmail![0].toUpperCase()
-            : 'U';
+        userInitials =
+            userEmail?.isNotEmpty == true ? userEmail![0].toUpperCase() : 'U';
       }
     } else {
       userInitials = authService.userInitials ?? 'U';
@@ -158,13 +156,17 @@ class ProfileContent extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-      padding: const EdgeInsets.all(Spacing.sm),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: Spacing.sm),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -172,13 +174,17 @@ class ProfileContent extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          // Profile Picture
+          // Profile picture with subtle ring
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.08),
+              border: Border.all(
+                color: AppColors.primary.withOpacity(0.25),
+                width: 1.5,
+              ),
               image: userImageUrl != null
                   ? DecorationImage(
                       image: NetworkImage(userImageUrl),
@@ -192,15 +198,15 @@ class ProfileContent extends StatelessWidget {
                       userInitials,
                       style: TextStyle(
                         color: AppColors.primary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   )
                 : null,
           ),
           const SizedBox(width: Spacing.sm),
-          // User Name, Email, Phone
+          // Name, email, phone
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -210,33 +216,61 @@ class ProfileContent extends StatelessWidget {
                 Text(
                   userName ?? 'User',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey[900],
+                    fontSize: 15,
+                    letterSpacing: -0.2,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  userEmail ?? '',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (profile?.phoneNumber != null && profile!.phoneNumber.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    profile.phoneNumber,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      Icons.mail_outline_rounded,
+                      size: 12,
                       color: Colors.grey[500],
-                      fontSize: 12,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        userEmail ?? '',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                if (profile?.phoneNumber != null &&
+                    profile!.phoneNumber.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.phone_outlined,
+                        size: 12,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          profile.phoneNumber,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -498,9 +532,10 @@ class _MenuItemWidget extends StatelessWidget {
               child: Text(
                 item.title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: item.isDestructive ? AppColors.error : Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color:
+                          item.isDestructive ? AppColors.error : Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
