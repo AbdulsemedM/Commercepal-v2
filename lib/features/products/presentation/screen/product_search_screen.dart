@@ -6,6 +6,7 @@ import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/shimmer_loading.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
@@ -13,6 +14,8 @@ import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/products/bloc/product_search_bloc.dart';
 import 'package:commercepal/features/products/data/models/product_search_request.dart';
 import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
+import 'package:commercepal/features/products/presentation/widgets/price_filter_chips.dart';
+import 'package:commercepal/features/products/data/models/product.dart';
 
 class ProductSearchScreen extends StatefulWidget {
   const ProductSearchScreen({super.key, this.initialQuery, this.providerId});
@@ -27,6 +30,7 @@ class ProductSearchScreen extends StatefulWidget {
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
   late final TextEditingController _searchController;
   late final ScrollController _scrollController;
+  PriceRange _priceRange = const PriceRange();
 
   void _performSearch() {
     final query = _searchController.text.trim();
@@ -56,6 +60,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   bool _isFromSubcategories() {
     return (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) &&
         (widget.providerId != null && widget.providerId!.isNotEmpty);
+  }
+
+  /// Uses backend product currency to get the symbol for the price filter.
+  /// Falls back to app default currency if list is empty.
+  String _getPriceFilterCurrencySymbol(List<Product> products) {
+    final String code = products.isNotEmpty
+        ? products.first.currency
+        : CountryCurrencyConstants.defaultCurrencyCode;
+    final String symbol = CountryCurrencyConstants.getCurrencySymbol(code);
+    // Add space after multi-character symbols (e.g. "Br ", "KSh ") for readability
+    return symbol.length > 1 ? '$symbol ' : symbol;
   }
 
   @override
@@ -279,57 +294,127 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       );
                     }
 
+                    final filteredProducts = state.products
+                        .where((Product p) => _priceRange.contains(p.price))
+                        .toList();
+                    final hasActiveFilter = !_priceRange.isAny;
+                    final maxPrice = state.products
+                        .map((Product p) => p.price)
+                        .fold(0.0, (double a, double b) => a > b ? a : b);
+
                     return Column(
                       children: <Widget>[
-                        // Results count
+                        // Results count + price filter
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: Spacing.md,
-                            vertical: Spacing.sm,
+                            vertical: Spacing.xs,
                           ),
                           child: Row(
                             children: <Widget>[
-                              Text(
-                                '${state.totalElements} results found',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
+                              Expanded(
+                                child: Text(
+                                  hasActiveFilter
+                                      ? 'Showing ${filteredProducts.length} of ${state.totalElements}'
+                                      : '${state.totalElements} results found',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
+                              if (hasActiveFilter)
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _priceRange = const PriceRange();
+                                    });
+                                  },
+                                  child: const Text('Clear filter'),
+                                ),
                             ],
                           ),
                         ),
-                        // Product grid
-                        Expanded(
-                          child: GridView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.all(Spacing.md),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: Spacing.md,
-                                  mainAxisSpacing: Spacing.md,
-                                  childAspectRatio: 0.75,
-                                ),
-                            itemCount: state.products.length,
-                            itemBuilder: (context, index) {
-                              final product = state.products[index];
-                              return ProductCard(
-                                key: ValueKey('product_${product.id}_$index'),
-                                productId: product.id,
-                                imageUrl: product.imageUrl ?? '',
-                                description: product.name,
-                                price:
-                                    '${product.currency} ${product.price.toStringAsFixed(2)}',
-                                originalPrice: product.originalPrice != null
-                                    ? '${product.currency} ${product.originalPrice!.toStringAsFixed(2)}'
-                                    : null,
-                                rating: product.rating,
-                                reviewCount: product.reviewCount,
-                                discountPercentage: product.discountPercentage,
-                              );
+                        // Price filter chips
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: Spacing.sm),
+                          child: PriceFilterChips(
+                            currentRange: _priceRange,
+                            currencySymbol: _getPriceFilterCurrencySymbol(
+                              state.products,
+                            ),
+                            maxPriceInList: maxPrice,
+                            onRangeChanged: (PriceRange range) {
+                              setState(() => _priceRange = range);
                             },
                           ),
+                        ),
+                        // Product grid or empty filter state
+                        Expanded(
+                          child: filteredProducts.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.filter_list_off,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: Spacing.md),
+                                      Text(
+                                        'No products in this price range',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: Spacing.sm),
+                                      FilledButton.icon(
+                                        onPressed: () {
+                                          setState(() {
+                                            _priceRange = const PriceRange();
+                                          });
+                                        },
+                                        icon: const Icon(Icons.clear_all, size: 20),
+                                        label: const Text('Clear price filter'),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : GridView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.all(Spacing.md),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: Spacing.md,
+                                    mainAxisSpacing: Spacing.md,
+                                    childAspectRatio: 0.75,
+                                  ),
+                                  itemCount: filteredProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final product = filteredProducts[index];
+                                    return ProductCard(
+                                      key: ValueKey('product_${product.id}_$index'),
+                                      productId: product.id,
+                                      imageUrl: product.imageUrl ?? '',
+                                      description: product.name,
+                                      price:
+                                          '${product.currency} ${product.price.toStringAsFixed(2)}',
+                                      originalPrice: product.originalPrice != null
+                                          ? '${product.currency} ${product.originalPrice!.toStringAsFixed(2)}'
+                                          : null,
+                                      rating: product.rating,
+                                      reviewCount: product.reviewCount,
+                                      discountPercentage: product.discountPercentage,
+                                    );
+                                  },
+                                ),
                         ),
                       ],
                     );

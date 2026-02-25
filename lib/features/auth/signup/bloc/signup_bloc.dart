@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
 import 'package:commercepal/core/utils/platform_utils.dart';
@@ -48,13 +49,12 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
     } catch (e) {
       String errorMessage = 'Failed to create account. Please try again.';
 
-      if (e is Exception) {
-        errorMessage =
-            e.toString().contains('400') || e.toString().contains('Bad Request')
-            ? 'Invalid information provided'
-            : e.toString().contains('409') || e.toString().contains('Conflict')
-            ? 'Email or phone number already exists'
-            : errorMessage;
+      if (e is DioException && e.response?.data is Map<String, dynamic>) {
+        final data = e.response!.data as Map<String, dynamic>;
+        final apiMessage = data['message'] as String?;
+        if (apiMessage != null && apiMessage.isNotEmpty) {
+          errorMessage = apiMessage;
+        }
       }
 
       emit(SignupFailure(errorMessage));

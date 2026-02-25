@@ -44,6 +44,44 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
+  /// Returns true if [order] belongs to the given tab [stageCategory].
+  /// [stageCategory] null means "All". Matches order.stageCategory and order.currentStage.
+  bool _orderMatchesTab(Order order, String? stageCategory) {
+    if (stageCategory == null || stageCategory.isEmpty) return true;
+    final cat = stageCategory.toUpperCase();
+    final orderCat = order.stageCategory.toUpperCase();
+    final orderStage = order.currentStage.toUpperCase();
+
+    if (orderCat == cat) return true;
+    if (orderStage == cat) return true;
+
+    // Aliases for common API variations
+    switch (cat) {
+      case 'DELIVERED':
+        return orderCat.contains('DELIVERED') || orderStage.contains('DELIVERED');
+      case 'ONGOING':
+        return orderCat.contains('ONGOING') ||
+            orderStage.contains('ONGOING') ||
+            orderCat.contains('SHIPPED') ||
+            orderStage.contains('SHIPPED') ||
+            orderCat.contains('CONFIRMED') ||
+            orderStage.contains('CONFIRMED') ||
+            orderCat.contains('PROCESSING') ||
+            orderStage.contains('PROCESSING');
+      case 'PENDING_PAYMENT':
+        return orderCat.contains('PENDING') && orderCat.contains('PAYMENT') ||
+            orderStage.contains('PENDING') && orderStage.contains('PAYMENT') ||
+            orderCat.contains('WAITING') ||
+            orderStage.contains('WAITING') ||
+            orderCat == 'PENDING_PAYMENT' ||
+            orderStage == 'PENDING_PAYMENT';
+      case 'CANCELLED':
+        return orderCat.contains('CANCEL') || orderStage.contains('CANCEL');
+      default:
+        return orderCat == cat || orderStage == cat;
+    }
+  }
+
   final OrdersRepository _ordersRepository = OrdersRepository();
 
   @override
@@ -181,13 +219,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   const SizedBox(height: Spacing.md),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<OrdersBloc>().add(
-                        OrdersLoadRequested(
-                          stageCategory: _getStageCategoryForTab(
-                            _selectedTabIndex,
-                          ),
-                        ),
-                      );
+                      context.read<OrdersBloc>().add(OrdersLoadRequested());
                     },
                     child: const Text('Retry'),
                   ),
@@ -197,7 +229,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           }
 
           if (state is OrdersLoaded) {
-            return _buildOrderList(state.response.content);
+            final category = _getStageCategoryForTab(_selectedTabIndex);
+            final filtered = state.response.content
+                .where((Order o) => _orderMatchesTab(o, category))
+                .toList();
+            return _buildOrderList(filtered);
           }
 
           return const Center(child: CircularProgressIndicator());
@@ -213,10 +249,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         setState(() {
           _selectedTabIndex = index;
         });
-        // Reload orders with the selected filter
-        context.read<OrdersBloc>().add(
-          OrdersLoadRequested(stageCategory: _getStageCategoryForTab(index)),
-        );
+        // Filtering is done client-side from the already-loaded list; no need to reload.
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
@@ -273,11 +306,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<OrdersBloc>().add(
-          OrdersRefreshRequested(
-            stageCategory: _getStageCategoryForTab(_selectedTabIndex),
-          ),
+          OrdersRefreshRequested(),
         );
-        // Wait a bit for the refresh to complete
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: ListView.builder(

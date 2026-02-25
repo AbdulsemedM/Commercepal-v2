@@ -343,20 +343,20 @@ class _SignupScreenState extends State<SignupScreen> {
                             // TODO: Handle Google signup
                           },
                         ),
-                        const SizedBox(height: Spacing.md),
-                        SocialSignupButton(
-                          type: SocialLoginType.facebook,
-                          onPressed: () {
-                            // TODO: Handle Facebook signup
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        SocialSignupButton(
-                          type: SocialLoginType.apple,
-                          onPressed: () {
-                            // TODO: Handle Apple signup
-                          },
-                        ),
+                        // const SizedBox(height: Spacing.md),
+                        // SocialSignupButton(
+                        //   type: SocialLoginType.facebook,
+                        //   onPressed: () {
+                        //     // TODO: Handle Facebook signup
+                        //   },
+                        // ),
+                        // const SizedBox(height: Spacing.md),
+                        // SocialSignupButton(
+                        //   type: SocialLoginType.apple,
+                        //   onPressed: () {
+                        //     // TODO: Handle Apple signup
+                        //   },
+                        // ),
                         const SizedBox(height: Spacing.xxl),
                         // Login link
                         LoginLink(
