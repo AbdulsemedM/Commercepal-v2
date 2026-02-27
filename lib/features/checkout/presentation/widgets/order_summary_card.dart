@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../../cart/data/models/cart.dart';
 
 class OrderSummaryCard extends StatelessWidget {
@@ -31,7 +32,7 @@ class OrderSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Order Summary',
+            LocalizationService.t(context, 'checkout.orderSummary'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -117,7 +118,7 @@ class OrderSummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Subtotal',
+                LocalizationService.t(context, 'checkout.subtotal'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Text(
@@ -133,7 +134,7 @@ class OrderSummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total',
+                LocalizationService.t(context, 'checkout.total'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

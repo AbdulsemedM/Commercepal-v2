@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/cart_item.dart';
 
 class CartItemWidget extends StatelessWidget {
@@ -59,7 +60,7 @@ class CartItemWidget extends StatelessWidget {
                   const SizedBox(width: Spacing.xs),
                   Expanded(
                     child: Text(
-                      'Item unavailable',
+                      LocalizationService.t(context, 'cart.itemUnavailable'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.error,
                             fontWeight: FontWeight.w600,
@@ -91,7 +92,7 @@ class CartItemWidget extends StatelessWidget {
                   const SizedBox(width: Spacing.xs),
                   Expanded(
                     child: Text(
-                      'Price dropped! Save ${_formatPrice(item.savingsAmount, item.currency)}',
+                      '${LocalizationService.t(context, 'cart.priceDropped')} ${_formatPrice(item.savingsAmount, item.currency)}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.success,
                             fontWeight: FontWeight.w600,
@@ -276,7 +277,7 @@ class CartItemWidget extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline),
                           onPressed: onRemove,
                           color: AppColors.error,
-                          tooltip: 'Remove item',
+                          tooltip: LocalizationService.t(context, 'cart.removeItemTooltip'),
                         ),
                       ],
                     ),

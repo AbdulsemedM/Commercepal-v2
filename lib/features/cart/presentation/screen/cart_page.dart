@@ -38,29 +38,29 @@ class CartPage extends StatelessWidget {
             );
           } else if (state is CartItemAdded) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item added to cart'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'cart.itemAdded')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is CartItemUpdated) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cart updated'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'cart.cartUpdated')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is CartItemDeleted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item removed from cart'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'cart.itemRemoved')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is CartCleared) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cart cleared'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'cart.cartCleared')),
                 backgroundColor: Colors.green,
               ),
             );
@@ -92,7 +92,7 @@ class CartPage extends StatelessWidget {
             hasNotification: false,
             searchPlaceholder: LocalizationService.t(
               context,
-              'nav.cart',
+              'profile.searchPlaceholder',
             ),
           ),
           body: BlocBuilder<CartBloc, CartState>(
@@ -127,7 +127,7 @@ class CartPage extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                         ),
-                        child: const Text('Retry'),
+                        child: Text(LocalizationService.t(context, 'cart.retry')),
                       ),
                     ],
                   ),
@@ -173,7 +173,7 @@ class CartPage extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.lg),
           Text(
-            'Your cart is empty',
+            LocalizationService.t(context, 'cart.emptyTitle'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[700],
@@ -181,7 +181,7 @@ class CartPage extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.sm),
           Text(
-            'Add items to your cart to get started',
+            LocalizationService.t(context, 'cart.emptySubtitle'),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -200,7 +200,7 @@ class CartPage extends StatelessWidget {
                 vertical: Spacing.md,
               ),
             ),
-            child: const Text('Start Shopping'),
+            child: Text(LocalizationService.t(context, 'cart.startShopping')),
           ),
         ],
       ),
@@ -280,7 +280,7 @@ class CartPage extends StatelessWidget {
                   const SizedBox(width: Spacing.xs),
                   Expanded(
                     child: Text(
-                      'You\'re saving ${cart.currency} ${cart.totalSavings.toStringAsFixed(2)}!',
+                      '${LocalizationService.t(context, 'cart.youreSaving')} ${cart.currency} ${cart.totalSavings.toStringAsFixed(2)}!',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.success,
                             fontWeight: FontWeight.w600,
@@ -295,7 +295,7 @@ class CartPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(
-                'Subtotal',
+                LocalizationService.t(context, 'cart.subtotal'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Text(
@@ -311,7 +311,7 @@ class CartPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(
-                'Estimated Total',
+                LocalizationService.t(context, 'cart.estimatedTotal'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -345,7 +345,7 @@ class CartPage extends StatelessWidget {
                       vertical: Spacing.md,
                     ),
                   ),
-                  child: const Text('Clear Cart'),
+                  child: Text(LocalizationService.t(context, 'cart.clearCart')),
                 ),
               ),
               const SizedBox(width: Spacing.md),
@@ -368,8 +368,8 @@ class CartPage extends StatelessWidget {
                       vertical: Spacing.md,
                     ),
                   ),
-                  child: const Text(
-                    'Checkout',
+                  child: Text(
+                    LocalizationService.t(context, 'cart.checkout'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -388,14 +388,14 @@ class CartPage extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Remove Item'),
+        title: Text(LocalizationService.t(context, 'cart.removeItem')),
         content: Text(
-          'Are you sure you want to remove "${cartItem.productName}" from your cart?',
+          '${LocalizationService.t(context, 'cart.removeItemConfirm')} "${cartItem.productName}"',
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(LocalizationService.t(context, 'cart.cancel')),
           ),
           TextButton(
             onPressed: () {
@@ -407,7 +407,7 @@ class CartPage extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
             ),
-            child: const Text('Remove'),
+            child: Text(LocalizationService.t(context, 'cart.remove')),
           ),
         ],
       ),
@@ -418,14 +418,14 @@ class CartPage extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Clear Cart'),
-        content: const Text(
-          'Are you sure you want to remove all items from your cart?',
+        title: Text(LocalizationService.t(context, 'cart.clearCart')),
+        content: Text(
+          LocalizationService.t(context, 'cart.clearCartConfirm'),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(LocalizationService.t(context, 'cart.cancel')),
           ),
           TextButton(
             onPressed: () {
@@ -435,7 +435,7 @@ class CartPage extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
             ),
-            child: const Text('Clear'),
+            child: Text(LocalizationService.t(context, 'cart.clear')),
           ),
         ],
       ),

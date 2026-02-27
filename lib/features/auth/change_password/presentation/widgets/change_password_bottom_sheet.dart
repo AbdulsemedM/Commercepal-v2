@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/change_password_bloc.dart';
 
 class ChangePasswordBottomSheet extends StatefulWidget {
@@ -39,24 +40,21 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     super.dispose();
   }
 
-  String _getPasswordStrength(String password) {
+  String _getPasswordStrength(BuildContext context, String password) {
     if (password.isEmpty) return '';
-    if (password.length < 6) return 'Weak';
-    if (password.length < 10) return 'Medium';
-    return 'Strong';
+    if (password.length < 6) return LocalizationService.t(context, 'changePassword.weak');
+    if (password.length < 10) return LocalizationService.t(context, 'changePassword.medium');
+    return LocalizationService.t(context, 'changePassword.strong');
   }
 
-  Color _getPasswordStrengthColor(String strength) {
-    switch (strength) {
-      case 'Weak':
-        return Colors.red;
-      case 'Medium':
-        return Colors.orange;
-      case 'Strong':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+  Color _getPasswordStrengthColor(BuildContext context, String strength) {
+    final weak = LocalizationService.t(context, 'changePassword.weak');
+    final medium = LocalizationService.t(context, 'changePassword.medium');
+    final strong = LocalizationService.t(context, 'changePassword.strong');
+    if (strength == weak) return Colors.red;
+    if (strength == medium) return Colors.orange;
+    if (strength == strong) return Colors.green;
+    return Colors.grey;
   }
 
   @override
@@ -124,9 +122,9 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             ),
                           ),
                           // Title
-                          const Text(
-                            'Change Password',
-                            style: TextStyle(
+                          Text(
+                            LocalizationService.t(context, 'changePassword.title'),
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primary,
@@ -135,7 +133,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.sm),
                           // Subtitle
                           Text(
-                            'Secure your account with a new password',
+                            LocalizationService.t(context, 'changePassword.subtitle'),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade700,
@@ -148,7 +146,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.xl),
                           // Current Password field
                           Text(
-                            'Current Password',
+                            LocalizationService.t(context, 'changePassword.currentPassword'),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -167,12 +165,12 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               enabled: !isLoading,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter current password';
+                                  return LocalizationService.t(context, 'changePassword.pleaseEnterCurrent');
                                 }
                                 return null;
                               },
                               decoration: InputDecoration(
-                                hintText: 'Enter your current password',
+                                hintText: LocalizationService.t(context, 'changePassword.currentPasswordHint'),
                                 hintStyle: TextStyle(
                                   color: Colors.grey.shade500,
                                   fontSize: 14,
@@ -199,7 +197,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.md),
                           // New Password field
                           Text(
-                            'New Password',
+                            LocalizationService.t(context, 'changePassword.newPassword'),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -221,15 +219,15 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               },
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter new password';
+                                  return LocalizationService.t(context, 'changePassword.pleaseEnterNew');
                                 }
                                 if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
+                                  return LocalizationService.t(context, 'changePassword.passwordMinLength');
                                 }
                                 return null;
                               },
                               decoration: InputDecoration(
-                                hintText: 'Enter your new password',
+                                hintText: LocalizationService.t(context, 'changePassword.newPasswordHint'),
                                 hintStyle: TextStyle(
                                   color: Colors.grey.shade500,
                                   fontSize: 14,
@@ -259,19 +257,20 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             Row(
                               children: [
                                 Text(
-                                  'Password Strength: ',
+                                  LocalizationService.t(context, 'changePassword.strengthLabel'),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade700,
                                   ),
                                 ),
                                 Text(
-                                  _getPasswordStrength(_newPasswordController.text),
+                                  _getPasswordStrength(context, _newPasswordController.text),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: _getPasswordStrengthColor(
-                                      _getPasswordStrength(_newPasswordController.text),
+                                      context,
+                                      _getPasswordStrength(context, _newPasswordController.text),
                                     ),
                                   ),
                                 ),
@@ -281,7 +280,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.md),
                           // Confirm Password field
                           Text(
-                            'Confirm Password',
+                            LocalizationService.t(context, 'changePassword.confirmPassword'),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -300,15 +299,15 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               enabled: !isLoading,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
+                                  return LocalizationService.t(context, 'changePassword.pleaseConfirm');
                                 }
                                 if (value != _newPasswordController.text) {
-                                  return 'Passwords do not match';
+                                  return LocalizationService.t(context, 'changePassword.passwordsDoNotMatch');
                                 }
                                 return null;
                               },
                               decoration: InputDecoration(
-                                hintText: 'Confirm your new password',
+                                hintText: LocalizationService.t(context, 'changePassword.confirmHint'),
                                 hintStyle: TextStyle(
                                   color: Colors.grey.shade500,
                                   fontSize: 14,
@@ -372,9 +371,9 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                         ),
                                       ),
                                     )
-                                  : const Text(
-                                      'Update Password',
-                                      style: TextStyle(
+                                  : Text(
+                                      LocalizationService.t(context, 'changePassword.updateButton'),
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),

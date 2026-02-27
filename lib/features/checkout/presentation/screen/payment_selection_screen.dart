@@ -5,6 +5,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
@@ -211,7 +212,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       if (mounted) {
         setState(() {
           _isLoadingPaymentMethods = false;
-          _errorMessage = 'Failed to load payment methods. Please try again.';
+          _errorMessage = LocalizationService.t(context, 'checkout.failedToLoadPaymentMethods');
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -262,7 +263,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(LocalizationService.t(context, 'cart.cancel')),
           ),
         ],
       ),
@@ -350,8 +351,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           if (mounted) {
             setState(() => _isPlacingOrder = false);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please enter a valid phone number for SahayPay.'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
                 backgroundColor: AppColors.warning,
               ),
             );
@@ -365,7 +366,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                verification.message ?? 'Phone number could not be verified. Please check and try again.',
+                verification.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
               ),
               backgroundColor: AppColors.error,
             ),
@@ -383,11 +384,6 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         );
       }).toList();
 
-      // Determine if payment account is needed (mobile money or Waafi/Edahab/iPay)
-      final isMobileMoney =
-          ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode) ||
-          selectedMethod.providerCode == 'MOBILE_MONEY';
-
       final categoryName = _getCategoryNameForSelectedMethod();
       final variantDisplayName = _getSelectedVariantDisplayName();
       final methodType = getPaymentMethodType(
@@ -395,17 +391,29 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         selectedMethod.displayName,
         variantDisplayName,
       );
-      final needsPaymentAccount = (isMobileMoney && phoneNumber != null) ||
-          (phoneNumber != null && requiresMethodSpecificPhone(methodType));
 
-      // Create checkout request
+      // Determine if this payment method requires a payment account (phone number).
+      // Only send paymentAccount when the method actually requires it; otherwise send null.
+      final effectiveRequireAccount = _getSelectedVariant()
+              ?.requireAccountNumberOnInitiation ??
+          selectedMethod.requireAccountNumberOnInitiation;
+      final requiresPhone = ['MOBILE_MONEY', 'LOAN']
+          .contains(selectedMethod.providerCode);
+      final isETB = cart.currency.toUpperCase() == 'ETB';
+      final methodRequiresPaymentAccount = effectiveRequireAccount == true ||
+          (effectiveRequireAccount != false &&
+              ((requiresPhone && isETB) || requiresMethodSpecificPhone(methodType)));
+
+      // Create checkout request – only include paymentAccount when method requires it
       final checkoutRequest = CheckoutRequest(
         channel: PlatformUtils.getChannel(),
         currency: cart.currency,
         deliveryAddressId: addressId,
         items: checkoutItems,
         paymentProviderCode: paymentProviderCode,
-        paymentAccount: needsPaymentAccount ? phoneNumber : null,
+        paymentAccount: methodRequiresPaymentAccount && phoneNumber != null && phoneNumber.isNotEmpty
+            ? phoneNumber
+            : null,
       );
 
       // Call checkout API
@@ -435,7 +443,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         });
 
         // Extract error message, preferring API response body when available
-        String errorMessage = 'Failed to place order. Please try again.';
+        String errorMessage = LocalizationService.t(context, 'checkout.failedToPlaceOrder');
         if (e is DioException && e.response?.data is Map<String, dynamic>) {
           final data = e.response!.data! as Map<String, dynamic>;
           final apiMessage = data['message'] as String?;
@@ -443,17 +451,16 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             errorMessage = apiMessage;
           }
         }
-        if (errorMessage == 'Failed to place order. Please try again.') {
+        if (errorMessage == LocalizationService.t(context, 'checkout.failedToPlaceOrder')) {
           if (e.toString().contains('401') ||
               e.toString().contains('Unauthorized')) {
-            errorMessage = 'Session expired. Please login again.';
+            errorMessage = LocalizationService.t(context, 'checkout.sessionExpired');
           } else if (e.toString().contains('400') ||
               e.toString().contains('Bad Request')) {
-            errorMessage =
-                'Invalid order data. Please check your cart and try again.';
+            errorMessage = LocalizationService.t(context, 'checkout.invalidOrderData');
           } else if (e.toString().contains('500') ||
               e.toString().contains('Server Error')) {
-            errorMessage = 'Server error. Please try again later.';
+            errorMessage = LocalizationService.t(context, 'checkout.serverError');
           } else if (e.toString().isNotEmpty) {
             final errorStr = e.toString();
             if (errorStr.contains('Exception:')) {
@@ -486,11 +493,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     if (cart == null || addressId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Payment'),
+          title: Text(LocalizationService.t(context, 'checkout.payment')),
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black87),
         ),
-        body: const Center(child: Text('Missing checkout data')),
+        body: Center(child: Text(LocalizationService.t(context, 'checkout.missingCheckoutData'))),
       );
     }
 
@@ -551,7 +558,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       } else {
         effectivePhone = showPhoneField
             ? (_paymentPhoneNumber ?? phoneNumber)
-            : phoneNumber;
+            : null;
       }
     }
 
@@ -573,9 +580,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightGrey,
       appBar: AppBar(
-        title: const Text(
-          'Select Payment Method',
-          style: TextStyle(
+        title: Text(
+          LocalizationService.t(context, 'checkout.selectPaymentMethod'),
+          style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 18,
             color: Colors.black87,
@@ -599,7 +606,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                     Spacing.sm,
                   ),
                   child: Text(
-                    'Choose your preferred payment method',
+                    LocalizationService.t(context, 'checkout.choosePreferredPaymentMethod'),
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
@@ -621,14 +628,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               const SizedBox(height: Spacing.md),
                               ElevatedButton(
                                 onPressed: _loadPaymentMethods,
-                                child: const Text('Retry'),
+                                child: Text(LocalizationService.t(context, 'cart.retry')),
                               ),
                             ],
                           ),
                         )
                       : _paymentMethodCategories.isEmpty
-                      ? const Center(
-                          child: Text('No payment methods available'),
+                      ? Center(
+                          child: Text(LocalizationService.t(context, 'checkout.noPaymentMethodsAvailable')),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(Spacing.md),
@@ -765,8 +772,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                             children: [
                               Text(
                                 requiresMethodPhone
-                                    ? 'Phone number for payment'
-                                    : 'Mobile number for payment',
+                                    ? LocalizationService.t(context, 'checkout.phoneNumberForPayment')
+                                    : LocalizationService.t(context, 'checkout.mobileNumberForPayment'),
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primary,
@@ -775,7 +782,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Enter the number linked to your payment account',
+                                LocalizationService.t(context, 'checkout.enterNumberLinkedToAccount'),
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Colors.grey[600],
                                       height: 1.3,
@@ -799,7 +806,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                         children: [
                           if (paymentInstructionText.isNotEmpty) ...[
                             Text(
-                              'Instructions',
+                              LocalizationService.t(context, 'checkout.instructions'),
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: Colors.black87,
@@ -1049,9 +1056,9 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                             ),
                           ),
                         )
-                      : const Text(
-                          'Place Order',
-                          style: TextStyle(
+                      : Text(
+                          LocalizationService.t(context, 'checkout.placeOrder'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),

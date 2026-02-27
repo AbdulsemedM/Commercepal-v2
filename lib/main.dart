@@ -8,9 +8,12 @@ import 'app/app.dart';
 import 'core/config/env.dart';
 import 'core/logging/app_logger.dart';
 import 'core/update/app_update_remote_config.dart';
+import 'services/localization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await LocalizationService.ensureInitialized();
 
   // Initialize Firebase
   try {
@@ -49,5 +52,5 @@ void main() async {
     await Env.initialize();
   }
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }

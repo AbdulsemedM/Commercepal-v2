@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class HelpDeskModal extends StatefulWidget {
   const HelpDeskModal({super.key});
@@ -57,9 +58,9 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                 ),
               ),
               // Title
-              const Text(
-                'Help Desk',
-                style: TextStyle(
+              Text(
+                LocalizationService.t(context, 'profile.helpDesk'),
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,
@@ -68,7 +69,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               const SizedBox(height: Spacing.sm),
               // Description
               Text(
-                'We are here to sort out any queries you may have',
+                LocalizationService.t(context, 'profile.helpDeskSubtitle'),
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade700,
@@ -81,7 +82,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               const SizedBox(height: Spacing.xl),
               // Description label
               Text(
-                'Description',
+                LocalizationService.t(context, 'profile.description'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -99,7 +100,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                   controller: _descriptionController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'Write something ...',
+                    hintText: LocalizationService.t(context, 'profile.writeSomething'),
                     hintStyle: TextStyle(
                       color: Colors.grey.shade500,
                       fontSize: 14,
@@ -128,8 +129,8 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Send Message',
+                  child: Text(
+                    LocalizationService.t(context, 'profile.sendMessage'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

@@ -43,6 +43,7 @@ class AppUpdateRemoteConfig {
       await remoteConfig.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: fetchTimeout,
+          // Fetch is only triggered at app startup (splash). This interval throttles repeated calls.
           minimumFetchInterval: const Duration(hours: 1),
         ),
       );
@@ -66,7 +67,7 @@ class AppUpdateRemoteConfig {
     }
   }
 
-  /// Fetches and activates the latest config. Call at startup (e.g. splash).
+  /// Fetches and activates the latest config. Intended to be called once at app startup (e.g. splash).
   /// Returns true if new config was activated.
   static Future<bool> fetchAndActivate() async {
     try {

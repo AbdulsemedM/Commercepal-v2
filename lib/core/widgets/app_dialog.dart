@@ -90,8 +90,8 @@ class AppDialog {
           );
           return CupertinoDialogAction(
             onPressed: () {
-              Navigator.of(context).maybePop();
               a.onPressed?.call();
+              Navigator.of(context).maybePop();
             },
             isDestructiveAction: a.isDestructive,
             child: Text(a.label, style: style),
@@ -117,8 +117,8 @@ class AppDialog {
             foregroundColor: scheme.onPrimary,
           ),
           onPressed: () {
-            Navigator.of(context).maybePop();
             a.onPressed?.call();
+            Navigator.of(context).maybePop();
           },
           child: Text(a.label),
         );
@@ -128,8 +128,8 @@ class AppDialog {
         return OutlinedButton(
           style: baseStyle,
           onPressed: () {
-            Navigator.of(context).maybePop();
             a.onPressed?.call();
+            Navigator.of(context).maybePop();
           },
           child: Text(a.label),
         );
@@ -138,8 +138,8 @@ class AppDialog {
       return TextButton(
         style: baseStyle,
         onPressed: () {
-          Navigator.of(context).maybePop();
           a.onPressed?.call();
+          Navigator.of(context).maybePop();
         },
         child: Text(a.label),
       );

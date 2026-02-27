@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../../addresses/bloc/address_bloc.dart';
@@ -28,11 +29,11 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
     if (cart == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Checkout'),
+          title: Text(LocalizationService.t(context, 'checkout.checkout')),
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black87),
         ),
-        body: const Center(child: Text('Cart data not found')),
+        body: Center(child: Text(LocalizationService.t(context, 'checkout.cartDataNotFound'))),
       );
     }
 
@@ -41,9 +42,9 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
       child: Scaffold(
         backgroundColor: AppColors.lightGrey,
         appBar: AppBar(
-          title: const Text(
-            'Checkout',
-            style: TextStyle(
+          title: Text(
+            LocalizationService.t(context, 'checkout.checkout'),
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 18,
               color: Colors.black87,
@@ -115,8 +116,8 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                     ),
-                    child: const Text(
-                      'Continue to Payment',
+                    child: Text(
+                      LocalizationService.t(context, 'checkout.continueToPayment'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

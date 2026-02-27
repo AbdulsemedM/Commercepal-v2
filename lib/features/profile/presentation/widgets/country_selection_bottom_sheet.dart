@@ -4,6 +4,7 @@ import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class CountrySelectionBottomSheet extends StatefulWidget {
   const CountrySelectionBottomSheet({super.key});
@@ -122,8 +123,8 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  const Text(
-                    'Select Country',
+                   Text(
+                    LocalizationService.t(context, 'profile.selectCountry'),
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -133,7 +134,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                   const SizedBox(height: Spacing.sm),
                   // Subtitle
                   Text(
-                    'Choose your location',
+                    LocalizationService.t(context, 'profile.chooseYourLocation'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -160,7 +161,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: 'Search countries...',
+                        hintText: LocalizationService.t(context, 'profile.searchCountries'),
                         hintStyle: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 14,
@@ -195,7 +196,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                               ),
                               const SizedBox(height: Spacing.md),
                               Text(
-                                'No countries found',
+                                LocalizationService.t(context, 'profile.noCountriesFound'),
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey.shade600,

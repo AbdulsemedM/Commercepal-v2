@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/orders/bloc/orders_bloc.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
@@ -17,14 +18,14 @@ class OrderHistoryScreen extends StatefulWidget {
 }
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
-  int _selectedTabIndex = 0; // All is selected by default
+  int _selectedTabIndex = 0;
 
-  final List<String> _tabs = <String>[
-    'All',
-    'Delivered',
-    'Ongoing',
-    'Pending Payment',
-    'Cancelled',
+  static const List<String> _tabKeys = [
+    'orderHistory.all',
+    'orderHistory.delivered',
+    'orderHistory.ongoing',
+    'orderHistory.pendingPayment',
+    'orderHistory.cancelled',
   ];
 
   String? _getStageCategoryForTab(int index) {
@@ -113,8 +114,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       } catch (_) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to load payment details. Please try again.'),
+            SnackBar(
+              content: Text(LocalizationService.t(context, 'orderHistory.unableToLoadPayment')),
               backgroundColor: AppColors.error,
             ),
           );
@@ -125,8 +126,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     if (paymentRef == null || paymentRef.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment is not available for this order.'),
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'orderHistory.paymentNotAvailable')),
             backgroundColor: AppColors.warning,
           ),
         );
@@ -167,7 +168,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Order History',
+          LocalizationService.t(context, 'orderHistory.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -180,10 +181,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List<Widget>.generate(_tabs.length, (int index) {
+                children: List<Widget>.generate(_tabKeys.length, (int index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-                    child: _buildTab(index, _tabs[index]),
+                    child: _buildTab(index, LocalizationService.t(context, _tabKeys[index])),
                   );
                 }),
               ),
@@ -221,7 +222,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     onPressed: () {
                       context.read<OrdersBloc>().add(OrdersLoadRequested());
                     },
-                    child: const Text('Retry'),
+                    child: Text(LocalizationService.t(context, 'orderHistory.retry')),
                   ),
                 ],
               ),
@@ -295,7 +296,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             ),
             const SizedBox(height: Spacing.md),
             Text(
-              'No orders found',
+              LocalizationService.t(context, 'orderHistory.noOrdersFound'),
               style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ],
@@ -324,7 +325,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Widget _buildOrderCard(Order order) {
     // Get first item for display
     final firstItem = order.items.isNotEmpty ? order.items.first : null;
-    final productName = firstItem?.productName ?? 'Multiple items';
+    final productName = firstItem?.productName ?? LocalizationService.t(context, 'orderHistory.multipleItems');
     final productImageUrl = firstItem?.productImageUrl ?? '';
 
     // Format date
@@ -415,7 +416,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   child: Text(
                     order.stageLabel.isNotEmpty
                         ? order.stageLabel
-                        : _getStatusLabel(status),
+                        : _getStatusLabel(context, status),
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -440,7 +441,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 const SizedBox(height: Spacing.xs),
                 // Order number
                 Text(
-                  'Order #${order.orderNumber}',
+                  '${LocalizationService.t(context, 'orderHistory.orderNumber')}${order.orderNumber}',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: Spacing.xs),
@@ -483,7 +484,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text('Pay'),
+                            child: Text(LocalizationService.t(context, 'orderHistory.pay')),
                           ),
                         ),
                       if (order.canTrack)
@@ -507,7 +508,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Track'),
+                          child: Text(LocalizationService.t(context, 'orderHistory.track')),
                         ),
                     ],
                   ),
@@ -548,25 +549,25 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
-  String _getStatusLabel(String status) {
+  String _getStatusLabel(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'delivered':
-        return 'Delivered';
+        return LocalizationService.t(context, 'orderHistory.delivered');
       case 'shipped':
       case 'ongoing':
-        return 'Ongoing';
+        return LocalizationService.t(context, 'orderHistory.ongoing');
       case 'pending':
       case 'pending_confirmation':
       case 'pending_payment':
-        return 'Pending Payment';
+        return LocalizationService.t(context, 'orderHistory.pendingPayment');
       case 'cancelled':
       case 'canceled':
-        return 'Cancelled';
+        return LocalizationService.t(context, 'orderHistory.cancelled');
       case 'confirmed':
       case 'waiting':
-        return 'Waiting';
+        return LocalizationService.t(context, 'orderHistory.waiting');
       default:
-        return 'Pending';
+        return LocalizationService.t(context, 'orderHistory.pending');
     }
   }
 }

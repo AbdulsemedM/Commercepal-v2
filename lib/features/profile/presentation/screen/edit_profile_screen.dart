@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-// import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/features/profile/data/models/update_profile_request.dart';
@@ -103,8 +103,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         listener: (context, state) {
           if (state is ProfileLoaded) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'profile.profileUpdatedSuccessfully')),
                 backgroundColor: Colors.green,
               ),
             );
@@ -139,7 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onPressed: () => context.pop(),
             ),
             title: Text(
-              'Edit Profile',
+              LocalizationService.t(context, 'profile.editProfile'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -159,11 +159,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     children: <Widget>[
                       // First Name
                       _buildTextField(
-                        label: 'First Name',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.firstName'),
                         controller: _firstNameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your first name';
+                            return LocalizationService.t(context, 'profile.pleaseEnterFirstName');
                           }
                           return null;
                         },
@@ -171,11 +172,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: Spacing.md),
                       // Last Name
                       _buildTextField(
-                        label: 'Last Name',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.lastName'),
                         controller: _lastNameController,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your last name';
+                            return LocalizationService.t(context, 'profile.pleaseEnterLastName');
                           }
                           return null;
                         },
@@ -183,7 +185,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: Spacing.md),
                       // Country
                       _buildDropdown(
-                        label: 'Country',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.country'),
                         value: _selectedCountry,
                         items: _countries
                             .map(
@@ -200,7 +203,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please select a country';
+                            return LocalizationService.t(context, 'profile.pleaseSelectCountry');
                           }
                           return null;
                         },
@@ -208,19 +211,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: Spacing.md),
                       // City
                       _buildTextField(
-                        label: 'City',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.city'),
                         controller: _cityController,
                       ),
                       const SizedBox(height: Spacing.md),
                       // State/Province
                       _buildTextField(
-                        label: 'State/Province',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.stateProvince'),
                         controller: _stateProvinceController,
                       ),
                       const SizedBox(height: Spacing.md),
                       // Preferred Language
                       _buildDropdown(
-                        label: 'Preferred Language',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.preferredLanguage'),
                         value: _selectedLanguage,
                         items: _languages
                             .map(
@@ -239,7 +245,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: Spacing.md),
                       // Preferred Currency
                       _buildDropdown(
-                        label: 'Preferred Currency',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.preferredCurrency'),
                         value: _selectedCurrency,
                         items: _currencies
                             .map(
@@ -258,7 +265,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: Spacing.md),
                       // Customer Notes
                       _buildTextField(
-                        label: 'Customer Notes',
+                        context: context,
+                        label: LocalizationService.t(context, 'profile.customerNotes'),
                         controller: _customerNotesController,
                         maxLines: 3,
                       ),
@@ -323,7 +331,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                 )
                               : Text(
-                                  'Update Profile',
+                                  LocalizationService.t(context, 'profile.updateProfile'),
                                   style: Theme.of(context).textTheme.bodyLarge
                                       ?.copyWith(
                                         color: Colors.white,
@@ -345,6 +353,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required String label,
     required TextEditingController controller,
     String? Function(String?)? validator,
@@ -367,7 +376,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           maxLines: maxLines,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
-            hintText: 'Enter $label',
+            hintText: '${LocalizationService.t(context, 'profile.enter')} $label',
             hintStyle: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
@@ -404,6 +413,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildDropdown({
+    required BuildContext context,
     required String label,
     required String? value,
     required List<DropdownMenuItem<String>> items,
@@ -427,7 +437,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onChanged: onChanged,
           validator: validator,
           decoration: InputDecoration(
-            hintText: 'Select $label',
+            hintText: '${LocalizationService.t(context, 'profile.select')} $label',
             hintStyle: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),

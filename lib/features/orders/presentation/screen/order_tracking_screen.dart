@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/models/order_item.dart';
-import 'package:intl/intl.dart';
+import 'package:commercepal/services/invoice_pdf_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   const OrderTrackingScreen({
@@ -25,6 +31,8 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  bool _isGeneratingInvoice = false;
+
   @override
   void initState() {
     super.initState();
@@ -180,7 +188,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(Spacing.md),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,6 +248,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               if (firstItem != null)
                 _buildProductCard(firstItem, order.currency),
             ],
+          ),
+          const SizedBox(height: Spacing.xl),
+          OutlinedButton.icon(
+            onPressed: _isGeneratingInvoice ? null : () => _downloadInvoice(context, order),
+            icon: _isGeneratingInvoice
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download),
+            label: Text(
+              _isGeneratingInvoice ? 'Generating…' : 'Download invoice (PDF)',
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+            ),
           ),
           const SizedBox(height: Spacing.xl),
           _buildTimeline(currentStatusIndex),
@@ -314,6 +339,41 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _downloadInvoice(BuildContext context, Order order) async {
+    setState(() => _isGeneratingInvoice = true);
+    try {
+      final pdfBytes = await InvoicePdfService.buildPdf(order: order);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/invoice_${order.orderNumber}.pdf');
+      await file.writeAsBytes(pdfBytes);
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Invoice - Order ${order.orderNumber}',
+        text: 'Your CommercePal invoice for order ${order.orderNumber}',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invoice ready. Save or share the PDF.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate invoice: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingInvoice = false);
+    }
   }
 
   int _getCurrentStatusIndex(Order order) {

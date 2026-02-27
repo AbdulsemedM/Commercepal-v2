@@ -29,6 +29,7 @@ class Storage {
   static const String _keySelectedCurrency = 'selected_currency_code';
   static const String _keyCustomerId = 'customer_id';
   static const String _keyWishlist = 'wishlist';
+  static const String _keyLocale = 'app_locale';
 
   // Token management
   Future<void> saveTokens({
@@ -182,5 +183,15 @@ class Storage {
   Future<bool> isInWishlist(String productId) async {
     final list = await getWishlist();
     return list.any((e) => e.productId == productId);
+  }
+
+  // Locale / language
+  Future<void> saveLocale(String languageCode) async {
+    await _storage.write(key: _keyLocale, value: languageCode);
+  }
+
+  Future<String> getLocale() async {
+    final code = await _storage.read(key: _keyLocale);
+    return code ?? 'en';
   }
 }

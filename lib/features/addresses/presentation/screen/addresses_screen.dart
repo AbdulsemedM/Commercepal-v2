@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/address_bloc.dart';
 import '../../data/models/address.dart';
 import '../widgets/address_card.dart';
@@ -45,7 +46,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'My Addresses',
+          LocalizationService.t(context, 'addresses.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -63,29 +64,29 @@ class _AddressesScreenState extends State<AddressesScreen> {
             );
           } else if (state is AddressAdded) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Address added successfully'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'addresses.added')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is AddressUpdated) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Address updated successfully'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'addresses.updated')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is AddressDeleted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Address deleted successfully'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'addresses.deleted')),
                 backgroundColor: Colors.green,
               ),
             );
           } else if (state is AddressSetDefault) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Default address updated'),
+              SnackBar(
+                content: Text(LocalizationService.t(context, 'addresses.defaultUpdated')),
                 backgroundColor: Colors.green,
               ),
             );
@@ -128,7 +129,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Retry'),
+                    child: Text(LocalizationService.t(context, 'addresses.retry')),
                   ),
                 ],
               ),
@@ -150,7 +151,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     ),
                     const SizedBox(height: Spacing.md),
                     Text(
-                      'No addresses yet',
+                      LocalizationService.t(context, 'addresses.noAddressesYet'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -159,7 +160,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     ),
                     const SizedBox(height: Spacing.sm),
                     Text(
-                      'Add your first address to get started',
+                      LocalizationService.t(context, 'addresses.addFirstHint'),
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -214,9 +215,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Add Address',
-          style: TextStyle(color: Colors.white),
+        label: Text(
+          LocalizationService.t(context, 'addresses.addAddress'),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
@@ -227,14 +228,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Address'),
+        title: Text(LocalizationService.t(context, 'addresses.deleteTitle')),
         content: Text(
-          'Are you sure you want to delete this address?\n\n${address.receiverName}\n${address.street}, ${address.city}',
+          '${LocalizationService.t(context, 'addresses.deleteConfirm')}\n\n${address.receiverName}\n${address.street}, ${address.city}',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(LocalizationService.t(context, 'cart.cancel')),
           ),
           TextButton(
             onPressed: () {
@@ -246,7 +247,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
             ),
-            child: const Text('Delete'),
+            child: Text(LocalizationService.t(context, 'addresses.delete')),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
@@ -28,7 +29,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Could not launch $phone'),
+              content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $phone'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -36,12 +37,12 @@ class _ContactUsPageState extends State<ContactUsPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${LocalizationService.t(context, 'contactUs.errorLaunching')} ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
       }
     }
   }
@@ -63,7 +64,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not launch $url'),
+            content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -72,7 +73,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error launching URL: ${e.toString()}'),
+            content: Text('${LocalizationService.t(context, 'contactUs.errorLaunching')} ${e.toString()}'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
@@ -183,7 +184,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          "Contact Us",
+          LocalizationService.t(context, "contactUs.title"),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -226,9 +227,9 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     ),
                   ),
                   const SizedBox(height: Spacing.lg),
-                  const Text(
-                    "Get in Touch",
-                    style: TextStyle(
+                  Text(
+                    LocalizationService.t(context, "contactUs.getInTouch"),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 28,
                       color: Colors.black87,
@@ -237,7 +238,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   ),
                   const SizedBox(height: Spacing.sm),
                   Text(
-                    "If you have any inquiries, get in touch with us.\nWe will be happy to help you.",
+                    LocalizationService.t(context, "contactUs.subtitle"),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.w400,
@@ -263,7 +264,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                       bottom: Spacing.md,
                     ),
                     child: Text(
-                      "Contact Methods",
+                      LocalizationService.t(context, "contactUs.contactMethods"),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
@@ -275,7 +276,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   // Short Code
                   _buildContactCard(
                     icon: Icons.phone_in_talk,
-                    title: "Short Code",
+                    title: LocalizationService.t(context, "contactUs.shortCode"),
                     subtitle: phoneNumber3,
                     iconColor: AppColors.success,
                     onTap: () => _makePhoneCall(phoneNumber3),
@@ -284,7 +285,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   // Phone Number
                   _buildContactCard(
                     icon: Icons.phone,
-                    title: "Phone Number",
+                    title: LocalizationService.t(context, "contactUs.phoneNumber"),
                     subtitle: phoneNumber,
                     iconColor: AppColors.success,
                     onTap: () => _makePhoneCall(phoneNumber),
@@ -293,7 +294,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   // Website
                   _buildContactCard(
                     icon: FontAwesomeIcons.globe,
-                    title: "Website",
+                    title: LocalizationService.t(context, "contactUs.website"),
                     subtitle: "https://commercepal.com",
                     iconColor: AppColors.info,
                     onTap: _openWebsite,
@@ -336,7 +337,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                       ),
                       const SizedBox(width: Spacing.sm),
                       Text(
-                        "Social Media",
+                        LocalizationService.t(context, "contactUs.socialMedia"),
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
@@ -347,35 +348,31 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     ],
                   ),
                   const SizedBox(height: Spacing.md),
-                  const SocialMediaLink(
+                  SocialMediaLink(
                     icon: Icons.facebook,
-                    text:
-                        'Stay updated, connect, and engage with us on Facebook.',
+                    text: LocalizationService.t(context, 'contactUs.socialFacebook'),
                     url: 'https://www.facebook.com/Commercepal/',
                   ),
-                  const SocialMediaLink(
+                  SocialMediaLink(
                     icon: FontAwesomeIcons.instagram,
-                    text:
-                        'Explore our visual world and discover beauty of our brand.',
+                    text: LocalizationService.t(context, 'contactUs.socialInstagram'),
                     url:
                         'https://www.instagram.com/commercepal1/?igshid=YmMyMTA2M2Y%3D',
                   ),
-                  const SocialMediaLink(
+                  SocialMediaLink(
                     icon: FontAwesomeIcons.tiktok,
-                    text:
-                        'Discover the beauty of our brand and explore our visual world on TikTok.',
+                    text: LocalizationService.t(context, 'contactUs.socialTiktok'),
                     url: 'https://www.tiktok.com/@commercepal',
                   ),
-                  const SocialMediaLink(
+                  SocialMediaLink(
                     icon: FontAwesomeIcons.twitter,
-                    text:
-                        'Follow us for real-time updates and lively discussions.',
+                    text: LocalizationService.t(context, 'contactUs.socialTwitter'),
                     url:
                         'https://x.com/CommercePal?t=3gF1oMXGc2GJmiawxvYvvA&s=09',
                   ),
-                  const SocialMediaLink(
+                  SocialMediaLink(
                     icon: FontAwesomeIcons.telegram,
-                    text: 'Connect with us on Telegram @CP9491.',
+                    text: LocalizationService.t(context, 'contactUs.socialTelegram'),
                     url: 'https://t.me/CP9491',
                   ),
                 ],

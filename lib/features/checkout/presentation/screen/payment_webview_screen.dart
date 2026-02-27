@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 
 /// In-app WebView screen for completing payment at [paymentUrl].
@@ -45,8 +46,8 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     final title = widget.orderNumber != null
-        ? 'Order ${widget.orderNumber} – Complete payment'
-        : 'Complete payment';
+        ? '${LocalizationService.t(context, 'checkout.order')} ${widget.orderNumber} – ${LocalizationService.t(context, 'checkout.orderCompletePayment')}'
+        : LocalizationService.t(context, 'checkout.orderCompletePayment');
 
     return Scaffold(
       appBar: AppBar(

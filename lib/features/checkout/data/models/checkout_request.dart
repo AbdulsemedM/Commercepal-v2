@@ -45,7 +45,7 @@ class CheckoutRequest {
         'deliveryAddressId': deliveryAddressId,
         'items': items.map((item) => item.toJson()).toList(),
         'paymentProviderCode': paymentProviderCode,
-        if (paymentAccount != null) 'paymentAccount': paymentAccount,
+        if (paymentAccount != null && paymentAccount!.isNotEmpty) 'paymentAccount': paymentAccount!,
         if (promoCode != null) 'promoCode': promoCode,
         if (referralCode != null) 'referralCode': referralCode,
       };

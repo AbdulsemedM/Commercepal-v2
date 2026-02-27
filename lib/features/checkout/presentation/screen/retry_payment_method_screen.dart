@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
+import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/constants/spacing.dart';
@@ -159,11 +160,11 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Failed to load payment methods.';
+          _errorMessage = LocalizationService.t(context, 'checkout.failedToLoadPaymentMethods');
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load payment methods. Please try again.'),
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.failedToLoadPaymentMethods')),
             backgroundColor: AppColors.error,
           ),
         );
@@ -223,8 +224,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         : method.variantCode;
     if (method.hasVariants && (variantCode.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a payment option.'),
+        SnackBar(
+          content: Text(LocalizationService.t(context, 'checkout.pleaseSelectPaymentOption')),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -275,8 +276,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       }
       if (paymentAccount == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid phone number for payment.'),
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
             backgroundColor: AppColors.warning,
           ),
         );
@@ -294,10 +295,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         !requiresMethodPhone &&
         (paymentAccount == null || paymentAccount.length < 9)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter a valid phone number for payment.',
-          ),
+        SnackBar(
+          content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -308,8 +307,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
       if (paymentAccount == null || paymentAccount.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid phone number for SahayPay.'),
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
             backgroundColor: AppColors.warning,
           ),
         );
@@ -322,7 +321,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                verification.message ?? 'Phone number could not be verified. Please check and try again.',
+                verification.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
               ),
               backgroundColor: AppColors.error,
             ),
@@ -331,7 +330,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         }
       } catch (e) {
         if (mounted) {
-          String msg = 'Verification failed. Please try again.';
+          String msg = LocalizationService.t(context, 'checkout.verificationFailed');
           if (e is DioException && e.response?.data is Map<String, dynamic>) {
             final data = e.response!.data as Map<String, dynamic>;
             final apiMessage = data['message'] as String?;
@@ -368,7 +367,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       if (mounted) context.pop(updated);
     } catch (e) {
       if (mounted) {
-        String msg = 'Failed to retry payment. Please try again.';
+        String msg = LocalizationService.t(context, 'checkout.failedToRetryPayment');
         if (e is DioException && e.response?.data is Map<String, dynamic>) {
           final data = e.response!.data as Map<String, dynamic>;
           final apiMessage = data['message'] as String?;
@@ -423,8 +422,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     final title = widget.orderNumber != null
-        ? 'Pay order ${widget.orderNumber}'
-        : 'Choose payment method';
+        ? '${LocalizationService.t(context, 'checkout.payOrder')} ${widget.orderNumber}'
+        : LocalizationService.t(context, 'checkout.selectPaymentMethod');
 
     final selectedMethod = _getSelectedMethod();
     final categoryName = _getCategoryNameForSelectedMethod();
@@ -475,7 +474,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(Spacing.lg),
                     child: Text(
-                      _errorMessage ?? 'No payment methods available.',
+                      _errorMessage ?? LocalizationService.t(context, 'checkout.noPaymentMethodsAvailableRetry'),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -487,7 +486,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                         padding: const EdgeInsets.all(Spacing.md),
                         children: [
                           Text(
-                            'Select a payment method to retry',
+                            LocalizationService.t(context, 'checkout.selectPaymentMethodToRetry'),
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                   color: Colors.black54,
                                 ),
@@ -607,7 +606,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Phone number for payment',
+                                          LocalizationService.t(context, 'checkout.phoneNumberForPayment'),
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium
@@ -619,7 +618,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          'Enter the number linked to your payment account',
+                                          LocalizationService.t(context, 'checkout.enterNumberLinkedToAccount'),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
@@ -789,7 +788,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                 vertical: Spacing.md,
                               ),
                             ),
-                            child: const Text('Pay with this method'),
+                            child: Text(LocalizationService.t(context, 'checkout.payWithThisMethod')),
                           ),
                         ),
                       ),

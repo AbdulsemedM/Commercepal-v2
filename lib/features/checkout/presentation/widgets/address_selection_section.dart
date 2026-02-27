@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../../addresses/bloc/address_bloc.dart';
 import '../../../addresses/data/models/address.dart';
 import '../../../addresses/presentation/widgets/add_edit_address_dialog.dart';
@@ -83,7 +84,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Retry'),
+                    child: Text(LocalizationService.t(context, 'cart.retry')),
                   ),
                 ],
               ),
@@ -120,7 +121,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Delivery Address',
+                      LocalizationService.t(context, 'checkout.deliveryAddress'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -130,7 +131,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         AddEditAddressDialog.show(context);
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add New'),
+                      label: Text(LocalizationService.t(context, 'checkout.addNew')),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primary,
                       ),
@@ -157,7 +158,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         ),
                         const SizedBox(height: Spacing.sm),
                         Text(
-                          'No addresses found',
+                          LocalizationService.t(context, 'checkout.noAddressesFound'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -166,7 +167,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         ),
                         const SizedBox(height: Spacing.xs),
                         Text(
-                          'Add an address to continue',
+                          LocalizationService.t(context, 'checkout.addAddressToContinue'),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -178,7 +179,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                             AddEditAddressDialog.show(context);
                           },
                           icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Add Address'),
+                          label: Text(LocalizationService.t(context, 'checkout.addAddress')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -270,9 +271,9 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              'DEFAULT',
-                              style: TextStyle(
+                            child: Text(
+                              LocalizationService.t(context, 'checkout.defaultLabel'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
@@ -321,8 +322,8 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         ),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
-                            _formatAddress(address),
+                            child: Text(
+                              _formatAddress(context, address),
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[700],
@@ -342,7 +343,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
     );
   }
 
-  String _formatAddress(Address address) {
+  String _formatAddress(BuildContext context, Address address) {
     final parts = <String>[];
     if (address.addressLine1 != null && address.addressLine1!.isNotEmpty) {
       parts.add(address.addressLine1!);
@@ -356,6 +357,6 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
     if (address.city.isNotEmpty) parts.add(address.city);
     if (address.state.isNotEmpty) parts.add(address.state);
     if (address.country.isNotEmpty) parts.add(address.country);
-    return parts.isNotEmpty ? parts.join(', ') : 'No address details';
+    return parts.isNotEmpty ? parts.join(', ') : LocalizationService.t(context, 'cart.noAddressDetails');
   }
 }

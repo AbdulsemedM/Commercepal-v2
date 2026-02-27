@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/address.dart';
 
 class AddressCard extends StatelessWidget {
@@ -56,9 +57,9 @@ class AddressCard extends StatelessWidget {
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            'DEFAULT',
-                            style: TextStyle(
+                          child: Text(
+                            LocalizationService.t(context, 'addresses.defaultLabel'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -92,35 +93,35 @@ class AddressCard extends StatelessWidget {
                   },
                   itemBuilder: (context) => [
                     if (!address.isDefault)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'set_default',
                         child: Row(
                           children: [
-                            Icon(Icons.star_outline, size: 18),
-                            SizedBox(width: Spacing.sm),
-                            Text('Set as Default'),
+                            const Icon(Icons.star_outline, size: 18),
+                            const SizedBox(width: Spacing.sm),
+                            Text(LocalizationService.t(context, 'addresses.setAsDefault')),
                           ],
                         ),
                       ),
                     if (address.canEdit)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 18),
-                            SizedBox(width: Spacing.sm),
-                            Text('Edit'),
+                            const Icon(Icons.edit_outlined, size: 18),
+                            const SizedBox(width: Spacing.sm),
+                            Text(LocalizationService.t(context, 'addresses.edit')),
                           ],
                         ),
                       ),
                     if (address.canDelete)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                            SizedBox(width: Spacing.sm),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
+                            const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                            const SizedBox(width: Spacing.sm),
+                            Text(LocalizationService.t(context, 'addresses.delete'), style: const TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),

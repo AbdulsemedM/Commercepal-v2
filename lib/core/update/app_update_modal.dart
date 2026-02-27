@@ -1,9 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/colors.dart';
 import '../widgets/app_dialog.dart';
 import 'app_update_check_result.dart';
+import 'app_update_constants.dart';
 
 /// Shows the app update modal (optional or mandatory) and opens the store when Update is tapped.
 class AppUpdateModal {
@@ -30,6 +33,10 @@ class AppUpdateModal {
         (mandatory ? _messageMandatory : _messageOptional)
             .replaceAll('%s', result.latestVersion);
 
+    final String storeUrl = result.storeUrl.trim().isNotEmpty
+        ? result.storeUrl
+        : _fallbackStoreUrl();
+
     final List<AppDialogAction> actions = [
       if (!mandatory)
         AppDialogAction(
@@ -41,7 +48,12 @@ class AppUpdateModal {
       AppDialogAction(
         label: 'Update',
         isPrimary: true,
-        onPressed: () => _openStore(result.storeUrl),
+        onPressed: () {
+          // Schedule launch after dialog closes so it runs in a valid context
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _openStore(storeUrl);
+          });
+        },
       ),
     ];
 
@@ -60,15 +72,39 @@ class AppUpdateModal {
     );
   }
 
+  static String _fallbackStoreUrl() {
+    if (Platform.isAndroid) return AppUpdateConstants.storeUrlAndroid;
+    return AppUpdateConstants.storeUrlIos;
+  }
+
   static Future<void> _openStore(String storeUrl) async {
+    final String url = storeUrl.trim().isEmpty ? _fallbackStoreUrl() : storeUrl;
     try {
-      final uri = Uri.parse(storeUrl);
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (Platform.isAndroid) {
+        // Prefer market: intent so the Play Store app opens directly
+        final marketUri = Uri.parse(AppUpdateConstants.storeIntentAndroid);
+        final launched = await _launchWithMode(marketUri, LaunchMode.externalApplication);
+        if (launched) return;
+      }
+      final uri = Uri.parse(url);
+      bool launched = await _launchWithMode(uri, LaunchMode.externalApplication);
       if (!launched) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
+        launched = await _launchWithMode(uri, LaunchMode.platformDefault);
       }
     } catch (_) {
-      // Ignore; user may have no store app
+      try {
+        final fallback = _fallbackStoreUrl();
+        final uri = Uri.parse(fallback);
+        await _launchWithMode(uri, LaunchMode.externalApplication);
+      } catch (_) {}
+    }
+  }
+
+  static Future<bool> _launchWithMode(Uri uri, LaunchMode mode) async {
+    try {
+      return await launchUrl(uri, mode: mode);
+    } catch (_) {
+      return false;
     }
   }
 }

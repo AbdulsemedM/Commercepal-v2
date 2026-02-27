@@ -1,11 +1,18 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/constants/spacing.dart';
+import '../../../../services/invoice_pdf_service.dart';
+import '../../../../services/localization_service.dart';
+import '../../../orders/data/repository/orders_repository.dart';
 import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
 import '../../data/repository/checkout_repository.dart';
@@ -31,7 +38,9 @@ class OrderPlacedScreen extends StatefulWidget {
 class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
   late CheckoutResponse _response;
   bool _isRetrying = false;
+  bool _isGeneratingInvoice = false;
   final CheckoutRepository _checkoutRepository = CheckoutRepository();
+  final OrdersRepository _ordersRepository = OrdersRepository();
 
   @override
   void initState() {
@@ -80,8 +89,8 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Retry requested. Check payment status above.'),
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.retryRequested')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -89,7 +98,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isRetrying = false);
-        String msg = 'Failed to retry payment. Please try again.';
+        String msg = LocalizationService.t(context, 'checkout.failedToRetryPayment');
         if (e is DioException && e.response?.data is Map<String, dynamic>) {
           final data = e.response!.data as Map<String, dynamic>;
           final apiMessage = data['message'] as String?;
@@ -102,6 +111,62 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _downloadInvoice() async {
+    final orderNumber = _response.orderNumber;
+    if (orderNumber == null || orderNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+          content: Text(LocalizationService.t(context, 'checkout.orderNumberNotAvailable')),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    setState(() => _isGeneratingInvoice = true);
+    try {
+      final order = await _ordersRepository.getOrderByOrderNumber(orderNumber);
+      final pdfBytes = await InvoicePdfService.buildPdf(
+        order: order,
+        paymentReference: _response.paymentInitiation?.paymentReference,
+        paymentMethodName: widget.paymentProviderCode.isNotEmpty
+            ? widget.paymentProviderCode
+            : null,
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/invoice_$orderNumber.pdf');
+      await file.writeAsBytes(pdfBytes);
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Invoice - Order $orderNumber',
+        text: 'Your CommercePal invoice for order $orderNumber',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.invoiceReady')),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().contains('404') || e.toString().contains('not found')
+                  ? LocalizationService.t(context, 'checkout.orderDetailsNotAvailable')
+                  : LocalizationService.t(context, 'checkout.failedToGenerateInvoice'),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingInvoice = false);
     }
   }
 
@@ -124,7 +189,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order placed'),
+        title: Text(LocalizationService.t(context, 'checkout.orderPlaced')),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black87),
         leading: IconButton(
@@ -204,7 +269,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
             // Pricing summary
             if (pricing != null) ...[
               Text(
-                'Order summary',
+                LocalizationService.t(context, 'checkout.orderSummary'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -223,28 +288,28 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                       if (pricing.subtotal != null)
                         _row(
                           context,
-                          'Subtotal',
+                          LocalizationService.t(context, 'checkout.subtotal'),
                           _formatMoney(pricing.subtotal!, pricing.currency),
                         ),
                       if (pricing.discountAmount != null &&
                           (pricing.discountAmount ?? 0) > 0)
                         _row(
                           context,
-                          'Discount',
+                          LocalizationService.t(context, 'checkout.discount'),
                           '-${_formatMoney(pricing.discountAmount!, pricing.currency)}',
                         ),
                       if (pricing.deliveryFee != null &&
                           (pricing.deliveryFee ?? 0) > 0)
                         _row(
                           context,
-                          'Delivery',
+                          LocalizationService.t(context, 'checkout.delivery'),
                           _formatMoney(pricing.deliveryFee!, pricing.currency),
                         ),
                       if (pricing.additionalCharges != null &&
                           (pricing.additionalCharges ?? 0) > 0)
                         _row(
                           context,
-                          'Additional charges',
+                          LocalizationService.t(context, 'checkout.additionalCharges'),
                           _formatMoney(
                             pricing.additionalCharges!,
                             pricing.currency,
@@ -254,7 +319,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                         const Divider(height: Spacing.md),
                         _row(
                           context,
-                          'Total',
+                          LocalizationService.t(context, 'checkout.total'),
                           _formatMoney(pricing.totalAmount!, pricing.currency),
                           isTotal: true,
                         ),
@@ -272,7 +337,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                     paymentInstructions.isNotEmpty) ||
                 nextAction != null) ...[
               Text(
-                'Payment',
+                LocalizationService.t(context, 'checkout.payment'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -299,7 +364,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                               SizedBox(
                                 width: 100,
                                 child: Text(
-                                  'Reference',
+                                  LocalizationService.t(context, 'checkout.reference'),
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
@@ -328,7 +393,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                         ),
                       if (nextAction != null && nextAction.isNotEmpty)
                         Text(
-                          'Next: $nextAction',
+                          '${LocalizationService.t(context, 'checkout.next')}: $nextAction',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.black54,
                               ),
@@ -355,7 +420,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                     );
                   },
                   icon: const Icon(Icons.payment),
-                  label: const Text('Complete payment'),
+                  label: Text(LocalizationService.t(context, 'checkout.completePayment')),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: Spacing.md),
@@ -374,7 +439,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.refresh),
-                  label: Text(_isRetrying ? 'Retrying…' : 'Retry payment'),
+                  label: Text(_isRetrying ? LocalizationService.t(context, 'checkout.retrying') : LocalizationService.t(context, 'checkout.retryPayment')),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.warning,
                     padding: const EdgeInsets.symmetric(vertical: Spacing.md),
@@ -398,13 +463,31 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                     }
                   },
                   icon: const Icon(Icons.payment),
-                  label: const Text('Choose another payment method'),
+                  label: Text(LocalizationService.t(context, 'checkout.chooseAnotherPaymentMethod')),
                 ),
               ),
             ],
+            Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.sm),
+              child: OutlinedButton.icon(
+                onPressed: _isGeneratingInvoice ? null : _downloadInvoice,
+                icon: _isGeneratingInvoice
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.download),
+                label: Text(
+                  _isGeneratingInvoice
+                      ? LocalizationService.t(context, 'checkout.generating')
+                      : LocalizationService.t(context, 'checkout.downloadInvoicePdf'),
+                ),
+              ),
+            ),
             OutlinedButton(
               onPressed: () => context.go(AppRoutes.dashboard),
-              child: const Text('Back to home'),
+              child: Text(LocalizationService.t(context, 'checkout.backToHome')),
             ),
           ],
         ),

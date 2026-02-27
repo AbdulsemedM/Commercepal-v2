@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 
@@ -75,7 +76,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Wishlist',
+          LocalizationService.t(context, 'wishlist.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -121,8 +122,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             ),
                           ),
                           const SizedBox(height: Spacing.lg),
-                          const Text(
-                            'Wishlist',
+                          Text(
+                            LocalizationService.t(context, 'wishlist.title'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
@@ -133,7 +134,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                           ),
                           const SizedBox(height: Spacing.sm),
                           Text(
-                            'Products you saved',
+                            LocalizationService.t(context, 'wishlist.productsSaved'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontWeight: FontWeight.w400,
@@ -161,7 +162,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             ),
                             const SizedBox(height: Spacing.lg),
                             Text(
-                              'Your wishlist is empty',
+                              LocalizationService.t(context, 'wishlist.empty'),
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -169,7 +170,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             ),
                             const SizedBox(height: Spacing.xs),
                             Text(
-                              'Tap the heart on a product to save it here.',
+                              LocalizationService.t(context, 'wishlist.emptyHint'),
                               textAlign: TextAlign.center,
                               style: Theme.of(context)
                                   .textTheme
@@ -280,7 +281,7 @@ class _WishlistCard extends StatelessWidget {
                     size: 24,
                   ),
                   onPressed: onRemove,
-                  tooltip: 'Remove from wishlist',
+                  tooltip: LocalizationService.t(context, 'wishlist.removeTooltip'),
                 ),
               ],
             ),

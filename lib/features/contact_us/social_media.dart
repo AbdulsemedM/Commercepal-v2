@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class SocialMediaLink extends StatelessWidget {
   const SocialMediaLink({
@@ -57,7 +58,7 @@ class SocialMediaLink extends StatelessWidget {
               if (!launched && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Could not launch $url'),
+                    content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url'),
                     backgroundColor: AppColors.error,
                   ),
                 );
@@ -66,7 +67,7 @@ class SocialMediaLink extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Error launching URL: ${e.toString()}'),
+                    content: Text('${LocalizationService.t(context, 'contactUs.errorLaunching')} ${e.toString()}'),
                     backgroundColor: AppColors.error,
                     duration: const Duration(seconds: 3),
                   ),

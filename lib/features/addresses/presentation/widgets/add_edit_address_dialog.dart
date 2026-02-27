@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/address_bloc.dart';
 import '../../data/models/address.dart';
 import '../../data/models/add_address_request.dart';
@@ -294,7 +295,9 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isEdit ? 'Edit Address' : 'Add New Address',
+                          isEdit
+                              ? LocalizationService.t(context, 'addresses.editAddress')
+                              : LocalizationService.t(context, 'addresses.addNewAddress'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -305,8 +308,8 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                         const SizedBox(height: 2),
                         Text(
                           isEdit
-                              ? 'Update your delivery details'
-                              : 'Save a delivery location',
+                              ? LocalizationService.t(context, 'addresses.updateDeliveryDetails')
+                              : LocalizationService.t(context, 'addresses.saveDeliveryLocation'),
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 13,
@@ -340,20 +343,20 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                 padding: const EdgeInsets.all(Spacing.lg),
                 child: Form(
                   key: _formKey,
-                  child: Column(
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionLabel('Contact'),
+                      _buildSectionLabel(LocalizationService.t(context, 'addresses.contact')),
                       _buildCard(
                         child: Column(
                           children: [
                             _buildTextField(
                               controller: _receiverNameController,
-                              label: 'Receiver Name',
+                              label: LocalizationService.t(context, 'addresses.receiverName'),
                               icon: Icons.person_outline_rounded,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter receiver name';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterReceiverName');
                                 }
                                 return null;
                               },
@@ -361,7 +364,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _phoneNumberController,
-                              label: 'Phone Number',
+                              label: LocalizationService.t(context, 'addresses.phoneNumber'),
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                               hintText: _selectedCountryCode == 'ET'
@@ -369,14 +372,14 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                                   : null,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter phone number';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterPhone');
                                 }
                                 if (_selectedCountryCode == 'ET') {
                                   final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
                                   final withoutLeadingZero =
                                       cleaned.startsWith('0') ? cleaned.substring(1) : cleaned;
                                   if (withoutLeadingZero.length != 9) {
-                                    return 'Phone must be 9 digits (e.g., 911223344)';
+                                    return LocalizationService.t(context, 'addresses.phoneMustBe9Digits');
                                   }
                                 }
                                 return null;
@@ -386,7 +389,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                         ),
                       ),
                       const SizedBox(height: Spacing.lg),
-                      _buildSectionLabel('Location'),
+                      _buildSectionLabel(LocalizationService.t(context, 'addresses.location')),
                       _buildCard(
                         child: Column(
                           children: [
@@ -394,11 +397,11 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _stateController,
-                              label: 'State / Province',
+                              label: LocalizationService.t(context, 'addresses.stateProvince'),
                               icon: Icons.map_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter state';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterState');
                                 }
                                 return null;
                               },
@@ -406,11 +409,11 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _cityController,
-                              label: 'City',
+                              label: LocalizationService.t(context, 'addresses.city'),
                               icon: Icons.location_city_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter city';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterCity');
                                 }
                                 return null;
                               },
@@ -418,11 +421,11 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _districtController,
-                              label: 'District',
+                              label: LocalizationService.t(context, 'addresses.district'),
                               icon: Icons.place_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter district';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterDistrict');
                                 }
                                 return null;
                               },
@@ -431,17 +434,17 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                         ),
                       ),
                       const SizedBox(height: Spacing.lg),
-                      _buildSectionLabel('Street & building'),
+                      _buildSectionLabel(LocalizationService.t(context, 'addresses.streetBuilding')),
                       _buildCard(
                         child: Column(
                           children: [
                             _buildTextField(
                               controller: _streetController,
-                              label: 'Street',
+                              label: LocalizationService.t(context, 'addresses.street'),
                               icon: Icons.streetview_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter street';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterStreet');
                                 }
                                 return null;
                               },
@@ -449,11 +452,11 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _houseNumberController,
-                              label: 'House / Building number',
+                              label: LocalizationService.t(context, 'addresses.houseBuildingNumber'),
                               icon: Icons.home_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter house number';
+                                  return LocalizationService.t(context, 'addresses.pleaseEnterHouseNumber');
                                 }
                                 return null;
                               },
@@ -461,33 +464,33 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _landmarkController,
-                              label: 'Landmark (optional)',
+                              label: LocalizationService.t(context, 'addresses.landmarkOptional'),
                               icon: Icons.flag_outlined,
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: Spacing.lg),
-                      _buildSectionLabel('Additional (optional)'),
+                      _buildSectionLabel(LocalizationService.t(context, 'addresses.additionalOptional')),
                       _buildCard(
                         child: Column(
                           children: [
                             _buildTextField(
                               controller: _addressLine1Controller,
-                              label: 'Address line 1',
+                              label: LocalizationService.t(context, 'addresses.addressLine1'),
                               icon: Icons.description_outlined,
                             ),
                             const SizedBox(height: Spacing.sm),
                             _buildTextField(
                               controller: _addressLine2Controller,
-                              label: 'Address line 2',
+                              label: LocalizationService.t(context, 'addresses.addressLine2'),
                               icon: Icons.description_outlined,
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: Spacing.lg),
-                      _buildDefaultSwitch(),
+                      _buildDefaultSwitch(context),
                       const SizedBox(height: Spacing.xl),
                       SizedBox(
                         width: double.infinity,
@@ -512,7 +515,9 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
                                   ),
                                 )
                               : Text(
-                                  isEdit ? 'Update Address' : 'Save Address',
+                                  isEdit
+                                      ? LocalizationService.t(context, 'addresses.updateAddress')
+                                      : LocalizationService.t(context, 'addresses.saveAddress'),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -565,7 +570,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
     );
   }
 
-  Widget _buildDefaultSwitch() {
+  Widget _buildDefaultSwitch(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.sm),
@@ -597,7 +602,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
           const SizedBox(width: Spacing.md),
           Expanded(
             child: Text(
-              'Set as default address',
+              LocalizationService.t(context, 'addresses.setAsDefaultAddress'),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
@@ -678,7 +683,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
     return DropdownButtonFormField<String>(
       value: _selectedCountryCode,
       decoration: InputDecoration(
-        labelText: 'Country',
+        labelText: LocalizationService.t(context, 'profile.country'),
         labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
         prefixIcon: Container(
           margin: const EdgeInsets.only(right: Spacing.sm),

@@ -4,6 +4,7 @@ import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class CurrencySelectionBottomSheet extends StatefulWidget {
   const CurrencySelectionBottomSheet({super.key});
@@ -123,8 +124,8 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  const Text(
-                    'Select Currency',
+                  Text(
+                    LocalizationService.t(context, 'profile.selectCurrency'),
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -134,7 +135,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                   const SizedBox(height: Spacing.sm),
                   // Subtitle
                   Text(
-                    'Choose your preferred currency',
+                    LocalizationService.t(context, 'profile.chooseYourCurrency'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -158,7 +159,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: 'Search currencies...',
+                        hintText: LocalizationService.t(context, 'profile.searchCurrencies'),
                         hintStyle: TextStyle(
                           color: Colors.grey.shade500,
                           fontSize: 14,
@@ -193,7 +194,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                               ),
                               const SizedBox(height: Spacing.md),
                               Text(
-                                'No currencies found',
+                                LocalizationService.t(context, 'profile.noCurrenciesFound'),
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey.shade600,

@@ -1,151 +1,42 @@
-// Localization service placeholder
-// TODO: Load translation files from assets/locales
-// TODO: Integrate with Flutter localization APIs
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 class LocalizationService {
-  // Minimal in-app dictionary to avoid hardcoded strings in UI.
-  static const Map<String, Map<String, String>>
-  _dict = <String, Map<String, String>>{
-    'en': <String, String>{
-      'nav.home': 'Home',
-      'nav.categories': 'Categories',
-      'nav.cart': 'Cart',
-      'nav.profile': 'Profile',
-      'appBar.searchPlaceholder': 'Search',
-      'auth.login.title': 'Login to your account',
-      'auth.login.subtitle': "It's great to see you again.",
-      'auth.login.email': 'Email',
-      'auth.login.emailPlaceholder': 'Enter your email address',
-      'auth.login.password': 'Password',
-      'auth.login.passwordPlaceholder': 'Enter your password',
-      'auth.login.forgotPassword': 'Forgot your password?',
-      'auth.login.resetPassword': 'Reset your password',
-      'auth.login.loginButton': 'Login',
-      'auth.login.or': 'Or',
-      'auth.login.socialGoogle': 'Login with Google',
-      'auth.login.socialFacebook': 'Login with Facebook',
-      'auth.login.socialApple': 'Login with Apple',
-      'auth.login.noAccount': "Don't have an account?",
-      'auth.login.join': 'Join',
-      'auth.signup.title': 'Create an account.',
-      'auth.signup.subtitle': "Let's create your account.",
-      'auth.signup.fullName': 'Full Name',
-      'auth.signup.fullNamePlaceholder': 'Enter your full name',
-      'auth.signup.dateOfBirth': 'Date of birth',
-      'auth.signup.dateOfBirthPlaceholder': 'Enter your date of birth',
-      'auth.signup.email': 'Email',
-      'auth.signup.emailPlaceholder': 'Enter your email address',
-      'auth.signup.password': 'Password',
-      'auth.signup.passwordPlaceholder': 'Enter your password',
-      'auth.signup.termsText': 'By signing up you agree to our',
-      'auth.signup.terms': 'Terms,',
-      'auth.signup.privacy': 'Privacy',
-      'auth.signup.policy': 'Policy,',
-      'auth.signup.createAccountButton': 'Create an Account',
-      'auth.signup.or': 'Or',
-      'auth.signup.socialGoogle': 'Sign Up with Google',
-      'auth.signup.socialFacebook': 'Sign Up with Facebook',
-      'auth.signup.socialApple': 'Sign Up with Apple',
-      'auth.signup.alreadyHaveAccount': 'Already have an account?',
-      'auth.signup.logIn': 'Log In',
-      'profile.title': 'Profile',
-      'profile.searchPlaceholder': 'Search',
-      'profile.personalDetails': 'Personal Details',
-      'profile.termsConditions': 'Terms & Conditions',
-      'profile.refundPolicy': 'Refund Policy',
-      'profile.orderHistory': 'Order History',
-      'profile.faqs': 'FAQs',
-      'profile.changePassword': 'Change Password',
-      'profile.changeCountry': 'Change Country',
-      'profile.changeCurrency': 'Change Currency',
-      'profile.helpDesk': 'Help Desk',
-      'profile.logOut': 'Log Out',
-      'profile.logOutConfirm': 'Are you sure you want to log out?',
-      'profile.cancel': 'Cancel',
-      'home.banner.hashtag': '#BLACK FRIDAY',
-      'home.banner.discount': '80% OFF',
-      'home.banner.subtitle': 'Discover fashion that suits your style',
-      'home.banner.button': 'Check This Out',
-      'home.categories.title': 'Categories',
-      'home.categories.seeAll': 'See All',
-      'home.dealOfDay.title': 'Deal of the Day',
-      'home.dealOfDay.viewAll': 'View all',
-      'home.dealOfDay.remaining': 'remaining',
-      'home.dealOfDay.sold': 'Sold',
-      'home.dealOfDay.inStock': 'In Stock',
-      'home.recentlyViewed.title': 'Recently Viewed',
-      'home.recentlyViewed.seeAll': 'See All',
-      'categories.technology': 'Technology',
-      'categories.realEstate': 'Real Estate',
-      'categories.watch': 'Watch',
-      'categories.homeLife': 'Home & Life',
-      'categories.cosmeticSurgery': 'Cosmetic Surgery',
-      'categories.fashion': 'Fashion',
-      'categories.homeAppliances': 'Home appliances',
-      'categories.jewelry': 'Jewelry',
-      'categories.babyProducts': 'Baby products',
-      'categories.sporting': 'Sporting',
-      'categories.products': 'Products',
-      'products.smartphones': 'Smartphones',
-      'products.headphones': 'Headphones',
-      'products.smartwatches': 'Smartwatches',
-      'products.tablets': 'Tablets',
-      'products.laptops': 'Laptops',
-      'products.desktops': 'Desktops',
-      'products.powerbanks': 'Powerbanks',
-      'products.iosPhones': 'IOS Phones',
-      'productDetail.code': 'Code',
-      'productDetail.category': 'Category',
-      'productDetail.keyword': 'Keyword',
-      'productDetail.share': 'Share',
-      'productDetail.specialOffer': 'Special Offer',
-      'productDetail.color': 'Color',
-      'productDetail.productDetailsReviews': 'Product Details & Reviews',
-      'productDetail.addToCart': 'Add to Cart',
-      'productDetail.total': 'Total',
-      'productDetail.day': 'Day',
-      'productDetail.hours': 'Hours',
-      'productDetail.min': 'Min',
-      'productDetail.sec': 'Sec',
-      'productDetail.review': 'review',
-      'productDetail.reviews': 'reviews',
-      'productDetail.spec.desktop': 'Destop',
-      'productDetail.spec.chipset': 'Chipset/ CPU',
-      'productDetail.spec.ram': 'RAM',
-      'productDetail.spec.os': 'Operating System',
-      'productDetails.description': 'Description',
-      'productDetails.technicalSpecifications': 'Technical Specifications',
-      'productDetails.comment': 'Comment',
-      'affiliate.becomeAffiliatePartner': 'Become Affiliate Partner',
-      'affiliate.becomeAffiliate': 'Become Affiliate',
-      'affiliate.affiliateDashboard': 'Affiliate Dashboard',
-      'affiliate.commissionType': 'Commission Type',
-      'affiliate.percentage': 'Percentage',
-      'affiliate.fixed': 'Fixed',
-      'affiliate.registrationSuccessMessage':
-          'Affiliate registration successful! Please login with your credentials.',
-      'affiliate.registerTitle': 'Become Affiliate Partner',
-      'affiliate.registerSubtitle':
-          'Register as an affiliate to start earning commissions.',
-      'affiliate.registerButton': 'Register as Affiliate',
-      'affiliate.referralCode': 'Referral Code',
-      'affiliate.referralCodeHint': 'Enter referral code (optional)',
-      'affiliate.modalTitle': 'Become Affiliate',
-      'affiliate.modalSubtitle':
-          'Choose your commission type and enter your referral code.',
-    },
-  };
+  static const List<String> _supportedLocales = ['en', 'ar', 'am', 'so'];
+
+  static Map<String, Map<String, String>> _loaded = {};
+  static bool _initialized = false;
+
+  static Future<void> ensureInitialized() async {
+    if (_initialized) return;
+    final bundle = rootBundle;
+    for (final code in _supportedLocales) {
+      try {
+        final json = await bundle.loadString('assets/locales/$code.json');
+        final map = Map<String, String>.from(
+          (jsonDecode(json) as Map).map(
+            (k, v) => MapEntry(k as String, v as String),
+          ),
+        );
+        _loaded[code] = map;
+      } catch (_) {
+        _loaded[code] = {};
+      }
+    }
+    _initialized = true;
+  }
 
   static String _localeCode(BuildContext context) {
-    final String code = Localizations.localeOf(
-      context,
-    ).languageCode.toLowerCase();
-    return _dict.containsKey(code) ? code : 'en';
+    final String code =
+        Localizations.localeOf(context).languageCode.toLowerCase();
+    return _loaded.containsKey(code) ? code : 'en';
   }
 
   static String t(BuildContext context, String key) {
     final String locale = _localeCode(context);
-    return _dict[locale]?[key] ?? _dict['en']?[key] ?? key;
+    return _loaded[locale]?[key] ?? _loaded['en']?[key] ?? key;
   }
+
+  static List<String> get supportedLocaleCodes => List.unmodifiable(_supportedLocales);
 }
