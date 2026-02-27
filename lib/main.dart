@@ -7,6 +7,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'app/app.dart';
 import 'core/config/env.dart';
 import 'core/logging/app_logger.dart';
+import 'core/update/app_update_remote_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,11 @@ void main() async {
   try {
     await Firebase.initializeApp();
     AppLogger.i('Firebase initialized successfully');
+
+    await AppUpdateRemoteConfig.initialize(
+      defaultLatestVersionAndroid: '4.1.3',
+      defaultLatestVersionIos: '4.1.3',
+    );
 
     // Initialize Crashlytics
     // FlutterError.onError = (errorDetails) {

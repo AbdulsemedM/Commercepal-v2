@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/update/app_update_check_result.dart';
+import 'package:commercepal/core/update/app_update_check_service.dart';
+import 'package:commercepal/core/update/app_update_modal.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,10 +17,33 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      context.go(AppRoutes.dashboard);
-    });
+    _runSplashAndVersionCheck();
+  }
+
+  Future<void> _runSplashAndVersionCheck() async {
+    const Duration minSplashDuration = Duration(seconds: 2);
+
+    final results = await Future.wait(<Future<dynamic>>[
+      Future<void>.delayed(minSplashDuration),
+      AppUpdateCheckService.check(),
+    ]);
+
+    final AppUpdateCheckResult result = results[1] as AppUpdateCheckResult;
+
+    if (!mounted) return;
+
+    if (result.hasUpdate) {
+      await AppUpdateModal.show(
+        context,
+        result: result,
+        onLater: () {
+          if (mounted) context.go(AppRoutes.dashboard);
+        },
+      );
+      return;
+    }
+
+    context.go(AppRoutes.dashboard);
   }
 
   @override

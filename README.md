@@ -15,6 +15,21 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
+## App Update Check (Firebase Remote Config)
+
+The app checks for updates at startup using Firebase Remote Config. Configure these parameters in the [Firebase Console](https://console.firebase.google.com) under **Remote Config**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `latest_app_version_android` | String | Version Android users should have (e.g. `4.1.4`). Update when you publish to the Play Store. |
+| `latest_app_version_ios` | String | Version iOS users should have (e.g. `4.1.4`). Update when you publish to the App Store. |
+| `store_url_android` | String (optional) | Play Store URL. Fallback is used if empty. |
+| `store_url_ios` | String (optional) | App Store URL from App Store Connect. Fallback is used if empty. |
+
+- **Patch-only** change: optional update modal with “Later” and “Update”.
+- **Minor or major** change: mandatory update modal with “Update” only.
+- Android and iOS version numbers are independent so you can release on each store on different days.
+
 ## AppDialog usage
 
 ```dart
