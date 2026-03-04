@@ -13,8 +13,8 @@ class CheckoutDataProvider {
   final ApiService _apiService;
   static const String _checkoutEndpoint = '/api/v1/orders/checkout';
   static const String _retryPaymentEndpoint = '/api/v1/payments/retry';
-  /// Placeholder: replace with real endpoint when API spec is provided.
-  static const String _sahayVerifyEndpoint = '/api/v1/payments/sahay/verify';
+  static const String _sahayCustomerLookupEndpoint =
+      '/api/v1/payments/sahaypay/customer-lookup';
 
   Future<CheckoutResponse> checkout(CheckoutRequest request) async {
     try {
@@ -90,13 +90,14 @@ class CheckoutDataProvider {
     }
   }
 
-  /// Verify Sahay phone number and account holder before checkout/retry.
-  /// Placeholder endpoint/request; update when real API spec is provided.
+  /// SahayPay customer lookup: GET with phoneNumber query (format 251 + 9 digits).
+  /// Response: { status: 0, message: "string", data: { customerName: "ABDI MOHAMED" } }
   Future<SahayVerificationResult> verifySahayAccount(String phoneNumber) async {
+    final normalized = _normalizeSahayPhone(phoneNumber);
     try {
-      final response = await _apiService.post<Map<String, dynamic>>(
-        _sahayVerifyEndpoint,
-        data: <String, dynamic>{'phoneNumber': phoneNumber},
+      final response = await _apiService.get<Map<String, dynamic>>(
+        _sahayCustomerLookupEndpoint,
+        query: <String, dynamic>{'phoneNumber': normalized},
       );
 
       if (response.data == null) {
@@ -109,21 +110,49 @@ class CheckoutDataProvider {
       }
 
       final responseData = response.data!;
-      final data = responseData['data'] as Map<String, dynamic>?;
-      final payload = data ?? responseData;
       return SahayVerificationResult.fromJson(
-        Map<String, dynamic>.from(payload as Map),
+        Map<String, dynamic>.from(responseData),
       );
     } on DioException catch (e) {
-      AppLogger.e('Sahay verification failed', error: e, stack: e.stackTrace);
+      AppLogger.e('Sahay customer lookup failed', error: e, stack: e.stackTrace);
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        final msg = data['message'] as String?;
+        if (msg != null && msg.isNotEmpty) {
+          throw DioException(
+            requestOptions: e.requestOptions,
+            response: e.response,
+            type: e.type,
+            error: msg,
+          );
+        }
+      }
       rethrow;
     } catch (e, stack) {
       AppLogger.e(
-        'Unexpected error during Sahay verification',
+        'Unexpected error during Sahay customer lookup',
         error: e,
         stack: stack,
       );
       rethrow;
     }
+  }
+
+  /// Normalize to 251 + 9 digits (e.g. 251912345678).
+  static String _normalizeSahayPhone(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 12 && digits.startsWith('251')) {
+      return digits.substring(0, 12);
+    }
+    if (digits.length == 10 && digits.startsWith('0')) {
+      return '251${digits.substring(1)}';
+    }
+    if (digits.length == 9) {
+      return '251$digits';
+    }
+    if (digits.length >= 9) {
+      return '251${digits.substring(digits.length - 9)}';
+    }
+    return '251$digits';
   }
 }

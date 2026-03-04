@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
@@ -7,6 +8,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
+import '../../../cart/bloc/cart_bloc.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
 import '../../data/models/payment_method_type.dart';
@@ -15,6 +17,7 @@ import '../../data/models/payment_constants.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
+import '../widgets/ussd_payment_success_dialog.dart';
 
 /// Helper class to represent a selectable payment method
 class _SelectablePaymentMethod {
@@ -345,7 +348,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           ? _selectedVariantCode!
           : selectedMethod.id;
 
-      // Sahay: verify phone and account holder before placing order
+      // Sahay: customer lookup, show customer name and confirm before placing order
       if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
         if (phoneNumber == null || phoneNumber.isEmpty) {
           if (mounted) {
@@ -359,18 +362,45 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           }
           return;
         }
-        final verification = await _checkoutRepository.verifySahayAccount(phoneNumber);
+        final lookup = await _checkoutRepository.verifySahayAccount(phoneNumber);
         if (!mounted) return;
-        if (!verification.success) {
+        if (!lookup.success) {
           setState(() => _isPlacingOrder = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                verification.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
+                lookup.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
               ),
               backgroundColor: AppColors.error,
             ),
           );
+          return;
+        }
+        final customerName = lookup.customerName ?? lookup.accountHolderName;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: Text(LocalizationService.t(ctx, 'checkout.sahayConfirmTitle')),
+            content: Text(
+              LocalizationService.t(ctx, 'checkout.sahayConfirmMessage')
+                  .replaceAll('{name}', customerName ?? ''),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(LocalizationService.t(ctx, 'checkout.cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(LocalizationService.t(ctx, 'checkout.sahayConfirm')),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        if (confirmed != true) {
+          setState(() => _isPlacingOrder = false);
           return;
         }
       }
@@ -424,16 +454,38 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           _isPlacingOrder = false;
         });
 
-        // Show order placed screen with backend response data and payment
-        // codes (for retry payment if needed)
-        if (context.mounted) {
+        if (!context.mounted) return;
+
+        // Clear cart on successful order
+        context.read<CartBloc>().add(CartClearRequested());
+
+        final init = response.paymentInitiation;
+        final nextAction = init?.nextAction;
+        final paymentUrl = init?.paymentUrl;
+        final orderNumber = response.orderNumber ?? init?.orderNumber;
+
+        // For USSD-style payments (Telebirr, eBirr, Sahay, Pesapal): show success popup first
+        if (PaymentConstants.isUssdPaymentProvider(paymentProviderCode)) {
+          await UssdPaymentSuccessDialog.show(
+            context,
+            orderNumber: orderNumber,
+          );
+          if (!context.mounted) return;
+        }
+
+        // If backend says redirect to payment URL, open it in-app WebView (not browser)
+        if (nextAction == 'REDIRECT_TO_PAYMENT_URL' &&
+            paymentUrl != null &&
+            paymentUrl.isNotEmpty) {
           context.go(
-            AppRoutes.orderPlaced,
+            AppRoutes.paymentWebView,
             extra: <String, dynamic>{
-              'checkoutResponse': response,
-              'paymentProviderCode': paymentProviderCode,
+              'paymentUrl': paymentUrl,
+              'orderNumber': orderNumber,
             },
           );
+        } else {
+          context.go(AppRoutes.dashboard);
         }
       }
     } catch (e) {

@@ -7,11 +7,13 @@ final class LoginSubmitted extends LoginEvent {
   final String loginIdentifier;
   final String password;
   final String? channel;
+  final bool rememberMe;
 
   LoginSubmitted({
     required this.loginIdentifier,
     required this.password,
     this.channel,
+    this.rememberMe = false,
   });
 }
 

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/update/app_update_check_result.dart';
 import 'package:commercepal/core/update/app_update_check_service.dart';
 import 'package:commercepal/core/update/app_update_modal.dart';
+import 'package:commercepal/services/biometric_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,10 +16,45 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final Storage _storage = Storage();
+  final BiometricService _biometricService = BiometricService();
+
   @override
   void initState() {
     super.initState();
     _runSplashAndVersionCheck();
+  }
+
+  Future<void> _navigateAfterAuth() async {
+    if (!mounted) return;
+
+    final hasTokens = await _storage.hasTokens();
+    if (!hasTokens) {
+      if (mounted) context.go(AppRoutes.login);
+      return;
+    }
+
+    final biometricEnabled = await _storage.getBiometricEnabled();
+    if (!biometricEnabled) {
+      if (mounted) context.go(AppRoutes.dashboard);
+      return;
+    }
+
+    final result = await _biometricService.authenticate(
+      reason: 'Authenticate to open CommercePal',
+    );
+
+    if (!mounted) return;
+    switch (result) {
+      case BiometricAuthResult.success:
+        context.go(AppRoutes.dashboard);
+        break;
+      case BiometricAuthResult.failure:
+      case BiometricAuthResult.cancel:
+      case BiometricAuthResult.unavailable:
+        context.go(AppRoutes.login);
+        break;
+    }
   }
 
   Future<void> _runSplashAndVersionCheck() async {
@@ -37,13 +74,13 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         result: result,
         onLater: () {
-          if (mounted) context.go(AppRoutes.dashboard);
+          if (mounted) _navigateAfterAuth();
         },
       );
       return;
     }
 
-    context.go(AppRoutes.dashboard);
+    await _navigateAfterAuth();
   }
 
   @override

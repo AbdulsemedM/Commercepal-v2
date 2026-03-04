@@ -90,6 +90,8 @@
 	<string>This app needs access to location when open to show you nearby stores and delivery options.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photos access to get QR code from photo library</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>CommercePal uses Face ID to securely sign you in to your account.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

@@ -30,6 +30,8 @@ class Storage {
   static const String _keyCustomerId = 'customer_id';
   static const String _keyWishlist = 'wishlist';
   static const String _keyLocale = 'app_locale';
+  static const String _keyRememberedEmail = 'remembered_email';
+  static const String _keyBiometricEnabled = 'biometric_enabled';
 
   // Token management
   Future<void> saveTokens({
@@ -79,6 +81,8 @@ class Storage {
       _storage.delete(key: _keyExpiresIn),
       _storage.delete(key: _keyUserEmail),
       _storage.delete(key: _keyCustomerId),
+      _storage.delete(key: _keyRememberedEmail),
+      _storage.delete(key: _keyBiometricEnabled),
     ]);
   }
 
@@ -193,5 +197,31 @@ class Storage {
   Future<String> getLocale() async {
     final code = await _storage.read(key: _keyLocale);
     return code ?? 'en';
+  }
+
+  // Remember me (email pre-fill)
+  Future<void> saveRememberedEmail(String email) async {
+    await _storage.write(key: _keyRememberedEmail, value: email);
+  }
+
+  Future<String?> getRememberedEmail() async {
+    return await _storage.read(key: _keyRememberedEmail);
+  }
+
+  Future<void> clearRememberedEmail() async {
+    await _storage.delete(key: _keyRememberedEmail);
+  }
+
+  // Biometric login
+  Future<void> setBiometricEnabled(bool enabled) async {
+    await _storage.write(
+      key: _keyBiometricEnabled,
+      value: enabled ? 'true' : 'false',
+    );
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    final value = await _storage.read(key: _keyBiometricEnabled);
+    return value == 'true';
   }
 }

@@ -303,7 +303,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       return;
     }
 
-    // Sahay: verify phone and account holder before retrying payment
+    // Sahay: customer lookup, show customer name and confirm before retrying payment
     if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
       if (paymentAccount == null || paymentAccount.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -315,19 +315,43 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         return;
       }
       try {
-        final verification = await _checkoutRepository.verifySahayAccount(paymentAccount);
+        final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount);
         if (!mounted) return;
-        if (!verification.success) {
+        if (!lookup.success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                verification.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
+                lookup.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
               ),
               backgroundColor: AppColors.error,
             ),
           );
           return;
         }
+        final customerName = lookup.customerName ?? lookup.accountHolderName;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: Text(LocalizationService.t(ctx, 'checkout.sahayConfirmTitle')),
+            content: Text(
+              LocalizationService.t(ctx, 'checkout.sahayConfirmMessage')
+                  .replaceAll('{name}', customerName ?? ''),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(LocalizationService.t(ctx, 'checkout.cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(LocalizationService.t(ctx, 'checkout.sahayConfirm')),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        if (confirmed != true) return;
       } catch (e) {
         if (mounted) {
           String msg = LocalizationService.t(context, 'checkout.verificationFailed');

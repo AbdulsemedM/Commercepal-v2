@@ -46,6 +46,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       // Update auth service with login state
       _authService.login(userEmail: event.loginIdentifier);
 
+      if (event.rememberMe) {
+        await _storage.saveRememberedEmail(event.loginIdentifier);
+      } else {
+        await _storage.clearRememberedEmail();
+      }
+
       emit(
         LoginSuccess(
           accessToken: response.accessToken,

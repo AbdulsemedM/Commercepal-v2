@@ -40,6 +40,11 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Re-check storage for tokens and update login state (e.g. after biometric sign-in).
+  Future<void> refreshAuthStatus() async {
+    await _checkAuthStatus();
+  }
+
   // Set user as logged in
   void login({String? userName, String? userEmail, String? userImageUrl}) {
     _isLoggedIn = true;
@@ -71,10 +76,10 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       // Even if API call fails, clear local state
       // This ensures user can logout even if offline
-      await _storage.clearTokens();
     }
 
     // Clear local state regardless of API call result
+    await _storage.clearTokens();
     _isLoggedIn = false;
     _userName = null;
     _userEmail = null;

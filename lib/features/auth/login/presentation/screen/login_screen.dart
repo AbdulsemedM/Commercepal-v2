@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/services/biometric_service.dart';
+import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/login_bloc.dart';
 import '../widgets/login_widgets.dart';
@@ -22,12 +25,106 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _rememberMe = false;
+  final Storage _storage = Storage();
+  final BiometricService _biometricService = BiometricService();
+  bool _showBiometricLogin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prefillRememberedEmail();
+      _checkBiometricLoginAvailable();
+    });
+  }
+
+  Future<void> _checkBiometricLoginAvailable() async {
+    final biometricEnabled = await _storage.getBiometricEnabled();
+    final hasTokens = await _storage.hasTokens();
+    if (mounted && biometricEnabled && hasTokens) {
+      setState(() => _showBiometricLogin = true);
+    }
+  }
+
+  Future<void> _prefillRememberedEmail() async {
+    final email = await _storage.getRememberedEmail();
+    if (email != null && email.isNotEmpty && mounted) {
+      setState(() {
+        _emailController.text = email;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeShowEnableBiometricDialog(BuildContext context) async {
+    final hasBiometrics = await _biometricService.hasEnrolledBiometrics;
+    final alreadyEnabled = await _storage.getBiometricEnabled();
+    if (!hasBiometrics || alreadyEnabled || !mounted) return;
+
+    final enable = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(
+          LocalizationService.t(context, 'auth.biometric.enableTitle'),
+        ),
+        content: Text(
+          LocalizationService.t(context, 'auth.biometric.enableMessage'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              LocalizationService.t(context, 'auth.biometric.notNow'),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              LocalizationService.t(context, 'auth.biometric.enable'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (enable == true && mounted) {
+      await _storage.setBiometricEnabled(true);
+    }
+  }
+
+  Future<void> _signInWithBiometric(BuildContext context) async {
+    final result = await _biometricService.authenticate(
+      reason: LocalizationService.t(context, 'auth.biometric.signInReason'),
+    );
+    if (!mounted) return;
+    switch (result) {
+      case BiometricAuthResult.success:
+        await AuthService().refreshAuthStatus();
+        if (context.mounted) context.go(AppRoutes.dashboard);
+        break;
+      case BiometricAuthResult.failure:
+      case BiometricAuthResult.unavailable:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'auth.biometric.signInFailed'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        break;
+      case BiometricAuthResult.cancel:
+        break;
+    }
   }
 
   @override
@@ -40,8 +137,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
               if (state is LoginSuccess) {
-                // Navigate to dashboard on successful login
-                context.go(AppRoutes.dashboard);
+                _maybeShowEnableBiometricDialog(context).then((_) {
+                  if (context.mounted) {
+                    context.go(AppRoutes.dashboard);
+                  }
+                });
               } else if (state is LoginFailure) {
                 // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +200,51 @@ class _LoginScreenState extends State<LoginScreen> {
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: Spacing.lg),
+                        if (_showBiometricLogin) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _signInWithBiometric(context),
+                              icon: const Icon(Icons.fingerprint, size: 24),
+                              label: Text(
+                                LocalizationService.t(
+                                  context,
+                                  'auth.biometric.signInWith',
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary),
+                                shape: const StadiumBorder(),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: Spacing.md,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.lg),
+                          Row(
+                            children: <Widget>[
+                              Expanded(child: Divider(color: Colors.grey[300])),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: Spacing.md,
+                                ),
+                                child: Text(
+                                  LocalizationService.t(context, 'auth.login.or'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: Colors.grey[600]),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: Colors.grey[300])),
+                            ],
+                          ),
+                          const SizedBox(height: Spacing.lg),
+                        ],
                         // Email field
                         EmailInputField(controller: _emailController),
                         const SizedBox(height: Spacing.md),
@@ -111,6 +256,46 @@ class _LoginScreenState extends State<LoginScreen> {
                           onTap: () {
                             context.push(AppRoutes.forgotPassword);
                           },
+                        ),
+                        const SizedBox(height: Spacing.sm),
+                        // Remember me checkbox
+                        Row(
+                          children: <Widget>[
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _rememberMe = !_rememberMe;
+                                });
+                              },
+                              child: Text(
+                                LocalizationService.t(
+                                  context,
+                                  'auth.login.rememberMe',
+                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: Colors.grey[700]),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: Spacing.lg),
                         // Login button with arrow icon
@@ -128,6 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                               .trim(),
                                           password: _passwordController.text,
                                           channel: PlatformUtils.getChannel(),
+                                          rememberMe: _rememberMe,
                                         ),
                                       );
                                     }

@@ -24,6 +24,16 @@ class AuthInterceptor extends Interceptor {
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
 
+  /// Do not redirect to login for these paths when session expires (show inline error instead).
+  static const List<String> _noRedirectPaths = <String>[
+    'recently-viewed',
+  ];
+
+  bool _shouldRedirectOnAuthFailure(RequestOptions requestOptions) {
+    final path = requestOptions.path;
+    return !_noRedirectPaths.any((segment) => path.contains(segment));
+  }
+
   // Lazy initialization of RefreshTokenRepository to avoid circular dependency
   RefreshTokenRepository get _refreshTokenRepo {
     _refreshTokenRepository ??= RefreshTokenRepository();
@@ -77,8 +87,9 @@ class AuthInterceptor extends Interceptor {
           _isRefreshing = false;
           _rejectPendingRequests(err);
           await _storage.clearTokens();
-          // Redirect to login if not already on login page
-          if (!NavigationService.instance.isOnLoginPage) {
+          // Redirect to login if not already on login page (skip for e.g. recently viewed)
+          if (!NavigationService.instance.isOnLoginPage &&
+              _shouldRedirectOnAuthFailure(requestOptions)) {
             NavigationService.instance.redirectToLogin();
           }
           return super.onError(err, handler);
@@ -117,8 +128,9 @@ class AuthInterceptor extends Interceptor {
 
         // If refresh fails, clear tokens and redirect to login
         await _storage.clearTokens();
-        // Redirect to login if not already on login page
-        if (!NavigationService.instance.isOnLoginPage) {
+        // Redirect to login if not already on login page (skip for e.g. recently viewed)
+        if (!NavigationService.instance.isOnLoginPage &&
+            _shouldRedirectOnAuthFailure(requestOptions)) {
           NavigationService.instance.redirectToLogin();
         }
         return super.onError(err, handler);
