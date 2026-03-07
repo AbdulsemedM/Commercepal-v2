@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -17,7 +18,7 @@ class CartItemWidget extends StatelessWidget {
   final VoidCallback onRemove;
 
   String _formatPrice(double price, String currency) {
-    return '$currency ${price.toStringAsFixed(2)}';
+    return MoneyFormatter.format(price, currency);
   }
 
   @override

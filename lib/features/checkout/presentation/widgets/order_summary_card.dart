@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -94,7 +95,7 @@ class OrderSummaryCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${item.quantity} × ${item.currency} ${item.unitPrice.toStringAsFixed(2)}',
+                            '${item.quantity} × ${MoneyFormatter.format(item.unitPrice, item.currency)}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.grey[600],
                                 ),
@@ -104,7 +105,7 @@ class OrderSummaryCard extends StatelessWidget {
                     ),
                     // Subtotal
                     Text(
-                      '${item.currency} ${item.subtotal.toStringAsFixed(2)}',
+                      '${MoneyFormatter.format(item.subtotal, item.currency)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -122,7 +123,7 @@ class OrderSummaryCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Text(
-                '${cart.currency} ${cart.subtotal.toStringAsFixed(2)}',
+                '${MoneyFormatter.format(cart.subtotal, cart.currency)}',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -140,7 +141,7 @@ class OrderSummaryCard extends StatelessWidget {
                     ),
               ),
               Text(
-                '${cart.currency} ${cart.estimatedTotal.toStringAsFixed(2)}',
+                '${MoneyFormatter.format(cart.estimatedTotal, cart.currency)}',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,

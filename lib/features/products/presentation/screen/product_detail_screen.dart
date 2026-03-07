@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
@@ -609,16 +610,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             }
                             
                             final hasSelectedVariants = _selectedVariants.isNotEmpty;
-                            final formattedTotalPrice = product.variants.isNotEmpty && product.variants.first.pricing != null
-                                ? product.variants.first.pricing!.currency
-                                : product.pricing.currency;
-                            
+
                             return AddToCartSection(
                               isInCart: itemInCart && !hasSelectedVariants,
                               isInWishlist: _isInWishlist,
                               quantity: totalQuantity > 0 ? totalQuantity : _quantity,
-                              unitPrice: hasSelectedVariants 
-                                  ? '$formattedTotalPrice ${totalPrice.toStringAsFixed(2)}'
+                              unitPrice: hasSelectedVariants
+                                  ? '${product.pricing.currency} ${MoneyFormatter.formatAmount(totalPrice)}'
                                   : currentPrice,
                               onAddToCart: () {
                                 _handleAddToCart(context, product);

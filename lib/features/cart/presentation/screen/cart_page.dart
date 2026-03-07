@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -280,7 +281,7 @@ class CartPage extends StatelessWidget {
                   const SizedBox(width: Spacing.xs),
                   Expanded(
                     child: Text(
-                      '${LocalizationService.t(context, 'cart.youreSaving')} ${cart.currency} ${cart.totalSavings.toStringAsFixed(2)}!',
+                      '${LocalizationService.t(context, 'cart.youreSaving')} ${MoneyFormatter.format(cart.totalSavings, cart.currency)}!',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.success,
                             fontWeight: FontWeight.w600,
@@ -299,7 +300,7 @@ class CartPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Text(
-                '${cart.currency} ${cart.subtotal.toStringAsFixed(2)}',
+                '${MoneyFormatter.format(cart.subtotal, cart.currency)}',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -317,7 +318,7 @@ class CartPage extends StatelessWidget {
                     ),
               ),
               Text(
-                '${cart.currency} ${cart.estimatedTotal.toStringAsFixed(2)}',
+                '${MoneyFormatter.format(cart.estimatedTotal, cart.currency)}',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,

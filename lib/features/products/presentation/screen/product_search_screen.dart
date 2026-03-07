@@ -7,6 +7,7 @@ import 'package:commercepal/core/widgets/shimmer_loading.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
@@ -405,9 +406,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                       imageUrl: product.imageUrl ?? '',
                                       description: product.name,
                                       price:
-                                          '${product.currency} ${product.price.toStringAsFixed(2)}',
+                                          '${MoneyFormatter.format(product.price, product.currency)}',
                                       originalPrice: product.originalPrice != null
-                                          ? '${product.currency} ${product.originalPrice!.toStringAsFixed(2)}'
+                                          ? MoneyFormatter.format(product.originalPrice!, product.currency)
                                           : null,
                                       rating: product.rating,
                                       reviewCount: product.reviewCount,

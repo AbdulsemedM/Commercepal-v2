@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/models/order_item.dart';
@@ -328,7 +329,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ],
           const SizedBox(height: 2),
           Text(
-            '${currency} ${item.unitPrice.toStringAsFixed(2)}',
+            '${MoneyFormatter.format(item.unitPrice, currency)}',
             style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
           ),
           const SizedBox(height: 2),

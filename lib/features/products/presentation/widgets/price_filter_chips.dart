@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 
 /// Preset or custom price range. null min/max means no bound.
 class PriceRange {
@@ -19,9 +20,9 @@ class PriceRange {
 
   String label(String currencySymbol) {
     if (isAny) return 'Any';
-    if (min != null && max != null) return '$currencySymbol${min!.toStringAsFixed(0)} – $currencySymbol${max!.toStringAsFixed(0)}';
-    if (max != null) return 'Under $currencySymbol${max!.toStringAsFixed(0)}';
-    return '$currencySymbol${min!.toStringAsFixed(0)}+';
+    if (min != null && max != null) return '$currencySymbol${MoneyFormatter.formatWhole(min!)} – $currencySymbol${MoneyFormatter.formatWhole(max!)}';
+    if (max != null) return 'Under $currencySymbol${MoneyFormatter.formatWhole(max!)}';
+    return '$currencySymbol${MoneyFormatter.formatWhole(min!)}+';
   }
 }
 
@@ -223,7 +224,7 @@ class _CustomPriceRangeSheetState extends State<_CustomPriceRangeSheet> {
           ),
           const SizedBox(height: Spacing.lg),
           Text(
-            '${widget.currencySymbol}${_low.toStringAsFixed(0)} – ${widget.currencySymbol}${_high.toStringAsFixed(0)}',
+            '${widget.currencySymbol}${MoneyFormatter.formatWhole(_low)} – ${widget.currencySymbol}${MoneyFormatter.formatWhole(_high)}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
@@ -13,14 +14,14 @@ class RecentlyViewedSection extends StatelessWidget {
   static String _formatPrice(Product product) {
     final symbol = CountryCurrencyConstants.getCurrencySymbol(product.currency);
     final prefix = symbol.length > 1 ? '$symbol ' : symbol;
-    return '$prefix${product.price.toStringAsFixed(2)}';
+    return '$prefix${MoneyFormatter.formatAmount(product.price)}';
   }
 
   static String? _formatOriginalPrice(Product product) {
     if (product.originalPrice == null) return null;
     final symbol = CountryCurrencyConstants.getCurrencySymbol(product.currency);
     final prefix = symbol.length > 1 ? '$symbol ' : symbol;
-    return '$prefix${product.originalPrice!.toStringAsFixed(2)}';
+    return '$prefix${MoneyFormatter.formatAmount(product.originalPrice!)}';
   }
 
   @override

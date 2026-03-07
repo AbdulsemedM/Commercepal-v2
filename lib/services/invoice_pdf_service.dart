@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:qr/qr.dart';
 import 'package:commercepal/core/config/env.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/models/delivery_address.dart';
 
@@ -183,8 +184,8 @@ class InvoicePdfService {
                 '${item.productName}${item.productConfiguration.isNotEmpty ? '\n${item.productConfiguration}' : ''}',
               ),
               _cell('${item.quantity}'),
-              _cell('${order.currency} ${item.unitPrice.toStringAsFixed(2)}'),
-              _cell('${item.currency} ${item.subTotal.toStringAsFixed(2)}'),
+              _cell('${order.currency} ${MoneyFormatter.formatAmount(item.unitPrice)}'),
+              _cell('${item.currency} ${MoneyFormatter.formatAmount(item.subTotal)}'),
             ],
           ),
       ],
@@ -233,7 +234,7 @@ class InvoicePdfService {
         children: [
           pw.Text(label, style: pw.TextStyle(fontSize: 10, fontWeight: isBold ? pw.FontWeight.bold : null)),
           pw.Text(
-            '$currency ${amount.toStringAsFixed(2)}',
+            '${MoneyFormatter.format(amount, currency)}',
             style: pw.TextStyle(fontSize: 10, fontWeight: isBold ? pw.FontWeight.bold : null),
           ),
         ],

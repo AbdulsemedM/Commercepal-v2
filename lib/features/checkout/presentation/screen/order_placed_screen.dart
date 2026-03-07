@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/utils/money_formatter.dart';
 import '../../../../core/constants/spacing.dart';
 import '../../../../services/invoice_pdf_service.dart';
 import '../../../../services/localization_service.dart';
@@ -525,6 +526,6 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
 
   static String _formatMoney(num amount, String? currency) {
     final code = currency ?? '';
-    return '$code ${amount.toStringAsFixed(2)}';
+    return MoneyFormatter.format(amount, code);
   }
 }

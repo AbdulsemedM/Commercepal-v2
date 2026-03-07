@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/orders/bloc/orders_bloc.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
@@ -457,7 +458,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                     ),
                     Text(
-                      '${order.currency} ${order.totalAmount.toStringAsFixed(2)}',
+                      '${MoneyFormatter.format(order.totalAmount, order.currency)}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
