@@ -39,12 +39,17 @@ class LoggingInterceptor extends Interceptor {
       }
 
       if (requestBody && options.data != null) {
+        final isAuth = _isAuthPath(options.uri.path);
         logBuffer.writeln('│');
         logBuffer.writeln('│ Body:');
-        final bodyString = _formatData(options.data);
-        bodyString.split('\n').forEach((line) {
-          logBuffer.writeln('│   $line');
-        });
+        if (isAuth) {
+          logBuffer.writeln('│   [REDACTED - auth endpoint]');
+        } else {
+          final bodyString = _formatData(options.data);
+          bodyString.split('\n').forEach((line) {
+            logBuffer.writeln('│   $line');
+          });
+        }
       }
 
       if (options.queryParameters.isNotEmpty) {
@@ -86,12 +91,17 @@ class LoggingInterceptor extends Interceptor {
       }
 
       if (responseBody && response.data != null) {
+        final isAuth = _isAuthPath(response.requestOptions.uri.path);
         logBuffer.writeln('│');
         logBuffer.writeln('│ Body:');
-        final bodyString = _formatData(response.data);
-        bodyString.split('\n').forEach((line) {
-          logBuffer.writeln('│   $line');
-        });
+        if (isAuth) {
+          logBuffer.writeln('│   [REDACTED - auth endpoint]');
+        } else {
+          final bodyString = _formatData(response.data);
+          bodyString.split('\n').forEach((line) {
+            logBuffer.writeln('│   $line');
+          });
+        }
       }
 
       logBuffer.writeln('└─────────────────────────────────────────────────');
@@ -105,42 +115,49 @@ class LoggingInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    final StringBuffer logBuffer = StringBuffer();
-    logBuffer.writeln('┌─────────────────────────────────────────────────');
-    logBuffer.writeln('│ ❌ ERROR');
-    logBuffer.writeln('├─────────────────────────────────────────────────');
-    logBuffer.writeln(
-      '│ ${err.requestOptions.method} ${err.requestOptions.uri}',
-    );
-    logBuffer.writeln('│ Error Type: ${err.type}');
-    logBuffer.writeln('│ Error Message: ${err.message}');
-
-    if (err.response != null) {
-      logBuffer.writeln('│ Status Code: ${err.response?.statusCode}');
+    if (kDebugMode) {
+      final StringBuffer logBuffer = StringBuffer();
+      logBuffer.writeln('┌─────────────────────────────────────────────────');
+      logBuffer.writeln('│ ❌ ERROR');
+      logBuffer.writeln('├─────────────────────────────────────────────────');
       logBuffer.writeln(
-        '│ Status Message: ${err.response?.statusMessage ?? 'N/A'}',
+        '│ ${err.requestOptions.method} ${err.requestOptions.uri}',
       );
+      logBuffer.writeln('│ Error Type: ${err.type}');
+      logBuffer.writeln('│ Error Message: ${err.message}');
 
-      if (errorResponse && err.response?.data != null) {
-        logBuffer.writeln('│');
-        logBuffer.writeln('│ Error Response:');
-        final bodyString = _formatData(err.response?.data);
-        bodyString.split('\n').forEach((line) {
-          logBuffer.writeln('│   $line');
-        });
+      if (err.response != null) {
+        logBuffer.writeln('│ Status Code: ${err.response?.statusCode}');
+        logBuffer.writeln(
+          '│ Status Message: ${err.response?.statusMessage ?? 'N/A'}',
+        );
+
+        if (errorResponse && err.response?.data != null) {
+          logBuffer.writeln('│');
+          logBuffer.writeln('│ Error Response:');
+          final bodyString = _formatData(err.response?.data);
+          bodyString.split('\n').forEach((line) {
+            logBuffer.writeln('│   $line');
+          });
+        }
+      } else {
+        logBuffer.writeln('│ No response received');
       }
-    } else {
-      logBuffer.writeln('│ No response received');
-    }
 
-    logBuffer.writeln('└─────────────────────────────────────────────────');
-    // Log directly to console for better visibility
-    _logFullMessage(logBuffer.toString(), 'API_ERROR');
-    AppLogger.e(
-      'API Error: ${err.requestOptions.method} ${err.requestOptions.uri}',
-      error: err,
-      stack: err.stackTrace,
-    );
+      logBuffer.writeln('└─────────────────────────────────────────────────');
+      _logFullMessage(logBuffer.toString(), 'API_ERROR');
+      AppLogger.e(
+        'API Error: ${err.requestOptions.method} ${err.requestOptions.uri}',
+        error: err,
+        stack: err.stackTrace,
+      );
+    } else {
+      // Release: log only safe summary to avoid leaking tokens/PII in error payloads
+      AppLogger.e(
+        'API Error: ${err.requestOptions.method} ${err.requestOptions.uri} '
+        'type=${err.type} message=${err.message}',
+      );
+    }
     super.onError(err, handler);
   }
 
@@ -178,6 +195,12 @@ class LoggingInterceptor extends Interceptor {
       }
     });
     return sanitized;
+  }
+
+  static bool _isAuthPath(String path) {
+    return path.contains('/auth/login') ||
+        path.contains('/auth/refresh') ||
+        path.contains('/auth/oauth2');
   }
 
   /// Logs a message in chunks to avoid truncation

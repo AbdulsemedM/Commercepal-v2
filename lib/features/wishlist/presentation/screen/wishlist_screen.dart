@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
+import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -15,18 +15,67 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
+  final WishlistRepository _repository = WishlistRepository();
   List<WishlistItem> _items = <WishlistItem>[];
   bool _loading = true;
+  bool _loadingMore = false;
+  int _currentPage = 0;
+  bool _hasNextPage = false;
 
   Future<void> _loadItems() async {
     if (!mounted) return;
-    setState(() => _loading = true);
-    final list = await Storage().getWishlist();
-    if (mounted) {
-      setState(() {
-        _items = list;
-        _loading = false;
-      });
+    setState(() {
+      _loading = true;
+      _items = <WishlistItem>[];
+      _currentPage = 0;
+    });
+    try {
+      if (_repository.isLoggedIn) {
+        final response = await _repository.getWishlistPage(0);
+        if (mounted) {
+          setState(() {
+            _items = response.items.map(WishlistItem.fromProduct).toList();
+            _hasNextPage = response.pagination.hasNext;
+            _currentPage = 0;
+            _loading = false;
+          });
+        }
+      } else {
+        final list = await _repository.getLocalWishlist();
+        if (mounted) {
+          setState(() {
+            _items = list;
+            _hasNextPage = false;
+            _loading = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (!_repository.isLoggedIn || !_hasNextPage || _loadingMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _currentPage + 1;
+      final response = await _repository.getWishlistPage(nextPage);
+      if (mounted) {
+        setState(() {
+          _items = <WishlistItem>[
+            ..._items,
+            ...response.items.map(WishlistItem.fromProduct),
+          ];
+          _hasNextPage = response.pagination.hasNext;
+          _currentPage = nextPage;
+          _loadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -37,12 +86,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   Future<void> _removeItem(WishlistItem item) async {
-    await Storage().removeWishlistItem(item.productId);
-    if (mounted) {
-      setState(() {
-        _items = _items.where((e) => e.productId != item.productId).toList();
-      });
-    }
+    try {
+      await _repository.removeItem(item.productId);
+      if (mounted) {
+        setState(() {
+          _items = _items.where((e) => e.productId != item.productId).toList();
+        });
+      }
+    } catch (_) {}
   }
 
   void _openProduct(WishlistItem item) {
@@ -187,6 +238,24 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (BuildContext context, int index) {
+                            if (index == _items.length) {
+                              if (!_hasNextPage) return const SizedBox.shrink();
+                              if (_loadingMore) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(Spacing.md),
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: Spacing.md),
+                                child: Center(
+                                  child: TextButton(
+                                    onPressed: _loadMore,
+                                    child: const Text('Load more'),
+                                  ),
+                                ),
+                              );
+                            }
                             final item = _items[index];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: Spacing.md),
@@ -197,7 +266,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               ),
                             );
                           },
-                          childCount: _items.length,
+                          childCount: _items.length + (_hasNextPage ? 1 : 0),
                         ),
                       ),
                     ),

@@ -26,6 +26,7 @@ import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
+import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -632,14 +633,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 }
                               },
                               onToggleFavorite: () async {
-                                final storage = Storage();
+                                final repository = WishlistRepository();
                                 if (_isInWishlist) {
-                                  await storage.removeWishlistItem(product.id);
+                                  await repository.removeItem(product.id);
                                 } else {
                                   final imageUrl = product.mainImage.main.isNotEmpty
                                       ? product.mainImage.main
                                       : product.mainImage.thumbnail;
-                                  await storage.addWishlistItem(WishlistItem(
+                                  await repository.addItem(WishlistItem(
                                     productId: product.id,
                                     productName: product.title,
                                     imageUrl: imageUrl,

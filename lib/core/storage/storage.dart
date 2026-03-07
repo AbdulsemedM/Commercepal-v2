@@ -189,6 +189,11 @@ class Storage {
     return list.any((e) => e.productId == productId);
   }
 
+  /// Clear all wishlist items from local storage.
+  Future<void> clearWishlist() async {
+    await _storage.write(key: _keyWishlist, value: '[]');
+  }
+
   // Locale / language
   Future<void> saveLocale(String languageCode) async {
     await _storage.write(key: _keyLocale, value: languageCode);

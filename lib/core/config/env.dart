@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EnvConfig {
@@ -25,9 +26,19 @@ class Env {
   }
 
   static Future<void> initialize() async {
-    final baseUrl = dotenv.env['BASE_URL'] ?? 'https://api.example.com';
+    final baseUrl = dotenv.env['BASE_URL']?.trim() ?? '';
+    const placeholderUrl = 'https://api.example.com';
+    final isPlaceholderOrMissing =
+        baseUrl.isEmpty || baseUrl == placeholderUrl;
+    if (kReleaseMode && isPlaceholderOrMissing) {
+      throw StateError(
+        'BASE_URL must be set in .env for release builds. '
+        'Do not use the placeholder $placeholderUrl in production.',
+      );
+    }
+    final resolvedBaseUrl = baseUrl.isNotEmpty ? baseUrl : placeholderUrl;
     _current = EnvConfig(
-      baseUrl: baseUrl,
+      baseUrl: resolvedBaseUrl,
       connectTimeoutMs:
           int.tryParse(dotenv.env['CONNECT_TIMEOUT_MS'] ?? '15000') ?? 15000,
       receiveTimeoutMs:
