@@ -34,7 +34,7 @@ class CartRepository {
           for (final item in request.items)
             AddToCartItem(
               productId: item.productId,
-              configId: item.configId,
+              configId: item.configId.trim().isEmpty ? '0' : item.configId,
               quantity: item.quantity,
               currency: currency,
               country: country,

@@ -17,9 +17,24 @@ class CartDataProvider {
 
   Future<Cart> addToCart(AddToCartRequest request) async {
     try {
+      return await _addToCartWithBody(request.toJsonSnakeCase());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        try {
+          return await _addToCartWithBody(request.toJson());
+        } on DioException catch (_) {
+          rethrow;
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<Cart> _addToCartWithBody(Map<String, dynamic> body) async {
+    try {
       final response = await _apiService.post<Map<String, dynamic>>(
         _cartItemsEndpoint,
-        data: request.toJson(),
+        data: body,
       );
 
       if (response.data == null) {
@@ -31,10 +46,9 @@ class CartDataProvider {
         );
       }
 
-      // Extract data from nested response structure
       final responseData = response.data!;
       final data = responseData['data'] as Map<String, dynamic>?;
-      
+
       if (data == null) {
         throw DioException(
           requestOptions: response.requestOptions,

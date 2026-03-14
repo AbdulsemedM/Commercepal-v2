@@ -20,6 +20,15 @@ class AddToCartItem {
     'currency': currency,
     'country': country,
   };
+
+  /// Snake_case payload for backends that expect it (e.g. Rails, Laravel).
+  Map<String, dynamic> toJsonSnakeCase() => {
+    'product_id': productId,
+    'config_id': configId,
+    'quantity': quantity,
+    'currency': currency,
+    'country': country,
+  };
 }
 
 class AddToCartRequest {
@@ -29,6 +38,10 @@ class AddToCartRequest {
 
   Map<String, dynamic> toJson() => {
     'items': items.map((item) => item.toJson()).toList(),
+  };
+
+  Map<String, dynamic> toJsonSnakeCase() => {
+    'items': items.map((item) => item.toJsonSnakeCase()).toList(),
   };
 }
 

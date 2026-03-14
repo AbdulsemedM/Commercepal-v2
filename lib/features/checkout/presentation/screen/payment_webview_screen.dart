@@ -6,13 +6,14 @@ import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 
 /// Allowed host suffixes for payment WebView (backend must only return URLs for these).
-/// Add your payment gateway domains (e.g. sahaypay, telebirr) to reduce open-redirect risk.
+/// Add your payment gateway domains (e.g. sahaypay, telebirr, cbe birr) to reduce open-redirect risk.
 const Set<String> _allowedPaymentHostSuffixes = {
   'sahaypay.com',
   'sahaypay.',
   'telebirr.',
   'ebirr.',
   'pesapal.',
+  'cbe.com.et', // CBE Birr payment gateway
 };
 
 /// In-app WebView screen for completing payment at [paymentUrl].
@@ -52,6 +53,10 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     return false;
   }
 
+  /// Browser-like User-Agent so payment gateways (e.g. CBE Birr) that block WebView accept the request.
+  static const String _browserUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
   @override
   void initState() {
     super.initState();
@@ -72,8 +77,14 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
             if (mounted) setState(() => _isLoading = false);
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.paymentUrl.trim()));
+      );
+    _loadPaymentUrl();
+  }
+
+  Future<void> _loadPaymentUrl() async {
+    await _controller.setUserAgent(_browserUserAgent);
+    if (!mounted) return;
+    await _controller.loadRequest(Uri.parse(widget.paymentUrl.trim()));
   }
 
   @override

@@ -1,6 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/features/cart/data/models/add_to_cart_request.dart';
 import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
@@ -89,10 +91,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(CartLoading());
 
     try {
+      // Use product.id when available so we send the same canonical id the API uses (sync path uses this too).
+      final productId = event.product?.id ?? event.productId;
       final request = AddToCartRequest(
         items: [
           AddToCartItem(
-            productId: event.productId,
+            productId: productId,
             configId: event.configId,
             quantity: event.quantity,
             currency: event.currency,
@@ -109,19 +113,40 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       if (e is Exception) {
         if (NavigationService.instance.handleSessionExpired(e)) {
           errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('400') || e.toString().contains('Bad Request')
-              ? 'Invalid item information'
-              : e.toString().contains('401') ||
-                    e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
+        } else if (e.toString().contains('401') ||
+            e.toString().contains('Unauthorized')) {
+          errorMessage = 'Session expired. Please login again.';
+        } else if (e is DioException && e.response?.statusCode == 400) {
+          errorMessage = _extractApiErrorMessage(e) ?? 'Invalid item information';
+          AppLogger.e(
+            'Add to cart 400',
+            error: e,
+            stack: e.stackTrace,
+          );
         }
       }
 
       emit(CartError(errorMessage));
     }
+  }
+
+  /// Extracts message from API error response (e.g. {"message": "..."} or {"error": "..."}).
+  static String? _extractApiErrorMessage(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message'] as String? ?? data['error'] as String?;
+      if (message != null && message.isNotEmpty) return message;
+      final errors = data['errors'];
+      if (errors is Map) {
+        final first = errors.values.isNotEmpty ? errors.values.first : null;
+        if (first is String) return first;
+        if (first is List && first.isNotEmpty && first.first is String) {
+          return first.first as String;
+        }
+      }
+    }
+    if (data is String && data.isNotEmpty) return data;
+    return null;
   }
 
   Future<void> _onCartUpdateItemRequested(

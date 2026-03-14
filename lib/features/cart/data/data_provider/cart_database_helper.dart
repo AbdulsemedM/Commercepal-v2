@@ -1,5 +1,7 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../models/cart_item.dart';
 
 class CartDatabaseHelper {
@@ -18,9 +20,11 @@ class CartDatabaseHelper {
     return _database!;
   }
 
+  /// Uses Application Support directory so the DB path is reliable on iOS in release/distributed builds.
+  /// getDatabasesPath() on iOS can point to a path that fails in release (see sqflite#695, #1085).
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'commercepal_cart.db');
+    final dir = await getApplicationSupportDirectory();
+    final path = join(dir.path, 'commercepal_cart.db');
 
     return await openDatabase(
       path,

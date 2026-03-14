@@ -15,6 +15,7 @@ import '../../data/models/payment_constants.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
+import 'ussd_payment_success_screen.dart';
 
 /// Helper to represent a selectable payment method for retry
 class _SelectablePaymentMethod {
@@ -377,6 +378,18 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       );
       final updated = await _checkoutRepository.retryPayment(request);
       if (!mounted) return;
+
+      // For USSD (Telebirr, etc.): push initiation confirmation before webview
+      if (PaymentConstants.isUssdPaymentProvider(paymentProviderCode)) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => UssdPaymentSuccessScreen(
+              orderNumber: updated.orderNumber ?? widget.orderNumber,
+            ),
+          ),
+        );
+        if (!mounted) return;
+      }
 
       final paymentUrl = updated.paymentInitiation?.paymentUrl;
       if (paymentUrl != null && paymentUrl.isNotEmpty) {

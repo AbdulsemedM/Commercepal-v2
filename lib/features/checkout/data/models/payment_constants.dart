@@ -6,11 +6,11 @@ class PaymentConstants {
   static const String sahayProviderCode = 'SAHAY';
 
   /// Provider codes that initiate USSD payment; show "USSD payment initiated" success popup after checkout.
+  /// CBE_BIRR is excluded: we redirect straight to payment URL without USSD confirmation.
   static const Set<String> ussdPaymentProviderCodes = <String>{
     'TELEBIRR',
     'EBIRR_COOPAY',
     'EBIRR_KAFFI',
-    'CBE_BIRR',
     'SAHAY',
     'PESAPAL',
   };

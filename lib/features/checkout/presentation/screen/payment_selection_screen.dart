@@ -17,7 +17,7 @@ import '../../data/models/payment_constants.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
-import '../widgets/ussd_payment_success_dialog.dart';
+import 'ussd_payment_success_screen.dart';
 
 /// Helper class to represent a selectable payment method
 class _SelectablePaymentMethod {
@@ -464,11 +464,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         final paymentUrl = init?.paymentUrl;
         final orderNumber = response.orderNumber ?? init?.orderNumber;
 
-        // For USSD-style payments (Telebirr, eBirr, Sahay, Pesapal): show success popup first
+        // For USSD-style payments (Telebirr, eBirr, Sahay, Pesapal): push confirmation screen on success
         if (PaymentConstants.isUssdPaymentProvider(paymentProviderCode)) {
-          await UssdPaymentSuccessDialog.show(
-            context,
-            orderNumber: orderNumber,
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (context) => UssdPaymentSuccessScreen(orderNumber: orderNumber),
+            ),
           );
           if (!context.mounted) return;
         }
