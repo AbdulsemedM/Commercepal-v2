@@ -9,6 +9,7 @@ import 'core/config/env.dart';
 import 'core/logging/app_logger.dart';
 import 'core/update/app_update_remote_config.dart';
 import 'services/localization_service.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,9 @@ void main() async {
   try {
     await Firebase.initializeApp();
     AppLogger.i('Firebase initialized successfully');
+
+    // Initialize push notifications (requestPermission on iOS, FCM handlers)
+    await NotificationService.initialize();
 
     await AppUpdateRemoteConfig.initialize(
       defaultLatestVersionAndroid: '4.1.3',
