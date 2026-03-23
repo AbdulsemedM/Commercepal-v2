@@ -50,7 +50,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isInCart = false;
   bool _isInWishlist = false;
   String? _wishlistStateLoadedForProductId;
-  String _cachedCountry = 'US'; // Default, will be loaded in initState
+  String _cachedCountry = 'ET'; // Default Ethiopia, will be loaded in initState
   // Map to track multiple variants with their quantities
   // Key: variant index, Value: quantity
   final Map<int, int> _selectedVariants = <int, int>{};
@@ -69,12 +69,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     try {
       final profileState = context.read<ProfileBloc>().state;
       if (profileState is ProfileLoaded) {
-        return profileState.profile.preferredCurrency ?? 'USD';
+        return profileState.profile.preferredCurrency ?? 'ETB';
       }
     } catch (e) {
       // ProfileBloc not available
     }
-    return 'USD';
+    return 'ETB';
   }
 
   Future<void> _loadCountry() async {

@@ -23,21 +23,16 @@ class CurrencyInfo {
 }
 
 class CountryCurrencyConstants {
-  // Default values
-  static const String defaultCountryCode = 'US';
-  static const String defaultCurrencyCode = 'USD';
+  // Default values (Ethiopia / ETB)
+  static const String defaultCountryCode = 'ET';
+  static const String defaultCurrencyCode = 'ETB';
 
-  // Supported countries
+  // Supported countries (US removed; Ethiopia is default)
   static const List<CountryInfo> supportedCountries = [
     CountryInfo(
       code: 'ET',
       name: 'Ethiopia',
       flagEmoji: '🇪🇹',
-    ),
-    CountryInfo(
-      code: 'US',
-      name: 'United States',
-      flagEmoji: '🇺🇸',
     ),
     CountryInfo(
       code: 'SO',
@@ -56,7 +51,7 @@ class CountryCurrencyConstants {
     ),
   ];
 
-  // Supported currencies
+  // Supported currencies (ETB default; USD kept)
   static const List<CurrencyInfo> supportedCurrencies = [
     CurrencyInfo(
       code: 'ETB',

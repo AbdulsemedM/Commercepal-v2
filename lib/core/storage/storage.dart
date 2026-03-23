@@ -128,7 +128,7 @@ class Storage {
 
   Future<String> getSelectedCountry() async {
     final countryCode = await _storage.read(key: _keySelectedCountry);
-    return countryCode ?? 'US'; // Default to US
+    return countryCode ?? 'ET'; // Default to Ethiopia
   }
 
   Future<void> saveSelectedCurrency(String currencyCode) async {
@@ -137,7 +137,7 @@ class Storage {
 
   Future<String> getSelectedCurrency() async {
     final currencyCode = await _storage.read(key: _keySelectedCurrency);
-    return currencyCode ?? 'USD'; // Default to USD
+    return currencyCode ?? 'ETB'; // Default to ETB (Ethiopian Birr)
   }
 
   // Customer ID management

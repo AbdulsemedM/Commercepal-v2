@@ -28,10 +28,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _selectedLanguage;
   String? _selectedCurrency;
 
-  // Country options
+  // Country options (US removed; Ethiopia first/default)
   final List<Map<String, String>> _countries = const [
     {'code': 'ET', 'name': 'Ethiopia'},
-    {'code': 'US', 'name': 'United States'},
     {'code': 'GB', 'name': 'United Kingdom'},
     {'code': 'KE', 'name': 'Kenya'},
     {'code': 'NG', 'name': 'Nigeria'},
