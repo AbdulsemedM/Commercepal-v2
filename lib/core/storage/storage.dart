@@ -32,6 +32,7 @@ class Storage {
   static const String _keyLocale = 'app_locale';
   static const String _keyRememberedEmail = 'remembered_email';
   static const String _keyBiometricEnabled = 'biometric_enabled';
+  static const String _keyHasOpenedApp = 'has_opened_app';
 
   // Token management
   Future<void> saveTokens({
@@ -228,5 +229,16 @@ class Storage {
   Future<bool> getBiometricEnabled() async {
     final value = await _storage.read(key: _keyBiometricEnabled);
     return value == 'true';
+  }
+
+  /// Returns true when app has never been marked as opened.
+  Future<bool> isFirstAppOpen() async {
+    final value = await _storage.read(key: _keyHasOpenedApp);
+    return value != 'true';
+  }
+
+  /// Marks that the app has been opened at least once.
+  Future<void> markAppOpened() async {
+    await _storage.write(key: _keyHasOpenedApp, value: 'true');
   }
 }

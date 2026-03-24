@@ -7,6 +7,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
 import 'package:commercepal/features/profile/presentation/widgets/country_selection_bottom_sheet.dart';
@@ -534,42 +535,35 @@ class ProfileContent extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(LocalizationService.t(context, 'profile.logOut')),
-        content: Text(LocalizationService.t(context, 'profile.logOutConfirm')),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(LocalizationService.t(context, 'profile.cancel')),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await AuthService().logout();
-                // Navigation will be handled automatically by ProfilePage
-                // which listens to AuthService changes
-              } catch (e) {
-                // Show error message if logout fails
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(LocalizationService.t(context, 'profile.logoutFailed')),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+    AppDialog.show<void>(
+      context,
+      title: LocalizationService.t(context, 'profile.logOut'),
+      message: LocalizationService.t(context, 'profile.logOutConfirm'),
+      icon: const Icon(Icons.logout_rounded),
+      actions: <AppDialogAction>[
+        AppDialogAction(label: LocalizationService.t(context, 'profile.cancel')),
+        AppDialogAction(
+          label: LocalizationService.t(context, 'profile.logOut'),
+          isDestructive: true,
+          onPressed: () async {
+            try {
+              await AuthService().logout();
+              // Navigation will be handled automatically by ProfilePage
+              // which listens to AuthService changes
+            } catch (e) {
+              // Show error message if logout fails
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(LocalizationService.t(context, 'profile.logoutFailed')),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
-            },
-            child: Text(
-              LocalizationService.t(context, 'profile.logOut'),
-              style: const TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
+            }
+          },
+        ),
+      ],
     );
   }
 }

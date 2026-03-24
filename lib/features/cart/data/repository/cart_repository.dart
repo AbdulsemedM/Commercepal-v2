@@ -41,7 +41,10 @@ class CartRepository {
             ),
         ],
       );
-      return await _dataProvider.addToCart(resolvedRequest);
+      final cart = await _dataProvider.addToCart(resolvedRequest);
+      // Keep local cache aligned with server cart after authenticated add.
+      await _localDataProvider.saveCart(cart);
+      return cart;
     } else {
       return await _localDataProvider.addToCart(request, product: product);
     }
@@ -59,7 +62,10 @@ class CartRepository {
 
   Future<Cart> updateCartItem(int itemId, UpdateCartItemRequest request) async {
     if (_authService.isLoggedIn) {
-      return await _dataProvider.updateCartItem(itemId, request);
+      final cart = await _dataProvider.updateCartItem(itemId, request);
+      // Keep local cache aligned with server cart after authenticated update.
+      await _localDataProvider.saveCart(cart);
+      return cart;
     } else {
       return await _localDataProvider.updateCartItem(itemId, request);
     }
@@ -67,7 +73,10 @@ class CartRepository {
 
   Future<Cart> deleteCartItem(int itemId) async {
     if (_authService.isLoggedIn) {
-      return await _dataProvider.deleteCartItem(itemId);
+      final cart = await _dataProvider.deleteCartItem(itemId);
+      // Keep local cache in sync for offline/fast reads after authenticated actions.
+      await _localDataProvider.saveCart(cart);
+      return cart;
     } else {
       return await _localDataProvider.deleteCartItem(itemId);
     }
@@ -75,7 +84,10 @@ class CartRepository {
 
   Future<ClearCartResponse> clearCart() async {
     if (_authService.isLoggedIn) {
-      return await _dataProvider.clearCart();
+      final response = await _dataProvider.clearCart();
+      // Ensure local storage reflects an empty cart after remote clear.
+      await _localDataProvider.clearCart();
+      return response;
     } else {
       return await _localDataProvider.clearCart();
     }

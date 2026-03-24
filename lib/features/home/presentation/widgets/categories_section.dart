@@ -174,24 +174,36 @@ class _CategoriesSectionState extends State<CategoriesSection> {
             ),
           )
         else
-          SizedBox(
-            height: 160,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-              itemCount: subCategories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-              itemBuilder: (BuildContext context, int index) {
-                final subCategory = subCategories[index];
-                return SizedBox(
-                  width: 140,
-                  child: _SubCategoryTile(
-                    subCategory: subCategory,
-                    icon: _getCategoryIcon(subCategory.name),
-                    color: _getCategoryColor(index),
-                  ),
-                );
-              },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.md,
+                vertical: Spacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: SizedBox(
+                height: 86,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: subCategories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+                  itemBuilder: (BuildContext context, int index) {
+                    final subCategory = subCategories[index];
+                    return SizedBox(
+                      width: 64,
+                      child: _SubCategoryBubbleTile(
+                        subCategory: subCategory,
+                        icon: _getCategoryIcon(subCategory.name),
+                        color: _getCategoryColor(index),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
       ],
@@ -201,42 +213,50 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   Widget _buildLoadingShimmer() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: Spacing.sm,
-          mainAxisSpacing: Spacing.sm,
-          childAspectRatio: 0.85,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.md,
         ),
-        itemCount: 6,
-        itemBuilder: (context, index) {
-          return Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: SizedBox(
+          height: 86,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List<Widget>.generate(5, (index) {
+              return SizedBox(
+                width: 64,
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: Spacing.xs),
-                Container(
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              );
+            }),
+          ),
+        ),
       ),
     );
   }
@@ -261,73 +281,110 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   Widget _buildCategoriesList(BuildContext context, List<Category> categories) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: Spacing.sm,
-          mainAxisSpacing: Spacing.sm,
-          childAspectRatio: 0.85,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.md,
         ),
-        itemCount: categories.length,
-        itemBuilder: (BuildContext context, int index) {
-          final Category category = categories[index];
-          final hasImage = category.imageUrl != null && category.imageUrl!.isNotEmpty;
-          final icon = _getCategoryIcon(category.name);
-          final color = _getCategoryColor(index);
-
-          return InkWell(
-            onTap: () {
-              setState(() => _selectedCategory = category);
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: SizedBox(
+          height: 86,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+            itemBuilder: (BuildContext context, int index) {
+              final category = categories[index];
+              return SizedBox(
+                width: 64,
+                child: _CategoryBubbleTile(
+                  category: category,
+                  index: index,
+                  onTap: () => setState(() => _selectedCategory = category),
+                  getIcon: _getCategoryIcon,
+                  getColor: _getCategoryColor,
+                ),
+              );
             },
-            borderRadius: BorderRadius.circular(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: hasImage
-                        ? Image.network(
-                            category.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildIconPlaceholder(icon, color),
-                          )
-                        : _buildIconPlaceholder(icon, color),
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  category.name,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildIconPlaceholder(IconData icon, Color color) {
-    return Container(
-      color: color.withOpacity(0.1),
-      child: Center(
-        child: Icon(icon, color: color, size: 40),
+}
+
+class _CategoryBubbleTile extends StatelessWidget {
+  const _CategoryBubbleTile({
+    required this.category,
+    required this.index,
+    required this.onTap,
+    required this.getIcon,
+    required this.getColor,
+  });
+
+  final Category category;
+  final int index;
+  final VoidCallback onTap;
+  final IconData Function(String name) getIcon;
+  final Color Function(int index) getColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = category.imageUrl != null && category.imageUrl!.isNotEmpty;
+    final icon = getIcon(category.name);
+    final color = getColor(index);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(0.08),
+            ),
+            child: ClipOval(
+              child: hasImage
+                  ? Image.network(
+                      category.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildFallbackIcon(icon, color),
+                    )
+                  : _buildFallbackIcon(icon, color),
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            category.name,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontSize: 12, color: Colors.grey[800]),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildFallbackIcon(IconData icon, Color color) {
+    return Container(
+      color: color.withOpacity(0.12),
+      child: Center(child: Icon(icon, color: color, size: 24)),
     );
   }
 }
 
-class _SubCategoryTile extends StatelessWidget {
-  const _SubCategoryTile({
+class _SubCategoryBubbleTile extends StatelessWidget {
+  const _SubCategoryBubbleTile({
     required this.subCategory,
     required this.icon,
     required this.color,
@@ -349,52 +406,37 @@ class _SubCategoryTile extends StatelessWidget {
         );
       },
       borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(0.08),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+            child: ClipOval(
+              child: hasImage
+                  ? Image.network(
+                      subCategory.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                    )
+                  : _buildPlaceholder(),
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            subCategory.name,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[800],
                 ),
-                child: hasImage
-                    ? Image.network(
-                        subCategory.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                      )
-                    : _buildPlaceholder(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.xs, vertical: Spacing.sm),
-              child: Text(
-                subCategory.name,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 12,
-                      color: Colors.grey[800],
-                      fontWeight: FontWeight.w500,
-                    ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

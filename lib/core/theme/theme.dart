@@ -63,6 +63,28 @@ class AppTheme {
         backgroundColor: scheme.surface,
         contentTextStyle: TextStyle(color: scheme.onSurface),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        titleTextStyle: AppTypography.workSans(scheme.onBackground).titleMedium
+            ?.copyWith(fontWeight: FontWeight.w700),
+        contentTextStyle:
+            AppTypography.workSans(scheme.onBackground).bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
     );
   }
 }

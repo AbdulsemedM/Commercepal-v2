@@ -13,6 +13,7 @@ class AddToCartSection extends StatelessWidget {
     required this.onQuantityChanged,
     required this.onToggleFavorite,
     this.isInWishlist = false,
+    this.isAddingToCart = false,
   });
 
   final bool isInCart;
@@ -22,6 +23,7 @@ class AddToCartSection extends StatelessWidget {
   final ValueChanged<int> onQuantityChanged;
   final VoidCallback onToggleFavorite;
   final bool isInWishlist;
+  final bool isAddingToCart;
 
   String _calculateTotal() {
     // For testing, just return a simple number
@@ -126,7 +128,7 @@ class AddToCartSection extends StatelessWidget {
             // Add to Cart button
             Expanded(
               child: FilledButton(
-                onPressed: onAddToCart,
+                onPressed: isAddingToCart ? null : onAddToCart,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.black,
@@ -135,13 +137,22 @@ class AddToCartSection extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                 ),
-                child: Text(
-                  LocalizationService.t(context, 'productDetail.addToCart'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: isAddingToCart
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.black87,
+                        ),
+                      )
+                    : Text(
+                        LocalizationService.t(context, 'productDetail.addToCart'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: Spacing.md),

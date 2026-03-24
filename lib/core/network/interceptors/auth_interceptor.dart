@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/storage/storage.dart';
@@ -22,6 +24,7 @@ class AuthInterceptor extends Interceptor {
     return _refreshTokenRepository!;
   }
   bool _isRefreshing = false;
+  Future<void>? _refreshFuture;
   final List<_PendingRequest> _pendingRequests = [];
 
   /// Do not redirect to login for these paths when session expires (show inline error instead).
@@ -32,6 +35,20 @@ class AuthInterceptor extends Interceptor {
   bool _shouldRedirectOnAuthFailure(RequestOptions requestOptions) {
     final path = requestOptions.path;
     return !_noRedirectPaths.any((segment) => path.contains(segment));
+  }
+
+  Future<bool> _canRedirectOnAuthFailure(RequestOptions requestOptions) async {
+    if (!_shouldRedirectOnAuthFailure(requestOptions)) {
+      return false;
+    }
+
+    // Never force login redirect on the very first app open.
+    final isFirstAppOpen = await _storage.isFirstAppOpen();
+    if (isFirstAppOpen) {
+      return false;
+    }
+
+    return !NavigationService.instance.isOnLoginPage;
   }
 
   // Lazy initialization of RefreshTokenRepository to avoid circular dependency
@@ -51,8 +68,14 @@ class AuthInterceptor extends Interceptor {
       return super.onRequest(options, handler);
     }
 
-    final accessToken = await _storage.getAccessToken();
+    var accessToken = await _storage.getAccessToken();
     final tokenType = await _storage.getTokenType() ?? 'Bearer';
+
+    // Proactively refresh expired access token when refresh token exists.
+    if (_isTokenExpired(accessToken)) {
+      await _refreshTokenIfNeeded();
+      accessToken = await _storage.getAccessToken();
+    }
 
     if (accessToken != null && accessToken.isNotEmpty) {
       options.headers['Authorization'] = '$tokenType $accessToken';
@@ -88,8 +111,7 @@ class AuthInterceptor extends Interceptor {
           _rejectPendingRequests(err);
           await _storage.clearTokens();
           // Redirect to login if not already on login page (skip for e.g. recently viewed)
-          if (!NavigationService.instance.isOnLoginPage &&
-              _shouldRedirectOnAuthFailure(requestOptions)) {
+          if (await _canRedirectOnAuthFailure(requestOptions)) {
             NavigationService.instance.redirectToLogin();
           }
           return super.onError(err, handler);
@@ -129,8 +151,7 @@ class AuthInterceptor extends Interceptor {
         // If refresh fails, clear tokens and redirect to login
         await _storage.clearTokens();
         // Redirect to login if not already on login page (skip for e.g. recently viewed)
-        if (!NavigationService.instance.isOnLoginPage &&
-            _shouldRedirectOnAuthFailure(requestOptions)) {
+        if (await _canRedirectOnAuthFailure(requestOptions)) {
           NavigationService.instance.redirectToLogin();
         }
         return super.onError(err, handler);
@@ -174,6 +195,64 @@ class AuthInterceptor extends Interceptor {
       pending.handler.reject(err);
     }
     _pendingRequests.clear();
+  }
+
+  Future<void> _refreshTokenIfNeeded() async {
+    if (_isRefreshing && _refreshFuture != null) {
+      return _refreshFuture;
+    }
+
+    final refreshToken = await _storage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return;
+    }
+
+    _isRefreshing = true;
+    final refreshFuture = _refreshTokenRepo.refreshToken(refreshToken).then((_) {});
+    _refreshFuture = refreshFuture;
+
+    try {
+      await refreshFuture;
+    } finally {
+      _isRefreshing = false;
+      _refreshFuture = null;
+    }
+  }
+
+  bool _isTokenExpired(String? token) {
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+
+    final payload = _parseJwtPayload(token);
+    if (payload == null || payload['exp'] == null) {
+      return false;
+    }
+
+    final expValue = payload['exp'];
+    final expSeconds = expValue is int ? expValue : int.tryParse('$expValue');
+    if (expSeconds == null) {
+      return false;
+    }
+
+    final expiryTime = DateTime.fromMillisecondsSinceEpoch(expSeconds * 1000);
+    return DateTime.now().isAfter(expiryTime);
+  }
+
+  Map<String, dynamic>? _parseJwtPayload(String token) {
+    final parts = token.split('.');
+    if (parts.length < 2) {
+      return null;
+    }
+
+    try {
+      final normalized = base64Url.normalize(parts[1]);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final data = jsonDecode(decoded);
+      return data is Map<String, dynamic> ? data : null;
+    } catch (_) {
+      return null;
+    }
   }
 }
 

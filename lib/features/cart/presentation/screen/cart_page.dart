@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
+import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -386,60 +387,43 @@ class CartPage extends StatelessWidget {
   }
 
   void _showRemoveItemDialog(BuildContext context, cartItem) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: Text(LocalizationService.t(context, 'cart.removeItem')),
-        content: Text(
+    AppDialog.show<void>(
+      context,
+      title: LocalizationService.t(context, 'cart.removeItem'),
+      message:
           '${LocalizationService.t(context, 'cart.removeItemConfirm')} "${cartItem.productName}"',
+      icon: const Icon(Icons.remove_shopping_cart_outlined),
+      actions: <AppDialogAction>[
+        AppDialogAction(label: LocalizationService.t(context, 'cart.cancel')),
+        AppDialogAction(
+          label: LocalizationService.t(context, 'cart.remove'),
+          isDestructive: true,
+          onPressed: () {
+            context.read<CartBloc>().add(
+                  CartDeleteItemRequested(itemId: cartItem.id),
+                );
+          },
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(LocalizationService.t(context, 'cart.cancel')),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<CartBloc>().add(
-                    CartDeleteItemRequested(itemId: cartItem.id),
-                  );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-            child: Text(LocalizationService.t(context, 'cart.remove')),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
   void _showClearCartDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: Text(LocalizationService.t(context, 'cart.clearCart')),
-        content: Text(
-          LocalizationService.t(context, 'cart.clearCartConfirm'),
+    AppDialog.show<void>(
+      context,
+      title: LocalizationService.t(context, 'cart.clearCart'),
+      message: LocalizationService.t(context, 'cart.clearCartConfirm'),
+      icon: const Icon(Icons.delete_sweep_outlined),
+      actions: <AppDialogAction>[
+        AppDialogAction(label: LocalizationService.t(context, 'cart.cancel')),
+        AppDialogAction(
+          label: LocalizationService.t(context, 'cart.clear'),
+          isDestructive: true,
+          onPressed: () {
+            context.read<CartBloc>().add(CartClearRequested());
+          },
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(LocalizationService.t(context, 'cart.cancel')),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<CartBloc>().add(CartClearRequested());
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-            child: Text(LocalizationService.t(context, 'cart.clear')),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

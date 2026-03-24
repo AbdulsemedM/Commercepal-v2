@@ -115,6 +115,10 @@ class AppDialog {
           style: FilledButton.styleFrom(
             backgroundColor: scheme.primary,
             foregroundColor: scheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
           onPressed: () {
             a.onPressed?.call();
@@ -126,7 +130,11 @@ class AppDialog {
 
       if (a.isDestructive) {
         return OutlinedButton(
-          style: baseStyle,
+          style: baseStyle.copyWith(
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
           onPressed: () {
             a.onPressed?.call();
             Navigator.of(context).maybePop();
@@ -136,7 +144,11 @@ class AppDialog {
       }
 
       return TextButton(
-        style: baseStyle,
+        style: baseStyle.copyWith(
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
         onPressed: () {
           a.onPressed?.call();
           Navigator.of(context).maybePop();
@@ -146,11 +158,15 @@ class AppDialog {
     }).toList();
 
     return AlertDialog(
-      backgroundColor: theme.colorScheme.surface,
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
+      backgroundColor: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 14,
+      shadowColor: Colors.black.withOpacity(0.18),
+      contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(22)),
+        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.45)),
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
@@ -184,33 +200,57 @@ class _DialogBody extends StatelessWidget {
     final List<Widget> columnChildren = <Widget>[
       if (icon != null)
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: IconTheme(
-            data: IconThemeData(color: scheme.primary, size: 28),
-            child: icon!,
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  scheme.primary.withOpacity(0.18),
+                  scheme.primary.withOpacity(0.06),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: scheme.primary.withOpacity(0.22),
+              ),
+            ),
+            child: IconTheme(
+              data: IconThemeData(color: scheme.primary, size: 24),
+              child: icon!,
+            ),
           ),
         ),
       if (title != null)
         Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             title!,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
+              letterSpacing: 0.1,
             ),
           ),
         ),
       if (message != null)
         Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             message!,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
+              height: 1.35,
             ),
           ),
         ),
-      if (content != null) Flexible(child: content!),
+      if (content != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: content!,
+        ),
       if (isLoading)
         Padding(
           padding: const EdgeInsets.only(top: 16),

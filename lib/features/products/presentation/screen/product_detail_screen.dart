@@ -49,6 +49,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _quantity = 1;
   bool _isInCart = false;
   bool _isInWishlist = false;
+  bool _isAddingToCart = false;
   String? _wishlistStateLoadedForProductId;
   String _cachedCountry = 'ET'; // Default Ethiopia, will be loaded in initState
   // Map to track multiple variants with their quantities
@@ -142,6 +143,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     BuildContext context,
     ProductDetails productDetails,
   ) {
+    if (_isAddingToCart) return;
+
     if (widget.productId == null || widget.productId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -167,6 +170,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
+    setState(() {
+      _isAddingToCart = true;
+    });
 
     if (!hasVariants) {
       // No variants: add product with default config (no variant selection needed)
@@ -254,6 +260,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           if (state is CartItemAdded) {
             setState(() {
               _isInCart = true;
+              _isAddingToCart = false;
             });
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -262,6 +269,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             );
           } else if (state is CartError) {
+            setState(() {
+              _isAddingToCart = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -614,6 +624,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             return AddToCartSection(
                               isInCart: itemInCart && !hasSelectedVariants,
                               isInWishlist: _isInWishlist,
+                              isAddingToCart: _isAddingToCart,
                               quantity: totalQuantity > 0 ? totalQuantity : _quantity,
                               unitPrice: hasSelectedVariants
                                   ? '${product.pricing.currency} ${MoneyFormatter.formatAmount(totalPrice)}'

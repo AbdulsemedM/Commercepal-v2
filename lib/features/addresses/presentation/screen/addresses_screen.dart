@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/address_bloc.dart';
 import '../../data/models/address.dart';
@@ -225,32 +226,22 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   void _showDeleteConfirmation(BuildContext context, Address address) {
     final addressBloc = context.read<AddressBloc>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(LocalizationService.t(context, 'addresses.deleteTitle')),
-        content: Text(
+    AppDialog.show<void>(
+      context,
+      title: LocalizationService.t(context, 'addresses.deleteTitle'),
+      message:
           '${LocalizationService.t(context, 'addresses.deleteConfirm')}\n\n${address.receiverName}\n${address.street}, ${address.city}',
+      icon: const Icon(Icons.delete_outline_rounded),
+      actions: <AppDialogAction>[
+        AppDialogAction(label: LocalizationService.t(context, 'cart.cancel')),
+        AppDialogAction(
+          label: LocalizationService.t(context, 'addresses.delete'),
+          isDestructive: true,
+          onPressed: () {
+            addressBloc.add(AddressDeleteRequested(addressId: address.id));
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(LocalizationService.t(context, 'cart.cancel')),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              addressBloc.add(
-                AddressDeleteRequested(addressId: address.id),
-              );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-            child: Text(LocalizationService.t(context, 'addresses.delete')),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

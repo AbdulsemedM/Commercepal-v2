@@ -28,34 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
 
-    final hasTokens = await _storage.hasTokens();
-    if (!hasTokens) {
-      if (mounted) context.go(AppRoutes.login);
-      return;
-    }
-
-    // Biometric login option commented out for now — go straight to dashboard
-    // final biometricEnabled = await _storage.getBiometricEnabled();
-    // if (!biometricEnabled) {
-    //   if (mounted) context.go(AppRoutes.dashboard);
-    //   return;
-    // }
-
-    // final result = await _biometricService.authenticate(
-    //   reason: 'Authenticate to open CommercePal',
-    // );
-
-    // if (!mounted) return;
-    // switch (result) {
-    //   case BiometricAuthResult.success:
-    //     context.go(AppRoutes.dashboard);
-    //     break;
-    //   case BiometricAuthResult.failure:
-    //   case BiometricAuthResult.cancel:
-    //   case BiometricAuthResult.unavailable:
-    //     context.go(AppRoutes.login);
-    //     break;
-    // }
+    await _storage.markAppOpened();
     if (mounted) context.go(AppRoutes.dashboard);
   }
 

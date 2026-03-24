@@ -9,6 +9,7 @@ import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
 import '../widgets/categories_section.dart';
+import '../widgets/deal_of_day_section.dart';
 import '../widgets/recently_viewed_section.dart';
 
 class HomePage extends StatelessWidget {
@@ -88,6 +89,9 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: Spacing.xl),
                 // Categories section
                 const CategoriesSection(),
+                const SizedBox(height: Spacing.xl),
+                // Deal of the Day section
+                const DealOfDaySection(),
                 const SizedBox(height: Spacing.xl),
                 // Recently Viewed section
                 const RecentlyViewedSection(),
