@@ -77,8 +77,21 @@ class AuthInterceptor extends Interceptor {
 
     // Proactively refresh expired access token when refresh token exists.
     if (_isTokenExpired(accessToken)) {
-      await _refreshTokenIfNeeded();
-      accessToken = await _storage.getAccessToken();
+      try {
+        await _refreshTokenIfNeeded();
+        accessToken = await _storage.getAccessToken();
+      } on DioException catch (e) {
+        // Expired/invalid refresh token: clear stale credentials and continue.
+        if (e.response?.statusCode == 401) {
+          await _storage.clearTokens();
+          if (await _canRedirectOnAuthFailure(options)) {
+            NavigationService.instance.redirectToLogin();
+          }
+          accessToken = null;
+        } else {
+          rethrow;
+        }
+      }
     }
 
     if (accessToken != null && accessToken.isNotEmpty) {
