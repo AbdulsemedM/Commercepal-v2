@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/utils/category_image_assets.dart';
 import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/app/router/app_router.dart';
 
@@ -102,6 +103,11 @@ class _SubCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fallbackIcon = CategoryImageAssets.iconForName(subCategory.name);
+    final hasNetworkImage =
+        subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
+    final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
+
     return InkWell(
       onTap: () {
         final query = Uri.encodeComponent(subCategory.name);
@@ -129,9 +135,7 @@ class _SubCategoryCard extends StatelessWidget {
                     topRight: Radius.circular(12),
                   ),
                 ),
-                child:
-                    subCategory.imageUrl != null &&
-                        subCategory.imageUrl!.isNotEmpty
+                child: hasNetworkImage
                     ? ClipRRect(
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(12),
@@ -140,17 +144,39 @@ class _SubCategoryCard extends StatelessWidget {
                         child: Image.network(
                           subCategory.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (
+                          errorBuilder: (
+                            BuildContext context,
+                            Object error,
+                            StackTrace? stackTrace,
+                          ) {
+                            return assetPath != null
+                                ? Image.asset(
+                                    assetPath,
+                                    fit: BoxFit.cover,
+                                  )
+                                : _buildPlaceholder(fallbackIcon);
+                          },
+                        ),
+                      )
+                    : (assetPath != null
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              assetPath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (
                                 BuildContext context,
                                 Object error,
                                 StackTrace? stackTrace,
                               ) {
-                                return _buildPlaceholder();
+                                return _buildPlaceholder(fallbackIcon);
                               },
-                        ),
-                      )
-                    : _buildPlaceholder(),
+                            ),
+                          )
+                        : _buildPlaceholder(fallbackIcon)),
               ),
             ),
             // Subcategory name
@@ -174,11 +200,11 @@ class _SubCategoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(IconData icon) {
     return Container(
       color: Colors.grey[300],
-      child: const Center(
-        child: Icon(Icons.category, color: Colors.grey, size: 40),
+      child: Center(
+        child: Icon(icon, color: Colors.grey, size: 40),
       ),
     );
   }

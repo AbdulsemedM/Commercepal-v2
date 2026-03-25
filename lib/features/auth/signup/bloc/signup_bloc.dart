@@ -34,7 +34,9 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
         firstName: event.firstName,
         lastName: event.lastName,
         country: event.country,
-        registrationChannel: event.registrationChannel ?? PlatformUtils.getChannel(),
+        registrationChannel:
+            event.registrationChannel ??
+            (PlatformUtils.isIOS ? 'MOBILE_APP_IOS' : 'MOBILE_APP_ANDROID'),
       );
 
       final response = await _repository.signup(request);

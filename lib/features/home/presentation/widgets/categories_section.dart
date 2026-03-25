@@ -7,6 +7,7 @@ import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
 import 'package:commercepal/features/categories/data/models/sub_category.dart';
+import 'package:commercepal/core/utils/category_image_assets.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:shimmer/shimmer.dart';
@@ -334,7 +335,9 @@ class _CategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = category.imageUrl != null && category.imageUrl!.isNotEmpty;
+    final hasNetworkImage =
+        category.imageUrl != null && category.imageUrl!.isNotEmpty;
+    final assetPath = CategoryImageAssets.assetPathForName(category.name);
     final icon = getIcon(category.name);
     final color = getColor(index);
 
@@ -351,13 +354,24 @@ class _CategoryBubbleTile extends StatelessWidget {
               color: color.withOpacity(0.08),
             ),
             child: ClipOval(
-              child: hasImage
+              child: hasNetworkImage
                   ? Image.network(
                       category.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildFallbackIcon(icon, color),
+                      errorBuilder: (_, __, ___) => (assetPath != null
+                          ? Image.asset(
+                              assetPath,
+                              fit: BoxFit.cover,
+                            )
+                          : _buildFallbackIcon(icon, color)),
                     )
-                  : _buildFallbackIcon(icon, color),
+                  : (assetPath != null
+                      ? Image.asset(
+                          assetPath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildFallbackIcon(icon, color),
+                        )
+                      : _buildFallbackIcon(icon, color)),
             ),
           ),
           const SizedBox(height: Spacing.xs),
@@ -396,7 +410,9 @@ class _SubCategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
+    final hasNetworkImage =
+        subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
+    final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
     return InkWell(
       onTap: () {
         final query = Uri.encodeComponent(subCategory.name);
@@ -416,13 +432,24 @@ class _SubCategoryBubbleTile extends StatelessWidget {
               color: color.withOpacity(0.08),
             ),
             child: ClipOval(
-              child: hasImage
+              child: hasNetworkImage
                   ? Image.network(
                       subCategory.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                      errorBuilder: (_, __, ___) => (assetPath != null
+                          ? Image.asset(
+                              assetPath,
+                              fit: BoxFit.cover,
+                            )
+                          : _buildPlaceholder()),
                     )
-                  : _buildPlaceholder(),
+                  : (assetPath != null
+                      ? Image.asset(
+                          assetPath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        )
+                      : _buildPlaceholder()),
             ),
           ),
           const SizedBox(height: Spacing.xs),

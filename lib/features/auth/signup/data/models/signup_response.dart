@@ -1,7 +1,7 @@
 class SignupResponse {
   final int status;
   final String message;
-  final Map<String, dynamic> data;
+  final Object? data;
 
   SignupResponse({
     required this.status,
@@ -12,7 +12,7 @@ class SignupResponse {
   factory SignupResponse.fromJson(Map<String, dynamic> json) => SignupResponse(
     status: json['status'] as int,
     message: json['message'] as String? ?? '',
-    data: json['data'] as Map<String, dynamic>? ?? <String, dynamic>{},
+    data: json['data'],
   );
 
   Map<String, dynamic> toJson() => {

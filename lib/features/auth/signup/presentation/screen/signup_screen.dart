@@ -31,6 +31,15 @@ class _SignupScreenState extends State<SignupScreen> {
   Country _selectedCountry = Country.parse('ET'); // Default to Ethiopia
   String _completePhoneNumber = ''; // Full phone number with country code
 
+  String _registrationChannel() {
+    if (PlatformUtils.isIOS) {
+      return 'MOBILE_APP_IOS';
+      // return 'WEB';
+    }
+    // return 'WEB';
+    return 'MOBILE_APP_ANDROID';
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -61,7 +70,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 // Navigate to login after showing success message
                 Future.delayed(const Duration(seconds: 2), () {
                   if (mounted) {
-                    context.go(AppRoutes.login);
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      context.go(AppRoutes.login);
+                    }
                   }
                 });
               } else if (state is SignupFailure) {
@@ -254,7 +267,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                           lastName: lastName,
                                           country: _selectedCountry.countryCode,
                                           registrationChannel:
-                                              PlatformUtils.getChannel(),
+                                              _registrationChannel(),
                                         ),
                                       );
                                     }

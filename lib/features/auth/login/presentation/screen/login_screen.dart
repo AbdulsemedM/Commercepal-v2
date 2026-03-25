@@ -127,14 +127,24 @@ class _LoginScreenState extends State<LoginScreen> {
   //   }
   // }
 
+  void _goToDashboardProfileTab() {
+    context.go('${AppRoutes.dashboard}?tab=3');
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => LoginBloc(),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: BlocListener<LoginBloc, LoginState>(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _goToDashboardProfileTab();
+        },
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
               if (state is LoginSuccess) {
                 // _maybeShowEnableBiometricDialog(context).then((_) {
@@ -179,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.black,
                               ),
                             ),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: _goToDashboardProfileTab,
                           ),
                         ] else
                           const SizedBox(height: Spacing.lg),
@@ -472,6 +482,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
               },
+            ),
             ),
           ),
         ),

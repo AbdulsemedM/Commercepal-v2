@@ -110,6 +110,24 @@ flutter:
     - assets/images/Facebook.png
     - assets/images/Apple.png
     - assets/images/banner.png
+    - assets/images/accessories.jpg
+    - assets/images/cosmetics.jpg
+    - assets/images/desktop.jpg
+    - assets/images/electronics.jpg
+    - assets/images/automotive.jpg
+    - assets/images/fashion.jpg
+    - "assets/images/home appliances.jpg"
+    - assets/images/laptop.jpg
+    - assets/images/lotion.jpg
+    - assets/images/makeup.jpg
+    - "assets/images/men's watch.jpg"
+    - assets/images/perfume.jpg
+    - "assets/images/smart watch.jpg"
+    - assets/images/sport.jpg
+    - assets/images/tablet.jpg
+    - assets/images/technology.jpg
+    - assets/images/watch.jpg
+    - "assets/images/women's watches.jpg"
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

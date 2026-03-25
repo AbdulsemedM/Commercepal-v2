@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
+import 'package:commercepal/core/utils/category_image_assets.dart';
 
 class CategorySidebar extends StatelessWidget {
   const CategorySidebar({
@@ -26,6 +27,10 @@ class CategorySidebar extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           final Category category = categories[index];
           final bool isSelected = selectedCategory?.slug == category.slug;
+          final hasNetworkImage =
+              category.imageUrl != null && category.imageUrl!.isNotEmpty;
+          final assetPath = CategoryImageAssets.assetPathForName(category.name);
+          final fallbackIcon = CategoryImageAssets.iconForName(category.name);
 
           return Padding(
             padding: const EdgeInsets.symmetric(
@@ -44,15 +49,61 @@ class CategorySidebar extends StatelessWidget {
                   color: isSelected ? AppColors.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  category.name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isSelected ? Colors.white : Colors.black,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        fontSize: 14,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipOval(
+                      child: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: hasNetworkImage
+                            ? Image.network(
+                                category.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => assetPath != null
+                                    ? Image.asset(
+                                        assetPath,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Center(
+                                        child: Icon(
+                                          fallbackIcon,
+                                          color:
+                                              isSelected ? Colors.white : Colors.grey,
+                                          size: 18,
+                                        ),
+                                      ),
+                              )
+                            : (assetPath != null
+                                ? Image.asset(
+                                    assetPath,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Center(
+                                    child: Icon(
+                                      fallbackIcon,
+                                      color:
+                                          isSelected ? Colors.white : Colors.grey,
+                                      size: 18,
+                                    ),
+                                  )),
                       ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      category.name,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontSize: 14,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
