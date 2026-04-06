@@ -51,8 +51,8 @@ android {
 
     defaultConfig {
         applicationId = "com.commercepal.commercepal"
-        // minSdk 23 required for local_auth biometric API
-        minSdk = flutter.minSdkVersion
+        // Security hardening baseline: Android 10+ (API 29)
+        minSdk = 29
         targetSdk = 36
         versionCode = flutterVersionCode.toInt()
         versionName = flutterVersionName
