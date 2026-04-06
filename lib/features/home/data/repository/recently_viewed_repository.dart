@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 
@@ -20,5 +22,23 @@ class RecentlyViewedRepository {
       country: country,
       currency: currency,
     );
+  }
+
+  Future<List<Product>> getCachedRecentlyViewed() async {
+    final raw = await _storage.getCachedRecentlyViewed();
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => Product.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveCachedRecentlyViewed(List<Product> products) async {
+    final json = jsonEncode(products.map((p) => p.toJson()).toList());
+    await _storage.saveCachedRecentlyViewed(json);
   }
 }

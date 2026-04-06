@@ -13,7 +13,6 @@ class ProductInfoSection extends StatefulWidget {
     required this.category,
     required this.keywords,
     this.vendorName,
-    this.provider,
     this.stockLevel,
     this.status,
     this.stuffStatus,
@@ -30,7 +29,6 @@ class ProductInfoSection extends StatefulWidget {
   final String category;
   final String keywords;
   final String? vendorName;
-  final String? provider;
   final int? stockLevel;
   final String? status;
   final String? stuffStatus;
@@ -123,14 +121,6 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
               context,
               'Vendor',
               widget.vendorName!,
-            ),
-          ],
-          if (widget.provider != null && widget.provider!.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(
-              context,
-              'Provider',
-              widget.provider!,
             ),
           ],
           if (widget.stockLevel != null || widget.status != null || (widget.stuffStatus != null && widget.stuffStatus!.isNotEmpty) || !widget.isSellAllowed) ...[

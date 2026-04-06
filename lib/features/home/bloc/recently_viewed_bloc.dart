@@ -16,21 +16,42 @@ class RecentlyViewedBloc extends Bloc<RecentlyViewedEvent, RecentlyViewedState> 
 
   final RecentlyViewedRepository _repository;
 
+  bool _productsEqual(List<Product> a, List<Product> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
+  }
+
   Future<void> _onFetchRecentlyViewed(
     FetchRecentlyViewed event,
     Emitter<RecentlyViewedState> emit,
   ) async {
-    emit(RecentlyViewedLoading());
+    // Step 1: Show cached data immediately if available (no loading spinner).
+    final cached = await _repository.getCachedRecentlyViewed();
+    if (cached.isNotEmpty) {
+      emit(RecentlyViewedLoaded(products: cached));
+    } else {
+      emit(RecentlyViewedLoading());
+    }
 
+    // Step 2: Fetch fresh data in the background.
     try {
-      final products = await _repository.getRecentlyViewed();
-      emit(RecentlyViewedLoaded(products: products));
-    } catch (e) {
-      String message = 'Failed to load recently viewed.';
-      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
-        message = 'Please sign in to see recently viewed.';
+      final fresh = await _repository.getRecentlyViewed();
+
+      // Update cache unconditionally.
+      await _repository.saveCachedRecentlyViewed(fresh);
+
+      // Only emit if data actually changed or we had no cache.
+      if (!_productsEqual(cached, fresh)) {
+        emit(RecentlyViewedLoaded(products: fresh));
       }
-      emit(RecentlyViewedError(message));
+    } catch (e) {
+      // If cached data is already on screen, stay silent on error.
+      if (state is RecentlyViewedLoaded) return;
+
+      emit(RecentlyViewedError('Failed to load recently viewed.'));
     }
   }
 }
