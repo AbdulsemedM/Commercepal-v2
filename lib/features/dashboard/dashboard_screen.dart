@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/widgets/pill_bottom_nav_bar.dart';
 import 'package:commercepal/features/home/presentation/pages/home_page.dart';
@@ -7,6 +9,7 @@ import 'package:commercepal/features/categories/presentation/pages/categories_pa
 import 'package:commercepal/features/cart/presentation/screen/cart_page.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/presentation/screen/profile_page.dart';
+import 'package:commercepal/services/auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.initialTab});
@@ -31,9 +34,34 @@ class DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialTab ?? 0;
-    // Ensure the initial tab is within valid range
     if (_currentIndex < 0 || _currentIndex >= _pages.length) {
       _currentIndex = 0;
+    }
+    AuthService().addListener(_onAuthServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    AuthService().removeListener(_onAuthServiceChanged);
+    super.dispose();
+  }
+
+  void _onAuthServiceChanged() {
+    if (!mounted) return;
+    if (AuthService().sessionExpired) {
+      AuthService().clearSessionExpired();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Your session has expired.'),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Login',
+            onPressed: () {
+              context.go(AppRoutes.login);
+            },
+          ),
+        ),
+      );
     }
   }
 

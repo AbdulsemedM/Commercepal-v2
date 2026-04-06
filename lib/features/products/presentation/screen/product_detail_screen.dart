@@ -420,7 +420,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     category: product.categoryId,
                                     keywords: product.brandName,
                                     vendorName: product.vendorName.isNotEmpty ? product.vendorName : null,
-                                    provider: product.provider.isNotEmpty ? product.provider : null,
                                     stockLevel: product.stockLevel,
                                     status: product.status.isNotEmpty ? product.status : null,
                                     stuffStatus: product.stuffStatus.isNotEmpty ? product.stuffStatus : null,
@@ -535,18 +534,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                             );
                                           }),
                                         ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: Spacing.lg),
-                                  ],
-                                  // External link
-                                  if (product.externalUrl.isNotEmpty) ...[
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _launchUrlString(product.externalUrl),
-                                        icon: const Icon(Icons.open_in_new, size: 18),
-                                        label: const Text('View on seller site'),
                                       ),
                                     ),
                                     const SizedBox(height: Spacing.lg),

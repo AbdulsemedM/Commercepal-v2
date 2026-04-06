@@ -17,16 +17,30 @@ class AuthService extends ChangeNotifier {
   final Storage _storage;
   final LogoutRepository _logoutRepository;
   bool _isLoggedIn = false;
+  bool _sessionExpired = false;
   String? _userName;
   String? _userEmail;
   String? _userInitials;
   String? _userImageUrl;
 
   bool get isLoggedIn => _isLoggedIn;
+  bool get sessionExpired => _sessionExpired;
   String? get userName => _userName;
   String? get userEmail => _userEmail;
   String? get userInitials => _userInitials;
   String? get userImageUrl => _userImageUrl;
+
+  void notifySessionExpired() {
+    if (_sessionExpired) return;
+    _sessionExpired = true;
+    notifyListeners();
+  }
+
+  void clearSessionExpired() {
+    if (!_sessionExpired) return;
+    _sessionExpired = false;
+    notifyListeners();
+  }
 
   Future<void> _checkAuthStatus() async {
     final hasTokens = await _storage.hasTokens();
@@ -81,6 +95,7 @@ class AuthService extends ChangeNotifier {
     // Clear local state regardless of API call result
     await _storage.clearTokens();
     _isLoggedIn = false;
+    _sessionExpired = false;
     _userName = null;
     _userEmail = null;
     _userInitials = null;

@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
-import 'package:commercepal/services/navigation_service.dart';
+import 'package:commercepal/services/auth_service.dart';
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
@@ -32,23 +32,23 @@ class AuthInterceptor extends Interceptor {
     'recently-viewed',
   ];
 
-  bool _shouldRedirectOnAuthFailure(RequestOptions requestOptions) {
+  bool _shouldNotifyOnAuthFailure(RequestOptions requestOptions) {
     final path = requestOptions.path;
     return !_noRedirectPaths.any((segment) => path.contains(segment));
   }
 
-  Future<bool> _canRedirectOnAuthFailure(RequestOptions requestOptions) async {
-    if (!_shouldRedirectOnAuthFailure(requestOptions)) {
+  Future<bool> _canNotifyOnAuthFailure(RequestOptions requestOptions) async {
+    if (!_shouldNotifyOnAuthFailure(requestOptions)) {
       return false;
     }
 
-    // Never force login redirect on the very first app open.
+    // Never notify on the very first app open (user hasn't logged in yet).
     final isFirstAppOpen = await _storage.isFirstAppOpen();
     if (isFirstAppOpen) {
       return false;
     }
 
-    return !NavigationService.instance.isOnLoginPage;
+    return true;
   }
 
   // Lazy initialization of RefreshTokenRepository to avoid circular dependency
@@ -84,8 +84,8 @@ class AuthInterceptor extends Interceptor {
         // Expired/invalid refresh token: clear stale credentials and continue.
         if (e.response?.statusCode == 401) {
           await _storage.clearTokens();
-          if (await _canRedirectOnAuthFailure(options)) {
-            NavigationService.instance.redirectToLogin();
+          if (await _canNotifyOnAuthFailure(options)) {
+            AuthService().notifySessionExpired();
           }
           accessToken = null;
         } else {
@@ -127,9 +127,8 @@ class AuthInterceptor extends Interceptor {
           _isRefreshing = false;
           _rejectPendingRequests(err);
           await _storage.clearTokens();
-          // Redirect to login if not already on login page (skip for e.g. recently viewed)
-          if (await _canRedirectOnAuthFailure(requestOptions)) {
-            NavigationService.instance.redirectToLogin();
+          if (await _canNotifyOnAuthFailure(requestOptions)) {
+            AuthService().notifySessionExpired();
           }
           return super.onError(err, handler);
         }
@@ -165,11 +164,10 @@ class AuthInterceptor extends Interceptor {
         _isRefreshing = false;
         _rejectPendingRequests(err);
 
-        // If refresh fails, clear tokens and redirect to login
+        // If refresh fails, clear tokens and notify UI softly.
         await _storage.clearTokens();
-        // Redirect to login if not already on login page (skip for e.g. recently viewed)
-        if (await _canRedirectOnAuthFailure(requestOptions)) {
-          NavigationService.instance.redirectToLogin();
+        if (await _canNotifyOnAuthFailure(requestOptions)) {
+          AuthService().notifySessionExpired();
         }
         return super.onError(err, handler);
       }
