@@ -234,6 +234,7 @@ class Storage {
   // Cache keys for home page SWR
   static const String _keyCacheCategories = 'cache_categories';
   static const String _keyCacheRecentlyViewed = 'cache_recently_viewed';
+  static const String _keyCacheHomeDiscover = 'cache_home_discover';
 
   Future<void> saveCachedCategories(String json) async {
     await _storage.write(key: _keyCacheCategories, value: json);
@@ -249,6 +250,14 @@ class Storage {
 
   Future<String?> getCachedRecentlyViewed() async {
     return await _storage.read(key: _keyCacheRecentlyViewed);
+  }
+
+  Future<void> saveCachedHomeDiscover(String json) async {
+    await _storage.write(key: _keyCacheHomeDiscover, value: json);
+  }
+
+  Future<String?> getCachedHomeDiscover() async {
+    return await _storage.read(key: _keyCacheHomeDiscover);
   }
 
   /// Returns true when app has never been marked as opened.

@@ -29,6 +29,8 @@ class ProductSearchScreen extends StatefulWidget {
 }
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
+  static const double _loadMoreScrollThreshold = 200;
+
   late final TextEditingController _searchController;
   late final ScrollController _scrollController;
   PriceRange _priceRange = const PriceRange();
@@ -47,10 +49,26 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       query: query.isNotEmpty ? query : null,
       provider: widget.providerId,
       page: 0,
-      size: 36,
+      size: 20,
     );
 
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
+  }
+
+  void _onProductListScroll() {
+    if (!mounted) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.maxScrollExtent <= 0) return;
+    if (position.pixels < position.maxScrollExtent - _loadMoreScrollThreshold) {
+      return;
+    }
+
+    final bloc = context.read<ProductSearchBloc>();
+    final ProductSearchState blocState = bloc.state;
+    if (blocState is ProductSearchLoaded && blocState.hasMore) {
+      bloc.add(LoadMoreProducts());
+    }
   }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
@@ -79,6 +97,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
     _scrollController = ScrollController();
+    _scrollController.addListener(_onProductListScroll);
 
     // Perform initial search if query or providerId is provided
     if ((widget.initialQuery != null && widget.initialQuery!.isNotEmpty) ||
@@ -91,6 +110,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onProductListScroll);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -271,8 +291,25 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     );
                   }
 
-                  if (state is ProductSearchLoaded) {
-                    if (state.products.isEmpty) {
+                  if (state is ProductSearchLoaded ||
+                      state is ProductSearchLoadingMore) {
+                    final List<Product> allProducts;
+                    final int totalElements;
+                    final bool loadingMoreFooter;
+
+                    if (state is ProductSearchLoaded) {
+                      allProducts = state.products;
+                      totalElements = state.totalElements;
+                      loadingMoreFooter = false;
+                    } else if (state is ProductSearchLoadingMore) {
+                      allProducts = state.products;
+                      totalElements = state.totalElements;
+                      loadingMoreFooter = true;
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+
+                    if (allProducts.isEmpty) {
                       return const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -295,11 +332,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       );
                     }
 
-                    final filteredProducts = state.products
+                    final filteredProducts = allProducts
                         .where((Product p) => _priceRange.contains(p.price))
                         .toList();
                     final hasActiveFilter = !_priceRange.isAny;
-                    final maxPrice = state.products
+                    final maxPrice = allProducts
                         .map((Product p) => p.price)
                         .fold(0.0, (double a, double b) => a > b ? a : b);
 
@@ -316,8 +353,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               Expanded(
                                 child: Text(
                                   hasActiveFilter
-                                      ? 'Showing ${filteredProducts.length} of ${state.totalElements}'
-                                      : '${state.totalElements} results found',
+                                      ? 'Showing ${filteredProducts.length} of $totalElements'
+                                      : '$totalElements results found',
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 14,
@@ -342,7 +379,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           child: PriceFilterChips(
                             currentRange: _priceRange,
                             currencySymbol: _getPriceFilterCurrencySymbol(
-                              state.products,
+                              allProducts,
                             ),
                             maxPriceInList: maxPrice,
                             onRangeChanged: (PriceRange range) {
@@ -387,34 +424,61 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                     ],
                                   ),
                                 )
-                              : GridView.builder(
-                                  controller: _scrollController,
-                                  padding: const EdgeInsets.all(Spacing.md),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: Spacing.md,
-                                    mainAxisSpacing: Spacing.md,
-                                    childAspectRatio: 0.75,
-                                  ),
-                                  itemCount: filteredProducts.length,
-                                  itemBuilder: (context, index) {
-                                    final product = filteredProducts[index];
-                                    return ProductCard(
-                                      key: ValueKey('product_${product.id}_$index'),
-                                      productId: product.id,
-                                      imageUrl: product.imageUrl ?? '',
-                                      description: product.name,
-                                      price:
-                                          '${MoneyFormatter.format(product.price, product.currency)}',
-                                      originalPrice: product.originalPrice != null
-                                          ? MoneyFormatter.format(product.originalPrice!, product.currency)
-                                          : null,
-                                      rating: product.rating,
-                                      reviewCount: product.reviewCount,
-                                      discountPercentage: product.discountPercentage,
-                                    );
-                                  },
+                              : Column(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: GridView.builder(
+                                        controller: _scrollController,
+                                        padding: const EdgeInsets.all(Spacing.md),
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          crossAxisSpacing: Spacing.md,
+                                          mainAxisSpacing: Spacing.md,
+                                          childAspectRatio: 0.75,
+                                        ),
+                                        itemCount: filteredProducts.length,
+                                        itemBuilder: (context, index) {
+                                          final product = filteredProducts[index];
+                                          return ProductCard(
+                                            key: ValueKey(
+                                              'product_${product.id}_$index',
+                                            ),
+                                            productId: product.id,
+                                            imageUrl: product.imageUrl ?? '',
+                                            description: product.name,
+                                            price: MoneyFormatter.format(
+                                              product.price,
+                                              product.currency,
+                                            ),
+                                            originalPrice: product.originalPrice != null
+                                                ? MoneyFormatter.format(
+                                                    product.originalPrice!,
+                                                    product.currency,
+                                                  )
+                                                : null,
+                                            rating: product.rating,
+                                            reviewCount: product.reviewCount,
+                                            discountPercentage:
+                                                product.discountPercentage,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    if (loadingMoreFooter)
+                                      const Padding(
+                                        padding: EdgeInsets.only(bottom: Spacing.md),
+                                        child: Center(
+                                          child: SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                         ),
                       ],

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/storage/storage.dart';
@@ -17,6 +15,7 @@ import '../../bloc/product_details_event.dart';
 import '../../bloc/product_details_state.dart';
 import '../../data/repository/product_details_repository.dart';
 import '../../data/models/product.dart';
+import '../widgets/in_app_product_video.dart';
 import '../widgets/product_image_gallery.dart';
 import '../widgets/product_info_section.dart';
 import '../widgets/product_specifications.dart';
@@ -102,41 +101,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   String _getCountry(BuildContext context) {
     return _cachedCountry;
-  }
-
-  Future<void> _launchUrlString(String url) async {
-    if (url.trim().isEmpty) return;
-    String normalized = url.trim();
-    if (!normalized.toLowerCase().startsWith('http://') &&
-        !normalized.toLowerCase().startsWith('https://')) {
-      normalized = 'https://$normalized';
-    }
-    try {
-      final uri = Uri.parse(normalized);
-      bool launched = false;
-      try {
-        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
-      } catch (_) {
-        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-      if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open link'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open link'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
 
   void _handleAddToCart(
@@ -494,50 +458,49 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           'Configurable options': 'Yes',
                                       },
                                     ),
-                                  const SizedBox(height: Spacing.lg),
-                                  // Videos
                                   if (product.videos.isNotEmpty) ...[
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: Spacing.md,
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
                                           Text(
-                                            'Videos',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            product.videos.length > 1
+                                                ? 'Videos'
+                                                : 'Video',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                           const SizedBox(height: Spacing.sm),
-                                          ...product.videos.asMap().entries.map((entry) {
-                                            final i = entry.key + 1;
-                                            final video = entry.value;
-                                            return Padding(
-                                              padding: const EdgeInsets.only(bottom: Spacing.sm),
-                                              child: InkWell(
-                                                onTap: () => _launchUrlString(video.url),
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(Icons.play_circle_outline, size: 32, color: Theme.of(context).colorScheme.primary),
-                                                    const SizedBox(width: Spacing.sm),
-                                                    Expanded(
-                                                      child: Text(
-                                                        'Video $i',
-                                                        style: Theme.of(context).textTheme.bodyMedium,
-                                                      ),
-                                                    ),
-                                                    const Icon(Icons.open_in_new, size: 18),
-                                                  ],
-                                                ),
+                                          for (var i = 0;
+                                              i < product.videos.length;
+                                              i++)
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: i <
+                                                        product.videos.length -
+                                                            1
+                                                    ? Spacing.md
+                                                    : 0,
                                               ),
-                                            );
-                                          }),
+                                              child: InAppProductVideo(
+                                                url: product.videos[i].url,
+                                                autoPlay: i == 0,
+                                              ),
+                                            ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: Spacing.lg),
+                                    const SizedBox(height: Spacing.md),
                                   ],
+                                  const SizedBox(height: Spacing.lg),
                                   // Reviews section
                                   if (product.customerReviews.isNotEmpty)
                                     ReviewsSectionWidget(

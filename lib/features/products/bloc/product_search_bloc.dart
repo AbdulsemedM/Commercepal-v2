@@ -24,11 +24,13 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
   List<Product> _allProducts = [];
   int _currentPage = 0;
   bool _hasMore = true;
+  bool _loadMoreInProgress = false;
 
   Future<void> _onSearchProducts(
     SearchProducts event,
     Emitter<ProductSearchState> emit,
   ) async {
+    _loadMoreInProgress = false;
     emit(ProductSearchLoading());
 
     try {
@@ -74,21 +76,24 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     LoadMoreProducts event,
     Emitter<ProductSearchState> emit,
   ) async {
-    if (!_hasMore || _currentRequest == null) {
+    if (!_hasMore || _currentRequest == null || _loadMoreInProgress) {
       return;
     }
 
     final currentState = state;
-    if (currentState is ProductSearchLoaded) {
-      emit(
-        ProductSearchLoadingMore(
-          products: _allProducts,
-          totalElements: currentState.totalElements,
-          totalPages: currentState.totalPages,
-          currentPage: currentState.currentPage,
-        ),
-      );
+    if (currentState is! ProductSearchLoaded) {
+      return;
     }
+
+    _loadMoreInProgress = true;
+    emit(
+      ProductSearchLoadingMore(
+        products: _allProducts,
+        totalElements: currentState.totalElements,
+        totalPages: currentState.totalPages,
+        currentPage: currentState.currentPage,
+      ),
+    );
 
     try {
       final nextPage = _currentPage + 1;
@@ -121,6 +126,8 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
       }
 
       emit(ProductSearchError(errorMessage));
+    } finally {
+      _loadMoreInProgress = false;
     }
   }
 
@@ -132,6 +139,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
       return;
     }
 
+    _loadMoreInProgress = false;
     emit(ProductSearchLoading());
 
     try {
@@ -189,6 +197,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     _allProducts = [];
     _currentPage = 0;
     _hasMore = true;
+    _loadMoreInProgress = false;
     emit(ProductSearchInitial());
   }
 }
