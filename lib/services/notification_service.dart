@@ -47,9 +47,22 @@ class NotificationService {
 
       // FCM token (send to your backend to target this device)
       final token = await messaging.getToken();
-      if (token != null && kDebugMode) {
-        AppLogger.i('FCM token: $token');
+      if (kDebugMode) {
+        if (token != null) {
+          // debugPrint surfaces clearly in `flutter run` / IDE Run terminal (dev.log is quieter)
+          debugPrint('[FCM] Token captured: $token');
+          AppLogger.i('FCM token: $token');
+        } else {
+          debugPrint('[FCM] getToken() returned null (check Firebase setup / emulator)');
+        }
       }
+
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        if (kDebugMode) {
+          debugPrint('[FCM] Token refreshed: $newToken');
+          AppLogger.i('FCM token refreshed: $newToken');
+        }
+      });
 
       // Optional: subscribe to a topic
       // await messaging.subscribeToTopic('orders');

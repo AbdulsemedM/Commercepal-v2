@@ -21,6 +21,7 @@ class AddressSelectionSection extends StatefulWidget {
 
 class _AddressSelectionSectionState extends State<AddressSelectionSection> {
   int? _selectedAddressId;
+  bool _hasTriggeredAutoAddressCreation = false;
 
   @override
   void initState() {
@@ -94,6 +95,14 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
 
         if (state is AddressLoaded) {
           final addresses = state.addresses;
+
+          if (addresses.isEmpty && !_hasTriggeredAutoAddressCreation) {
+            _hasTriggeredAutoAddressCreation = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              AddEditAddressDialog.show(context);
+            });
+          }
 
           // Auto-select default address if available
           if (_selectedAddressId == null && addresses.isNotEmpty) {

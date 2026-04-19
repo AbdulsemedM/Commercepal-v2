@@ -19,6 +19,7 @@ class ProductInfoSection extends StatefulWidget {
     this.createdTime,
     this.updatedTime,
     this.isSellAllowed = true,
+    this.variantSelector,
   });
 
   final String title;
@@ -35,6 +36,7 @@ class ProductInfoSection extends StatefulWidget {
   final String? createdTime;
   final String? updatedTime;
   final bool isSellAllowed;
+  final Widget? variantSelector;
 
   @override
   State<ProductInfoSection> createState() => _ProductInfoSectionState();
@@ -77,6 +79,10 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
               fontSize: 24,
             ),
           ),
+          if (widget.variantSelector != null) ...[
+            const SizedBox(height: Spacing.sm),
+            widget.variantSelector!,
+          ],
           const SizedBox(height: Spacing.sm),
           // Rating and reviews
           Row(

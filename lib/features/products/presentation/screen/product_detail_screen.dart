@@ -390,6 +390,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     createdTime: product.createdTime.isNotEmpty ? product.createdTime : null,
                                     updatedTime: product.updatedTime.isNotEmpty ? product.updatedTime : null,
                                     isSellAllowed: product.isSellAllowed,
+                                    variantSelector: product.variants.isNotEmpty
+                                        ? MultiVariantSelectorWidget(
+                                            variants: product.variants,
+                                            selectedVariants: _selectedVariants,
+                                            onVariantToggled: _handleVariantToggled,
+                                            onQuantityChanged: _handleQuantityChanged,
+                                          )
+                                        : null,
                                   ),
                                   const SizedBox(height: Spacing.lg),
                                   // Description
@@ -423,14 +431,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                     const SizedBox(height: Spacing.lg),
                                   ],
-                                  // Multi-variant selector
-                                  if (product.variants.isNotEmpty)
-                                    MultiVariantSelectorWidget(
-                                      variants: product.variants,
-                                      selectedVariants: _selectedVariants,
-                                      onVariantToggled: _handleVariantToggled,
-                                      onQuantityChanged: _handleQuantityChanged,
-                                    ),
                                   const SizedBox(height: Spacing.lg),
                                   // Specifications (if available)
                                   if (product.physicalParameters.weight > 0 ||
