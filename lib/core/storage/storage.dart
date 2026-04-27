@@ -33,6 +33,9 @@ class Storage {
   static const String _keyRememberedEmail = 'remembered_email';
   static const String _keyBiometricEnabled = 'biometric_enabled';
   static const String _keyHasOpenedApp = 'has_opened_app';
+  static const String _keyRecentProductSearches = 'recent_product_searches';
+
+  static const int _maxRecentProductSearches = 12;
 
   // Token management
   Future<void> saveTokens({
@@ -216,6 +219,64 @@ class Storage {
 
   Future<void> clearRememberedEmail() async {
     await _storage.delete(key: _keyRememberedEmail);
+  }
+
+  /// Last text queries used on the product search screen (newest first).
+  Future<List<String>> getRecentProductSearches() async {
+    final String? raw = await _storage.read(key: _keyRecentProductSearches);
+    if (raw == null || raw.isEmpty) return <String>[];
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is List<dynamic>) {
+        return decoded
+            .map((dynamic e) => e.toString().trim())
+            .where((String s) => s.isNotEmpty)
+            .toList();
+      }
+    } catch (_) {
+      // ignore corrupt payload
+    }
+    return <String>[];
+  }
+
+  Future<void> recordRecentProductSearch(String query) async {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    List<String> list = await getRecentProductSearches();
+    list = list
+        .where(
+          (String s) => s.toLowerCase() != trimmed.toLowerCase(),
+        )
+        .toList();
+    list.insert(0, trimmed);
+    if (list.length > _maxRecentProductSearches) {
+      list = list.sublist(0, _maxRecentProductSearches);
+    }
+    await _storage.write(
+      key: _keyRecentProductSearches,
+      value: jsonEncode(list),
+    );
+  }
+
+  Future<void> removeRecentProductSearch(String query) async {
+    final List<String> list = await getRecentProductSearches();
+    final filtered = list
+        .where(
+          (String s) => s.toLowerCase() != query.toLowerCase(),
+        )
+        .toList();
+    if (filtered.isEmpty) {
+      await _storage.delete(key: _keyRecentProductSearches);
+    } else {
+      await _storage.write(
+        key: _keyRecentProductSearches,
+        value: jsonEncode(filtered),
+      );
+    }
+  }
+
+  Future<void> clearRecentProductSearches() async {
+    await _storage.delete(key: _keyRecentProductSearches);
   }
 
   // Biometric login

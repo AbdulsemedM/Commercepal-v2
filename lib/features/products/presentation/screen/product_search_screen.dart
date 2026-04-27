@@ -17,6 +17,8 @@ import 'package:commercepal/features/products/data/models/product_search_request
 import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
 import 'package:commercepal/features/products/presentation/widgets/price_filter_chips.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
+import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class ProductSearchScreen extends StatefulWidget {
   const ProductSearchScreen({super.key, this.initialQuery, this.providerId});
@@ -33,9 +35,18 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   late final TextEditingController _searchController;
   late final ScrollController _scrollController;
+  final Storage _storage = Storage();
   PriceRange _priceRange = const PriceRange();
+  List<String> _recentSearches = <String>[];
 
-  void _performSearch() {
+  Future<void> _loadRecentSearches() async {
+    final List<String> next = await _storage.getRecentProductSearches();
+    if (mounted) {
+      setState(() => _recentSearches = next);
+    }
+  }
+
+  Future<void> _performSearch() async {
     final query = _searchController.text.trim();
 
     // Allow search if either query or providerId is provided
@@ -53,6 +64,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     );
 
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
+
+    if (query.isNotEmpty) {
+      await _storage.recordRecentProductSearch(query);
+      if (mounted) {
+        await _loadRecentSearches();
+      }
+    }
   }
 
   void _onProductListScroll() {
@@ -99,13 +117,14 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onProductListScroll);
 
-    // Perform initial search if query or providerId is provided
-    if ((widget.initialQuery != null && widget.initialQuery!.isNotEmpty) ||
-        (widget.providerId != null && widget.providerId!.isNotEmpty)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _performSearch();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadRecentSearches();
+      if (!mounted) return;
+      if ((widget.initialQuery != null && widget.initialQuery!.isNotEmpty) ||
+          (widget.providerId != null && widget.providerId!.isNotEmpty)) {
+        await _performSearch();
+      }
+    });
   }
 
   @override
@@ -175,7 +194,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                   controller: _searchController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    hintText: 'Search products...',
+                    hintText: LocalizationService.t(
+                      context,
+                      'productSearch.fieldHint',
+                    ),
                     hintStyle: TextStyle(
                       color: Colors.grey.shade500,
                       fontSize: 15,
@@ -217,7 +239,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       vertical: Spacing.sm,
                     ),
                   ),
-                  onSubmitted: (_) => _performSearch(),
+                  onSubmitted: (_) {
+                    _performSearch();
+                  },
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -226,15 +250,104 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               child: BlocBuilder<ProductSearchBloc, ProductSearchState>(
                 builder: (context, state) {
                   if (state is ProductSearchInitial) {
+                    final String hint = widget.providerId != null
+                        ? LocalizationService.t(
+                            context,
+                            'productSearch.loadingProducts',
+                          )
+                        : LocalizationService.t(
+                            context,
+                            'productSearch.emptyHint',
+                          );
+                    if (!_isFromSubcategories() &&
+                        widget.providerId == null &&
+                        _recentSearches.isNotEmpty) {
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.all(Spacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Text(
+                                    LocalizationService.t(
+                                      context,
+                                      'productSearch.recentSearches',
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    await _storage.clearRecentProductSearches();
+                                    if (mounted) {
+                                      setState(() => _recentSearches = <String>[]);
+                                    }
+                                  },
+                                  child: Text(
+                                    LocalizationService.t(
+                                      context,
+                                      'productSearch.clearRecent',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            Wrap(
+                              spacing: Spacing.sm,
+                              runSpacing: Spacing.sm,
+                              children: _recentSearches.map((String q) {
+                                return InputChip(
+                                  label: Text(
+                                    q,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.text = q;
+                                    setState(() {});
+                                    _performSearch();
+                                  },
+                                  onDeleted: () async {
+                                    await _storage.removeRecentProductSearch(q);
+                                    if (mounted) {
+                                      await _loadRecentSearches();
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: Spacing.xl),
+                            Center(
+                              child: Text(
+                                hint,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return Center(
                       child: Text(
-                        widget.providerId != null
-                            ? 'Loading products...'
-                            : 'Enter a search query to find products',
+                        hint,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 16,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     );
                   }
