@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../core/network/connectivity_banner_host.dart';
 import '../core/theme/theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/locale/locale_controller.dart';
@@ -75,7 +76,7 @@ class _MyAppState extends State<MyApp> {
                   return Directionality(
                     textDirection:
                         isRtl ? TextDirection.rtl : TextDirection.ltr,
-                    child: child!,
+                    child: ConnectivityBannerHost(child: child!),
                   );
                 },
               ),

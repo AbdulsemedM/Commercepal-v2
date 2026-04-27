@@ -26,48 +26,44 @@ class RecentlyViewedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          RecentlyViewedBloc()..add(FetchRecentlyViewed()),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  LocalizationService.t(context, 'home.recentlyViewed.title'),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(
+                LocalizationService.t(context, 'home.recentlyViewed.title'),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+              ),
+            ],
           ),
-          const SizedBox(height: Spacing.md),
-          BlocBuilder<RecentlyViewedBloc, RecentlyViewedState>(
-            builder: (context, state) {
-              if (state is RecentlyViewedLoading) {
-                return _buildLoading(context);
+        ),
+        const SizedBox(height: Spacing.md),
+        BlocBuilder<RecentlyViewedBloc, RecentlyViewedState>(
+          builder: (context, state) {
+            if (state is RecentlyViewedLoading) {
+              return _buildLoading(context);
+            }
+            if (state is RecentlyViewedError) {
+              return _buildError(context, state.message);
+            }
+            if (state is RecentlyViewedLoaded) {
+              if (state.products.isEmpty) {
+                return _buildEmpty(context);
               }
-              if (state is RecentlyViewedError) {
-                return _buildError(context, state.message);
-              }
-              if (state is RecentlyViewedLoaded) {
-                if (state.products.isEmpty) {
-                  return _buildEmpty(context);
-                }
-                return _buildProductList(context, state.products);
-              }
-              return _buildEmpty(context);
-            },
-          ),
-          const SizedBox(height: Spacing.xl),
-        ],
-      ),
+              return _buildProductList(context, state.products);
+            }
+            return _buildEmpty(context);
+          },
+        ),
+        const SizedBox(height: Spacing.xl),
+      ],
     );
   }
 

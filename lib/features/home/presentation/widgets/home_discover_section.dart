@@ -69,49 +69,46 @@ class HomeDiscoverSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => HomeDiscoverBloc()..add(FetchHomeDiscover()),
-      child: BlocBuilder<HomeDiscoverBloc, HomeDiscoverState>(
-        builder: (context, state) {
-          if (state is HomeDiscoverLoading || state is HomeDiscoverInitial) {
-            return _DiscoverLoading();
-          }
-          if (state is HomeDiscoverError) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.md,
-                vertical: Spacing.md,
+    return BlocBuilder<HomeDiscoverBloc, HomeDiscoverState>(
+      builder: (context, state) {
+        if (state is HomeDiscoverLoading || state is HomeDiscoverInitial) {
+          return _DiscoverLoading();
+        }
+        if (state is HomeDiscoverError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.md,
+            ),
+            child: Center(
+              child: Text(
+                state.message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
               ),
-              child: Center(
-                child: Text(
-                  state.message,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+            ),
+          );
+        }
+        if (state is HomeDiscoverLoaded) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (var i = 0; i < kHomeDiscoverSections.length; i++) ...[
+                if (i > 0) const SizedBox(height: Spacing.lg),
+                _DiscoverCategoryBlock(
+                  config: kHomeDiscoverSections[i],
+                  products: state.sections[kHomeDiscoverSections[i].id] ??
+                      <Product>[],
                 ),
-              ),
-            );
-          }
-          if (state is HomeDiscoverLoaded) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                for (var i = 0; i < kHomeDiscoverSections.length; i++) ...[
-                  if (i > 0) const SizedBox(height: Spacing.lg),
-                  _DiscoverCategoryBlock(
-                    config: kHomeDiscoverSections[i],
-                    products: state.sections[kHomeDiscoverSections[i].id] ??
-                        <Product>[],
-                  ),
-                ],
-                const SizedBox(height: Spacing.md),
               ],
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
+              const SizedBox(height: Spacing.md),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 }

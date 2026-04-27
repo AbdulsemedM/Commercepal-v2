@@ -15,12 +15,14 @@ import 'package:commercepal/features/profile/presentation/widgets/currency_selec
 import 'package:commercepal/features/profile/presentation/widgets/language_selection_bottom_sheet.dart';
 import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_bottom_sheet.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
+import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/affiliate_register/presentation/widgets/affiliate_registration_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
@@ -128,6 +130,8 @@ class ProfileContent extends StatelessWidget {
                           const SizedBox(height: Spacing.lg),
                           // Profile Menu Items
                           _buildMenuItems(context),
+                          const SizedBox(height: Spacing.md),
+                          _buildAppVersionFooter(context),
                           const SizedBox(height: Spacing.xl),
                         ],
                       ),
@@ -139,6 +143,32 @@ class ProfileContent extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildAppVersionFooter(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        final PackageInfo info = snapshot.data!;
+        final String label = LocalizationService.t(
+          context,
+          'profile.appVersion',
+        );
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+          child: Text(
+            '$label ${info.version} (${info.buildNumber})',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[500],
+                ),
+          ),
+        );
+      },
     );
   }
 
@@ -402,8 +432,9 @@ class ProfileContent extends StatelessWidget {
             profile = state.profile;
           }
           context.push('/edit-profile', extra: profile).then((_) {
-            // Refresh profile after returning from edit screen
-            context.read<ProfileBloc>().add(ProfileRefreshRequested());
+            if (context.mounted) {
+              context.read<ProfileBloc>().add(ProfileRefreshRequested());
+            }
           });
         },
       ),
@@ -518,6 +549,14 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.person_off_outlined,
+        title: LocalizationService.t(context, 'profile.deleteAccount'),
+        onTap: () {
+          _showDeleteAccountDialog(context);
+        },
+        isDestructive: true,
+      ),
+      _MenuItem(
         icon: Icons.logout_outlined,
         title: LocalizationService.t(context, 'profile.logOut'),
         onTap: () {
@@ -532,6 +571,52 @@ class ProfileContent extends StatelessWidget {
         return _MenuItemWidget(item: item);
       }).toList(),
     );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    AppDialog.show<void>(
+      context,
+      title: LocalizationService.t(context, 'profile.deleteAccount'),
+      message: LocalizationService.t(
+        context,
+        'profile.deleteAccountConfirm',
+      ),
+      icon: const Icon(Icons.warning_amber_rounded),
+      actions: <AppDialogAction>[
+        AppDialogAction(
+          label: LocalizationService.t(context, 'profile.cancel'),
+        ),
+        AppDialogAction(
+          label: LocalizationService.t(context, 'profile.deleteAccount'),
+          isDestructive: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+            _performDeleteAccount(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _performDeleteAccount(BuildContext context) async {
+    try {
+      await ProfileRepository().deleteAccount();
+      await AuthService().logout();
+      if (context.mounted) {
+        context.go(AppRoutes.login);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'profile.deleteAccountFailed'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showLogoutDialog(BuildContext context) {

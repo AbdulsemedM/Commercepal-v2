@@ -163,7 +163,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               onLogoTap: () => context.pop(),
               onCartTap: () => _navigateToTab(context, 2),
               onProfileTap: () => _navigateToTab(context, 3),
-              hasNotification: true,
+              hasNotification: false,
             ),
         body: Column(
           children: <Widget>[

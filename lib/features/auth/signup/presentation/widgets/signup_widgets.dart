@@ -3,6 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:commercepal/app/router/app_router.dart';
 
 /// Full name input field widget
 class FullNameInputField extends StatelessWidget {
@@ -198,9 +201,7 @@ class TermsAndPolicyText extends StatelessWidget {
             recognizer: TapGestureRecognizer()
               ..onTap =
                   onTermsTap ??
-                  () {
-                    // TODO: Navigate to terms screen
-                  },
+                  () => context.push(AppRoutes.termsConditions),
           ),
           const TextSpan(text: ' '),
           TextSpan(
@@ -213,9 +214,7 @@ class TermsAndPolicyText extends StatelessWidget {
             recognizer: TapGestureRecognizer()
               ..onTap =
                   onPrivacyTap ??
-                  () {
-                    // TODO: Navigate to privacy screen
-                  },
+                  () => context.push(AppRoutes.termsConditions),
           ),
           const TextSpan(text: ' '),
           TextSpan(
@@ -228,9 +227,7 @@ class TermsAndPolicyText extends StatelessWidget {
             recognizer: TapGestureRecognizer()
               ..onTap =
                   onPolicyTap ??
-                  () {
-                    // TODO: Navigate to policy screen
-                  },
+                  () => context.push(AppRoutes.refundPolicy),
           ),
         ],
       ),

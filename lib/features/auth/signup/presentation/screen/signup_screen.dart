@@ -226,10 +226,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             context.push(AppRoutes.termsConditions);
                           },
                           onPrivacyTap: () {
-                            // TODO: Navigate to privacy screen
+                            context.push(AppRoutes.termsConditions);
                           },
                           onPolicyTap: () {
-                            // TODO: Navigate to policy screen
+                            context.push(AppRoutes.refundPolicy);
                           },
                         ),
                         const SizedBox(height: Spacing.lg),

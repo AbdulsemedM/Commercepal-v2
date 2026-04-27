@@ -15,4 +15,8 @@ class ProfileRepository {
   Future<ProfileResponse> updateProfile(UpdateProfileRequest request) async {
     return await _dataProvider.updateProfile(request);
   }
+
+  Future<void> deleteAccount() async {
+    await _dataProvider.deleteAccount();
+  }
 }

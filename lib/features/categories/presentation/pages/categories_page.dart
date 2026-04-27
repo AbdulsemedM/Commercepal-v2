@@ -61,7 +61,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
             // Navigate to profile tab
             _navigateToTab(context, 3);
           },
-          hasNotification: true,
+          hasNotification: false,
         ),
         body: BlocBuilder<CategoriesBloc, CategoriesState>(
           builder: (context, state) {

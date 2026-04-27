@@ -80,9 +80,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
       return _buildSubcategoriesView(context, _selectedCategory!);
     }
 
-    return BlocProvider(
-      create: (context) => CategoriesBloc()..add(FetchCategories()),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Header
@@ -133,8 +131,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
             },
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildSubcategoriesView(BuildContext context, Category category) {

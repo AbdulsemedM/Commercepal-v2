@@ -284,7 +284,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 onProfileTap: () {
                   _navigateToTab(context, 3);
                 },
-                hasNotification: true,
+                hasNotification: false,
               ),
               body: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
                 builder: (context, state) {

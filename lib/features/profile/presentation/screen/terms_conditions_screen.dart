@@ -28,7 +28,7 @@ class TermsConditionsScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Privacy Policy',
+          'Terms & privacy',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -40,29 +40,42 @@ class TermsConditionsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Title
             const Text(
-              'Privacy Policy',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.sm),
-                  Text(
-                    'Last updated: July 14, 2022',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.xl),
-                  // Introduction
-                  _buildClause(
-                    'Introduction',
+              'Terms & privacy',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Text(
+              'Last updated: July 14, 2022',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: Spacing.xl),
+            _buildClause(
+              'Conditions of use',
+              'By using CommercePal mobile apps, websites, and related services, you agree to follow these rules and all applicable laws. You are responsible for your account activity and for keeping your login credentials secure. We may update these conditions; continued use after changes means you accept the revised terms. For purchases, returns, and refunds, see our refund policy. The privacy notice below explains how we handle your personal information.',
+            ),
+            const SizedBox(height: Spacing.lg),
+            const Text(
+              'Privacy policy',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            // Introduction
+            _buildClause(
+              'Introduction',
                     'We know that you care how information about you is used and shared, and we appreciate your trust that we will do so carefully and sensibly. This Privacy Notice describes how Commercepal.com and its affiliates (collectively "CommercePal") collect and process your personal information through CommercePal websites, devices, products, services, online and physical stores, and applications that reference this Privacy Notice (together "CommercePal Services"). By using CommercePal Services, you are consenting to the practices described in this Privacy Notice.',
                   ),
                   const SizedBox(height: Spacing.lg),

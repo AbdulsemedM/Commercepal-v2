@@ -68,4 +68,21 @@ class ProfileDataProvider {
       rethrow;
     }
   }
+
+  /// Permanently deletes the signed-in customer account (DELETE `/api/v1/customers/me`).
+  Future<void> deleteAccount() async {
+    try {
+      await _apiService.delete<void>(_profileEndpoint);
+    } on DioException catch (e) {
+      AppLogger.e('Delete account failed', error: e, stack: e.stackTrace);
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.e(
+        'Unexpected error during delete account',
+        error: e,
+        stack: stack,
+      );
+      rethrow;
+    }
+  }
 }

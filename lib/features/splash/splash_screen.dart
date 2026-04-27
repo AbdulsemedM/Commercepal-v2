@@ -6,7 +6,8 @@ import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/update/app_update_check_result.dart';
 import 'package:commercepal/core/update/app_update_check_service.dart';
 import 'package:commercepal/core/update/app_update_modal.dart';
-// import 'package:commercepal/services/biometric_service.dart';
+import 'package:commercepal/services/biometric_service.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +18,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final Storage _storage = Storage();
-  // final BiometricService _biometricService = BiometricService();
 
   @override
   void initState() {
@@ -30,6 +30,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
     await _storage.markAppOpened();
     if (mounted) context.go(AppRoutes.dashboard);
+  }
+
+  Future<void> _proceedToApp() async {
+    final bool biometricOk = await _unlockWithBiometricIfNeeded();
+    if (!mounted) return;
+    if (!biometricOk) {
+      context.go(AppRoutes.login);
+      return;
+    }
+    await _navigateAfterAuth();
   }
 
   Future<void> _runSplashAndVersionCheck() async {
@@ -49,13 +59,35 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         result: result,
         onLater: () {
-          if (mounted) _navigateAfterAuth();
+          if (mounted) {
+            _proceedToApp();
+          }
         },
       );
       return;
     }
 
-    await _navigateAfterAuth();
+    await _proceedToApp();
+  }
+
+  /// When the user enabled biometric login and tokens exist, require a successful
+  /// biometric prompt before entering the app. Hardware or enrollment issues skip the gate.
+  Future<bool> _unlockWithBiometricIfNeeded() async {
+    final bool hasTokens = await _storage.hasTokens();
+    final bool biometricEnabled = await _storage.getBiometricEnabled();
+    if (!hasTokens || !biometricEnabled) return true;
+
+    final BiometricService biometricService = BiometricService();
+    if (!await biometricService.hasEnrolledBiometrics) return true;
+
+    if (!mounted) return true;
+    final String reason = LocalizationService.t(
+      context,
+      'auth.biometric.signInReason',
+    );
+    final BiometricAuthResult result =
+        await biometricService.authenticate(reason: reason);
+    return result == BiometricAuthResult.success;
   }
 
   @override

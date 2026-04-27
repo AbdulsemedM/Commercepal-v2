@@ -5,6 +5,10 @@ import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
+import 'package:commercepal/features/cart/data/models/cart.dart';
+import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
+import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
+import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
@@ -24,86 +28,116 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  Future<void> _onPullToRefresh(BuildContext context) async {
+    context.read<CategoriesBloc>().add(FetchCategories());
+    context.read<HomeDiscoverBloc>().add(FetchHomeDiscover());
+    context.read<RecentlyViewedBloc>().add(FetchRecentlyViewed());
+    try {
+      context.read<CartBloc>().add(CartLoadRequested());
+    } catch (_) {
+      // CartBloc may be absent outside dashboard
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Try to get CartBloc from context (provided at dashboard level)
     CartBloc? cartBloc;
     try {
       cartBloc = context.read<CartBloc>();
-    } catch (e) {
+    } catch (_) {
       // CartBloc not available, will use default count of 0
     }
 
-    return BlocBuilder<CartBloc, CartState>(
-      bloc: cartBloc,
-      builder: (context, cartState) {
-        int cartCount = 0;
-        if (cartState is CartLoaded ||
-            cartState is CartItemAdded ||
-            cartState is CartItemUpdated ||
-            cartState is CartItemDeleted) {
-          final cart = cartState is CartLoaded
-              ? cartState.cart
-              : cartState is CartItemAdded
-              ? cartState.cart
-              : cartState is CartItemUpdated
-              ? cartState.cart
-              : (cartState as CartItemDeleted).cart;
-          cartCount = cart.totalItems;
-        }
-
-        return Scaffold(
-          appBar: AppBarWidget(
-            cartCount: cartCount,
-            userInitials: AuthService().userInitials ?? 'U',
-            onSearchTap: () {
-              // Navigate to search screen when search bar is tapped
-              context.push(AppRoutes.productSearch);
-            },
-            onSearchSubmitted: (String query) {
-              // Navigate to search screen with query
-              context.push(
-                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-              );
-              return null;
-            },
-            onLogoTap: () {
-              // Handle logo tap
-            },
-            onCartTap: () {
-              // Navigate to cart tab
-              _navigateToTab(context, 2);
-            },
-            onProfileTap: () {
-              // Navigate to profile tab
-              _navigateToTab(context, 3);
-            },
-            hasNotification: true,
-          ),
-          body: SingleChildScrollView(
+    Widget homeScaffold(BuildContext context, int cartCount) {
+      return Scaffold(
+        appBar: AppBarWidget(
+          cartCount: cartCount,
+          userInitials: AuthService().userInitials ?? 'U',
+          onSearchTap: () {
+            context.push(AppRoutes.productSearch);
+          },
+          onSearchSubmitted: (String query) {
+            context.push(
+              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+            );
+            return null;
+          },
+          onLogoTap: () {
+            // Handle logo tap
+          },
+          onCartTap: () {
+            _navigateToTab(context, 2);
+          },
+          onProfileTap: () {
+            _navigateToTab(context, 3);
+          },
+          hasNotification: false,
+        ),
+        body: RefreshIndicator(
+          onRefresh: () => _onPullToRefresh(context),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const SizedBox(height: Spacing.md),
-                // Banner section
                 const BannerSection(),
                 const SizedBox(height: Spacing.lg),
-                // Categories section
                 const CategoriesSection(),
                 const SizedBox(height: Spacing.lg),
-                // Deal of the Day section
                 const DealOfDaySection(),
                 const SizedBox(height: Spacing.lg),
-                // Curated category grids (search + cache)
                 const HomeDiscoverSection(),
                 const SizedBox(height: Spacing.lg),
-                // Recently Viewed section
                 const RecentlyViewedSection(),
               ],
             ),
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    int cartCountFromState(CartState cartState) {
+      if (cartState is CartLoaded ||
+          cartState is CartItemAdded ||
+          cartState is CartItemUpdated ||
+          cartState is CartItemDeleted) {
+        final Cart cart = cartState is CartLoaded
+            ? cartState.cart
+            : cartState is CartItemAdded
+                ? cartState.cart
+                : cartState is CartItemUpdated
+                    ? cartState.cart
+                    : (cartState as CartItemDeleted).cart;
+        return cart.totalItems;
+      }
+      return 0;
+    }
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<CategoriesBloc>(
+          create: (_) => CategoriesBloc()..add(FetchCategories()),
+        ),
+        BlocProvider<HomeDiscoverBloc>(
+          create: (_) => HomeDiscoverBloc()..add(FetchHomeDiscover()),
+        ),
+        BlocProvider<RecentlyViewedBloc>(
+          create: (_) => RecentlyViewedBloc()..add(FetchRecentlyViewed()),
+        ),
+      ],
+      child: cartBloc != null
+          ? BlocBuilder<CartBloc, CartState>(
+              bloc: cartBloc,
+              builder: (BuildContext context, CartState cartState) {
+                return homeScaffold(context, cartCountFromState(cartState));
+              },
+            )
+          : Builder(
+              builder: (BuildContext context) =>
+                  homeScaffold(context, 0),
+            ),
     );
   }
 }
