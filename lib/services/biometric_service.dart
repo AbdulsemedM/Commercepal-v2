@@ -1,4 +1,6 @@
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// Result of a biometric authentication attempt.
 enum BiometricAuthResult {
@@ -47,7 +49,27 @@ class BiometricService {
         ),
       );
       return success ? BiometricAuthResult.success : BiometricAuthResult.failure;
-    } catch (e) {
+    } on PlatformException catch (e, stackTrace) {
+      debugPrint(
+        '[BiometricService] PlatformException code=${e.code} message=${e.message}',
+      );
+      debugPrint(stackTrace.toString());
+      final msg = '${e.code} ${e.message ?? ''}'.toLowerCase();
+      if (msg.contains('cancel') ||
+          msg.contains('user_canceled') ||
+          msg.contains('user canceled') ||
+          msg.contains('not_enrolled')) {
+        return BiometricAuthResult.cancel;
+      }
+      if (msg.contains('lockout') ||
+          msg.contains('unavailable') ||
+          msg.contains('not_available')) {
+        return BiometricAuthResult.unavailable;
+      }
+      return BiometricAuthResult.failure;
+    } catch (e, stackTrace) {
+      debugPrint('[BiometricService] Unexpected error: $e');
+      debugPrint(stackTrace.toString());
       final msg = e.toString().toLowerCase();
       if (msg.contains('cancel') ||
           msg.contains('user_canceled') ||

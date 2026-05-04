@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/services/biometric_service.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/app/router/app_router.dart';
@@ -15,7 +18,6 @@ import 'package:commercepal/features/profile/presentation/widgets/currency_selec
 import 'package:commercepal/features/profile/presentation/widgets/language_selection_bottom_sheet.dart';
 import 'package:commercepal/features/auth/change_password/presentation/widgets/change_password_bottom_sheet.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
-import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
@@ -488,6 +490,13 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.fingerprint,
+        title: LocalizationService.t(context, 'profile.enableBiometric'),
+        onTap: () {
+          _enableBiometricLogin(context);
+        },
+      ),
+      _MenuItem(
         icon: Icons.flag_outlined,
         title: LocalizationService.t(context, 'profile.changeCountry'),
         onTap: () async {
@@ -549,14 +558,6 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
-        icon: Icons.person_off_outlined,
-        title: LocalizationService.t(context, 'profile.deleteAccount'),
-        onTap: () {
-          _showDeleteAccountDialog(context);
-        },
-        isDestructive: true,
-      ),
-      _MenuItem(
         icon: Icons.logout_outlined,
         title: LocalizationService.t(context, 'profile.logOut'),
         onTap: () {
@@ -573,44 +574,85 @@ class ProfileContent extends StatelessWidget {
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
-    AppDialog.show<void>(
-      context,
-      title: LocalizationService.t(context, 'profile.deleteAccount'),
-      message: LocalizationService.t(
-        context,
-        'profile.deleteAccountConfirm',
-      ),
-      icon: const Icon(Icons.warning_amber_rounded),
-      actions: <AppDialogAction>[
-        AppDialogAction(
-          label: LocalizationService.t(context, 'profile.cancel'),
-        ),
-        AppDialogAction(
-          label: LocalizationService.t(context, 'profile.deleteAccount'),
-          isDestructive: true,
-          onPressed: () {
-            Navigator.of(context).pop();
-            _performDeleteAccount(context);
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _performDeleteAccount(BuildContext context) async {
+  Future<void> _enableBiometricLogin(BuildContext context) async {
     try {
-      await ProfileRepository().deleteAccount();
-      await AuthService().logout();
-      if (context.mounted) {
-        context.go(AppRoutes.login);
+      final Storage storage = Storage();
+      final BiometricService biometricService = BiometricService();
+
+      final bool alreadyEnabled = await storage.getBiometricEnabled();
+      if (alreadyEnabled) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                LocalizationService.t(context, 'profile.biometricAlreadyEnabled'),
+              ),
+            ),
+          );
+        }
+        return;
       }
-    } catch (_) {
+
+      final bool hasBiometrics = await biometricService.hasEnrolledBiometrics;
+      if (!hasBiometrics) {
+        debugPrint(
+          '[Profile][Biometric] Enable failed: no enrolled biometrics found.',
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                LocalizationService.t(context, 'profile.biometricUnavailable'),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final BiometricAuthResult authResult = await biometricService.authenticate(
+        reason: LocalizationService.t(context, 'auth.biometric.signInReason'),
+      );
+      if (!context.mounted) return;
+
+      if (authResult != BiometricAuthResult.success) {
+        debugPrint(
+          '[Profile][Biometric] Enable failed: authResult=$authResult.',
+        );
+        if (authResult == BiometricAuthResult.cancel) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'auth.biometric.signInFailed'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      await storage.setBiometricEnabled(true);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              LocalizationService.t(context, 'profile.deleteAccountFailed'),
+              LocalizationService.t(context, 'profile.biometricEnabledSuccess'),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint('[Profile][Biometric] Enable exception: $error');
+      debugPrint(stackTrace.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'auth.biometric.signInFailed'),
             ),
             backgroundColor: Colors.red,
           ),
