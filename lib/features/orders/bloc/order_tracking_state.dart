@@ -13,8 +13,12 @@ final class OrderTrackingLoading extends OrderTrackingState {
 }
 
 final class OrderTrackingLoaded extends OrderTrackingState {
-  const OrderTrackingLoaded(this.order);
+  const OrderTrackingLoaded(this.order, {this.fromCache = false});
+
   final Order order;
+
+  /// True when [order] was restored from on-device cache (e.g. offline).
+  final bool fromCache;
 }
 
 final class OrderTrackingError extends OrderTrackingState {

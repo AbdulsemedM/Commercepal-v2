@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:commercepal/services/localization_service.dart';
@@ -76,6 +77,15 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
           onPageFinished: (_) {
             if (mounted) setState(() => _isLoading = false);
           },
+          onWebResourceError: (WebResourceError error) {
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _loadError = error.description.isNotEmpty
+                  ? error.description
+                  : 'Could not load the payment page (${error.errorCode}).';
+            });
+          },
         ),
       );
     _loadPaymentUrl();
@@ -136,14 +146,64 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
             context.go(AppRoutes.dashboard);
           },
         ),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Open in browser',
+            icon: const Icon(Icons.open_in_browser),
+            onPressed: () async {
+              final uri = Uri.tryParse(widget.paymentUrl.trim());
+              if (uri != null && await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
+      body: Column(
+        children: <Widget>[
           if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+            const LinearProgressIndicator(minHeight: 3),
+          Expanded(
+            child: _loadError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 48,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            onPressed: () {
+                              setState(() => _loadError = null);
+                              _loadPaymentUrl();
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Stack(
+                    children: <Widget>[
+                      WebViewWidget(controller: _controller),
+                      if (_isLoading)
+                        const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );

@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/services/app_analytics.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../../addresses/bloc/address_bloc.dart';
@@ -61,6 +63,16 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    CheckoutStepIndicator(
+                      currentStep: 1,
+                      totalSteps: 3,
+                      labels: <String>[
+                        LocalizationService.t(context, 'checkout.stepCart'),
+                        LocalizationService.t(context, 'checkout.stepPayment'),
+                        LocalizationService.t(context, 'checkout.stepConfirm'),
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.sm),
                     // Order Summary
                     OrderSummaryCard(cart: cart),
                     const SizedBox(height: Spacing.sm),
@@ -98,6 +110,10 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                     onPressed: _selectedAddressId == null
                         ? null
                         : () {
+                            AppAnalytics.logBeginCheckout(
+                              value: cart.estimatedTotal,
+                              currency: cart.currency,
+                            );
                             // Navigate to payment selection screen
                             context.push(
                               AppRoutes.paymentSelection,

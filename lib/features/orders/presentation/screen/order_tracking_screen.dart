@@ -102,7 +102,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   );
                 }
                 if (state is OrderTrackingLoaded) {
-                  return _buildContent(context, state.order);
+                  return _buildContent(
+                    context,
+                    state.order,
+                    fromCache: state.fromCache,
+                  );
                 }
                 return const SizedBox.shrink();
               },
@@ -178,7 +182,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, Order order) {
+  Widget _buildContent(
+    BuildContext context,
+    Order order, {
+    bool fromCache = false,
+  }) {
     final currentStatusIndex = _getCurrentStatusIndex(order);
     final statusLabel = order.stageLabel.isNotEmpty
         ? order.stageLabel
@@ -191,6 +199,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          if (fromCache)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: Spacing.md),
+              padding: const EdgeInsets.all(Spacing.md),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.cloud_off_outlined, color: Colors.amber.shade900),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Showing the last saved copy of this order. '
+                      'Reconnect and use Retry to refresh.',
+                      style: TextStyle(
+                        color: Colors.amber.shade900,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

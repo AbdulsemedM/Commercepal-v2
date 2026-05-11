@@ -88,12 +88,57 @@ class _WishlistScreenState extends State<WishlistScreen> {
   Future<void> _removeItem(WishlistItem item) async {
     try {
       await _repository.removeItem(item.productId);
+    } catch (_) {
       if (mounted) {
-        setState(() {
-          _items = _items.where((e) => e.productId != item.productId).toList();
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'wishlist.removeFailed'),
+            ),
+          ),
+        );
       }
-    } catch (_) {}
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _items = _items.where((e) => e.productId != item.productId).toList();
+    });
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          LocalizationService.t(context, 'wishlist.removedSnackbar'),
+        ),
+        action: SnackBarAction(
+          label: LocalizationService.t(context, 'cart.undo'),
+          onPressed: () async {
+            try {
+              await _repository.addItem(item);
+              if (mounted) {
+                setState(() {
+                  if (!_items.any((WishlistItem e) => e.productId == item.productId)) {
+                    _items = <WishlistItem>[..._items, item];
+                  }
+                });
+              }
+            } catch (_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      LocalizationService.t(context, 'wishlist.undoFailed'),
+                    ),
+                  ),
+                );
+              }
+            }
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _openProduct(WishlistItem item) {

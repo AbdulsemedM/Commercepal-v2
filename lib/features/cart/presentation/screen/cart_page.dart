@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
+import 'package:commercepal/core/widgets/app_empty_state.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -12,10 +15,27 @@ import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/cart_bloc.dart';
 import '../../data/models/cart.dart';
+import '../../data/models/cart_item.dart';
 import '../widgets/cart_item_widget.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
+
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  static const Duration _removeUndoWindow = Duration(seconds: 4);
+
+  Timer? _pendingRemoveTimer;
+  int? _pendingRemoveItemId;
+
+  @override
+  void dispose() {
+    _pendingRemoveTimer?.cancel();
+    super.dispose();
+  }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
     final DashboardScreenState? dashboardState = context
@@ -25,139 +45,142 @@ class CartPage extends StatelessWidget {
     }
   }
 
+  void _scheduleRemoveWithUndo(BuildContext context, CartItem item) {
+    _pendingRemoveTimer?.cancel();
+    _pendingRemoveItemId = item.id;
+
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          '${LocalizationService.t(context, 'cart.removePending')} "${item.productName}"',
+        ),
+        action: SnackBarAction(
+          label: LocalizationService.t(context, 'cart.undo'),
+          onPressed: () {
+            _pendingRemoveTimer?.cancel();
+            _pendingRemoveTimer = null;
+            _pendingRemoveItemId = null;
+          },
+        ),
+        duration: _removeUndoWindow,
+      ),
+    );
+
+    _pendingRemoveTimer = Timer(_removeUndoWindow, () {
+      if (!mounted) return;
+      if (_pendingRemoveItemId == item.id) {
+        context.read<CartBloc>().add(CartDeleteItemRequested(itemId: item.id));
+      }
+      _pendingRemoveItemId = null;
+      _pendingRemoveTimer = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Use the existing CartBloc from parent context (DashboardScreen)
-    // instead of creating a new one
     return BlocListener<CartBloc, CartState>(
-        listener: (context, state) {
-          if (state is CartError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is CartItemAdded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'cart.itemAdded')),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartItemUpdated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'cart.cartUpdated')),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartItemDeleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'cart.itemRemoved')),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else if (state is CartCleared) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'cart.cartCleared')),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-        child: Scaffold(
-          backgroundColor: AppColors.lightGrey,
-          appBar: AppBarWidget(
-            cartCount: 0,
-            userInitials: AuthService().userInitials ?? 'U',
-            onSearchTap: () {
-              // Navigate to search screen when search bar is tapped
-              context.push(AppRoutes.productSearch);
-            },
-            onSearchSubmitted: (String query) {
-              // Navigate to search screen with query
-              context.push(
-                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-              );
-              return null;
-            },
-            onCartTap: () {
-              // Navigate to cart tab
-              _navigateToTab(context, 2);
-            },
-            onProfileTap: () {
-              _navigateToTab(context, 3);
-            },
-            hasNotification: false,
-            searchPlaceholder: LocalizationService.t(
-              context,
-              'profile.searchPlaceholder',
+      listener: (BuildContext context, CartState state) {
+        if (state is CartError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
             ),
+          );
+        } else if (state is CartItemAdded) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(LocalizationService.t(context, 'cart.itemAdded')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is CartItemUpdated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(LocalizationService.t(context, 'cart.cartUpdated')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is CartCleared) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(LocalizationService.t(context, 'cart.cartCleared')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.lightGrey,
+        appBar: AppBarWidget(
+          cartCount: 0,
+          userInitials: AuthService().userInitials ?? 'U',
+          onSearchTap: () {
+            context.push(AppRoutes.productSearch);
+          },
+          onSearchSubmitted: (String query) {
+            context.push(
+              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+            );
+            return null;
+          },
+          onCartTap: () {
+            _navigateToTab(context, 2);
+          },
+          onProfileTap: () {
+            _navigateToTab(context, 3);
+          },
+          hasNotification: false,
+          searchPlaceholder: LocalizationService.t(
+            context,
+            'profile.searchPlaceholder',
           ),
-          body: BlocBuilder<CartBloc, CartState>(
-            builder: (context, state) {
-              if (state is CartLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
+        ),
+        body: BlocBuilder<CartBloc, CartState>(
+          builder: (BuildContext context, CartState state) {
+            if (state is CartLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (state is CartError) {
+              return Center(
+                child: AppEmptyState(
+                  icon: Icons.error_outline,
+                  title: LocalizationService.t(context, 'cart.errorTitle'),
+                  subtitle: state.message,
+                  primaryLabel: LocalizationService.t(context, 'cart.retry'),
+                  onPrimary: () {
+                    context.read<CartBloc>().add(CartLoadRequested());
+                  },
+                ),
+              );
+            }
+
+            if (state is CartLoaded ||
+                state is CartItemAdded ||
+                state is CartItemUpdated ||
+                state is CartItemDeleted) {
+              final Cart cart = state is CartLoaded
+                  ? state.cart
+                  : state is CartItemAdded
+                      ? state.cart
+                      : state is CartItemUpdated
+                          ? state.cart
+                          : (state as CartItemDeleted).cart;
+
+              if (cart.items.isEmpty) {
+                return _buildEmptyCart(context);
               }
 
-              if (state is CartError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      Text(
-                        state.message,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: Spacing.lg),
-                      FilledButton(
-                        onPressed: () {
-                          context.read<CartBloc>().add(CartLoadRequested());
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                        ),
-                        child: Text(LocalizationService.t(context, 'cart.retry')),
-                      ),
-                    ],
-                  ),
-                );
-              }
+              return _buildCartContent(context, cart);
+            }
 
-              if (state is CartLoaded || 
-                  state is CartItemAdded ||
-                  state is CartItemUpdated || 
-                  state is CartItemDeleted) {
-                final Cart cart = state is CartLoaded
-                    ? state.cart
-                    : state is CartItemAdded
-                        ? state.cart
-                        : state is CartItemUpdated
-                            ? state.cart
-                            : (state as CartItemDeleted).cart;
-
-                if (cart.items.isEmpty) {
-                  return _buildEmptyCart(context);
-                }
-
-                return _buildCartContent(context, cart);
-              }
-
-              // Initial state - show empty or loading
-              return _buildEmptyCart(context);
-            },
+            return _buildEmptyCart(context);
+          },
         ),
       ),
     );
@@ -165,46 +188,12 @@ class CartPage extends StatelessWidget {
 
   Widget _buildEmptyCart(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 120,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: Spacing.lg),
-          Text(
-            LocalizationService.t(context, 'cart.emptyTitle'),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-          ),
-          const SizedBox(height: Spacing.sm),
-          Text(
-            LocalizationService.t(context, 'cart.emptySubtitle'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: Spacing.xl),
-          FilledButton(
-            onPressed: () {
-              _navigateToTab(context, 0); // Navigate to home
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.xl,
-                vertical: Spacing.md,
-              ),
-            ),
-            child: Text(LocalizationService.t(context, 'cart.startShopping')),
-          ),
-        ],
+      child: AppEmptyState(
+        icon: Icons.shopping_cart_outlined,
+        title: LocalizationService.t(context, 'cart.emptyTitle'),
+        subtitle: LocalizationService.t(context, 'cart.emptySubtitle'),
+        primaryLabel: LocalizationService.t(context, 'cart.startShopping'),
+        onPrimary: () => _navigateToTab(context, 0),
       ),
     );
   }
@@ -218,9 +207,8 @@ class CartPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // Cart items
                 ...cart.items.map(
-                  (item) => CartItemWidget(
+                  (CartItem item) => CartItemWidget(
                     item: item,
                     onQuantityChanged: (int newQuantity) {
                       context.read<CartBloc>().add(
@@ -240,7 +228,6 @@ class CartPage extends StatelessWidget {
             ),
           ),
         ),
-        // Summary and actions
         _buildCartSummary(context, cart),
       ],
     );
@@ -263,7 +250,6 @@ class CartPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Savings indicator
           if (cart.totalSavings > 0)
             Container(
               padding: const EdgeInsets.all(Spacing.sm),
@@ -292,7 +278,6 @@ class CartPage extends StatelessWidget {
                 ],
               ),
             ),
-          // Price breakdown
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
@@ -301,7 +286,7 @@ class CartPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               Text(
-                '${MoneyFormatter.format(cart.subtotal, cart.currency)}',
+                MoneyFormatter.format(cart.subtotal, cart.currency),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -319,7 +304,7 @@ class CartPage extends StatelessWidget {
                     ),
               ),
               Text(
-                '${MoneyFormatter.format(cart.estimatedTotal, cart.currency)}',
+                MoneyFormatter.format(cart.estimatedTotal, cart.currency),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
@@ -328,10 +313,8 @@ class CartPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Spacing.md),
-          // Action buttons
           Row(
             children: <Widget>[
-              // Clear cart button
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
@@ -351,7 +334,6 @@ class CartPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Spacing.md),
-              // Checkout button
               Expanded(
                 flex: 2,
                 child: FilledButton(
@@ -372,7 +354,7 @@ class CartPage extends StatelessWidget {
                   ),
                   child: Text(
                     LocalizationService.t(context, 'cart.checkout'),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -386,7 +368,7 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  void _showRemoveItemDialog(BuildContext context, cartItem) {
+  void _showRemoveItemDialog(BuildContext context, CartItem cartItem) {
     AppDialog.show<void>(
       context,
       title: LocalizationService.t(context, 'cart.removeItem'),
@@ -399,9 +381,7 @@ class CartPage extends StatelessWidget {
           label: LocalizationService.t(context, 'cart.remove'),
           isDestructive: true,
           onPressed: () {
-            context.read<CartBloc>().add(
-                  CartDeleteItemRequested(itemId: cartItem.id),
-                );
+            _scheduleRemoveWithUndo(context, cartItem);
           },
         ),
       ],
@@ -427,6 +407,3 @@ class CartPage extends StatelessWidget {
     );
   }
 }
-
-
-

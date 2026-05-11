@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
@@ -27,6 +28,8 @@ import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
+import 'package:commercepal/features/products/presentation/widgets/product_actions_sheet.dart';
+import 'package:commercepal/services/app_analytics.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({
@@ -54,6 +57,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // Map to track multiple variants with their quantities
   // Key: variant index, Value: quantity
   final Map<int, int> _selectedVariants = <int, int>{};
+
+  String? _lastRecordedViewProductId;
+  String? _lastAnalyticsProductId;
 
   @override
   void initState() {
@@ -103,6 +109,79 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return _cachedCountry;
   }
 
+  Future<void> _recordLocalViewAndLogAnalytics(ProductDetails product) async {
+    if (_lastRecordedViewProductId == product.id) return;
+    _lastRecordedViewProductId = product.id;
+    final String imageUrl = product.mainImage.main.isNotEmpty
+        ? product.mainImage.main
+        : product.mainImage.thumbnail;
+    await Storage().recordLocalProductView(<String, dynamic>{
+      'productId': product.id,
+      'title': product.title,
+      'imageUrl': imageUrl,
+      'price': product.pricing.currentPrice,
+      'currency': product.pricing.currency,
+      'rating': product.meta.rating,
+      'reviewCount': product.meta.reviewCount,
+    });
+    if (_lastAnalyticsProductId != product.id) {
+      _lastAnalyticsProductId = product.id;
+      await AppAnalytics.logViewItem(
+        itemId: product.id,
+        itemName: product.title,
+        currency: product.pricing.currency,
+        value: product.pricing.currentPrice,
+      );
+    }
+  }
+
+  void _onProductOverflowMenu(BuildContext context, ProductDetails product) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.compare_arrows),
+                title: const Text('Compare'),
+                subtitle: const Text('Add to compare (up to 4)'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await Storage().addProductCompareId(product.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Added to compare. Opening compare screen…'),
+                    ),
+                  );
+                  context.push(AppRoutes.productCompare);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share_outlined),
+                title: const Text('Share & link'),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await showProductActionsSheet(
+                    context,
+                    productId: product.id,
+                    title: product.title,
+                    shareUrl: product.externalUrl.isNotEmpty
+                        ? product.externalUrl
+                        : null,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _handleAddToCart(
     BuildContext context,
     ProductDetails productDetails,
@@ -134,6 +213,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     final String currency = _getCurrency(context);
     final String country = _getCountry(context);
+    HapticFeedback.lightImpact();
     setState(() {
       _isAddingToCart = true;
     });
@@ -222,6 +302,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: BlocListener<CartBloc, CartState>(
         listener: (context, state) {
           if (state is CartItemAdded) {
+            HapticFeedback.mediumImpact();
+            final String? pid = widget.productId;
+            if (pid != null && pid.isNotEmpty) {
+              AppAnalytics.logAddToCart(
+                itemId: pid,
+                currency: _getCurrency(context),
+              );
+            }
             setState(() {
               _isInCart = true;
               _isAddingToCart = false;
@@ -263,28 +351,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
             return Scaffold(
               backgroundColor: Colors.white,
-              appBar: AppBarWidget(
-                cartCount: cartCount,
-                userInitials: AuthService().userInitials ?? 'U',
-                onSearchTap: () {
-                  context.push(AppRoutes.productSearch);
-                },
-                onSearchSubmitted: (String query) {
-                  context.push(
-                    '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-                  );
-                  return null;
-                },
-                onLogoTap: () {
-                  Navigator.of(context).pop();
-                },
-                onCartTap: () {
-                  _navigateToTab(context, 2);
-                },
-                onProfileTap: () {
-                  _navigateToTab(context, 3);
-                },
-                hasNotification: false,
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight + 20),
+                child: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
+                  builder: (BuildContext context, ProductDetailsState pdState) {
+                    return AppBarWidget(
+                    cartCount: cartCount,
+                    userInitials: AuthService().userInitials ?? 'U',
+                    onSearchTap: () {
+                      context.push(AppRoutes.productSearch);
+                    },
+                    onSearchSubmitted: (String query) {
+                      context.push(
+                        '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                      );
+                      return null;
+                    },
+                    onLogoTap: () {
+                      Navigator.of(context).pop();
+                    },
+                    onCartTap: () {
+                      _navigateToTab(context, 2);
+                    },
+                    onProfileTap: () {
+                      _navigateToTab(context, 3);
+                    },
+                    hasNotification: false,
+                    additionalActions: pdState is ProductDetailsLoaded
+                        ? <Widget>[
+                            Semantics(
+                              label: 'Product actions',
+                              button: true,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => _onProductOverflowMenu(
+                                  context,
+                                  pdState.productDetails,
+                                ),
+                              ),
+                            ),
+                          ]
+                        : null,
+                    );
+                  },
+                ),
               ),
               body: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
                 builder: (context, state) {
@@ -340,6 +453,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         }
                       });
                     }
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        _recordLocalViewAndLogAnalytics(product);
+                      }
+                    });
                     final selectedVariant = product.variants.isNotEmpty
                         ? product.variants[state.selectedVariantIndex]
                         : null;
@@ -592,6 +710,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 }
                               },
                               onToggleFavorite: () async {
+                                HapticFeedback.selectionClick();
                                 final repository = WishlistRepository();
                                 if (_isInWishlist) {
                                   await repository.removeItem(product.id);

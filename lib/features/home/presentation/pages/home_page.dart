@@ -16,9 +16,18 @@ import '../widgets/categories_section.dart';
 import '../widgets/deal_of_day_section.dart';
 import '../widgets/home_discover_section.dart';
 import '../widgets/recently_viewed_section.dart';
+import '../widgets/local_recent_product_views_strip.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final GlobalKey<LocalRecentProductViewsStripState> _localRecentKey =
+      GlobalKey<LocalRecentProductViewsStripState>();
 
   void _navigateToTab(BuildContext context, int tabIndex) {
     final DashboardScreenState? dashboardState = context
@@ -37,6 +46,7 @@ class HomePage extends StatelessWidget {
     } catch (_) {
       // CartBloc may be absent outside dashboard
     }
+    await _localRecentKey.currentState?.reload();
     await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 
@@ -77,6 +87,7 @@ class HomePage extends StatelessWidget {
         body: RefreshIndicator(
           onRefresh: () => _onPullToRefresh(context),
           child: SingleChildScrollView(
+            key: const PageStorageKey<String>('home_scroll_v1'),
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,6 +101,7 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: Spacing.lg),
                 const HomeDiscoverSection(),
                 const SizedBox(height: Spacing.lg),
+                LocalRecentProductViewsStrip(key: _localRecentKey),
                 const RecentlyViewedSection(),
               ],
             ),

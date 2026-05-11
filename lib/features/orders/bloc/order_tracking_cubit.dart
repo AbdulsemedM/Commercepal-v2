@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:commercepal/features/orders/data/models/order.dart';
+import 'package:commercepal/features/orders/data/order_tracking_cache.dart';
 import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
 
 part 'order_tracking_state.dart';
@@ -13,6 +14,7 @@ class OrderTrackingCubit extends Cubit<OrderTrackingState> {
   final OrdersRepository _repository;
 
   void setOrder(Order order) {
+    OrderTrackingCache.save(order);
     emit(OrderTrackingLoaded(order));
   }
 
@@ -20,13 +22,19 @@ class OrderTrackingCubit extends Cubit<OrderTrackingState> {
     emit(OrderTrackingLoading());
     try {
       final order = await _repository.getOrderByOrderNumber(orderNumber);
+      await OrderTrackingCache.save(order);
       emit(OrderTrackingLoaded(order));
     } catch (e) {
-      emit(
-        OrderTrackingError(
-          e is Exception ? e.toString() : 'Failed to load order',
-        ),
-      );
+      final cached = await OrderTrackingCache.load(orderNumber);
+      if (cached != null) {
+        emit(OrderTrackingLoaded(cached, fromCache: true));
+      } else {
+        emit(
+          OrderTrackingError(
+            e is Exception ? e.toString() : 'Failed to load order',
+          ),
+        );
+      }
     }
   }
 }

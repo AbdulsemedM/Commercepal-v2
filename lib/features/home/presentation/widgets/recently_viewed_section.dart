@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
@@ -78,13 +79,14 @@ class RecentlyViewedSection extends StatelessWidget {
         itemBuilder: (context, index) {
           return SizedBox(
             width: 160,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           );
