@@ -19,9 +19,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final ThemeController _themeController = ThemeController(
-    initialMode: ThemeMode.light,
-  );
+  final ThemeController _themeController = ThemeController();
   final LocaleController _localeController = LocaleController();
   late final CartBloc _cartBloc;
 
@@ -54,7 +52,9 @@ class _MyAppState extends State<MyApp> {
               final isRtl = locale.languageCode == 'ar';
               return LocaleControllerScope(
                 localeController: _localeController,
-                child: MaterialApp.router(
+                child: ThemeControllerScope(
+                  themeController: _themeController,
+                  child: MaterialApp.router(
                 routerConfig: appRouter,
                 theme: AppTheme.light,
                 darkTheme: AppTheme.dark,
@@ -122,6 +122,7 @@ class _MyAppState extends State<MyApp> {
                   );
                 },
               ),
+                ),
               );
             },
           );

@@ -39,7 +39,7 @@ class RecentlyViewedSection extends StatelessWidget {
                 LocalizationService.t(context, 'home.recentlyViewed.title'),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
             ],
@@ -69,6 +69,7 @@ class RecentlyViewedSection extends StatelessWidget {
   }
 
   Widget _buildLoading(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: 220,
       child: ListView.separated(
@@ -80,11 +81,11 @@ class RecentlyViewedSection extends StatelessWidget {
           return SizedBox(
             width: 160,
             child: Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
+              baseColor: scheme.surfaceContainerHighest,
+              highlightColor: scheme.surface,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: scheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -102,7 +103,7 @@ class RecentlyViewedSection extends StatelessWidget {
         child: Text(
           message,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
           textAlign: TextAlign.center,
         ),
@@ -117,7 +118,7 @@ class RecentlyViewedSection extends StatelessWidget {
         child: Text(
           'No recently viewed products',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
       ),

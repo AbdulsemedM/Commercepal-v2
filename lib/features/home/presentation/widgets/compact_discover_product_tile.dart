@@ -28,6 +28,7 @@ class CompactDiscoverProductTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -43,12 +44,12 @@ class CompactDiscoverProductTile extends StatelessWidget {
           },
           child: Ink(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: scheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: scheme.shadow.withOpacity(0.06),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -68,11 +69,12 @@ class CompactDiscoverProductTile extends StatelessWidget {
                             imageUrl,
                             fit: BoxFit.cover,
                             gaplessPlayback: true,
-                            errorBuilder: (_, __, ___) => _placeholder(),
+                            errorBuilder: (_, __, ___) => _placeholder(context),
                             loadingBuilder: (context, child, progress) {
                               if (progress == null) return child;
                               return ColoredBox(
-                                color: AppColors.lightGrey,
+                                color: scheme.surfaceContainerHighest
+                                    .withOpacity(0.6),
                                 child: Center(
                                   child: SizedBox(
                                     width: 18,
@@ -89,7 +91,7 @@ class CompactDiscoverProductTile extends StatelessWidget {
                               );
                             },
                           )
-                        : _placeholder(),
+                        : _placeholder(context),
                   ),
                 ),
                 Expanded(
@@ -113,7 +115,7 @@ class CompactDiscoverProductTile extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.left,
                               style: textTheme.labelSmall?.copyWith(
-                                color: Colors.grey.shade800,
+                                color: scheme.onSurface,
                                 height: 1.15,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 10,
@@ -128,7 +130,7 @@ class CompactDiscoverProductTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.labelSmall?.copyWith(
-                              color: Colors.grey.shade400,
+                              color: scheme.onSurfaceVariant,
                               fontSize: 8,
                               decoration: TextDecoration.lineThrough,
                             ),
@@ -166,7 +168,7 @@ class CompactDiscoverProductTile extends StatelessWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color:
-                                          AppColors.error.withValues(alpha: 0.12),
+                                          AppColors.error.withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -194,12 +196,13 @@ class CompactDiscoverProductTile extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return ColoredBox(
-      color: AppColors.lightGrey,
+      color: scheme.surfaceContainerHighest.withOpacity(0.6),
       child: Icon(
         Icons.image_outlined,
-        color: Colors.grey.shade400,
+        color: scheme.onSurfaceVariant,
         size: 22,
       ),
     );

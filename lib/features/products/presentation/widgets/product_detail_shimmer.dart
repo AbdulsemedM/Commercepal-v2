@@ -7,13 +7,14 @@ class ProductDetailShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: Spacing.sm),
           // Image Gallery Shimmer
-          _buildImageGalleryShimmer(),
+          _buildImageGalleryShimmer(scheme),
           const SizedBox(height: Spacing.md),
           
           // Product Info Shimmer
@@ -24,12 +25,14 @@ class ProductDetailShimmer extends StatelessWidget {
               children: [
                 // Title shimmer
                 _buildShimmerBox(
+                  scheme,
                   width: double.infinity,
                   height: 24,
                   borderRadius: 4,
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildShimmerBox(
+                  scheme,
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: 24,
                   borderRadius: 4,
@@ -39,23 +42,23 @@ class ProductDetailShimmer extends StatelessWidget {
                 // Rating shimmer
                 Row(
                   children: [
-                    _buildShimmerBox(width: 80, height: 16, borderRadius: 4),
+                    _buildShimmerBox(scheme, width: 80, height: 16, borderRadius: 4),
                     const SizedBox(width: Spacing.sm),
-                    _buildShimmerBox(width: 100, height: 16, borderRadius: 4),
+                    _buildShimmerBox(scheme, width: 100, height: 16, borderRadius: 4),
                   ],
                 ),
                 const SizedBox(height: Spacing.md),
                 
                 // Price shimmer
-                _buildShimmerBox(width: 120, height: 32, borderRadius: 6),
+                _buildShimmerBox(scheme, width: 120, height: 32, borderRadius: 6),
                 const SizedBox(height: Spacing.sm),
-                _buildShimmerBox(width: 150, height: 16, borderRadius: 4),
+                _buildShimmerBox(scheme, width: 150, height: 16, borderRadius: 4),
                 const SizedBox(height: Spacing.lg),
                 
                 // Product code and category shimmer
-                _buildInfoRowShimmer(),
+                _buildInfoRowShimmer(scheme),
                 const SizedBox(height: Spacing.xs),
-                _buildInfoRowShimmer(),
+                _buildInfoRowShimmer(scheme),
                 const SizedBox(height: Spacing.lg),
               ],
             ),
@@ -67,7 +70,7 @@ class ProductDetailShimmer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(width: 100, height: 20, borderRadius: 4),
+                _buildShimmerBox(scheme, width: 100, height: 20, borderRadius: 4),
                 const SizedBox(height: Spacing.sm),
                 SizedBox(
                   height: 50,
@@ -76,6 +79,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     itemCount: 4,
                     separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
                     itemBuilder: (_, index) => _buildShimmerBox(
+                      scheme,
                       width: 80,
                       height: 40,
                       borderRadius: 8,
@@ -93,21 +97,24 @@ class ProductDetailShimmer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(width: 120, height: 20, borderRadius: 4),
+                _buildShimmerBox(scheme, width: 120, height: 20, borderRadius: 4),
                 const SizedBox(height: Spacing.sm),
                 _buildShimmerBox(
+                  scheme,
                   width: double.infinity,
                   height: 16,
                   borderRadius: 4,
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildShimmerBox(
+                  scheme,
                   width: double.infinity,
                   height: 16,
                   borderRadius: 4,
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildShimmerBox(
+                  scheme,
                   width: MediaQuery.of(context).size.width * 0.7,
                   height: 16,
                   borderRadius: 4,
@@ -123,13 +130,13 @@ class ProductDetailShimmer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(width: 140, height: 20, borderRadius: 4),
+                _buildShimmerBox(scheme, width: 140, height: 20, borderRadius: 4),
                 const SizedBox(height: Spacing.sm),
-                _buildSpecificationRowShimmer(),
+                _buildSpecificationRowShimmer(scheme),
                 const SizedBox(height: Spacing.xs),
-                _buildSpecificationRowShimmer(),
+                _buildSpecificationRowShimmer(scheme),
                 const SizedBox(height: Spacing.xs),
-                _buildSpecificationRowShimmer(),
+                _buildSpecificationRowShimmer(scheme),
               ],
             ),
           ),
@@ -144,14 +151,14 @@ class ProductDetailShimmer extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildShimmerBox(width: 120, height: 20, borderRadius: 4),
-                    _buildShimmerBox(width: 60, height: 16, borderRadius: 4),
+                    _buildShimmerBox(scheme, width: 120, height: 20, borderRadius: 4),
+                    _buildShimmerBox(scheme, width: 60, height: 16, borderRadius: 4),
                   ],
                 ),
                 const SizedBox(height: Spacing.md),
-                _buildReviewCardShimmer(),
+                _buildReviewCardShimmer(scheme),
                 const SizedBox(height: Spacing.sm),
-                _buildReviewCardShimmer(),
+                _buildReviewCardShimmer(scheme),
               ],
             ),
           ),
@@ -163,7 +170,7 @@ class ProductDetailShimmer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildShimmerBox(width: 180, height: 20, borderRadius: 4),
+                _buildShimmerBox(scheme, width: 180, height: 20, borderRadius: 4),
                 const SizedBox(height: Spacing.md),
                 SizedBox(
                   height: 250,
@@ -171,7 +178,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: 3,
                     separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-                    itemBuilder: (_, index) => _buildProductCardShimmer(),
+                    itemBuilder: (_, index) => _buildProductCardShimmer(scheme),
                   ),
                 ),
               ],
@@ -183,20 +190,21 @@ class ProductDetailShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGalleryShimmer() {
+  Widget _buildImageGalleryShimmer(ColorScheme scheme) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Column(
         children: [
-          // Main image
           Container(
             width: double.infinity,
             height: 350,
-            color: Colors.white,
+            color: fill,
           ),
           const SizedBox(height: Spacing.sm),
-          // Thumbnail images
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
             child: Row(
@@ -209,7 +217,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fill,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -222,36 +230,43 @@ class ProductDetailShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildShimmerBox({
+  Widget _buildShimmerBox(
+    ColorScheme scheme, {
     required double width,
     required double height,
     required double borderRadius,
   }) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRowShimmer() {
+  Widget _buildInfoRowShimmer(ColorScheme scheme) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Row(
         children: [
           Container(
             width: 80,
             height: 16,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: fill,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -260,7 +275,7 @@ class ProductDetailShimmer extends StatelessWidget {
             width: 120,
             height: 16,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: fill,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -269,17 +284,21 @@ class ProductDetailShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildSpecificationRowShimmer() {
+  Widget _buildSpecificationRowShimmer(ColorScheme scheme) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
+    final Color inner = scheme.outlineVariant;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Container(
         padding: const EdgeInsets.symmetric(
           vertical: Spacing.sm,
           horizontal: Spacing.md,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -289,7 +308,7 @@ class ProductDetailShimmer extends StatelessWidget {
               width: 100,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.grey[400],
+                color: inner,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -297,7 +316,7 @@ class ProductDetailShimmer extends StatelessWidget {
               width: 120,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.grey[400],
+                color: inner,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -307,14 +326,17 @@ class ProductDetailShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewCardShimmer() {
+  Widget _buildReviewCardShimmer(ColorScheme scheme) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Container(
         padding: const EdgeInsets.all(Spacing.md),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -325,8 +347,8 @@ class ProductDetailShimmer extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: fill,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -338,7 +360,7 @@ class ProductDetailShimmer extends StatelessWidget {
                       width: 100,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: fill,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -347,7 +369,7 @@ class ProductDetailShimmer extends StatelessWidget {
                       width: 60,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: fill,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -360,7 +382,7 @@ class ProductDetailShimmer extends StatelessWidget {
               width: double.infinity,
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: fill,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -369,7 +391,7 @@ class ProductDetailShimmer extends StatelessWidget {
               width: 200,
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: fill,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -379,14 +401,17 @@ class ProductDetailShimmer extends StatelessWidget {
     );
   }
 
-  Widget _buildProductCardShimmer() {
+  Widget _buildProductCardShimmer(ColorScheme scheme) {
+    final Color base = scheme.surfaceContainerHighest;
+    final Color highlight = scheme.surface;
+    final Color fill = scheme.surfaceContainerLow;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: base,
+      highlightColor: highlight,
       child: Container(
         width: 150,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -396,7 +421,7 @@ class ProductDetailShimmer extends StatelessWidget {
               width: 150,
               height: 150,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: fill,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -411,7 +436,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     width: 100,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fill,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -420,7 +445,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     width: 130,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fill,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -429,7 +454,7 @@ class ProductDetailShimmer extends StatelessWidget {
                     width: 60,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: fill,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

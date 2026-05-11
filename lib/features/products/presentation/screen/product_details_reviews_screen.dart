@@ -65,8 +65,9 @@ class _ProductDetailsReviewsScreenState
           cartCount = cart.totalItems;
         }
 
+        final ColorScheme scheme = Theme.of(context).colorScheme;
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: scheme.surface,
           appBar: AppBarWidget(
             cartCount: cartCount,
             userInitials: AuthService().userInitials ?? 'U',
@@ -96,7 +97,7 @@ class _ProductDetailsReviewsScreenState
         children: <Widget>[
           // White navigation bar with tabs
           Container(
-            decoration: const BoxDecoration(color: Colors.white),
+            decoration: BoxDecoration(color: scheme.surface),
             padding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,
               vertical: Spacing.sm,
@@ -203,7 +204,9 @@ class _ProductDetailsReviewsScreenState
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected ? Colors.black87 : Colors.grey.shade600,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -229,57 +232,66 @@ class _ProductDetailsReviewsScreenState
   Widget _buildContent(BuildContext context) {
     switch (_selectedTabIndex) {
       case 0:
-        return _buildDescriptionContent();
+        return _buildDescriptionContent(context);
       case 1:
-        return _buildTechnicalSpecificationsContent();
+        return _buildTechnicalSpecificationsContent(context);
       case 2:
-        return _buildCommentContent();
+        return _buildCommentContent(context);
       default:
-        return _buildDescriptionContent();
+        return _buildDescriptionContent(context);
     }
   }
 
-  Widget _buildDescriptionContent() {
+  Widget _buildDescriptionContent(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(Spacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _buildSectionTitle(
+            context,
             'Thin and light design, thin 5.9mm, soft rounded edges, elegant silver color',
           ),
           const SizedBox(height: Spacing.sm),
           _buildSectionText(
+            context,
             'The Apple iPad Pro 11" (2020) Wifi 128Gb (Silver) features a sleek and lightweight design with a thickness of just 5.9mm. Weighing only 471g, it offers exceptional portability. The device measures 247.6 x 178.5 mm, making it perfect for on-the-go use. The elegant silver color and soft rounded edges provide a premium feel.',
           ),
           const SizedBox(height: Spacing.lg),
           _buildSectionTitle(
+            context,
             '120Hz screen, 16 million colors, 11-inch IPS LCD panel',
           ),
           const SizedBox(height: Spacing.sm),
           _buildSectionText(
+            context,
             'Experience stunning visuals with the 11-inch IPS LCD panel featuring a 120Hz refresh rate for smooth scrolling and interactions. The display supports 16 million colors, delivering vibrant and accurate color reproduction. With a resolution of 1668x2388 pixels, every detail comes to life. The ProMotion technology ensures fluid motion, while True Tone adjusts the white balance to match your environment. An oleophobic coating reduces fingerprints and smudges.',
           ),
           const SizedBox(height: Spacing.lg),
-          _buildSectionTitle('Perfect Experience'),
+          _buildSectionTitle(context, 'Perfect Experience'),
           const SizedBox(height: Spacing.sm),
           _buildSectionText(
+            context,
             'The iPad (2019) 10.2" Wifi + Cellular 32GB (Gold) offers a perfect experience with its Retina display and stereo system. Access your favorite streaming services and enjoy immersive entertainment wherever you go.',
           ),
           const SizedBox(height: Spacing.lg),
           _buildSectionTitle(
+            context,
             'Impressive performance when owning the A12Z Bionic chip',
           ),
           const SizedBox(height: Spacing.sm),
           _buildSectionText(
+            context,
             'Powered by the 8-core A12Z Bionic chip, this iPad Pro delivers exceptional performance. The improved controller system enables seamless multitasking and smooth operation. Whether you\'re editing 4K videos or designing 3D images, the device handles it with ease. Choose between 128GB and 256GB internal memory options to suit your storage needs.',
           ),
           const SizedBox(height: Spacing.lg),
           _buildSectionTitle(
+            context,
             'Improved rear camera system with LIDAR depth gauge',
           ),
           const SizedBox(height: Spacing.sm),
           _buildSectionText(
+            context,
             'Capture stunning photos and videos with the advanced camera system. The dual rear camera setup includes a 12MP main camera and a 10MP ultra-wide camera, allowing you to capture more in every shot. The LiDAR scanner provides depth sensing up to 5 meters, enabling enhanced AR experiences and improved photography. Record videos in stunning 4K quality. The 7MP selfie camera is perfect for 1080p video calls and vlogging, ensuring you always look your best.',
           ),
         ],
@@ -287,67 +299,72 @@ class _ProductDetailsReviewsScreenState
     );
   }
 
-  Widget _buildTechnicalSpecificationsContent() {
+  Widget _buildTechnicalSpecificationsContent(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(Spacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _buildSpecRow(
+            context,
             'Display',
             '11-inch IPS LCD, 1668x2388 pixels, 120Hz ProMotion',
           ),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Chipset', 'Apple A12Z Bionic 8-core'),
+          _buildSpecRow(context, 'Chipset', 'Apple A12Z Bionic 8-core'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Storage', '128GB / 256GB'),
+          _buildSpecRow(context, 'Storage', '128GB / 256GB'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Operating System', 'iOS 13'),
+          _buildSpecRow(context, 'Operating System', 'iOS 13'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Dimensions', '247.6 x 178.5 x 5.9 mm'),
+          _buildSpecRow(context, 'Dimensions', '247.6 x 178.5 x 5.9 mm'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Weight', '471g'),
+          _buildSpecRow(context, 'Weight', '471g'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Rear Camera', '12MP main + 10MP ultra-wide'),
+          _buildSpecRow(context, 'Rear Camera', '12MP main + 10MP ultra-wide'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Front Camera', '7MP'),
+          _buildSpecRow(context, 'Front Camera', '7MP'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Video Recording', '4K video recording'),
+          _buildSpecRow(context, 'Video Recording', '4K video recording'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('LiDAR Scanner', 'Depth sensing up to 5m'),
+          _buildSpecRow(context, 'LiDAR Scanner', 'Depth sensing up to 5m'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Connectivity', 'Wi-Fi'),
+          _buildSpecRow(context, 'Connectivity', 'Wi-Fi'),
           const SizedBox(height: Spacing.md),
-          _buildSpecRow('Color', 'Silver'),
+          _buildSpecRow(context, 'Color', 'Silver'),
         ],
       ),
     );
   }
 
-  Widget _buildCommentContent() {
+  Widget _buildCommentContent(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(Spacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Review Section
-          _buildSectionTitle('Review'),
+          _buildSectionTitle(context, 'Review'),
           const SizedBox(height: Spacing.md),
           // Overall rating
           Row(
             children: <Widget>[
               Text(
                 '4.5',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(width: Spacing.xs),
               Text(
                 '832 review',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -356,20 +373,21 @@ class _ProductDetailsReviewsScreenState
           _buildLargeStarRating(4.5),
           const SizedBox(height: Spacing.lg),
           // Rating breakdown
-          _buildRatingBreakdown(5, 750, 832),
+          _buildRatingBreakdown(context, 5, 750, 832),
           const SizedBox(height: Spacing.sm),
-          _buildRatingBreakdown(4, 52, 832),
+          _buildRatingBreakdown(context, 4, 52, 832),
           const SizedBox(height: Spacing.sm),
-          _buildRatingBreakdown(3, 24, 832),
+          _buildRatingBreakdown(context, 3, 24, 832),
           const SizedBox(height: Spacing.sm),
-          _buildRatingBreakdown(2, 6, 832),
+          _buildRatingBreakdown(context, 2, 6, 832),
           const SizedBox(height: Spacing.sm),
-          _buildRatingBreakdown(1, 0, 832),
+          _buildRatingBreakdown(context, 1, 0, 832),
           const SizedBox(height: Spacing.xl),
           // Comment Section
-          _buildSectionTitle('Comment'),
+          _buildSectionTitle(context, 'Comment'),
           const SizedBox(height: Spacing.md),
           _buildDetailedCommentItem(
+            context,
             'Ralph Edwards',
             'October 20, 2020',
             'Gold color',
@@ -378,6 +396,7 @@ class _ProductDetailsReviewsScreenState
           ),
           const SizedBox(height: Spacing.md),
           _buildDetailedCommentItem(
+            context,
             'Savannah Nguyen',
             'September 3, 2020',
             'Sliver color',
@@ -386,6 +405,7 @@ class _ProductDetailsReviewsScreenState
           ),
           const SizedBox(height: Spacing.md),
           _buildDetailedCommentItem(
+            context,
             'Cody Fisher',
             'September 3, 2020',
             'White color',
@@ -397,30 +417,33 @@ class _ProductDetailsReviewsScreenState
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w700,
-        color: Colors.black87,
+        color: scheme.onSurface,
       ),
     );
   }
 
-  Widget _buildSectionText(String text) {
+  Widget _buildSectionText(BuildContext context, String text) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Text(
       text,
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: Colors.grey.shade800,
+        color: scheme.onSurfaceVariant,
         height: 1.6,
       ),
     );
   }
 
-  Widget _buildSpecRow(String label, String value) {
+  Widget _buildSpecRow(BuildContext context, String label, String value) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -428,10 +451,10 @@ class _ProductDetailsReviewsScreenState
           width: 120,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: scheme.onSurface,
             ),
           ),
         ),
@@ -441,7 +464,7 @@ class _ProductDetailsReviewsScreenState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: Colors.grey.shade700,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -463,7 +486,13 @@ class _ProductDetailsReviewsScreenState
     );
   }
 
-  Widget _buildRatingBreakdown(int stars, int count, int total) {
+  Widget _buildRatingBreakdown(
+    BuildContext context,
+    int stars,
+    int count,
+    int total,
+  ) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final double percentage = total > 0 ? count / total : 0.0;
     return Row(
       children: <Widget>[
@@ -473,9 +502,9 @@ class _ProductDetailsReviewsScreenState
             if (index < stars) {
               return const Icon(Icons.star, color: Colors.amber, size: 16);
             } else {
-              return const Icon(
+              return Icon(
                 Icons.star_border,
-                color: Colors.grey,
+                color: scheme.onSurfaceVariant,
                 size: 16,
               );
             }
@@ -487,7 +516,7 @@ class _ProductDetailsReviewsScreenState
           child: Container(
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: scheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),
             ),
             child: FractionallySizedBox(
@@ -506,13 +535,17 @@ class _ProductDetailsReviewsScreenState
         // Count
         Text(
           '$count',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+          style: TextStyle(
+            fontSize: 14,
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildDetailedCommentItem(
+    BuildContext context,
     String name,
     String date,
     String color,
@@ -520,6 +553,7 @@ class _ProductDetailsReviewsScreenState
     bool hasProfileImage = false,
     String? initials,
   }) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -531,8 +565,8 @@ class _ProductDetailsReviewsScreenState
               CircleAvatar(
                 radius: 24,
                 backgroundImage: null, // In real app, would load image
-                backgroundColor: Colors.grey.shade300,
-                child: const Icon(Icons.person, color: Colors.grey),
+                backgroundColor: scheme.surfaceContainerHighest,
+                child: Icon(Icons.person, color: scheme.onSurfaceVariant),
               )
             else
               CircleAvatar(
@@ -556,10 +590,10 @@ class _ProductDetailsReviewsScreenState
                     children: <Widget>[
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: scheme.onSurface,
                         ),
                       ),
                       const SizedBox(width: Spacing.xs),
@@ -567,7 +601,7 @@ class _ProductDetailsReviewsScreenState
                         date,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -636,7 +670,7 @@ class _ProductDetailsReviewsScreenState
           comment,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade800,
+            color: scheme.onSurfaceVariant,
             height: 1.5,
           ),
         ),
@@ -646,7 +680,7 @@ class _ProductDetailsReviewsScreenState
           children: <Widget>[
             IconButton(
               icon: Icon(Icons.thumb_up_outlined, size: 18),
-              color: Colors.grey.shade600,
+              color: scheme.onSurfaceVariant,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: () {},
@@ -654,12 +688,15 @@ class _ProductDetailsReviewsScreenState
             const SizedBox(width: Spacing.xs),
             Text(
               'Like',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(width: Spacing.md),
             IconButton(
               icon: Icon(Icons.reply_outlined, size: 18),
-              color: Colors.grey.shade600,
+              color: scheme.onSurfaceVariant,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: () {},
@@ -667,7 +704,10 @@ class _ProductDetailsReviewsScreenState
             const SizedBox(width: Spacing.xs),
             Text(
               'Reply',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

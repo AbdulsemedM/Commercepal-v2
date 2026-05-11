@@ -188,11 +188,13 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
         paymentReference.isNotEmpty &&
         widget.paymentProviderCode.isNotEmpty;
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: Text(LocalizationService.t(context, 'checkout.orderPlaced')),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        backgroundColor: scheme.surface,
+        iconTheme: IconThemeData(color: scheme.onSurface),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(AppRoutes.dashboard),
@@ -206,7 +208,7 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
             // Order number & status
             Card(
               elevation: 0,
-              color: AppColors.cream,
+              color: scheme.surfaceContainerLow,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

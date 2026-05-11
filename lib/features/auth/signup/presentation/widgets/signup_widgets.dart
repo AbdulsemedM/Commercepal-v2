@@ -42,7 +42,7 @@ class FullNameInputField extends StatelessWidget {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -139,7 +139,7 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -269,7 +269,7 @@ class SignupEmailInputField extends StatelessWidget {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -349,7 +349,7 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),

@@ -76,6 +76,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     if (_selectedCategory != null) {
       return _buildSubcategoriesView(context, _selectedCategory!);
     }
@@ -93,7 +94,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   LocalizationService.t(context, 'home.categories.title'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                        color: scheme.onSurface,
                       ),
                 ),
                 InkWell(
@@ -116,7 +117,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
           BlocBuilder<CategoriesBloc, CategoriesState>(
             builder: (context, state) {
               if (state is CategoriesLoading) {
-                return _buildLoadingShimmer();
+                return _buildLoadingShimmer(context);
               }
 
               if (state is CategoriesError) {
@@ -127,7 +128,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 return _buildCategoriesList(context, state.categories);
               }
 
-              return _buildLoadingShimmer();
+              return _buildLoadingShimmer(context);
             },
           ),
         ],
@@ -135,6 +136,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   }
 
   Widget _buildSubcategoriesView(BuildContext context, Category category) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final subCategories = category.subCategories;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +157,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   category.name,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                        color: scheme.onSurface,
                       ),
                 ),
               ),
@@ -168,7 +170,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.lg),
             child: Text(
               'No subcategories',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           )
         else
@@ -180,8 +182,9 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 vertical: Spacing.md,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: scheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
               ),
               child: SizedBox(
                 height: 86,
@@ -208,7 +211,8 @@ class _CategoriesSectionState extends State<CategoriesSection> {
     );
   }
 
-  Widget _buildLoadingShimmer() {
+  Widget _buildLoadingShimmer(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
       child: Container(
@@ -217,26 +221,29 @@ class _CategoriesSectionState extends State<CategoriesSection> {
           vertical: Spacing.md,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
         ),
         child: SizedBox(
           height: 86,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List<Widget>.generate(5, (index) {
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 5,
+            separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+            itemBuilder: (BuildContext context, int index) {
               return SizedBox(
                 width: 64,
                 child: Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
+                  baseColor: scheme.surfaceContainerHighest,
+                  highlightColor: scheme.surface.withOpacity(0.85),
                   child: Column(
                     children: [
                       Container(
                         width: 52,
                         height: 52,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: scheme.surface,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -244,7 +251,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                       Container(
                         height: 10,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: scheme.surface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -252,7 +259,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   ),
                 ),
               );
-            }),
+            },
           ),
         ),
       ),
@@ -277,6 +284,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   }
 
   Widget _buildCategoriesList(BuildContext context, List<Category> categories) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
       child: Container(
@@ -285,8 +293,9 @@ class _CategoriesSectionState extends State<CategoriesSection> {
           vertical: Spacing.md,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
         ),
         child: SizedBox(
           height: 86,
@@ -332,6 +341,7 @@ class _CategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final hasNetworkImage =
         category.imageUrl != null && category.imageUrl!.isNotEmpty;
     final assetPath = CategoryImageAssets.assetPathForName(category.name);
@@ -376,7 +386,7 @@ class _CategoryBubbleTile extends StatelessWidget {
             category.name,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(fontSize: 12, color: Colors.grey[800]),
+            ).textTheme.bodySmall?.copyWith(fontSize: 12, color: scheme.onSurface),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -407,6 +417,7 @@ class _SubCategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final hasNetworkImage =
         subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
     final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
@@ -454,7 +465,7 @@ class _SubCategoryBubbleTile extends StatelessWidget {
             subCategory.name,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
-                  color: Colors.grey[800],
+                  color: scheme.onSurface,
                 ),
             textAlign: TextAlign.center,
             maxLines: 1,

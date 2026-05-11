@@ -92,12 +92,13 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     return Container(
       height: screenHeight * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -112,7 +113,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                 height: 4,
                 margin: const EdgeInsets.only(top: Spacing.md, bottom: Spacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: scheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

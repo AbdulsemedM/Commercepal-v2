@@ -34,6 +34,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
         // Navigate with product ID if available, otherwise use name and price
@@ -50,8 +51,9 @@ class ProductCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(0.4)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +64,7 @@ class ProductCard extends StatelessWidget {
               height: 120,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.lightGrey,
+                color: scheme.surfaceContainerHighest.withOpacity(0.5),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -86,7 +88,7 @@ class ProductCard extends StatelessWidget {
                           Object error,
                           StackTrace? stackTrace,
                         ) {
-                          return _buildPlaceholder();
+                          return _buildPlaceholder(context);
                         },
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -101,7 +103,7 @@ class ProductCard extends StatelessWidget {
                         },
                       ),
                     )
-                  : _buildPlaceholder(),
+                  : _buildPlaceholder(context),
             ),
             Padding(
               padding: const EdgeInsets.all(Spacing.xs),
@@ -113,7 +115,7 @@ class ProductCard extends StatelessWidget {
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[700],
+                          color: scheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                     maxLines: 1,
@@ -130,7 +132,7 @@ class ProductCard extends StatelessWidget {
                           rating!.toStringAsFixed(1),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[700],
+                            color: scheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -140,7 +142,7 @@ class ProductCard extends StatelessWidget {
                             '($reviewCount)',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey[500],
+                              color: scheme.onSurfaceVariant.withOpacity(0.85),
                             ),
                           ),
                         ],
@@ -155,7 +157,7 @@ class ProductCard extends StatelessWidget {
                         Text(
                           originalPrice!,
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: scheme.onSurfaceVariant,
                             fontSize: 10,
                             decoration: TextDecoration.lineThrough,
                           ),
@@ -166,7 +168,9 @@ class ProductCard extends StatelessWidget {
                         child: Text(
                           price,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: originalPrice != null ? AppColors.error : Colors.black,
+                                color: originalPrice != null
+                                    ? AppColors.error
+                                    : scheme.onSurface,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -199,7 +203,7 @@ class ProductCard extends StatelessWidget {
                     Text(
                       'Sold: $sold In Stock: $inStock',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
+                            color: scheme.onSurfaceVariant,
                             fontSize: 10,
                           ),
                     ),
@@ -209,7 +213,8 @@ class ProductCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: sold! / (sold! + inStock!),
-                        backgroundColor: Colors.grey[200],
+                        backgroundColor:
+                            scheme.surfaceContainerHighest.withOpacity(0.8),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.success,
                         ),
@@ -226,13 +231,14 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
-      color: Colors.grey[300],
-      child: const Center(
+      color: scheme.surfaceContainerHighest,
+      child: Center(
         child: Icon(
           Icons.image,
-          color: Colors.grey,
+          color: scheme.onSurfaceVariant,
           size: 40,
         ),
       ),

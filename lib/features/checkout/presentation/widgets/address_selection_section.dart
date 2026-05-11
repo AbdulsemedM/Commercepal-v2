@@ -48,6 +48,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
         }
       },
       builder: (context, state) {
+        final ColorScheme scheme = Theme.of(context).colorScheme;
         if (state is AddressLoading) {
           return const Padding(
             padding: EdgeInsets.all(Spacing.md),
@@ -68,12 +69,12 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                   Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: Colors.grey[400],
+                    color: scheme.onSurfaceVariant,
                   ),
                   const SizedBox(height: Spacing.sm),
                   Text(
                     state.message,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: Spacing.md),
@@ -154,16 +155,16 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                   child: Container(
                     padding: const EdgeInsets.all(Spacing.lg),
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                      color: scheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: scheme.outline),
                     ),
                     child: Column(
                       children: [
                         Icon(
                           Icons.location_on_outlined,
                           size: 48,
-                          color: Colors.grey[400],
+                          color: scheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: Spacing.sm),
                         Text(
@@ -171,7 +172,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
+                            color: scheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: Spacing.xs),
@@ -179,7 +180,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                           LocalizationService.t(context, 'checkout.addAddressToContinue'),
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: Spacing.md),
@@ -218,21 +219,22 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
     Address address,
     bool isSelected,
   ) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: Spacing.md,
         vertical: Spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected ? AppColors.primary : Colors.grey[300]!,
+          color: isSelected ? AppColors.primary : scheme.outline,
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: scheme.shadow.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -293,10 +295,10 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Expanded(
                           child: Text(
                             address.receiverName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                              color: scheme.onSurface,
                             ),
                           ),
                         ),
@@ -308,14 +310,14 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Icon(
                           Icons.phone_outlined,
                           size: 14,
-                          color: Colors.grey[600],
+                          color: scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           address.phoneNumber,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey[700],
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -327,7 +329,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Icon(
                           Icons.location_on_outlined,
                           size: 14,
-                          color: Colors.grey[600],
+                          color: scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -335,7 +337,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                               _formatAddress(context, address),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[700],
+                              color: scheme.onSurfaceVariant,
                               height: 1.4,
                             ),
                           ),

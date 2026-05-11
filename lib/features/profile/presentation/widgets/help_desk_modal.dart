@@ -30,10 +30,11 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -52,7 +53,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: Spacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: scheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -72,7 +73,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                 LocalizationService.t(context, 'profile.helpDeskSubtitle'),
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: scheme.onSurfaceVariant,
                   height: 1.5,
                 ),
               ),
@@ -86,14 +87,14 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: Spacing.sm),
               // Text area
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
@@ -102,7 +103,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                   decoration: InputDecoration(
                     hintText: LocalizationService.t(context, 'profile.writeSomething'),
                     hintStyle: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: scheme.onSurfaceVariant,
                       fontSize: 14,
                     ),
                     border: InputBorder.none,
@@ -123,7 +124,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: scheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

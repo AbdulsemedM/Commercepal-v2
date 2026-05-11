@@ -38,9 +38,12 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final String placeholder =
         searchPlaceholder ??
         LocalizationService.t(context, 'appBar.searchPlaceholder');
+    final Color searchFill = scheme.surface;
+    final Color searchSecondary = scheme.onSurfaceVariant;
 
     return Container(
       decoration: const BoxDecoration(
@@ -93,7 +96,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: searchFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -101,7 +104,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                       decoration: InputDecoration(
                         hintText: placeholder,
                         hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: searchSecondary,
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                         ),
@@ -109,7 +112,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                           padding: const EdgeInsets.all(12),
                           child: Icon(
                             Icons.search,
-                            color: Colors.grey.shade500,
+                            color: searchSecondary,
                             size: 20,
                           ),
                         ),
@@ -122,9 +125,10 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         isDense: true,
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
+                        color: scheme.onSurface,
                       ),
                       onSubmitted: (String value) {
                         onSearchSubmitted(value);
@@ -203,8 +207,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: searchFill,
                           shape: BoxShape.circle,
                         ),
                         child: Center(

@@ -567,6 +567,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     // Get cart, addressId, and phoneNumber from route extra parameter
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final cart = extra?['cart'] as Cart?;
@@ -577,8 +578,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       return Scaffold(
         appBar: AppBar(
           title: Text(LocalizationService.t(context, 'checkout.payment')),
-          backgroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Colors.black87),
+          backgroundColor: scheme.surface,
+          iconTheme: IconThemeData(color: scheme.onSurface),
         ),
         body: Center(child: Text(LocalizationService.t(context, 'checkout.missingCheckoutData'))),
       );
@@ -661,19 +662,19 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         : '';
 
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: Text(
           LocalizationService.t(context, 'checkout.selectPaymentMethod'),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 18,
-            color: Colors.black87,
+            color: scheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: scheme.onSurface),
       ),
       body: Column(
         children: [
@@ -701,7 +702,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                     LocalizationService.t(context, 'checkout.choosePreferredPaymentMethod'),
                     style: Theme.of(
                       context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ),
                 Expanded(
@@ -759,10 +760,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                                         ),
                                       Text(
                                         category.categoryName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                          color: scheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -814,7 +815,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             Container(
               margin: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, 0),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: scheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -823,7 +824,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                     offset: const Offset(0, 4),
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: scheme.shadow.withOpacity(0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -876,7 +877,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               Text(
                                 LocalizationService.t(context, 'checkout.enterNumberLinkedToAccount'),
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
+                                      color: scheme.onSurfaceVariant,
                                       height: 1.3,
                                     ),
                               ),
@@ -901,14 +902,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               LocalizationService.t(context, 'checkout.instructions'),
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    color: scheme.onSurface,
                                   ),
                             ),
                             const SizedBox(height: Spacing.xs),
                             Text(
                               paymentInstructionText,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.black87,
+                                    color: scheme.onSurface,
                                   ),
                             ),
                             const SizedBox(height: Spacing.md),
@@ -936,14 +937,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               hintText: '1234567',
                               counterText: '',
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: scheme.surface,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(color: scheme.outline),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(color: scheme.outline),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -983,14 +984,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                               hintText: '1234567',
                               counterText: '',
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: scheme.surface,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(color: scheme.outline),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(color: scheme.outline),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1022,14 +1023,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                       decoration: InputDecoration(
                         hintText: 'Phone number',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: scheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: scheme.outline),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: scheme.outline),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1056,16 +1057,16 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                         hintStyle: Theme.of(context)
                             .textTheme
                             .bodyMedium
-                            ?.copyWith(color: Colors.grey[400]),
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: scheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: scheme.outline),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: scheme.outline),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1105,13 +1106,13 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           // Place Order Button
           Container(
             padding: const EdgeInsets.all(Spacing.md),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLow,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black12,
+                  color: scheme.shadow.withOpacity(0.12),
                   blurRadius: 10,
-                  offset: Offset(0, -2),
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
@@ -1131,21 +1132,19 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                         },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: Colors.grey[300],
+                    disabledBackgroundColor: scheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                   ),
                   child: _isPlacingOrder
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            color: scheme.onPrimary,
                           ),
                         )
                       : Text(

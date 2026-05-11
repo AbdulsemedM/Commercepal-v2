@@ -18,9 +18,10 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       width: 120,
-      color: Colors.white,
+      color: scheme.surfaceContainerLow,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: Spacing.md),
         itemCount: categories.length,
@@ -70,8 +71,9 @@ class CategorySidebar extends StatelessWidget {
                                     : Center(
                                         child: Icon(
                                           fallbackIcon,
-                                          color:
-                                              isSelected ? Colors.white : Colors.grey,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : scheme.onSurfaceVariant,
                                           size: 18,
                                         ),
                                       ),
@@ -84,8 +86,9 @@ class CategorySidebar extends StatelessWidget {
                                 : Center(
                                     child: Icon(
                                       fallbackIcon,
-                                      color:
-                                          isSelected ? Colors.white : Colors.grey,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : scheme.onSurfaceVariant,
                                       size: 18,
                                     ),
                                   )),
@@ -95,7 +98,9 @@ class CategorySidebar extends StatelessWidget {
                     Text(
                       category.name,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isSelected ? Colors.white : Colors.black,
+                            color: isSelected
+                                ? Colors.white
+                                : scheme.onSurface,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             fontSize: 14,
                           ),

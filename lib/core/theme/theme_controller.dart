@@ -4,7 +4,7 @@ import 'package:commercepal/core/storage/storage.dart';
 
 /// Controls ThemeMode and persists preference to secure storage.
 class ThemeController extends ChangeNotifier {
-  ThemeController({ThemeMode initialMode = ThemeMode.system})
+  ThemeController({ThemeMode initialMode = ThemeMode.light})
     : _mode = initialMode;
 
   ThemeMode _mode;
@@ -17,7 +17,7 @@ class ThemeController extends ChangeNotifier {
       case 'dark':
         return ThemeMode.dark;
       default:
-        return ThemeMode.system;
+        return ThemeMode.light;
     }
   }
 
@@ -44,4 +44,26 @@ class ThemeController extends ChangeNotifier {
     await Storage().saveThemeMode(serializeThemeMode(mode));
     notifyListeners();
   }
+}
+
+/// Provides [ThemeController] below [MaterialApp] (e.g. for profile theme toggle).
+class ThemeControllerScope extends InheritedWidget {
+  const ThemeControllerScope({
+    super.key,
+    required this.themeController,
+    required super.child,
+  });
+
+  final ThemeController themeController;
+
+  static ThemeController of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<ThemeControllerScope>();
+    assert(scope != null, 'ThemeControllerScope not found');
+    return scope!.themeController;
+  }
+
+  @override
+  bool updateShouldNotify(ThemeControllerScope oldWidget) =>
+      themeController != oldWidget.themeController;
 }

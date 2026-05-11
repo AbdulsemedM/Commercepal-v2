@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/theme_controller.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -59,7 +60,7 @@ class ProfileContent extends StatelessWidget {
           }
 
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             appBar: AppBarWidget(
               cartCount: cartCount,
               userInitials: AuthService().userInitials ?? 'U',
@@ -130,6 +131,8 @@ class ProfileContent extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: Spacing.lg),
+                          _buildThemeSection(context),
+                          const SizedBox(height: Spacing.md),
                           // Profile Menu Items
                           _buildMenuItems(context),
                           const SizedBox(height: Spacing.md),
@@ -166,7 +169,7 @@ class ProfileContent extends StatelessWidget {
             '$label ${info.version} (${info.buildNumber})',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         );
@@ -197,11 +200,12 @@ class ProfileContent extends StatelessWidget {
       userInitials = authService.userInitials ?? 'U';
     }
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
       padding: const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: Spacing.sm),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: AppColors.primary.withOpacity(0.08),
@@ -209,7 +213,7 @@ class ProfileContent extends StatelessWidget {
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: scheme.shadow.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -260,7 +264,7 @@ class ProfileContent extends StatelessWidget {
                   userName ?? LocalizationService.t(context, 'profile.user'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey[900],
+                    color: scheme.onSurface,
                     fontSize: 15,
                     letterSpacing: -0.2,
                   ),
@@ -274,14 +278,14 @@ class ProfileContent extends StatelessWidget {
                     Icon(
                       Icons.mail_outline_rounded,
                       size: 12,
-                      color: Colors.grey[500],
+                      color: scheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         userEmail ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                          color: scheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                         maxLines: 1,
@@ -299,14 +303,14 @@ class ProfileContent extends StatelessWidget {
                       Icon(
                         Icons.phone_outlined,
                         size: 12,
-                        color: Colors.grey[500],
+                        color: scheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           profile.phoneNumber,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
+                            color: scheme.onSurfaceVariant,
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -324,7 +328,64 @@ class ProfileContent extends StatelessWidget {
     );
   }
 
+  Widget _buildThemeSection(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            LocalizationService.t(context, 'profile.theme'),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: Spacing.sm),
+          ListenableBuilder(
+            listenable: ThemeControllerScope.of(context),
+            builder: (BuildContext context, Widget? child) {
+              final ThemeController controller =
+                  ThemeControllerScope.of(context);
+              return SegmentedButton<ThemeMode>(
+                segments: <ButtonSegment<ThemeMode>>[
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.light,
+                    label: Text(
+                      LocalizationService.t(context, 'profile.themeLight'),
+                    ),
+                    icon: const Icon(Icons.light_mode_outlined, size: 18),
+                  ),
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.dark,
+                    label: Text(
+                      LocalizationService.t(context, 'profile.themeDark'),
+                    ),
+                    icon: const Icon(Icons.dark_mode_outlined, size: 18),
+                  ),
+                  ButtonSegment<ThemeMode>(
+                    value: ThemeMode.system,
+                    label: Text(
+                      LocalizationService.t(context, 'profile.themeSystem'),
+                    ),
+                    icon: const Icon(Icons.brightness_auto_outlined, size: 18),
+                  ),
+                ],
+                selected: <ThemeMode>{controller.themeMode},
+                onSelectionChanged: (Set<ThemeMode> selected) async {
+                  if (selected.isEmpty) return;
+                  await controller.setThemeMode(selected.first);
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReferralCodeCard(BuildContext context, String referralCode) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.sm),
@@ -352,7 +413,7 @@ class ProfileContent extends StatelessWidget {
                 Text(
                   LocalizationService.t(context, 'profile.referralCode'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                    color: scheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -383,7 +444,7 @@ class ProfileContent extends StatelessWidget {
             icon: const Icon(Icons.copy_rounded),
             color: AppColors.primary,
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: scheme.surfaceContainerLow,
             ),
             tooltip: LocalizationService.t(context, 'profile.copyCode'),
           ),
@@ -716,14 +777,15 @@ class _MenuItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: item.onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
         padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Color(0xFFF5F5F5), width: 1),
+            bottom: BorderSide(color: scheme.outlineVariant, width: 1),
           ),
         ),
         child: Row(
@@ -738,13 +800,18 @@ class _MenuItemWidget extends StatelessWidget {
               child: Text(
                 item.title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color:
-                          item.isDestructive ? AppColors.error : Colors.black,
+                      color: item.isDestructive
+                          ? AppColors.error
+                          : scheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
+            Icon(
+              Icons.chevron_right,
+              color: scheme.onSurfaceVariant,
+              size: 24,
+            ),
           ],
         ),
       ),

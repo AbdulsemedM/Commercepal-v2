@@ -25,6 +25,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     // Get cart from route extra parameter
     final cart = GoRouterState.of(context).extra as Cart?;
 
@@ -32,8 +33,8 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
       return Scaffold(
         appBar: AppBar(
           title: Text(LocalizationService.t(context, 'checkout.checkout')),
-          backgroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Colors.black87),
+          backgroundColor: scheme.surface,
+          iconTheme: IconThemeData(color: scheme.onSurface),
         ),
         body: Center(child: Text(LocalizationService.t(context, 'checkout.cartDataNotFound'))),
       );
@@ -42,19 +43,19 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
     return BlocProvider(
       create: (context) => AddressBloc()..add(AddressLoadRequested()),
       child: Scaffold(
-        backgroundColor: AppColors.lightGrey,
+        backgroundColor: scheme.surface,
         appBar: AppBar(
           title: Text(
             LocalizationService.t(context, 'checkout.checkout'),
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 18,
-              color: Colors.black87,
+              color: scheme.onSurface,
             ),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: scheme.surface,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.black87),
+          iconTheme: IconThemeData(color: scheme.onSurface),
         ),
         body: Column(
           children: [
@@ -93,13 +94,13 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
             // Continue Button
             Container(
               padding: const EdgeInsets.all(Spacing.md),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: scheme.shadow.withOpacity(0.12),
                     blurRadius: 10,
-                    offset: Offset(0, -2),
+                    offset: const Offset(0, -2),
                   ),
                 ],
               ),

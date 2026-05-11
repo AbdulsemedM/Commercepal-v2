@@ -139,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return BlocProvider(
       create: (context) => LoginBloc(),
       child: PopScope(
@@ -148,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _goToDashboardProfileTab();
         },
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: scheme.surface,
           body: SafeArea(
             child: BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
@@ -185,13 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             icon: Container(
                               padding: const EdgeInsets.all(Spacing.xs),
                               decoration: BoxDecoration(
-                                color: Colors.grey[200],
+                                color: scheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.arrow_back_ios_new,
                                 size: 18,
-                                color: Colors.black,
+                                color: scheme.onSurface,
                               ),
                             ),
                             onPressed: _goToDashboardProfileTab,
@@ -213,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           LocalizationService.t(context, 'auth.login.subtitle'),
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: Spacing.lg),
                         if (_showBiometricLogin) ...[
@@ -243,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: Spacing.lg),
                           Row(
                             children: <Widget>[
-                              Expanded(child: Divider(color: Colors.grey[300])),
+                              Expanded(child: Divider(color: scheme.outlineVariant)),
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: Spacing.md,
@@ -256,10 +257,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
-                                      ?.copyWith(color: Colors.grey[600]),
+                                      ?.copyWith(color: scheme.onSurfaceVariant),
                                 ),
                               ),
-                              Expanded(child: Divider(color: Colors.grey[300])),
+                              Expanded(child: Divider(color: scheme.outlineVariant)),
                             ],
                           ),
                           const SizedBox(height: Spacing.lg),
@@ -311,7 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyMedium
-                                    ?.copyWith(color: Colors.grey[700]),
+                                    ?.copyWith(color: scheme.onSurface),
                               ),
                             ),
                           ],
@@ -343,17 +344,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.symmetric(
                                 vertical: Spacing.md,
                               ),
-                              disabledBackgroundColor: Colors.grey[300],
+                              disabledBackgroundColor: scheme.surfaceContainerHighest,
                             ),
                             child: isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
+                                      color: scheme.onPrimary,
                                     ),
                                   )
                                 : Row(
@@ -368,15 +367,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                             .textTheme
                                             .bodyLarge
                                             ?.copyWith(
-                                              color: Colors.white,
+                                              color: scheme.onPrimary,
                                               fontWeight: FontWeight.w600,
                                             ),
                                       ),
                                       const SizedBox(width: Spacing.xs),
-                                      const Icon(
+                                      Icon(
                                         Icons.arrow_forward,
                                         size: 20,
-                                        color: Colors.white,
+                                        color: scheme.onPrimary,
                                       ),
                                     ],
                                   ),
@@ -388,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: <Widget>[
                             Expanded(
                               child: Divider(
-                                color: Colors.grey[300],
+                                color: scheme.outlineVariant,
                                 thickness: 1,
                               ),
                             ),
@@ -399,12 +398,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Text(
                                 LocalizationService.t(context, 'auth.login.or'),
                                 style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.grey[600]),
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
                               ),
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.grey[300],
+                                color: scheme.outlineVariant,
                                 thickness: 1,
                               ),
                             ),

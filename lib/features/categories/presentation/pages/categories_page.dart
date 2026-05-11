@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
@@ -35,7 +34,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),
       child: Scaffold(
-        backgroundColor: AppColors.lightGrey,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBarWidget(
           cartCount: 2,
           userInitials: AuthService().userInitials ?? 'U',

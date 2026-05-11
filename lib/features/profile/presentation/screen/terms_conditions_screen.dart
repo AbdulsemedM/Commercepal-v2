@@ -7,22 +7,23 @@ class TermsConditionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: scheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: Colors.black,
+              color: scheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -31,7 +32,7 @@ class TermsConditionsScreen extends StatelessWidget {
           'Terms & privacy',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: scheme.onSurface,
           ),
         ),
       ),
@@ -40,12 +41,12 @@ class TermsConditionsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text(
+            Text(
               'Terms & privacy',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: scheme.onSurface,
               ),
             ),
             const SizedBox(height: Spacing.sm),
@@ -54,33 +55,36 @@ class TermsConditionsScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: Colors.grey.shade600,
+                color: scheme.onSurfaceVariant,
                 fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: Spacing.xl),
             _buildClause(
+              context,
               'Conditions of use',
               'By using CommercePal mobile apps, websites, and related services, you agree to follow these rules and all applicable laws. You are responsible for your account activity and for keeping your login credentials secure. We may update these conditions; continued use after changes means you accept the revised terms. For purchases, returns, and refunds, see our refund policy. The privacy notice below explains how we handle your personal information.',
             ),
             const SizedBox(height: Spacing.lg),
-            const Text(
+            Text(
               'Privacy policy',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: scheme.onSurface,
               ),
             ),
             const SizedBox(height: Spacing.md),
             // Introduction
             _buildClause(
+              context,
               'Introduction',
                     'We know that you care how information about you is used and shared, and we appreciate your trust that we will do so carefully and sensibly. This Privacy Notice describes how Commercepal.com and its affiliates (collectively "CommercePal") collect and process your personal information through CommercePal websites, devices, products, services, online and physical stores, and applications that reference this Privacy Notice (together "CommercePal Services"). By using CommercePal Services, you are consenting to the practices described in this Privacy Notice.',
                   ),
                   const SizedBox(height: Spacing.lg),
                   // What Personal Information About Customers Does CommercePal Collect?
                   _buildClause(
+                    context,
                     'What Personal Information About Customers Does CommercePal Collect?',
                     'We collect your personal information in order to provide and continually improve our products and services. Here are the types of personal information we collect:\n\n'
                     '• Information You Give Us. We receive and store any information you provide in relation to CommercePal Services. You can choose not to provide certain information, but then you might not be able to take advantage of many of our CommercePal Services.\n\n'
@@ -90,6 +94,7 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // For What Purposes Does CommercePal Use Your Personal Information?
                   _buildClause(
+                    context,
                     'For What Purposes Does CommercePal Use Your Personal Information?',
                     'We use your personal information to operate, provide, develop, and improve the products and services that we offer our customers. These purposes include:\n\n'
                     '• Purchase and delivery of products and services. We receive and store any information you provide in relation to CommercePal Services. You can choose not to provide certain information, but then you might not be able to take advantage of many of our CommercePal Services.\n\n'
@@ -103,12 +108,14 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // What About Cookies and Other Identifiers?
                   _buildClause(
+                    context,
                     'What About Cookies and Other Identifiers?',
                     'To enable our systems to recognize your browser or device and to provide and improve CommercePal Services, we use cookies and other identifiers. For more information about cookies and how we use them, please read our Cookies Notice.',
                   ),
                   const SizedBox(height: Spacing.lg),
                   // Does CommercePal Share Your Personal Information?
                   _buildClause(
+                    context,
                     'Does CommercePal Share Your Personal Information?',
                     'Information about our customers is an important part of our business, and we are not in the business of selling our customers\' personal information to others. We share customers\' personal information only as described below and with subsidiaries Commercepal.com, Inc. controls that either are subject to this Privacy Notice or follow practices at least as protective as those described in this Privacy Notice.\n\n'
                     '• Transactions involving Third Parties. We make available to you services, products, applications, or skills provided by third parties for use on or through CommercePal Services. We also offer services or sell product lines jointly with third-party businesses, such as co-branded credit cards. You can tell when a third party is involved in your transactions, and we share customers\' personal information related to those transactions with that third party.\n\n'
@@ -120,6 +127,7 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // How Secure Is Information About Me?
                   _buildClause(
+                    context,
                     'How Secure Is Information About Me?',
                     'We design our systems with your security and privacy in mind.\n\n'
                     '• We work to protect the security of your personal information during transmission by using encryption protocols and software.\n\n'
@@ -131,6 +139,7 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // What About Advertising?
                   _buildClause(
+                    context,
                     'What About Advertising?',
                     '• Third-Party Advertisers and Links to Other Websites: CommercePal Services may include third-party advertising and links to other websites and apps. Third-party advertising partners may collect information about you when you interact with their content, advertising, and services. For more information about third-party advertising at CommercePal, including interest-based ads, please read our Interest-Based Ads policy. To adjust your advertising preferences, please go to the Advertising Preferences page.\n\n'
                     '• Use of Third-Party Advertising Services: We provide ad companies with information that allows them to serve you with more useful and relevant CommercePal ads and to measure their effectiveness. We never share your name or other information that directly identifies you when we do this. Instead, we use an advertising identifier like a cookie or other device identifier. For example, if you have already downloaded one of our apps, we will share your advertising identifier and data about that event so that you will not be served an ad to download the app again. Some ad companies also use this information to serve you relevant ads from other advertisers. You can learn more about how to opt-out of interest-based advertising by going to the Advertising Preferences page.',
@@ -138,12 +147,14 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // What Information Can I Access?
                   _buildClause(
+                    context,
                     'What Information Can I Access?',
                     'You can access your information, including your name, address, payment options, profile information, Prime membership, household settings, and purchase history in the "Your Account" section of the website.',
                   ),
                   const SizedBox(height: Spacing.lg),
                   // What Choices Do I Have?
                   _buildClause(
+                    context,
                     'What Choices Do I Have?',
                     'If you have any questions as to how we collect and use your personal information, please contact our Customer Service. Many of our CommercePal Services also include settings that provide you with options as to how your information is being used.\n\n'
                     '• As described above, you can choose not to provide certain information, but then you might not be able to take advantage of many of the CommercePal Services.\n\n'
@@ -160,12 +171,14 @@ class TermsConditionsScreen extends StatelessWidget {
                   const SizedBox(height: Spacing.lg),
                   // Are Children Allowed to Use CommercePal Services?
                   _buildClause(
+                    context,
                     'Are Children Allowed to Use CommercePal Services?',
                     'CommercePal does not sell products for purchase by children. We sell children\'s products for purchase by adults. If you are under 18, you may use CommercePal Services only with the involvement of a parent or guardian. We do not knowingly collect personal information from children under the age of 13 without the consent of the child\'s parent or guardian.',
                   ),
                   const SizedBox(height: Spacing.lg),
                   // Examples of Information Collected
                   _buildClause(
+                    context,
                     'Examples of Information Collected',
                     'Information You Give Us When You Use CommercePal Services. You provide information to us when you:\n\n'
                     '• search or shop for products or services in our stores;\n'
@@ -243,16 +256,17 @@ class TermsConditionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildClause(String title, String content) {
+  Widget _buildClause(BuildContext context, String title, String content) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Colors.black87,
+            color: scheme.onSurface,
           ),
         ),
         const SizedBox(height: Spacing.sm),
@@ -261,7 +275,7 @@ class TermsConditionsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            color: Colors.grey.shade800,
+            color: scheme.onSurfaceVariant,
             height: 1.6,
           ),
         ),

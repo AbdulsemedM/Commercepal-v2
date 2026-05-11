@@ -350,7 +350,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             }
 
             return Scaffold(
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(kToolbarHeight + 20),
                 child: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(

@@ -60,7 +60,7 @@ class LocalRecentProductViewsStripState extends State<LocalRecentProductViewsStr
             LocalizationService.t(context, 'home.localRecent.title'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
           ),
         ),

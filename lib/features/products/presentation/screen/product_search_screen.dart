@@ -190,7 +190,10 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
             cartCount = cart.totalItems;
           }
 
+          final ColorScheme scheme = Theme.of(context).colorScheme;
+
           return Scaffold(
+            backgroundColor: scheme.surface,
             appBar: AppBarWidget(
               cartCount: cartCount,
               userInitials: AuthService().userInitials ?? 'U',
@@ -225,14 +228,14 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       'productSearch.fieldHint',
                     ),
                     hintStyle: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: scheme.onSurfaceVariant,
                       fontSize: 15,
                     ),
                     prefixIcon: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Icon(
                         Icons.search,
-                        color: Colors.grey.shade500,
+                        color: scheme.onSurfaceVariant,
                         size: 20,
                       ),
                     ),
@@ -247,11 +250,11 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: scheme.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: scheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -306,7 +309,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                         .titleSmall
                                         ?.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade800,
+                                          color: scheme.onSurface,
                                         ),
                                   ),
                                 ),
@@ -356,8 +359,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               child: Text(
                                 hint,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.grey,
+                                style: TextStyle(
+                                  color: scheme.onSurfaceVariant,
                                   fontSize: 16,
                                 ),
                               ),
@@ -369,8 +372,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     return Center(
                       child: Text(
                         hint,
-                        style: const TextStyle(
-                          color: Colors.grey,
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
@@ -404,13 +407,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           Icon(
                             Icons.error_outline,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: scheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: Spacing.md),
                           Text(
                             state.message,
-                            style: const TextStyle(
-                              color: Colors.grey,
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
                               fontSize: 16,
                             ),
                             textAlign: TextAlign.center,
@@ -449,20 +452,20 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                     }
 
                     if (allProducts.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             Icon(
                               Icons.search_off,
                               size: 64,
-                              color: Colors.grey,
+                              color: scheme.onSurfaceVariant,
                             ),
-                            SizedBox(height: Spacing.md),
+                            const SizedBox(height: Spacing.md),
                             Text(
                               'No products found',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: scheme.onSurfaceVariant,
                                 fontSize: 16,
                               ),
                             ),
@@ -496,7 +499,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                       ? 'Showing ${filteredProducts.length} of $totalElements'
                                       : '$totalElements results found',
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: scheme.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -559,7 +562,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                       Icon(
                                         Icons.sort,
                                         size: 20,
-                                        color: Colors.grey[700],
+                                        color: scheme.onSurface,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -568,7 +571,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                           'productSearch.sortLabel',
                                         ),
                                         style: TextStyle(
-                                          color: Colors.grey[800],
+                                          color: scheme.onSurface,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13,
                                         ),
@@ -613,13 +616,17 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                       Icon(
                                         Icons.filter_list_off,
                                         size: 64,
-                                        color: Colors.grey[400],
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                       ),
                                       const SizedBox(height: Spacing.md),
                                       Text(
                                         'No products in this price range',
                                         style: TextStyle(
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                           fontSize: 16,
                                         ),
                                       ),
@@ -632,10 +639,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                         },
                                         icon: const Icon(Icons.clear_all, size: 20),
                                         label: const Text('Clear price filter'),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          foregroundColor: Colors.white,
-                                        ),
                                       ),
                                     ],
                                   ),

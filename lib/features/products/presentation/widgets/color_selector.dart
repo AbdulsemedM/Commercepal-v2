@@ -16,6 +16,7 @@ class ColorSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
       child: Row(
@@ -30,6 +31,8 @@ class ColorSelector extends StatelessWidget {
           const SizedBox(width: Spacing.md),
           ...List<Widget>.generate(colors.length, (int index) {
             final bool isSelected = index == selectedColorIndex;
+            final Color swatch = colors[index];
+            final bool lightSwatch = swatch.computeLuminance() > 0.45;
             return GestureDetector(
               onTap: () => onColorSelected(index),
               child: Container(
@@ -37,17 +40,17 @@ class ColorSelector extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: colors[index],
+                  color: swatch,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? Colors.black : Colors.grey[300]!,
+                    color: isSelected ? scheme.primary : scheme.outlineVariant,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(
+                    ? Icon(
                         Icons.check,
-                        color: Colors.white,
+                        color: lightSwatch ? Colors.black87 : Colors.white,
                         size: 18,
                       )
                     : null,

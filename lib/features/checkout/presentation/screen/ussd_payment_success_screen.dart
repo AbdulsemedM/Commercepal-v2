@@ -17,8 +17,9 @@ class UssdPaymentSuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.xl),
@@ -43,7 +44,7 @@ class UssdPaymentSuccessScreen extends StatelessWidget {
                 LocalizationService.t(context, 'checkout.ussdSuccessTitle'),
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: scheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -51,7 +52,7 @@ class UssdPaymentSuccessScreen extends StatelessWidget {
               Text(
                 LocalizationService.t(context, 'checkout.ussdSuccessMessage'),
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
+                  color: scheme.onSurfaceVariant,
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -73,7 +74,7 @@ class UssdPaymentSuccessScreen extends StatelessWidget {
                     vertical: Spacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -92,7 +93,7 @@ class UssdPaymentSuccessScreen extends StatelessWidget {
                   onPressed: () => Navigator.of(context).pop(),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: scheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -32,6 +32,7 @@ class AddToCartSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     if (isInCart) {
       // Quantity selector state
       return Container(
@@ -40,10 +41,10 @@ class AddToCartSection extends StatelessWidget {
           vertical: Spacing.sm,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: scheme.shadow.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -54,7 +55,7 @@ class AddToCartSection extends StatelessWidget {
             // Quantity selector
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: scheme.outlineVariant),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -114,10 +115,10 @@ class AddToCartSection extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(Spacing.md),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: scheme.shadow.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -131,26 +132,27 @@ class AddToCartSection extends StatelessWidget {
                 onPressed: isAddingToCart ? null : onAddToCart,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.black,
+                  foregroundColor: scheme.onSecondary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                 ),
                 child: isAddingToCart
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.2,
-                          color: Colors.black87,
+                          color: scheme.onSecondary,
                         ),
                       )
                     : Text(
                         LocalizationService.t(context, 'productDetail.addToCart'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          color: scheme.onSecondary,
                         ),
                       ),
               ),

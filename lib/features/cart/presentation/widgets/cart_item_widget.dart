@@ -23,6 +23,7 @@ class CartItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool hasPriceDrop = item.priceDropped && item.savingsAmount > 0;
     final bool isUnavailable = !item.isAvailable;
 
@@ -30,11 +31,11 @@ class CartItemWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: Spacing.md),
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         border: isUnavailable
             ? Border.all(color: AppColors.error.withOpacity(0.3), width: 1)
-            : null,
+            : Border.all(color: scheme.outlineVariant.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,10 +125,10 @@ class CartItemWidget extends StatelessWidget {
                           return Container(
                             width: 80,
                             height: 80,
-                            color: Colors.grey[200],
-                            child: const Icon(
+                            color: scheme.surfaceContainerHighest,
+                            child: Icon(
                               Icons.image_not_supported,
-                              color: Colors.grey,
+                              color: scheme.onSurfaceVariant,
                             ),
                           );
                         },
@@ -135,10 +136,10 @@ class CartItemWidget extends StatelessWidget {
                     : Container(
                         width: 80,
                         height: 80,
-                        color: Colors.grey[200],
-                        child: const Icon(
+                        color: scheme.surfaceContainerHighest,
+                        child: Icon(
                           Icons.image_not_supported,
-                          color: Colors.grey,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
               ),
@@ -154,8 +155,8 @@ class CartItemWidget extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isUnavailable
-                                ? Colors.grey[600]
-                                : Colors.black,
+                                ? scheme.onSurfaceVariant
+                                : scheme.onSurface,
                           ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -165,7 +166,7 @@ class CartItemWidget extends StatelessWidget {
                     Text(
                       item.provider,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                            color: scheme.onSurfaceVariant,
                           ),
                     ),
                     const SizedBox(height: Spacing.sm),
@@ -181,7 +182,7 @@ class CartItemWidget extends StatelessWidget {
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: isUnavailable
-                                    ? Colors.grey[600]
+                                    ? scheme.onSurfaceVariant
                                     : AppColors.primary,
                               ),
                         ),
@@ -194,7 +195,7 @@ class CartItemWidget extends StatelessWidget {
                                 .textTheme
                                 .bodySmall
                                 ?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: scheme.onSurfaceVariant,
                                   decoration: TextDecoration.lineThrough,
                                 ),
                           ),
@@ -209,9 +210,7 @@ class CartItemWidget extends StatelessWidget {
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: isUnavailable
-                                  ? Colors.grey[300]!
-                                  : Colors.grey[300]!,
+                              color: scheme.outlineVariant,
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -233,8 +232,8 @@ class CartItemWidget extends StatelessWidget {
                                   minHeight: 36,
                                 ),
                                 color: isUnavailable
-                                    ? Colors.grey[400]
-                                    : Colors.black,
+                                    ? scheme.onSurfaceVariant
+                                    : scheme.onSurface,
                               ),
                               Container(
                                 width: 40,
@@ -248,8 +247,8 @@ class CartItemWidget extends StatelessWidget {
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14,
                                         color: isUnavailable
-                                            ? Colors.grey[600]
-                                            : Colors.black,
+                                            ? scheme.onSurfaceVariant
+                                            : scheme.onSurface,
                                       ),
                                 ),
                               ),
@@ -266,8 +265,8 @@ class CartItemWidget extends StatelessWidget {
                                   minHeight: 36,
                                 ),
                                 color: isUnavailable
-                                    ? Colors.grey[400]
-                                    : Colors.black,
+                                    ? scheme.onSurfaceVariant
+                                    : scheme.onSurface,
                               ),
                             ],
                           ),

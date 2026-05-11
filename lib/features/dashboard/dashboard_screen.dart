@@ -153,8 +153,9 @@ class DashboardScreenState extends State<DashboardScreen> {
                         : (cartState as CartItemDeleted).cart;
           }
 
+          final ColorScheme scheme = Theme.of(context).colorScheme;
           return Scaffold(
-            backgroundColor: AppColors.lightGrey,
+            backgroundColor: scheme.surface,
             body: Stack(
               clipBehavior: Clip.none,
               children: <Widget>[
@@ -169,7 +170,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                     child: Material(
                       elevation: 8,
                       borderRadius: BorderRadius.circular(12),
-                      color: Colors.white,
+                      color: scheme.surfaceContainerLow,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => changeTab(2),
@@ -188,9 +189,10 @@ class DashboardScreenState extends State<DashboardScreen> {
                               Expanded(
                                 child: Text(
                                   '${miniCart.totalItems} items',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 15,
+                                    color: scheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -204,7 +206,10 @@ class DashboardScreenState extends State<DashboardScreen> {
                                   color: AppColors.primary,
                                 ),
                               ),
-                              const Icon(Icons.chevron_right),
+                              Icon(
+                                Icons.chevron_right,
+                                color: scheme.onSurfaceVariant,
+                              ),
                             ],
                           ),
                         ),

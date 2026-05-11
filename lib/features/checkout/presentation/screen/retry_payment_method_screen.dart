@@ -498,11 +498,13 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                 _paymentPhoneNumber!.isNotEmpty &&
                 _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '').length >= 9));
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        backgroundColor: scheme.surface,
+        iconTheme: IconThemeData(color: scheme.onSurface),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -592,7 +594,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                         margin: const EdgeInsets.fromLTRB(
                             Spacing.md, Spacing.sm, Spacing.md, 0),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: scheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -601,7 +603,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                               offset: const Offset(0, 4),
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: scheme.shadow.withOpacity(0.06),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -698,7 +700,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                         hintText: '1234567',
                                         counterText: '',
                                         filled: true,
-                                        fillColor: Colors.white,
+                                        fillColor: scheme.surface,
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
                                           borderSide:
@@ -736,7 +738,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                         hintText: '1234567',
                                         counterText: '',
                                         filled: true,
-                                        fillColor: Colors.white,
+                                        fillColor: scheme.surface,
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
                                           borderSide:
@@ -765,7 +767,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                 decoration: InputDecoration(
                                   hintText: 'Phone number',
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: scheme.surface,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide:
@@ -790,7 +792,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                 decoration: InputDecoration(
                                   hintText: 'Phone number',
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: scheme.surface,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide:

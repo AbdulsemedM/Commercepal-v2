@@ -23,6 +23,8 @@ class MultiVariantSelectorWidget extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
       child: Column(
@@ -71,14 +73,14 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                       color: isSelected
                           ? AppColors.primary
                           : isInStock
-                              ? Colors.white
-                              : Colors.grey[200],
+                              ? scheme.surface
+                              : scheme.surfaceContainerHighest,
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
                             : isInStock
-                                ? Colors.grey[300]!
-                                : Colors.grey[400]!,
+                                ? scheme.outlineVariant
+                                : scheme.outline,
                         width: isSelected ? 2 : 1,
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -96,8 +98,8 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                                 color: isSelected
                                     ? Colors.white
                                     : isInStock
-                                        ? Colors.black87
-                                        : Colors.grey[600],
+                                        ? scheme.onSurface
+                                        : scheme.onSurfaceVariant,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -112,7 +114,7 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: scheme.surface,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
@@ -146,7 +148,7 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                           Text(
                             'Out of Stock',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: scheme.onSurfaceVariant,
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
                             ),
@@ -180,9 +182,9 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: Spacing.sm),
                 padding: const EdgeInsets.all(Spacing.sm),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: scheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: scheme.outlineVariant),
                 ),
                 child: Row(
                   children: [
@@ -197,7 +199,7 @@ class MultiVariantSelectorWidget extends StatelessWidget {
                     // Quantity selector
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: scheme.outlineVariant),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(

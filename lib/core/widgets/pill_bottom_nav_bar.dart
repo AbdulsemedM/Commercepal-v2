@@ -49,11 +49,14 @@ class PillBottomNavBar extends StatelessWidget {
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(40),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+          ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: theme.colorScheme.shadow.withOpacity(0.08),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),

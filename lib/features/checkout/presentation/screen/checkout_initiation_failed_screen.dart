@@ -19,12 +19,13 @@ class CheckoutInitiationFailedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
         elevation: 0,
-        foregroundColor: Colors.black87,
+        foregroundColor: scheme.onSurface,
         title: Text(
           LocalizationService.t(context, 'checkout.paymentCouldNotStartTitle'),
         ),
@@ -41,7 +42,7 @@ class CheckoutInitiationFailedScreen extends StatelessWidget {
               Text(
                 message,
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.black87,
+                  color: scheme.onSurface,
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -51,7 +52,7 @@ class CheckoutInitiationFailedScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: scheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: Spacing.md),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

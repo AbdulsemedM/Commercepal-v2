@@ -7,6 +7,7 @@ class BannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     String promo = '';
     try {
       promo = AppUpdateRemoteConfig.homePromoBanner;
@@ -28,9 +29,13 @@ class BannerSection extends StatelessWidget {
               errorBuilder:
                   (BuildContext context, Object error, StackTrace? stackTrace) {
                     return Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.image, color: Colors.grey, size: 60),
+                      color: scheme.surfaceContainerHighest,
+                      child: Center(
+                        child: Icon(
+                          Icons.image,
+                          color: scheme.onSurfaceVariant,
+                          size: 60,
+                        ),
                       ),
                     );
                   },

@@ -117,22 +117,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             );
           }
         },
-        child: Scaffold(
-          backgroundColor: Colors.white,
+        child: Builder(
+          builder: (BuildContext context) {
+            final ColorScheme scheme = Theme.of(context).colorScheme;
+            return Scaffold(
+          backgroundColor: scheme.surface,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: scheme.surface,
             elevation: 0,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(Spacing.xs),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new,
                   size: 18,
-                  color: Colors.black,
+                  color: scheme.onSurface,
                 ),
               ),
               onPressed: () => context.pop(),
@@ -141,7 +144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               LocalizationService.t(context, 'profile.editProfile'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: scheme.onSurface,
               ),
             ),
           ),
@@ -316,16 +319,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             padding: const EdgeInsets.symmetric(
                               vertical: Spacing.md,
                             ),
-                            disabledBackgroundColor: Colors.grey[300],
+                            disabledBackgroundColor:
+                                scheme.surfaceContainerHighest,
                           ),
                           child: isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                                      scheme.onPrimary,
                                     ),
                                   ),
                                 )
@@ -333,7 +337,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   LocalizationService.t(context, 'profile.updateProfile'),
                                   style: Theme.of(context).textTheme.bodyLarge
                                       ?.copyWith(
-                                        color: Colors.white,
+                                        color: scheme.onPrimary,
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -346,6 +350,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               );
             },
           ),
+        );
+          },
         ),
       ),
     );
@@ -358,13 +364,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -378,16 +385,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             hintText: '${LocalizationService.t(context, 'profile.enter')} $label',
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: scheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -419,13 +426,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required void Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -439,16 +447,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             hintText: '${LocalizationService.t(context, 'profile.select')} $label',
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: scheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

@@ -345,7 +345,7 @@ class Storage {
 
   Future<String> getThemeMode() async {
     final v = await _storage.read(key: _keyThemeMode);
-    return (v == null || v.isEmpty) ? 'system' : v;
+    return (v == null || v.isEmpty) ? 'light' : v;
   }
 
   /// Locally viewed products (client-only), newest first.

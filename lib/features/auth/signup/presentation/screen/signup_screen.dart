@@ -53,10 +53,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return BlocProvider(
       create: (context) => SignupBloc(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: scheme.surface,
         body: SafeArea(
           child: BlocListener<SignupBloc, SignupState>(
             listener: (context, state) {
@@ -278,16 +279,16 @@ class _SignupScreenState extends State<SignupScreen> {
                               padding: const EdgeInsets.symmetric(
                                 vertical: Spacing.md,
                               ),
-                              disabledBackgroundColor: Colors.grey[300],
+                              disabledBackgroundColor: scheme.surfaceContainerHighest,
                             ),
                             child: isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                                        scheme.onPrimary,
                                       ),
                                     ),
                                   )
@@ -303,15 +304,15 @@ class _SignupScreenState extends State<SignupScreen> {
                                             .textTheme
                                             .bodyLarge
                                             ?.copyWith(
-                                              color: Colors.white,
+                                              color: scheme.onPrimary,
                                               fontWeight: FontWeight.w600,
                                             ),
                                       ),
                                       const SizedBox(width: Spacing.xs),
-                                      const Icon(
+                                      Icon(
                                         Icons.arrow_forward,
                                         size: 20,
-                                        color: Colors.white,
+                                        color: scheme.onPrimary,
                                       ),
                                     ],
                                   ),
@@ -419,14 +420,14 @@ class _SignupScreenState extends State<SignupScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -475,14 +476,14 @@ class _SignupScreenState extends State<SignupScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -542,7 +543,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text(
           'Country',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -560,7 +561,7 @@ class _SignupScreenState extends State<SignupScreen> {
               },
               countryListTheme: CountryListThemeData(
                 flagSize: 25,
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 textStyle: Theme.of(context).textTheme.bodyLarge,
                 inputDecoration: InputDecoration(
                   labelText: 'Search',
@@ -570,7 +571,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
                 searchTextStyle: Theme.of(context).textTheme.bodyLarge,
                 borderRadius: BorderRadius.circular(12),
@@ -583,8 +584,10 @@ class _SignupScreenState extends State<SignupScreen> {
               vertical: Spacing.md,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey[300]!),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -600,7 +603,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ],
             ),
           ),
@@ -619,12 +625,13 @@ class SocialSignupButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final Map<SocialLoginType, Map<String, dynamic>> buttonConfig = {
       SocialLoginType.google: <String, dynamic>{
         'label': LocalizationService.t(context, 'auth.signup.socialGoogle'),
-        'backgroundColor': Colors.white,
-        'textColor': Colors.black,
-        'borderColor': Colors.grey[300]!,
+        'backgroundColor': scheme.surface,
+        'textColor': scheme.onSurface,
+        'borderColor': scheme.outlineVariant,
         'imagePath': 'assets/images/Google.png',
       },
       SocialLoginType.facebook: <String, dynamic>{

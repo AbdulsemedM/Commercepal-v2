@@ -85,7 +85,7 @@ class HomeDiscoverSection extends StatelessWidget {
                 state.message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             ),
@@ -145,7 +145,7 @@ class _DiscoverCategoryBlock extends StatelessWidget {
                   config.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade900,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                 ),
               ),
@@ -185,7 +185,7 @@ class _DiscoverCategoryBlock extends StatelessWidget {
                 child: Text(
                   'No products in this category right now.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
               );
@@ -235,17 +235,18 @@ class _DiscoverCategoryBlock extends StatelessWidget {
 class _EmptyDiscoverSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Center(
         child: Icon(
           Icons.add_photo_alternate_outlined,
           size: 20,
-          color: Colors.grey.shade400,
+          color: scheme.onSurfaceVariant,
         ),
       ),
     );
@@ -255,6 +256,7 @@ class _EmptyDiscoverSlot extends StatelessWidget {
 class _DiscoverLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -268,7 +270,7 @@ class _DiscoverLoading extends StatelessWidget {
                   width: 120,
                   height: 18,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
@@ -299,7 +301,7 @@ class _DiscoverLoading extends StatelessWidget {
                     itemCount: 20,
                     itemBuilder: (_, __) => Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: scheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),

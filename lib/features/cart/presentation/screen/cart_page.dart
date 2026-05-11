@@ -113,7 +113,7 @@ class _CartPageState extends State<CartPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.lightGrey,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBarWidget(
           cartCount: 0,
           userInitials: AuthService().userInitials ?? 'U',
@@ -234,15 +234,16 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartSummary(BuildContext context, Cart cart) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black12,
+            color: scheme.shadow.withOpacity(0.12),
             blurRadius: 10,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
