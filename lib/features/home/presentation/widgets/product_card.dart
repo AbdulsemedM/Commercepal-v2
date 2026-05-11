@@ -77,6 +77,10 @@ class ProductCard extends StatelessWidget {
                       child: Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
+                        cacheWidth: (MediaQuery.sizeOf(context).width *
+                                MediaQuery.devicePixelRatioOf(context) /
+                                2)
+                            .round(),
                         errorBuilder: (
                           BuildContext context,
                           Object error,

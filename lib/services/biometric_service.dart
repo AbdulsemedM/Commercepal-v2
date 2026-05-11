@@ -46,6 +46,8 @@ class BiometricService {
         options: const AuthenticationOptions(
           stickyAuth: true,
           useErrorDialogs: true,
+          // Allow device PIN / pattern fallback when biometrics fail or are unavailable.
+          biometricOnly: false,
         ),
       );
       return success ? BiometricAuthResult.success : BiometricAuthResult.failure;

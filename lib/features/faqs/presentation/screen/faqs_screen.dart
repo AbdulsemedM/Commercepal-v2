@@ -5,7 +5,10 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/faqs/data/faq_model.dart';
 
 class FaqsScreen extends StatefulWidget {
-  const FaqsScreen({super.key});
+  const FaqsScreen({super.key, this.sectionSlug});
+
+  /// When set (e.g. route `?section=track`), scrolls to and expands that FAQ.
+  final String? sectionSlug;
 
   @override
   State<FaqsScreen> createState() => _FaqsScreenState();
@@ -15,11 +18,39 @@ class _FaqsScreenState extends State<FaqsScreen> {
   final List<FaqItem> _allFaqs = FaqDataSource.getFaqs();
   final TextEditingController _searchController = TextEditingController();
   int? _expandedIndex;
+  late final List<GlobalKey> _faqCardKeys;
 
   @override
   void initState() {
     super.initState();
+    _faqCardKeys = List<GlobalKey>.generate(
+      _allFaqs.length,
+      (_) => GlobalKey(),
+    );
     _searchController.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSectionIfNeeded();
+    });
+  }
+
+  void _scrollToSectionIfNeeded() {
+    final String? slug = widget.sectionSlug?.trim().toLowerCase();
+    if (slug == null || slug.isEmpty) return;
+    final int idx = _allFaqs.indexWhere(
+      (FaqItem f) => f.slug.toLowerCase() == slug,
+    );
+    if (idx < 0 || !mounted) return;
+    _searchController.clear();
+    setState(() => _expandedIndex = idx);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (idx < _faqCardKeys.length) {
+        final BuildContext? ctx = _faqCardKeys[idx].currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(ctx, alignment: 0.12);
+        }
+      }
+    });
   }
 
   @override
@@ -207,16 +238,20 @@ class _FaqsScreenState extends State<FaqsScreen> {
                   else
                     ...List<Widget>.generate(filtered.length, (int i) {
                       final faq = filtered[i];
-                      final isExpanded = _expandedIndex == i;
+                      final int globalIndex = _allFaqs.indexOf(faq);
+                      final isExpanded = _expandedIndex == globalIndex;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: Spacing.md),
                         child: _FaqCard(
+                          key: globalIndex >= 0 && globalIndex < _faqCardKeys.length
+                              ? _faqCardKeys[globalIndex]
+                              : null,
                           faq: faq,
                           isExpanded: isExpanded,
                           onTap: () {
                             setState(() {
                               _expandedIndex =
-                                  isExpanded ? null : i;
+                                  isExpanded ? null : globalIndex;
                             });
                           },
                         ),
@@ -235,6 +270,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
 
 class _FaqCard extends StatelessWidget {
   const _FaqCard({
+    super.key,
     required this.faq,
     required this.isExpanded,
     required this.onTap,

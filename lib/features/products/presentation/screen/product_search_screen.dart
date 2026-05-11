@@ -19,6 +19,9 @@ import 'package:commercepal/features/products/presentation/widgets/price_filter_
 import 'package:commercepal/features/products/data/models/product.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/services/app_analytics.dart';
+
+enum _ClientProductSort { relevance, priceAsc, priceDesc, nameAz }
 
 class ProductSearchScreen extends StatefulWidget {
   const ProductSearchScreen({super.key, this.initialQuery, this.providerId});
@@ -38,12 +41,34 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   final Storage _storage = Storage();
   PriceRange _priceRange = const PriceRange();
   List<String> _recentSearches = <String>[];
+  _ClientProductSort _clientSort = _ClientProductSort.relevance;
 
   Future<void> _loadRecentSearches() async {
     final List<String> next = await _storage.getRecentProductSearches();
     if (mounted) {
       setState(() => _recentSearches = next);
     }
+  }
+
+  List<Product> _sortInMemory(List<Product> products) {
+    final List<Product> out = List<Product>.from(products);
+    switch (_clientSort) {
+      case _ClientProductSort.relevance:
+        break;
+      case _ClientProductSort.priceAsc:
+        out.sort((Product a, Product b) => a.price.compareTo(b.price));
+        break;
+      case _ClientProductSort.priceDesc:
+        out.sort((Product a, Product b) => b.price.compareTo(a.price));
+        break;
+      case _ClientProductSort.nameAz:
+        out.sort(
+          (Product a, Product b) =>
+              a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        break;
+    }
+    return out;
   }
 
   Future<void> _performSearch() async {
@@ -66,6 +91,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
 
     if (query.isNotEmpty) {
+      await AppAnalytics.logSearch(searchTerm: query);
       await _storage.recordRecentProductSearch(query);
       if (mounted) {
         await _loadRecentSearches();
@@ -445,7 +471,8 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                       );
                     }
 
-                    final filteredProducts = allProducts
+                    final List<Product> sortedAll = _sortInMemory(allProducts);
+                    final filteredProducts = sortedAll
                         .where((Product p) => _priceRange.contains(p.price))
                         .toList();
                     final hasActiveFilter = !_priceRange.isAny;
@@ -471,6 +498,82 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              PopupMenuButton<_ClientProductSort>(
+                                initialValue: _clientSort,
+                                tooltip: LocalizationService.t(
+                                  context,
+                                  'productSearch.sortLabel',
+                                ),
+                                onSelected: (_ClientProductSort value) {
+                                  setState(() => _clientSort = value);
+                                },
+                                itemBuilder: (BuildContext ctx) =>
+                                    <PopupMenuEntry<_ClientProductSort>>[
+                                  PopupMenuItem(
+                                    value: _ClientProductSort.relevance,
+                                    child: Text(
+                                      LocalizationService.t(
+                                        ctx,
+                                        'productSearch.sortRelevance',
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _ClientProductSort.priceAsc,
+                                    child: Text(
+                                      LocalizationService.t(
+                                        ctx,
+                                        'productSearch.sortPriceLow',
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _ClientProductSort.priceDesc,
+                                    child: Text(
+                                      LocalizationService.t(
+                                        ctx,
+                                        'productSearch.sortPriceHigh',
+                                      ),
+                                    ),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _ClientProductSort.nameAz,
+                                    child: Text(
+                                      LocalizationService.t(
+                                        ctx,
+                                        'productSearch.sortName',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Spacing.sm,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.sort,
+                                        size: 20,
+                                        color: Colors.grey[700],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        LocalizationService.t(
+                                          context,
+                                          'productSearch.sortLabel',
+                                        ),
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -540,9 +643,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               : Column(
                                   children: <Widget>[
                                     Expanded(
-                                      child: GridView.builder(
+                                      child: RefreshIndicator(
+                                        onRefresh: _performSearch,
+                                        child: GridView.builder(
                                         controller: _scrollController,
                                         padding: const EdgeInsets.all(Spacing.md),
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
                                         gridDelegate:
                                             const SliverGridDelegateWithFixedCrossAxisCount(
                                           crossAxisCount: 2,
@@ -576,6 +683,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                 product.discountPercentage,
                                           );
                                         },
+                                      ),
                                       ),
                                     ),
                                     if (loadingMoreFooter)

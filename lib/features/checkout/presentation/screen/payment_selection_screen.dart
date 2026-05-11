@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
@@ -647,6 +648,15 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       ),
       body: Column(
         children: [
+          CheckoutStepIndicator(
+            currentStep: 2,
+            totalSteps: 3,
+            labels: <String>[
+              LocalizationService.t(context, 'checkout.stepCart'),
+              LocalizationService.t(context, 'checkout.stepPayment'),
+              LocalizationService.t(context, 'checkout.stepConfirm'),
+            ],
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

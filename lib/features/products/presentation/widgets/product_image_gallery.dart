@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import '../../data/models/product_image.dart';
+import '../screen/product_image_viewer_screen.dart';
 
 class ProductImageGallery extends StatefulWidget {
   const ProductImageGallery({
@@ -58,7 +59,19 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
               final image = widget.images[index];
               return GestureDetector(
                 onTap: () {
-                  // TODO: Open full-screen image viewer
+                  final urls = widget.images
+                      .map((ProductImage img) => img.main)
+                      .where((String u) => u.isNotEmpty)
+                      .toList();
+                  if (urls.isEmpty) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProductImageViewerScreen(
+                        imageUrls: urls,
+                        initialIndex: index,
+                      ),
+                    ),
+                  );
                 },
                 child: Container(
                   color: Colors.grey[100],

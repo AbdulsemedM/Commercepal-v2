@@ -36,6 +36,7 @@ import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
 import '../../features/faqs/presentation/screen/faqs_screen.dart';
 import '../../features/wishlist/presentation/screen/wishlist_screen.dart';
+import '../../features/products/presentation/screen/product_compare_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -64,6 +65,7 @@ class AppRoutes {
   static const String affiliateRegister = '/affiliate-register';
   static const String faqs = '/faqs';
   static const String wishlist = '/wishlist';
+  static const String productCompare = '/product-compare';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -295,8 +297,23 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.faqs,
       name: 'faqs',
-      builder: (BuildContext context, GoRouterState state) =>
-          const FaqsScreen(),
+      builder: (BuildContext context, GoRouterState state) {
+        final String? section = state.uri.queryParameters['section'];
+        return FaqsScreen(sectionSlug: section);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.productCompare,
+      name: 'productCompare',
+      builder: (BuildContext context, GoRouterState state) {
+        final String raw = state.uri.queryParameters['ids'] ?? '';
+        final List<String> ids = raw
+            .split(',')
+            .map((String e) => e.trim())
+            .where((String e) => e.isNotEmpty)
+            .toList();
+        return ProductCompareScreen(productIds: ids);
+      },
     ),
     GoRoute(
       path: AppRoutes.wishlist,

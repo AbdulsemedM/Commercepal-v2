@@ -34,8 +34,14 @@ class Storage {
   static const String _keyBiometricEnabled = 'biometric_enabled';
   static const String _keyHasOpenedApp = 'has_opened_app';
   static const String _keyRecentProductSearches = 'recent_product_searches';
+  static const String _keyThemeMode = 'app_theme_mode';
+  static const String _keyLocalRecentProductViews = 'local_recent_product_views';
+  static const String _keyProductCompareIds = 'product_compare_ids';
+  static const String _keyDashboardCoachmarksDone = 'dashboard_coachmarks_v1_done';
 
   static const int _maxRecentProductSearches = 12;
+  static const int _maxLocalRecentProductViews = 24;
+  static const int _maxProductCompareIds = 4;
 
   // Token management
   Future<void> saveTokens({
@@ -330,5 +336,100 @@ class Storage {
   /// Marks that the app has been opened at least once.
   Future<void> markAppOpened() async {
     await _storage.write(key: _keyHasOpenedApp, value: 'true');
+  }
+
+  // Theme preference: `light`, `dark`, or `system`.
+  Future<void> saveThemeMode(String mode) async {
+    await _storage.write(key: _keyThemeMode, value: mode);
+  }
+
+  Future<String> getThemeMode() async {
+    final v = await _storage.read(key: _keyThemeMode);
+    return (v == null || v.isEmpty) ? 'system' : v;
+  }
+
+  /// Locally viewed products (client-only), newest first.
+  Future<List<Map<String, dynamic>>> getLocalRecentProductViews() async {
+    final raw = await _storage.read(key: _keyLocalRecentProductViews);
+    if (raw == null || raw.isEmpty) return <Map<String, dynamic>>[];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List<dynamic>) return <Map<String, dynamic>>[];
+      return decoded
+          .map((dynamic e) => e is Map<String, dynamic> ? e : null)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  Future<void> clearLocalRecentProductViews() async {
+    await _storage.delete(key: _keyLocalRecentProductViews);
+  }
+
+  Future<void> recordLocalProductView(Map<String, dynamic> entry) async {
+    final id = entry['productId']?.toString() ?? '';
+    if (id.isEmpty) return;
+    var list = await getLocalRecentProductViews();
+    list = list
+        .where((Map<String, dynamic> e) => e['productId']?.toString() != id)
+        .toList();
+    list.insert(0, entry);
+    if (list.length > _maxLocalRecentProductViews) {
+      list = list.sublist(0, _maxLocalRecentProductViews);
+    }
+    await _storage.write(
+      key: _keyLocalRecentProductViews,
+      value: jsonEncode(list),
+    );
+  }
+
+  Future<List<String>> getProductCompareIds() async {
+    final raw = await _storage.read(key: _keyProductCompareIds);
+    if (raw == null || raw.isEmpty) return <String>[];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List<dynamic>) return <String>[];
+      return decoded
+          .map((dynamic e) => e.toString())
+          .where((String s) => s.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
+  Future<void> setProductCompareIds(List<String> ids) async {
+    final unique = <String>[];
+    for (final id in ids) {
+      final t = id.trim();
+      if (t.isEmpty || unique.contains(t)) continue;
+      unique.add(t);
+      if (unique.length >= _maxProductCompareIds) break;
+    }
+    await _storage.write(key: _keyProductCompareIds, value: jsonEncode(unique));
+  }
+
+  Future<void> addProductCompareId(String productId) async {
+    final id = productId.trim();
+    if (id.isEmpty) return;
+    final list = await getProductCompareIds();
+    final next = <String>[id, ...list.where((String e) => e != id)];
+    await setProductCompareIds(next);
+  }
+
+  Future<void> removeProductCompareId(String productId) async {
+    final list =
+        (await getProductCompareIds()).where((e) => e != productId).toList();
+    await _storage.write(key: _keyProductCompareIds, value: jsonEncode(list));
+  }
+
+  Future<bool> isDashboardCoachmarksDone() async {
+    return await _storage.read(key: _keyDashboardCoachmarksDone) == 'true';
+  }
+
+  Future<void> setDashboardCoachmarksDone() async {
+    await _storage.write(key: _keyDashboardCoachmarksDone, value: 'true');
   }
 }

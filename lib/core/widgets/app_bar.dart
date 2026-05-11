@@ -15,6 +15,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.hasNotification = false,
     this.searchPlaceholder,
     this.onSearchTap,
+    this.additionalActions,
   });
 
   final int cartCount;
@@ -26,6 +27,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final bool hasNotification;
   final String? searchPlaceholder;
   final VoidCallback? onSearchTap;
+  /// Shown after the search field and before the cart icon (e.g. overflow menu).
+  final List<Widget>? additionalActions;
 
   @override
   Size get preferredSize {
@@ -130,6 +133,10 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
               ),
+              if (additionalActions != null && additionalActions!.isNotEmpty) ...[
+                const SizedBox(width: Spacing.xs),
+                ...additionalActions!,
+              ],
               const SizedBox(width: Spacing.sm),
               // Shopping cart with badge
               InkWell(
