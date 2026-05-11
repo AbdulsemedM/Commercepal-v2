@@ -11,13 +11,14 @@ import '../../../../app/router/app_router.dart';
 import '../../../cart/bloc/cart_bloc.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
+import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
-import 'ussd_payment_success_screen.dart';
+import 'checkout_initiation_failed_screen.dart';
 
 /// Helper class to represent a selectable payment method
 class _SelectablePaymentMethod {
@@ -453,42 +454,70 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         setState(() {
           _isPlacingOrder = false;
         });
+      }
 
-        if (!context.mounted) return;
+      if (!context.mounted) return;
 
-        // Clear cart on successful order
-        context.read<CartBloc>().add(CartClearRequested());
-
-        final init = response.paymentInitiation;
-        final nextAction = init?.nextAction;
-        final paymentUrl = init?.paymentUrl;
-        final orderNumber = response.orderNumber ?? init?.orderNumber;
-
-        // For USSD-style payments (Telebirr, eBirr, Sahay, Pesapal): push confirmation screen on success
-        if (PaymentConstants.isUssdPaymentProvider(paymentProviderCode)) {
-          await Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (context) => UssdPaymentSuccessScreen(orderNumber: orderNumber),
-            ),
-          );
-          if (!context.mounted) return;
-        }
-
-        // If backend says redirect to payment URL, open it in-app WebView (not browser)
-        if (nextAction == 'REDIRECT_TO_PAYMENT_URL' &&
-            paymentUrl != null &&
-            paymentUrl.isNotEmpty) {
-          context.go(
-            AppRoutes.paymentWebView,
+      if (!response.isCheckoutCompleteForCartClear) {
+        final ref = response.paymentReferenceOrNull;
+        final ord = response.resolvedOrderNumber;
+        if (ref != null &&
+            ref.isNotEmpty &&
+            ord != null &&
+            ord.isNotEmpty) {
+          await context.push<void>(
+            AppRoutes.retryPaymentMethod,
             extra: <String, dynamic>{
-              'paymentUrl': paymentUrl,
-              'orderNumber': orderNumber,
+              'paymentReference': ref,
+              'currency': cart.currency,
+              'orderNumber': ord,
             },
           );
         } else {
-          context.go(AppRoutes.dashboard);
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
+                message: LocalizationService.t(
+                  ctx,
+                  'checkout.initiationFailedGeneric',
+                ),
+              ),
+            ),
+          );
         }
+        return;
       }
+
+      context.read<CartBloc>().add(CartClearRequested());
+
+      final init = response.paymentInitiation!;
+      final nextAction = init.nextAction?.trim() ?? '';
+      final paymentUrl = init.paymentUrl?.trim() ?? '';
+      final orderNumber = response.resolvedOrderNumber;
+
+      if (nextAction == CheckoutResponse.nextActionRedirectToPaymentUrl &&
+          paymentUrl.isNotEmpty) {
+        context.go(
+          AppRoutes.paymentWebView,
+          extra: <String, dynamic>{
+            'paymentUrl': paymentUrl,
+            'orderNumber': orderNumber,
+          },
+        );
+        return;
+      }
+
+      if (nextAction == CheckoutResponse.nextActionOpenAdditionalInput) {
+        context.go(
+          AppRoutes.orderConfirmedPaymentPending,
+          extra: <String, dynamic>{
+            'checkoutResponse': response,
+          },
+        );
+        return;
+      }
+
+      context.go(AppRoutes.dashboard);
     } catch (e) {
       if (mounted) {
         setState(() {

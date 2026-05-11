@@ -31,6 +31,7 @@ import '../../features/checkout/presentation/screen/checkout_summary_screen.dart
 import '../../features/checkout/presentation/screen/payment_selection_screen.dart';
 import '../../features/checkout/presentation/screen/payment_webview_screen.dart';
 import '../../features/checkout/presentation/screen/order_placed_screen.dart';
+import '../../features/checkout/presentation/screen/order_confirmed_payment_pending_screen.dart';
 import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
 import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
@@ -60,6 +61,8 @@ class AppRoutes {
   static const String paymentSelection = '/payment-selection';
   static const String paymentWebView = '/payment-webview';
   static const String orderPlaced = '/order-placed';
+  static const String orderConfirmedPaymentPending =
+      '/order-confirmed-payment-pending';
   static const String retryPaymentMethod = '/retry-payment-method';
   static const String affiliateRegister = '/affiliate-register';
   static const String faqs = '/faqs';
@@ -265,6 +268,23 @@ final GoRouter appRouter = GoRouter(
         return OrderPlacedScreen(
           response: response,
           paymentProviderCode: paymentProviderCode,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.orderConfirmedPaymentPending,
+      name: 'orderConfirmedPaymentPending',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final response = extra?['checkoutResponse'] as CheckoutResponse?;
+        if (response == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Order')),
+            body: const Center(child: Text('Missing order data')),
+          );
+        }
+        return OrderConfirmedPaymentPendingScreen(
+          response: response,
         );
       },
     ),

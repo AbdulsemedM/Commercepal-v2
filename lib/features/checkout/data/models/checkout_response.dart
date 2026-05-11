@@ -99,4 +99,54 @@ class CheckoutResponse {
           : null,
     );
   }
+
+  /// Backend [nextAction] values we treat as a completed checkout for cart clearing.
+  static const String nextActionOpenAdditionalInput = 'OPEN_ADDITIONAL_INPUT';
+  static const String nextActionRedirectToPaymentUrl = 'REDIRECT_TO_PAYMENT_URL';
+
+  /// When true, the order is reserved and payment started; safe to clear the cart.
+  /// Based on [paymentInitiation] (not HTTP status alone).
+  bool get isCheckoutCompleteForCartClear {
+    final init = paymentInitiation;
+    if (init == null) return false;
+    if (init.success != true) return false;
+
+    final top = orderNumber?.trim() ?? '';
+    final initOrder = init.orderNumber?.trim() ?? '';
+    if (top.isNotEmpty && initOrder.isNotEmpty && top != initOrder) {
+      return false;
+    }
+    final resolvedOrder = top.isNotEmpty ? top : initOrder;
+    if (resolvedOrder.isEmpty) return false;
+
+    final ref = init.paymentReference?.trim() ?? '';
+    if (ref.isEmpty) return false;
+
+    final action = init.nextAction?.trim() ?? '';
+    if (action.isEmpty) return false;
+
+    if (action == nextActionRedirectToPaymentUrl) {
+      final url = init.paymentUrl?.trim() ?? '';
+      return url.isNotEmpty;
+    }
+    if (action == nextActionOpenAdditionalInput) {
+      final instructions = init.paymentInstructions?.trim() ?? '';
+      return instructions.isNotEmpty;
+    }
+    return false;
+  }
+
+  /// Non-empty [paymentInitiation.paymentReference] when present (for retry flow).
+  String? get paymentReferenceOrNull {
+    final r = paymentInitiation?.paymentReference?.trim() ?? '';
+    return r.isEmpty ? null : r;
+  }
+
+  /// Resolved order number for display and retry routes.
+  String? get resolvedOrderNumber {
+    final top = orderNumber?.trim() ?? '';
+    if (top.isNotEmpty) return top;
+    final io = paymentInitiation?.orderNumber?.trim() ?? '';
+    return io.isEmpty ? null : io;
+  }
 }
