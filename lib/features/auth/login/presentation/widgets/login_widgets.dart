@@ -18,13 +18,14 @@ class EmailInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.email'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -44,24 +45,26 @@ class EmailInputField extends StatelessWidget {
                 return null;
               },
           keyboardType: TextInputType.emailAddress,
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: scheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: LocalizationService.t(
               context,
               'auth.login.emailPlaceholder',
             ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
+            ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: scheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -108,13 +111,14 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.password'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -134,24 +138,26 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
                 return null;
               },
           obscureText: _obscureText,
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: scheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: LocalizationService.t(
               context,
               'auth.login.passwordPlaceholder',
             ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
+            ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: scheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: scheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -172,7 +178,7 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey[600],
+                color: scheme.onSurfaceVariant,
               ),
               onPressed: () {
                 setState(() {

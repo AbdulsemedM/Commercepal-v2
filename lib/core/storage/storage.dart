@@ -38,6 +38,9 @@ class Storage {
   static const String _keyLocalRecentProductViews = 'local_recent_product_views';
   static const String _keyProductCompareIds = 'product_compare_ids';
   static const String _keyDashboardCoachmarksDone = 'dashboard_coachmarks_v1_done';
+  static const String _keyRememberedPasswordCipher = 'remembered_password_cipher';
+  static const String _keyRememberMeDeviceId = 'remember_me_device_id';
+  static const String _keyJustLoggedOut = 'just_logged_out';
 
   static const int _maxRecentProductSearches = 12;
   static const int _maxLocalRecentProductViews = 24;
@@ -83,7 +86,9 @@ class Storage {
     return await _storage.read(key: _keyUserEmail);
   }
 
-  Future<void> clearTokens() async {
+  /// Clears access/refresh tokens and session-scoped user id. Does not remove
+  /// remembered login, biometric preference, device id, or encrypted credentials.
+  Future<void> clearAuthSession() async {
     await Future.wait([
       _storage.delete(key: _keyAccessToken),
       _storage.delete(key: _keyRefreshToken),
@@ -91,9 +96,12 @@ class Storage {
       _storage.delete(key: _keyExpiresIn),
       _storage.delete(key: _keyUserEmail),
       _storage.delete(key: _keyCustomerId),
-      _storage.delete(key: _keyRememberedEmail),
-      _storage.delete(key: _keyBiometricEnabled),
     ]);
+  }
+
+  /// Same as [clearAuthSession] (legacy name).
+  Future<void> clearTokens() async {
+    await clearAuthSession();
   }
 
   Future<bool> hasTokens() async {
@@ -225,6 +233,44 @@ class Storage {
 
   Future<void> clearRememberedEmail() async {
     await _storage.delete(key: _keyRememberedEmail);
+  }
+
+  /// Encrypted password blob (AES-GCM concatenation, base64). Bound device id stored separately.
+  Future<void> saveRememberedPasswordCipher({
+    required String cipherBase64,
+    required String boundDeviceId,
+  }) async {
+    await Future.wait([
+      _storage.write(key: _keyRememberedPasswordCipher, value: cipherBase64),
+      _storage.write(key: _keyRememberMeDeviceId, value: boundDeviceId),
+    ]);
+  }
+
+  Future<String?> getRememberedPasswordCipher() async {
+    return await _storage.read(key: _keyRememberedPasswordCipher);
+  }
+
+  Future<String?> getRememberMeBoundDeviceId() async {
+    return await _storage.read(key: _keyRememberMeDeviceId);
+  }
+
+  Future<void> clearRememberMeCredentials() async {
+    await Future.wait([
+      _storage.delete(key: _keyRememberedPasswordCipher),
+      _storage.delete(key: _keyRememberMeDeviceId),
+    ]);
+  }
+
+  Future<void> setJustLoggedOut(bool value) async {
+    if (value) {
+      await _storage.write(key: _keyJustLoggedOut, value: 'true');
+    } else {
+      await _storage.delete(key: _keyJustLoggedOut);
+    }
+  }
+
+  Future<bool> getJustLoggedOut() async {
+    return await _storage.read(key: _keyJustLoggedOut) == 'true';
   }
 
   /// Last text queries used on the product search screen (newest first).

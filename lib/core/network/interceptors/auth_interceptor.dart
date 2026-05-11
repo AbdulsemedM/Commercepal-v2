@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import 'package:commercepal/core/auth/token_refresh_biometric_gate.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -80,10 +81,16 @@ class AuthInterceptor extends Interceptor {
       try {
         await _refreshTokenIfNeeded();
         accessToken = await _storage.getAccessToken();
+      } on RefreshBiometricDenied {
+        await _storage.clearAuthSession();
+        if (await _canNotifyOnAuthFailure(options)) {
+          AuthService().notifySessionExpired();
+        }
+        accessToken = null;
       } on DioException catch (e) {
         // Expired/invalid refresh token: clear stale credentials and continue.
         if (e.response?.statusCode == 401) {
-          await _storage.clearTokens();
+          await _storage.clearAuthSession();
           if (await _canNotifyOnAuthFailure(options)) {
             AuthService().notifySessionExpired();
           }
@@ -126,7 +133,19 @@ class AuthInterceptor extends Interceptor {
         if (refreshToken == null || refreshToken.isEmpty) {
           _isRefreshing = false;
           _rejectPendingRequests(err);
-          await _storage.clearTokens();
+          await _storage.clearAuthSession();
+          if (await _canNotifyOnAuthFailure(requestOptions)) {
+            AuthService().notifySessionExpired();
+          }
+          return super.onError(err, handler);
+        }
+
+        final bool bioOk =
+            await TokenRefreshBiometricGate.instance.ensureUnlockedForRefresh();
+        if (!bioOk) {
+          _isRefreshing = false;
+          _rejectPendingRequests(err);
+          await _storage.clearAuthSession();
           if (await _canNotifyOnAuthFailure(requestOptions)) {
             AuthService().notifySessionExpired();
           }
@@ -165,7 +184,7 @@ class AuthInterceptor extends Interceptor {
         _rejectPendingRequests(err);
 
         // If refresh fails, clear tokens and notify UI softly.
-        await _storage.clearTokens();
+        await _storage.clearAuthSession();
         if (await _canNotifyOnAuthFailure(requestOptions)) {
           AuthService().notifySessionExpired();
         }
@@ -220,6 +239,12 @@ class AuthInterceptor extends Interceptor {
     final refreshToken = await _storage.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
       return;
+    }
+
+    final bool bioOk =
+        await TokenRefreshBiometricGate.instance.ensureUnlockedForRefresh();
+    if (!bioOk) {
+      throw const RefreshBiometricDenied();
     }
 
     _isRefreshing = true;

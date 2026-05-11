@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/remember_me_crypto.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/login/data/models/login_request.dart';
@@ -48,8 +49,20 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
       if (event.rememberMe) {
         await _storage.saveRememberedEmail(event.loginIdentifier);
+        final String? cipher = await RememberMeCrypto.encryptPassword(
+          _storage,
+          event.password,
+        );
+        if (cipher != null) {
+          final String deviceId = await _storage.getOrCreateDeviceId();
+          await _storage.saveRememberedPasswordCipher(
+            cipherBase64: cipher,
+            boundDeviceId: deviceId,
+          );
+        }
       } else {
         await _storage.clearRememberedEmail();
+        await _storage.clearRememberMeCredentials();
       }
 
       emit(

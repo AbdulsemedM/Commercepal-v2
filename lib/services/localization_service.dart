@@ -38,5 +38,14 @@ class LocalizationService {
     return _loaded[locale]?[key] ?? _loaded['en']?[key] ?? key;
   }
 
+  /// Resolved string without a [BuildContext] (e.g. background interceptors). Call
+  /// [ensureInitialized] first.
+  static String tForLanguage(String languageCode, String key) {
+    final String code = languageCode.toLowerCase();
+    final String resolved =
+        _supportedLocales.contains(code) ? code : 'en';
+    return _loaded[resolved]?[key] ?? _loaded['en']?[key] ?? key;
+  }
+
   static List<String> get supportedLocaleCodes => List.unmodifiable(_supportedLocales);
 }

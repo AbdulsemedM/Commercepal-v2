@@ -92,8 +92,9 @@ class AuthService extends ChangeNotifier {
       // This ensures user can logout even if offline
     }
 
-    // Clear local state regardless of API call result
-    await _storage.clearTokens();
+    // Clear session tokens only; remember-me and biometric preference persist.
+    await _storage.clearAuthSession();
+    await _storage.setJustLoggedOut(true);
     _isLoggedIn = false;
     _sessionExpired = false;
     _userName = null;

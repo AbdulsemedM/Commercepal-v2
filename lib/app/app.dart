@@ -8,6 +8,7 @@ import '../core/theme/theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/locale/fallback_material_localizations.dart';
+import '../core/auth/token_refresh_biometric_gate.dart';
 import '../features/cart/bloc/cart_bloc.dart';
 import 'router/app_router.dart';
 
@@ -18,7 +19,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final ThemeController _themeController = ThemeController();
   final LocaleController _localeController = LocaleController();
   late final CartBloc _cartBloc;
@@ -26,6 +27,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cartBloc = CartBloc()..add(CartLoadRequested());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _themeController.loadPersistedTheme();
@@ -34,8 +36,18 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _cartBloc.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      TokenRefreshBiometricGate.instance.onAppBackgrounded();
+    }
   }
 
   @override
