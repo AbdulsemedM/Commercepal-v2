@@ -51,8 +51,8 @@ android {
 
     defaultConfig {
         applicationId = "com.commercepal.commercepal"
-        // Security hardening baseline: Android 10+ (API 29)
-        minSdk = 29
+        // Android 7.0+ (API 24)
+        minSdk = 24
         targetSdk = 36
         versionCode = flutterVersionCode.toInt()
         versionName = flutterVersionName
