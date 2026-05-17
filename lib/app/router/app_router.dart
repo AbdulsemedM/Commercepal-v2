@@ -17,6 +17,7 @@ import '../../features/products/bloc/product_search_bloc.dart';
 import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
 import '../../features/profile/presentation/screen/refund_policy_screen.dart';
 import '../../features/profile/presentation/screen/edit_profile_screen.dart';
+import '../../features/profile/presentation/screen/account_deletion_request_screen.dart';
 import '../../features/profile/data/models/profile_data.dart';
 import '../../features/orders/presentation/screen/order_history_screen.dart';
 import '../../features/orders/presentation/screen/order_summary_screen.dart';
@@ -69,6 +70,7 @@ class AppRoutes {
   static const String faqs = '/faqs';
   static const String wishlist = '/wishlist';
   static const String productCompare = '/product-compare';
+  static const String accountDeletionRequest = '/account-deletion-request';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -340,6 +342,12 @@ final GoRouter appRouter = GoRouter(
       name: 'wishlist',
       builder: (BuildContext context, GoRouterState state) =>
           const WishlistScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.accountDeletionRequest,
+      name: 'accountDeletionRequest',
+      builder: (BuildContext context, GoRouterState state) =>
+          const AccountDeletionRequestScreen(),
     ),
   ],
 );

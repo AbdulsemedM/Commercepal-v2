@@ -619,6 +619,14 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        icon: Icons.person_off_outlined,
+        title: LocalizationService.t(context, 'profile.accountDeletionRequest'),
+        onTap: () {
+          context.push(AppRoutes.accountDeletionRequest);
+        },
+        isDestructive: true,
+      ),
+      _MenuItem(
         icon: Icons.logout_outlined,
         title: LocalizationService.t(context, 'profile.logOut'),
         onTap: () {

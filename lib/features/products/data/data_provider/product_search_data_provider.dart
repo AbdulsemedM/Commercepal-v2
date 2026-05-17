@@ -26,15 +26,39 @@ class ProductSearchDataProvider {
       );
 
       if (response.data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response from server',
+        AppLogger.w(
+          'Product search: response body was null; treating as empty results',
+        );
+        return ProductSearchResponse.empty(
+          currentPage: request.page,
+          size: request.size,
         );
       }
 
-      return ProductSearchResponse.fromJson(response.data!);
+      final Object? raw = response.data;
+      if (raw is! Map<String, dynamic>) {
+        AppLogger.w(
+          'Product search: unexpected response type ${raw.runtimeType}; treating as empty',
+        );
+        return ProductSearchResponse.empty(
+          currentPage: request.page,
+          size: request.size,
+        );
+      }
+
+      try {
+        return ProductSearchResponse.fromJson(raw);
+      } catch (e, stack) {
+        AppLogger.e(
+          'Product search: JSON parse failed; treating as empty',
+          error: e,
+          stack: stack,
+        );
+        return ProductSearchResponse.empty(
+          currentPage: request.page,
+          size: request.size,
+        );
+      }
     } on DioException catch (e) {
       AppLogger.e('Product search failed', error: e, stack: e.stackTrace);
       rethrow;

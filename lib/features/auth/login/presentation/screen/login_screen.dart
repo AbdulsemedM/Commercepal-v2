@@ -587,55 +587,61 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: Spacing.md),
-                        // Or separator
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Divider(
-                                color: scheme.outlineVariant,
-                                thickness: 1,
+                        if (PlatformUtils.shouldShowGoogleSignInButton) ...[
+                          const SizedBox(height: Spacing.md),
+                          // Or separator
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Divider(
+                                  color: scheme.outlineVariant,
+                                  thickness: 1,
+                                ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.md,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: Spacing.md,
+                                ),
+                                child: Text(
+                                  LocalizationService.t(
+                                    context,
+                                    'auth.login.or',
+                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: scheme.onSurfaceVariant),
+                                ),
                               ),
-                              child: Text(
-                                LocalizationService.t(context, 'auth.login.or'),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              Expanded(
+                                child: Divider(
+                                  color: scheme.outlineVariant,
+                                  thickness: 1,
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: scheme.outlineVariant,
-                                thickness: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Spacing.xl),
-                        // Social login buttons
-                        SocialLoginButton(
-                          type: SocialLoginType.google,
-                          onPressed: isLoading
-                              ? null
-                              : () {
-                                  context.read<LoginBloc>().add(
-                                    GoogleSignInRequested(
-                                      channel: PlatformUtils.getChannel(),
-                                    ),
-                                  );
-                                },
-                        ),
-                        // const SizedBox(height: Spacing.md),
-                        // SocialLoginButton(
-                        //   type: SocialLoginType.facebook,
-                        //   onPressed: () {
-                        //     // TODO: Handle Facebook login
-                        //   },
-                        // ),
+                            ],
+                          ),
+                          const SizedBox(height: Spacing.xl),
+                          SocialLoginButton(
+                            type: SocialLoginType.google,
+                            onPressed: isLoading
+                                ? null
+                                : () {
+                                    context.read<LoginBloc>().add(
+                                      GoogleSignInRequested(
+                                        channel: PlatformUtils.getChannel(),
+                                      ),
+                                    );
+                                  },
+                          ),
+                          // const SizedBox(height: Spacing.md),
+                          // SocialLoginButton(
+                          //   type: SocialLoginType.facebook,
+                          //   onPressed: () {
+                          //     // TODO: Handle Facebook login
+                          //   },
+                          // ),
+                        ],
                         const SizedBox(height: Spacing.xxl),
                         // Sign up link
                         SignUpLink(

@@ -1,9 +1,9 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
 import '../data/models/product.dart';
 import '../data/models/product_search_request.dart';
-// import '../data/models/product_search_response.dart';
 import '../data/repository/product_search_repository.dart';
 
 part 'product_search_event.dart';
@@ -17,6 +17,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     on<LoadMoreProducts>(_onLoadMoreProducts);
     on<ApplyFilters>(_onApplyFilters);
     on<ResetSearch>(_onResetSearch);
+    on<ClearSearchNotice>(_onClearSearchNotice);
   }
 
   final ProductSearchRepository _repository;
@@ -25,6 +26,43 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
   int _currentPage = 0;
   bool _hasMore = true;
   bool _loadMoreInProgress = false;
+
+  static bool _isUnauthorized(Object e) {
+    final s = e.toString();
+    return s.contains('401') || s.contains('Unauthorized');
+  }
+
+  static bool _isNoResultsHttp(Object e) {
+    if (e is! DioException) return false;
+    final int? code = e.response?.statusCode;
+    return code == 404 || code == 204;
+  }
+
+  static bool _isNetworkIssue(DioException e) {
+    return e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.cancel;
+  }
+
+  void _onClearSearchNotice(
+    ClearSearchNotice event,
+    Emitter<ProductSearchState> emit,
+  ) {
+    if (state is! ProductSearchLoaded) return;
+    final ProductSearchLoaded s = state as ProductSearchLoaded;
+    if (s.noticeKey == null) return;
+    emit(
+      ProductSearchLoaded(
+        products: s.products,
+        totalElements: s.totalElements,
+        totalPages: s.totalPages,
+        currentPage: s.currentPage,
+        hasMore: s.hasMore,
+      ),
+    );
+  }
 
   Future<void> _onSearchProducts(
     SearchProducts event,
@@ -56,19 +94,45 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Failed to search products. Please try again.';
-
-      if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : e.toString().contains('404') || e.toString().contains('Not Found')
-            ? 'No products found.'
-            : errorMessage;
+      if (_isUnauthorized(e)) {
+        emit(
+          ProductSearchError(
+            'Session expired. Please login again.',
+            localizationKey: 'checkout.sessionExpired',
+          ),
+        );
+        return;
       }
-
-      emit(ProductSearchError(errorMessage));
+      if (_isNoResultsHttp(e)) {
+        _allProducts = <Product>[];
+        _currentPage = 0;
+        _hasMore = false;
+        emit(
+          ProductSearchLoaded(
+            products: _allProducts,
+            totalElements: 0,
+            totalPages: 0,
+            currentPage: 0,
+            hasMore: false,
+          ),
+        );
+        return;
+      }
+      if (e is DioException && _isNetworkIssue(e)) {
+        emit(
+          ProductSearchError(
+            'Network error',
+            localizationKey: 'productSearch.errorNetwork',
+          ),
+        );
+        return;
+      }
+      emit(
+        ProductSearchError(
+          'Failed to search products. Please try again.',
+          localizationKey: 'productSearch.errorGeneric',
+        ),
+      );
     }
   }
 
@@ -80,7 +144,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
       return;
     }
 
-    final currentState = state;
+    final ProductSearchState currentState = state;
     if (currentState is! ProductSearchLoaded) {
       return;
     }
@@ -96,8 +160,9 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     );
 
     try {
-      final nextPage = _currentPage + 1;
-      final request = _currentRequest!.copyWith(page: nextPage);
+      final int nextPage = _currentPage + 1;
+      final ProductSearchRequest request =
+          _currentRequest!.copyWith(page: nextPage);
 
       final response = await _repository.searchProducts(request);
 
@@ -115,17 +180,16 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Failed to load more products. Please try again.';
-
-      if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
-      }
-
-      emit(ProductSearchError(errorMessage));
+      emit(
+        ProductSearchLoaded(
+          products: List<Product>.from(_allProducts),
+          totalElements: currentState.totalElements,
+          totalPages: currentState.totalPages,
+          currentPage: currentState.currentPage,
+          hasMore: _hasMore,
+          noticeKey: 'productSearch.loadMoreFailed',
+        ),
+      );
     } finally {
       _loadMoreInProgress = false;
     }
@@ -139,6 +203,10 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
       return;
     }
 
+    final ProductSearchLoaded? previousLoaded =
+        state is ProductSearchLoaded ? state as ProductSearchLoaded : null;
+    final ProductSearchRequest previousRequest = _currentRequest!;
+
     _loadMoreInProgress = false;
     emit(ProductSearchLoading());
 
@@ -147,19 +215,19 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
       _allProducts = [];
       _hasMore = true;
 
-      _currentRequest = _currentRequest!.copyWith(
+      _currentRequest = previousRequest.copyWith(
         page: 0,
-        categoryId: event.categoryId ?? _currentRequest!.categoryId,
-        provider: event.provider ?? _currentRequest!.provider,
-        orderBy: event.orderBy ?? _currentRequest!.orderBy,
-        brandId: event.brandId ?? _currentRequest!.brandId,
-        isTmall: event.isTmall ?? _currentRequest!.isTmall,
+        categoryId: event.categoryId ?? previousRequest.categoryId,
+        provider: event.provider ?? previousRequest.provider,
+        orderBy: event.orderBy ?? previousRequest.orderBy,
+        brandId: event.brandId ?? previousRequest.brandId,
+        isTmall: event.isTmall ?? previousRequest.isTmall,
         useOptimalFrameSize:
-            event.useOptimalFrameSize ?? _currentRequest!.useOptimalFrameSize,
-        maxVolume: event.maxVolume ?? _currentRequest!.maxVolume,
-        minVolume: event.minVolume ?? _currentRequest!.minVolume,
-        minPrice: event.minPrice ?? _currentRequest!.minPrice,
-        maxPrice: event.maxPrice ?? _currentRequest!.maxPrice,
+            event.useOptimalFrameSize ?? previousRequest.useOptimalFrameSize,
+        maxVolume: event.maxVolume ?? previousRequest.maxVolume,
+        minVolume: event.minVolume ?? previousRequest.minVolume,
+        minPrice: event.minPrice ?? previousRequest.minPrice,
+        maxPrice: event.maxPrice ?? previousRequest.maxPrice,
       );
 
       final response = await _repository.searchProducts(_currentRequest!);
@@ -178,17 +246,47 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Failed to apply filters. Please try again.';
-
-      if (e is Exception) {
-        errorMessage =
-            e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Session expired. Please login again.'
-            : errorMessage;
+      _currentRequest = previousRequest;
+      if (previousLoaded != null) {
+        _allProducts = List<Product>.from(previousLoaded.products);
+        _currentPage = previousLoaded.currentPage;
+        _hasMore = previousLoaded.hasMore;
+        emit(
+          ProductSearchLoaded(
+            products: _allProducts,
+            totalElements: previousLoaded.totalElements,
+            totalPages: previousLoaded.totalPages,
+            currentPage: previousLoaded.currentPage,
+            hasMore: previousLoaded.hasMore,
+            noticeKey: 'productSearch.applyFiltersFailed',
+          ),
+        );
+        return;
       }
-
-      emit(ProductSearchError(errorMessage));
+      if (_isUnauthorized(e)) {
+        emit(
+          ProductSearchError(
+            'Session expired. Please login again.',
+            localizationKey: 'checkout.sessionExpired',
+          ),
+        );
+        return;
+      }
+      if (e is DioException && _isNetworkIssue(e)) {
+        emit(
+          ProductSearchError(
+            'Network error',
+            localizationKey: 'productSearch.errorNetwork',
+          ),
+        );
+        return;
+      }
+      emit(
+        ProductSearchError(
+          'Failed to apply filters. Please try again.',
+          localizationKey: 'productSearch.errorApplyFilters',
+        ),
+      );
     }
   }
 

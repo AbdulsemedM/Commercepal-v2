@@ -38,3 +38,6 @@ final class ApplyFilters extends ProductSearchEvent {
 }
 
 final class ResetSearch extends ProductSearchEvent {}
+
+/// Clears [ProductSearchLoaded.noticeKey] after the UI has shown a SnackBar.
+final class ClearSearchNotice extends ProductSearchEvent {}

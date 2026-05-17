@@ -25,5 +25,13 @@ class PlatformUtils {
 
   /// Check if running on Web
   static bool get isWeb => kIsWeb;
+
+  /// Google Sign-In is omitted on Apple OS native builds; shown on Android and web.
+  static bool get shouldShowGoogleSignInButton {
+    if (kIsWeb) {
+      return true;
+    }
+    return !Platform.isIOS && !Platform.isMacOS;
+  }
 }
 

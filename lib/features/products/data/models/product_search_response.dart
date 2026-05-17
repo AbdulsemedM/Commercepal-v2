@@ -19,6 +19,19 @@ class ProductSearchResponse {
     required this.hasPrevious,
   });
 
+  /// Empty page (e.g. null body or unparseable payload treated as no results).
+  factory ProductSearchResponse.empty({int currentPage = 0, int size = 20}) {
+    return ProductSearchResponse(
+      products: <Product>[],
+      totalElements: 0,
+      totalPages: 0,
+      currentPage: currentPage,
+      size: size,
+      hasNext: false,
+      hasPrevious: false,
+    );
+  }
+
   factory ProductSearchResponse.fromJson(Map<String, dynamic> json) {
     // Handle nested structure: { data: { items: [...], pagination: {...} } }
     List<dynamic> content;

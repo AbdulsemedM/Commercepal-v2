@@ -318,59 +318,61 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: Spacing.md),
-                        // Or separator
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.md,
-                              ),
-                              child: Text(
-                                LocalizationService.t(
-                                  context,
-                                  'auth.signup.or',
+                        if (PlatformUtils.shouldShowGoogleSignInButton) ...[
+                          const SizedBox(height: Spacing.md),
+                          // Or separator
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.grey[300],
+                                  thickness: 1,
                                 ),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.grey[600]),
                               ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: Spacing.md,
+                                ),
+                                child: Text(
+                                  LocalizationService.t(
+                                    context,
+                                    'auth.signup.or',
+                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.grey[600]),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Spacing.xl),
-                        // Social signup buttons
-                        SocialSignupButton(
-                          type: SocialLoginType.google,
-                          onPressed: () {
-                            // TODO: Handle Google signup
-                          },
-                        ),
-                        // const SizedBox(height: Spacing.md),
-                        // SocialSignupButton(
-                        //   type: SocialLoginType.facebook,
-                        //   onPressed: () {
-                        //     // TODO: Handle Facebook signup
-                        //   },
-                        // ),
-                        // const SizedBox(height: Spacing.md),
-                        // SocialSignupButton(
-                        //   type: SocialLoginType.apple,
-                        //   onPressed: () {
-                        //     // TODO: Handle Apple signup
-                        //   },
-                        // ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.grey[300],
+                                  thickness: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: Spacing.xl),
+                          // Social signup buttons
+                          SocialSignupButton(
+                            type: SocialLoginType.google,
+                            onPressed: () {
+                              // TODO: Handle Google signup
+                            },
+                          ),
+                          // const SizedBox(height: Spacing.md),
+                          // SocialSignupButton(
+                          //   type: SocialLoginType.facebook,
+                          //   onPressed: () {
+                          //     // TODO: Handle Facebook signup
+                          //   },
+                          // ),
+                          // const SizedBox(height: Spacing.md),
+                          // SocialSignupButton(
+                          //   type: SocialLoginType.apple,
+                          //   onPressed: () {
+                          //     // TODO: Handle Apple signup
+                          //   },
+                          // ),
+                        ],
                         const SizedBox(height: Spacing.xxl),
                         // Login link
                         LoginLink(
