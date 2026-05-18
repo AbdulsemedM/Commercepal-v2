@@ -73,17 +73,27 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       );
     } catch (e) {
       String errorMessage = 'Login failed. Please try again.';
+      var isInvalidCredentials = false;
 
       if (e is Exception) {
-        // You can parse specific error messages from the exception here
-        errorMessage =
+        final bool unauthorized =
             e.toString().contains('401') ||
-                e.toString().contains('Unauthorized')
-            ? 'Invalid email or password'
-            : errorMessage;
+            e.toString().contains('Unauthorized');
+        if (unauthorized) {
+          isInvalidCredentials = true;
+          errorMessage = event.usedPhoneLogin
+              ? 'Invalid phone number or password'
+              : 'Invalid email or password';
+        }
       }
 
-      emit(LoginFailure(errorMessage));
+      emit(
+        LoginFailure(
+          errorMessage,
+          isInvalidCredentials: isInvalidCredentials,
+          usedPhoneLogin: event.usedPhoneLogin,
+        ),
+      );
     }
   }
 

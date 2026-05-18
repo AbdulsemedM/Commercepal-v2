@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
+import 'package:commercepal/core/utils/phone_utils.dart';
 import 'package:commercepal/core/auth/remember_me_crypto.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -25,8 +26,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  LoginMethod _loginMethod = LoginMethod.email;
+  String _completePhoneNumber = '';
   bool _rememberMe = false;
   final Storage _storage = Storage();
   final BiometricService _biometricService = BiometricService();
@@ -67,6 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() {
         _emailController.clear();
+        _phoneController.clear();
+        _completePhoneNumber = '';
         _passwordController.clear();
         _needsBiometricToRevealSavedLogin = true;
         _showUnlockSavedLoginButton = false;
@@ -87,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _needsBiometricToRevealSavedLogin = false;
       _showUnlockSavedLoginButton = false;
       if (email != null && email.isNotEmpty) {
-        _emailController.text = email;
+        _applySavedIdentifier(email);
       }
       if (password != null && password.isNotEmpty) {
         _passwordController.text = password;
@@ -96,6 +102,25 @@ class _LoginScreenState extends State<LoginScreen> {
         _rememberMe = true;
       }
     });
+  }
+
+  void _applySavedIdentifier(String identifier) {
+    if (PhoneUtils.looksLikePhone(identifier)) {
+      final String normalized = PhoneUtils.normalizeLoginIdentifier(identifier);
+      _loginMethod = LoginMethod.phone;
+      _completePhoneNumber = normalized;
+      if (normalized.startsWith('251') && normalized.length >= 12) {
+        _phoneController.text = normalized.substring(3);
+      } else {
+        _phoneController.text = identifier.replaceAll(RegExp(r'\D'), '');
+      }
+      _emailController.clear();
+    } else {
+      _loginMethod = LoginMethod.email;
+      _emailController.text = identifier;
+      _phoneController.clear();
+      _completePhoneNumber = '';
+    }
   }
 
   Future<void> _applyDecryptedSavedCredentials() async {
@@ -126,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() {
       if (email != null && email.isNotEmpty) {
-        _emailController.text = email;
+        _applySavedIdentifier(email);
       }
       _passwordController.text = password;
       _rememberMe = true;
@@ -222,14 +247,56 @@ class _LoginScreenState extends State<LoginScreen> {
           _rememberMe = false;
           _passwordController.clear();
           _emailController.clear();
+          _phoneController.clear();
+          _completePhoneNumber = '';
+          _loginMethod = LoginMethod.email;
         });
       }
     }
   }
 
+  String _resolveLoginIdentifier() {
+    if (_loginMethod == LoginMethod.email) {
+      return _emailController.text.trim();
+    }
+    final String raw = _completePhoneNumber.isNotEmpty
+        ? _completePhoneNumber
+        : _phoneController.text.trim();
+    return PhoneUtils.normalizeLoginIdentifier(raw);
+  }
+
+  void _submitLogin(BuildContext context) {
+    if (_formKey.currentState?.validate() != true) return;
+
+    final String loginIdentifier = _resolveLoginIdentifier();
+    if (_loginMethod == LoginMethod.phone &&
+        !PhoneUtils.isValidLoginIdentifier(loginIdentifier)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'auth.login.phoneInvalid'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    context.read<LoginBloc>().add(
+      LoginSubmitted(
+        loginIdentifier: loginIdentifier,
+        password: _passwordController.text,
+        channel: PlatformUtils.getChannel(),
+        rememberMe: _rememberMe,
+        usedPhoneLogin: _loginMethod == LoginMethod.phone,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -330,10 +397,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 });
               } else if (state is LoginFailure) {
-                // Show error message
+                String message = state.message;
+                if (state.isInvalidCredentials) {
+                  message = LocalizationService.t(
+                    context,
+                    state.usedPhoneLogin
+                        ? 'auth.login.invalidCredentialsPhone'
+                        : 'auth.login.invalidCredentialsEmail',
+                  );
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.message),
+                    content: Text(message),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -385,6 +460,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           LocalizationService.t(context, 'auth.login.subtitle'),
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                          const SizedBox(height: Spacing.lg),
+                        LoginMethodTabs(
+                          selected: _loginMethod,
+                          onChanged: (LoginMethod method) {
+                            setState(() {
+                              _loginMethod = method;
+                            });
+                          },
                         ),
                         const SizedBox(height: Spacing.lg),
                         if (_showBiometricLogin) ...[
@@ -471,8 +555,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: Spacing.lg),
                         ],
-                        // Email field
-                        EmailInputField(controller: _emailController),
+                        if (_loginMethod == LoginMethod.email)
+                          EmailInputField(controller: _emailController)
+                        else
+                          PhoneLoginInputField(
+                            controller: _phoneController,
+                            onCompleteNumberChanged: (String complete) {
+                              setState(() {
+                                _completePhoneNumber = complete;
+                              });
+                            },
+                          ),
                         const SizedBox(height: Spacing.md),
                         // Password field
                         PasswordInputField(controller: _passwordController),
@@ -530,20 +623,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: FilledButton(
                             onPressed: isLoading
                                 ? null
-                                : () {
-                                    if (_formKey.currentState?.validate() ??
-                                        false) {
-                                      context.read<LoginBloc>().add(
-                                        LoginSubmitted(
-                                          loginIdentifier: _emailController.text
-                                              .trim(),
-                                          password: _passwordController.text,
-                                          channel: PlatformUtils.getChannel(),
-                                          rememberMe: _rememberMe,
-                                        ),
-                                      );
-                                    }
-                                  },
+                                : () => _submitLogin(context),
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               shape: const StadiumBorder(),

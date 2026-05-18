@@ -16,6 +16,12 @@ final class LoginSuccess extends LoginState {
 
 final class LoginFailure extends LoginState {
   final String message;
+  final bool isInvalidCredentials;
+  final bool usedPhoneLogin;
 
-  LoginFailure(this.message);
+  LoginFailure(
+    this.message, {
+    this.isInvalidCredentials = false,
+    this.usedPhoneLogin = false,
+  });
 }
