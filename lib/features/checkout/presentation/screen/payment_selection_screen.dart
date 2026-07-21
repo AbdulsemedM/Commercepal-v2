@@ -138,6 +138,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     return null;
   }
 
+  /// Flat list of every selectable method across categories (for the grid).
+  List<_SelectablePaymentMethod> get _allSelectableMethods => [
+        for (final category in _paymentMethodCategories) ...category.methods,
+      ];
+
   Future<void> _loadPaymentMethods() async {
     setState(() {
       _isLoadingPaymentMethods = true;
@@ -150,8 +155,40 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       // Build payment methods structure grouped by categories, filtered by cart currency
       final List<_PaymentMethodCategory> categories = [];
 
+      // Item codes already exposed through nested items (e.g. PesaPal's
+      // PESAPAL_CARD / PESAPAL_MPESA) so duplicate top-level entries are skipped.
+      final Set<String> nestedItemCodes = {
+        for (final method in response.data)
+          for (final item in method.paymentMethodItemResponses) item.itemCode,
+      };
+
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> categoryMethods = [];
+
+        // Some methods (Telebirr, CBE Birr, QPay, Amole, …) come with no inner
+        // items; the top-level method itself is the selectable option.
+        if (paymentMethod.paymentMethodItemResponses.isEmpty) {
+          if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          categories.add(
+            _PaymentMethodCategory(
+              categoryName: paymentMethod.displayName,
+              categoryCode: paymentMethod.code,
+              categoryIconUrl: paymentMethod.iconUrl,
+              methods: [
+                _SelectablePaymentMethod(
+                  id: paymentMethod.code,
+                  displayName: paymentMethod.displayName,
+                  iconUrl: paymentMethod.iconUrl,
+                  providerCode: paymentMethod.code,
+                  variantCode: paymentMethod.code,
+                  currency: _cartCurrency ?? '',
+                  hasVariants: false,
+                ),
+              ],
+            ),
+          );
+          continue;
+        }
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
           if (item.hasVariants) {
@@ -730,79 +767,37 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                       ? Center(
                           child: Text(LocalizationService.t(context, 'checkout.noPaymentMethodsAvailable')),
                         )
-                      : ListView.builder(
+                      : GridView.builder(
                           padding: const EdgeInsets.all(Spacing.md),
-                          itemCount: _paymentMethodCategories.length,
-                          itemBuilder: (context, categoryIndex) {
-                            final category = _paymentMethodCategories[categoryIndex];
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Category header
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: Spacing.sm,
-                                    top: categoryIndex > 0 ? Spacing.md : 0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      if (category.categoryIconUrl.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(right: Spacing.sm),
-                                          child: Image.network(
-                                            category.categoryIconUrl,
-                                            width: 24,
-                                            height: 24,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const SizedBox.shrink();
-                                            },
-                                          ),
-                                        ),
-                                      Text(
-                                        category.categoryName,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: scheme.onSurface,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Payment methods grid for this category
-                                GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        crossAxisSpacing: Spacing.sm,
-                                        mainAxisSpacing: Spacing.sm,
-                                        childAspectRatio: 1.0,
-                                      ),
-                                  itemCount: category.methods.length,
-                                  itemBuilder: (context, index) {
-                                    final method = category.methods[index];
-                                    return PaymentMethodCard(
-                                      paymentMethodId: method.id,
-                                      paymentMethodName: method.displayName,
-                                      iconUrl: method.iconUrl,
-                                      description: method.currency,
-                                      isSelected: _selectedPaymentMethodId == method.id,
-                                      onTap: () {
-                                        if (method.hasVariants) {
-                                          _showVariantSelectionDialog(context, method);
-                                        } else {
-                                          setState(() {
-                                            _selectedPaymentMethodId = method.id;
-                                            _selectedVariantCode = null;
-                                          });
-                                        }
-                                      },
-                                    );
-                                  },
-                                ),
-                              ],
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: Spacing.sm,
+                                mainAxisSpacing: Spacing.sm,
+                                childAspectRatio: 0.85,
+                              ),
+                          itemCount: _allSelectableMethods.length,
+                          itemBuilder: (context, index) {
+                            final method = _allSelectableMethods[index];
+                            return PaymentMethodCard(
+                              paymentMethodId: method.id,
+                              paymentMethodName: method.displayName,
+                              iconUrl: method.iconUrl,
+                              isSelected:
+                                  _selectedPaymentMethodId == method.id,
+                              onTap: () {
+                                if (method.hasVariants) {
+                                  _showVariantSelectionDialog(
+                                    context,
+                                    method,
+                                  );
+                                } else {
+                                  setState(() {
+                                    _selectedPaymentMethodId = method.id;
+                                    _selectedVariantCode = null;
+                                  });
+                                }
+                              },
                             );
                           },
                         ),

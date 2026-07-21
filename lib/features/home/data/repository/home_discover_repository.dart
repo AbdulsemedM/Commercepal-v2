@@ -7,6 +7,9 @@ import 'package:commercepal/features/products/data/models/product_search_request
 import 'package:commercepal/features/products/data/repository/product_search_repository.dart';
 
 /// Parallel product search for home discover rows + JSON cache (SWR).
+///
+/// Multi-query sections follow commercepal.com: fetch each query in parallel,
+/// dedupe by product id, stop once [pageSize] unique items are collected.
 class HomeDiscoverRepository {
   HomeDiscoverRepository({
     ProductSearchRepository? productSearchRepository,
@@ -63,20 +66,67 @@ class HomeDiscoverRepository {
   Future<Map<String, List<Product>>> fetchFresh() async {
     final futures = kHomeDiscoverSections.map((config) async {
       try {
-        final response = await _productSearchRepository.searchProducts(
-          ProductSearchRequest(
-            query: config.searchQuery,
-            page: 0,
-            size: _pageSize,
-          ),
-        );
-        return MapEntry(config.id, response.products);
+        final products = await _fetchSection(config);
+        return MapEntry(config.id, products);
       } catch (_) {
         return MapEntry(config.id, <Product>[]);
       }
     });
     final entries = await Future.wait(futures);
     return Map.fromEntries(entries);
+  }
+
+  Future<List<Product>> _fetchSection(HomeDiscoverSectionConfig config) async {
+    final queries = config.allQueries;
+    if (queries.length == 1) {
+      return _search(queries.first, _pageSize);
+    }
+
+    // Mirror web merge: pull a slice from each query in parallel, dedupe by id.
+    final perQuery = (_pageSize / queries.length).ceil().clamp(4, _pageSize);
+    final results = await Future.wait(
+      queries.map((q) => _search(q, perQuery)),
+    );
+
+    final seen = <String>{};
+    final merged = <Product>[];
+    for (final batch in results) {
+      for (final product in batch) {
+        if (!seen.add(product.id)) continue;
+        merged.add(product);
+        if (merged.length >= _pageSize) return merged;
+      }
+    }
+
+    // Top up from remaining queries if still short (same as web fallback pass).
+    if (merged.length < _pageSize) {
+      for (final q in queries) {
+        if (merged.length >= _pageSize) break;
+        final more = await _search(q, _pageSize - merged.length);
+        for (final product in more) {
+          if (!seen.add(product.id)) continue;
+          merged.add(product);
+          if (merged.length >= _pageSize) break;
+        }
+      }
+    }
+
+    return merged;
+  }
+
+  Future<List<Product>> _search(String query, int size) async {
+    try {
+      final response = await _productSearchRepository.searchProducts(
+        ProductSearchRequest(
+          query: query,
+          page: 0,
+          size: size,
+        ),
+      );
+      return response.products;
+    } catch (_) {
+      return <Product>[];
+    }
   }
 }
 

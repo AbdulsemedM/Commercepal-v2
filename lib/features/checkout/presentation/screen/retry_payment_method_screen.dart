@@ -101,8 +101,38 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       final response = await _paymentMethodsRepository.getPaymentMethods();
       final List<_PaymentMethodCategory> categories = [];
 
+      // Item codes already exposed through nested items, so duplicate
+      // top-level entries (e.g. PESAPAL_CARD) are skipped.
+      final Set<String> nestedItemCodes = {
+        for (final method in response.data)
+          for (final item in method.paymentMethodItemResponses) item.itemCode,
+      };
+
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> methods = [];
+
+        // Some methods (Telebirr, CBE Birr, QPay, Amole, …) come with no inner
+        // items; the top-level method itself is the selectable option.
+        if (paymentMethod.paymentMethodItemResponses.isEmpty) {
+          if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          categories.add(
+            _PaymentMethodCategory(
+              categoryName: paymentMethod.displayName,
+              categoryIconUrl: paymentMethod.iconUrl,
+              methods: [
+                _SelectablePaymentMethod(
+                  id: paymentMethod.code,
+                  displayName: paymentMethod.displayName,
+                  iconUrl: paymentMethod.iconUrl,
+                  variantCode: paymentMethod.code,
+                  currency: widget.currency,
+                  hasVariants: false,
+                ),
+              ],
+            ),
+          );
+          continue;
+        }
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
           if (item.hasVariants) {
@@ -439,6 +469,10 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     return null;
   }
 
+  List<_SelectablePaymentMethod> get _allSelectableMethods => [
+        for (final category in _categories) ...category.methods,
+      ];
+
   String? _getSelectedVariantDisplayName() {
     final v = _getSelectedVariant();
     return v?.displayName;
@@ -521,71 +555,60 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
               : Column(
                   children: [
                     Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(Spacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            LocalizationService.t(context, 'checkout.selectPaymentMethodToRetry'),
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: Colors.black54,
-                                ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              Spacing.md,
+                              Spacing.md,
+                              Spacing.md,
+                              Spacing.sm,
+                            ),
+                            child: Text(
+                              LocalizationService.t(
+                                context,
+                                'checkout.selectPaymentMethodToRetry',
+                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(color: Colors.black54),
+                            ),
                           ),
-                          const SizedBox(height: Spacing.md),
-                          ..._categories.map((category) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: Spacing.xs,
-                                    top: Spacing.sm,
-                                  ),
-                                  child: Text(
-                                    category.categoryName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ),
-                                GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: Spacing.sm,
-                                    mainAxisSpacing: Spacing.sm,
-                                    childAspectRatio: 1.0,
-                                  ),
-                                  itemCount: category.methods.length,
-                                  itemBuilder: (context, index) {
-                                    final method = category.methods[index];
-                                    return PaymentMethodCard(
-                                      paymentMethodId: method.id,
-                                      paymentMethodName: method.displayName,
-                                      iconUrl: method.iconUrl,
-                                      description: method.currency,
-                                      isSelected:
-                                          _selectedPaymentMethodId == method.id,
-                                      onTap: () {
-                                        if (method.hasVariants) {
-                                          _showVariantDialog(method);
-                                        } else {
-                                          setState(() {
-                                            _selectedPaymentMethodId = method.id;
-                                            _selectedVariantCode = null;
-                                          });
-                                        }
-                                      },
-                                    );
+                          Expanded(
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(Spacing.md),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: Spacing.sm,
+                                mainAxisSpacing: Spacing.sm,
+                                childAspectRatio: 0.85,
+                              ),
+                              itemCount: _allSelectableMethods.length,
+                              itemBuilder: (context, index) {
+                                final method = _allSelectableMethods[index];
+                                return PaymentMethodCard(
+                                  paymentMethodId: method.id,
+                                  paymentMethodName: method.displayName,
+                                  iconUrl: method.iconUrl,
+                                  isSelected:
+                                      _selectedPaymentMethodId == method.id,
+                                  onTap: () {
+                                    if (method.hasVariants) {
+                                      _showVariantDialog(method);
+                                    } else {
+                                      setState(() {
+                                        _selectedPaymentMethodId = method.id;
+                                        _selectedVariantCode = null;
+                                      });
+                                    }
                                   },
-                                ),
-                              ],
-                            );
-                          }),
+                                );
+                              },
+                            ),
+                          ),
                         ],
                       ),
                     ),
