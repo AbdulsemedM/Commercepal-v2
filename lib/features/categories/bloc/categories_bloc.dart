@@ -10,8 +10,8 @@ part 'categories_state.dart';
 
 class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
   CategoriesBloc({CategoriesRepository? repository})
-    : _repository = repository ?? CategoriesRepository(),
-      super(CategoriesInitial()) {
+      : _repository = repository ?? CategoriesRepository(),
+        super(CategoriesInitial()) {
     on<FetchCategories>(_onFetchCategories);
   }
 
@@ -40,6 +40,14 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i].id != b[i].id || a[i].name != b[i].name) return false;
+      final aSubs = a[i].subCategories;
+      final bSubs = b[i].subCategories;
+      if (aSubs.length != bSubs.length) return false;
+      for (var j = 0; j < aSubs.length; j++) {
+        if (aSubs[j].name != bSubs[j].name || aSubs[j].slug != bSubs[j].slug) {
+          return false;
+        }
+      }
     }
     return true;
   }
@@ -75,7 +83,8 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
 
       String errorMessage = 'Failed to fetch categories. Please try again.';
       if (e is Exception) {
-        if (e.toString().contains('404') || e.toString().contains('Not Found')) {
+        if (e.toString().contains('404') ||
+            e.toString().contains('Not Found')) {
           errorMessage = 'No categories found.';
         }
       }
