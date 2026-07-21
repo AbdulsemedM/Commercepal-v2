@@ -13,7 +13,7 @@ import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
 import '../widgets/categories_section.dart';
-import '../widgets/deal_of_day_section.dart';
+// import '../widgets/deal_of_day_section.dart';
 import '../widgets/home_discover_section.dart';
 import '../widgets/recently_viewed_section.dart';
 import '../widgets/trust_badges_strip.dart';
@@ -93,8 +93,8 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: Spacing.lg),
                 const CategoriesSection(),
                 const SizedBox(height: Spacing.lg),
-                const DealOfDaySection(),
-                const SizedBox(height: Spacing.lg),
+                // const DealOfDaySection(),
+                // const SizedBox(height: Spacing.lg),
                 const HomeDiscoverSection(),
                 const SizedBox(height: Spacing.lg),
                 const RecentlyViewedSection(),

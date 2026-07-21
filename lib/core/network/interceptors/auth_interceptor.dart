@@ -73,6 +73,10 @@ class AuthInterceptor extends Interceptor {
       return super.onRequest(options, handler);
     }
 
+    // Stable per-install session id so the backend can track guest carts
+    // (required when unauthenticated: "Send X-Session-Id header or authenticate").
+    options.headers['X-Session-Id'] = await _storage.getOrCreateDeviceId();
+
     var accessToken = await _storage.getAccessToken();
     final tokenType = await _storage.getTokenType() ?? 'Bearer';
 

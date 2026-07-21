@@ -18,7 +18,7 @@ const int _kProductsPerRow = 5;
 const int _kMaxRows = 4;
 const int _kMaxProductsPerSection = _kProductsPerRow * _kMaxRows;
 const double _kCardWidth = 150;
-const double _kRowHeight = 320;
+const double _kRowHeight = 330;
 
 /// Vertical inset inside each row so card shadows are not clipped by the
 /// row's scroll viewport (prevents hard shadow cut-off between rows).

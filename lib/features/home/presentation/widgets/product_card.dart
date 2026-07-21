@@ -131,8 +131,6 @@ class _ProductCardState extends State<ProductCard> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        // Horizontal lists give a tight height: fill it and pin the button to
-        // the bottom so every card in a row has an identical outline.
         final bool bounded =
             widget.fillCell || constraints.hasBoundedHeight;
         return _buildCard(context, scheme, isDark, bounded);
@@ -146,101 +144,103 @@ class _ProductCardState extends State<ProductCard> {
     bool isDark,
     bool bounded,
   ) {
-    final Widget imageSection = _buildImageSection(context, scheme);
+    // Compact metrics when height is constrained (home rows / grid cells).
+    final bool compact = bounded;
+    final double pad = compact ? Spacing.xs : Spacing.sm;
+    final double titleSize = compact ? 11 : 13;
+    final double priceSize = compact ? 13 : 15;
+    final double originalSize = compact ? 9 : 11;
+    final double buttonHeight = compact ? 28 : 32;
+    final double buttonFont = compact ? 9 : 11;
 
-    final Widget detailsSection = Padding(
-      padding: EdgeInsets.fromLTRB(
-        widget.fillCell ? Spacing.xs : Spacing.sm,
-        widget.fillCell ? Spacing.xs : Spacing.sm,
-        widget.fillCell ? Spacing.xs : Spacing.sm,
-        widget.fillCell ? 4 : Spacing.sm,
-      ),
+    final Widget imageSection = _buildImageSection(
+      context,
+      scheme,
+      expand: compact,
+    );
+
+    final Widget textBlock = InkWell(
+      onTap: () => _openProductDetail(context),
+      borderRadius: BorderRadius.circular(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          InkWell(
-            onTap: () => _openProductDetail(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Text(
+            widget.description,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isDark ? scheme.onSurface : AppColors.navy,
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w500,
+                  height: 1.15,
+                ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          if (widget.rating != null && widget.rating! > 0) ...[
+            Row(
               children: <Widget>[
-                Text(
-                  widget.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isDark ? scheme.onSurface : AppColors.navy,
-                        fontSize: widget.fillCell ? 11 : 13,
-                        fontWeight: FontWeight.w500,
-                        height: 1.2,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Icon(
+                  Icons.star,
+                  color: AppColors.secondary,
+                  size: compact ? 11 : 14,
                 ),
-                SizedBox(height: widget.fillCell ? 2 : 4),
-                if (widget.rating != null && widget.rating! > 0) ...[
-                  Row(
-                    children: <Widget>[
-                      Icon(
-                        Icons.star,
-                        color: AppColors.secondary,
-                        size: widget.fillCell ? 11 : 14,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        widget.rating!.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: widget.fillCell ? 10 : 12,
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (widget.reviewCount != null) ...[
-                        const SizedBox(width: 2),
-                        Flexible(
-                          child: Text(
-                            '(${widget.reviewCount})',
-                            style: TextStyle(
-                              fontSize: widget.fillCell ? 9 : 11,
-                              color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
+                const SizedBox(width: 2),
+                Text(
+                  widget.rating!.toStringAsFixed(1),
+                  style: TextStyle(
+                    fontSize: compact ? 10 : 12,
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
                   ),
-                  SizedBox(height: widget.fillCell ? 2 : Spacing.xs),
-                ],
-                Text(
-                  widget.price,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: widget.fillCell ? 12 : 15,
-                      ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
-                if (widget.originalPrice != null) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    widget.originalPrice!,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: widget.fillCell ? 9 : 11,
-                      decoration: TextDecoration.lineThrough,
+                if (widget.reviewCount != null) ...[
+                  const SizedBox(width: 2),
+                  Flexible(
+                    child: Text(
+                      '(${widget.reviewCount})',
+                      style: TextStyle(
+                        fontSize: compact ? 9 : 11,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
                 ],
               ],
             ),
+            const SizedBox(height: 2),
+          ],
+          Text(
+            widget.price,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: priceSize,
+                  height: 1.15,
+                ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
+          if (widget.originalPrice != null) ...[
+            const SizedBox(height: 1),
+            Text(
+              widget.originalPrice!,
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontSize: originalSize,
+                height: 1.1,
+                decoration: TextDecoration.lineThrough,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
           if (widget.showProgressBar &&
               widget.sold != null &&
               widget.inStock != null) ...[
-            const SizedBox(height: Spacing.xs),
+            const SizedBox(height: 4),
             Text(
               'Sold: ${widget.sold} In Stock: ${widget.inStock}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -248,7 +248,7 @@ class _ProductCardState extends State<ProductCard> {
                     fontSize: 10,
                   ),
             ),
-            const SizedBox(height: Spacing.xs),
+            const SizedBox(height: 4),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
@@ -262,49 +262,81 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
           ],
-          if (_canAddToCart) ...[
-            if (bounded)
-              const Spacer()
-            else
-              SizedBox(height: widget.fillCell ? 4 : Spacing.xs),
-            SizedBox(
-              width: double.infinity,
-              height: widget.fillCell ? 28 : 32,
-              child: FilledButton(
-                onPressed: _isAdding ? null : _handleAddToCart,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: AppColors.onSecondary,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isAdding
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.onSecondary.withValues(alpha: 0.8),
-                        ),
-                      )
-                    : Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: widget.fillCell ? 9 : 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-              ),
-            ),
-          ],
         ],
       ),
+    );
+
+    final Widget? addButton = _canAddToCart
+        ? SizedBox(
+            width: double.infinity,
+            height: buttonHeight,
+            child: FilledButton(
+              onPressed: _isAdding ? null : _handleAddToCart,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.onSecondary,
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: _isAdding
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.onSecondary.withValues(alpha: 0.8),
+                      ),
+                    )
+                  : Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: buttonFont,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+            ),
+          )
+        : null;
+
+    final Widget detailsSection = Padding(
+      padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
+      child: compact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Shrink/clip text if space is tight; button stays pinned.
+                Flexible(
+                  child: ClipRect(
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: textBlock,
+                    ),
+                  ),
+                ),
+                if (addButton != null) ...[
+                  const SizedBox(height: 4),
+                  addButton,
+                ],
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                textBlock,
+                if (addButton != null) ...[
+                  const SizedBox(height: Spacing.xs),
+                  addButton,
+                ],
+              ],
+            ),
     );
 
     return Container(
@@ -313,7 +345,7 @@ class _ProductCardState extends State<ProductCard> {
         shadowColor: scheme.shadow,
       ),
       clipBehavior: Clip.antiAlias,
-      child: widget.fillCell
+      child: compact
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
@@ -321,39 +353,35 @@ class _ProductCardState extends State<ProductCard> {
                 Expanded(flex: 48, child: detailsSection),
               ],
             )
-          : bounded
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    imageSection,
-                    Expanded(child: detailsSection),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    imageSection,
-                    detailsSection,
-                  ],
-                ),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                imageSection,
+                detailsSection,
+              ],
+            ),
     );
   }
 
-  Widget _buildImageSection(BuildContext context, ColorScheme scheme) {
-    final double fixedHeight = widget.fillCell ? double.infinity : 150;
+  Widget _buildImageSection(
+    BuildContext context,
+    ColorScheme scheme, {
+    required bool expand,
+  }) {
+    final double fixedHeight = 150;
 
     return InkWell(
       onTap: () => _openProductDetail(context),
       child: Stack(
-        fit: widget.fillCell ? StackFit.expand : StackFit.loose,
+        fit: expand ? StackFit.expand : StackFit.loose,
         children: <Widget>[
           Container(
-            height: widget.fillCell ? null : fixedHeight,
+            height: expand ? null : fixedHeight,
             width: double.infinity,
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: widget.fillCell
+              borderRadius: expand
                   ? null
                   : const BorderRadius.only(
                       topLeft: Radius.circular(AppDecorations.radiusMd),
@@ -365,7 +393,7 @@ class _ProductCardState extends State<ProductCard> {
                     widget.imageUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    height: widget.fillCell ? double.infinity : fixedHeight,
+                    height: expand ? double.infinity : fixedHeight,
                     cacheWidth: (MediaQuery.sizeOf(context).width *
                             MediaQuery.devicePixelRatioOf(context) /
                             2)
@@ -414,7 +442,7 @@ class _ProductCardState extends State<ProductCard> {
                   '-${widget.discountPercentage}%',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: widget.fillCell ? 8 : 10,
+                    fontSize: expand ? 8 : 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -433,7 +461,7 @@ class _ProductCardState extends State<ProductCard> {
         child: Icon(
           Icons.image,
           color: scheme.onSurfaceVariant,
-          size: widget.fillCell ? 28 : 40,
+          size: 28,
         ),
       ),
     );
