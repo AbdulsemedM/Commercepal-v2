@@ -50,6 +50,6 @@ const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
   HomeDiscoverSectionConfig(
     id: 'audio',
     title: 'Audio',
-    searchQuery: 'headphones speaker audio',
+    searchQuery: 'earpods and headsets',
   ),
 ];

@@ -75,7 +75,10 @@ class RecentlyViewedSection extends StatelessWidget {
       height: 320,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: 8,
+        ),
         itemCount: 3,
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
         itemBuilder: (context, index) {
@@ -131,7 +134,11 @@ class RecentlyViewedSection extends StatelessWidget {
       height: 320,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        // Vertical inset keeps card shadows inside the scroll viewport.
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: 8,
+        ),
         itemCount: products.length,
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
         itemBuilder: (context, index) {

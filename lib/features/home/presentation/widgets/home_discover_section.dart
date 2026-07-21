@@ -18,7 +18,11 @@ const int _kProductsPerRow = 5;
 const int _kMaxRows = 4;
 const int _kMaxProductsPerSection = _kProductsPerRow * _kMaxRows;
 const double _kCardWidth = 150;
-const double _kRowHeight = 290;
+const double _kRowHeight = 320;
+
+/// Vertical inset inside each row so card shadows are not clipped by the
+/// row's scroll viewport (prevents hard shadow cut-off between rows).
+const double _kRowVerticalInset = 8;
 
 List<List<Product>> _chunkProducts(List<Product> products) {
   final int capped = products.length.clamp(0, _kMaxProductsPerSection);
@@ -142,10 +146,8 @@ class _DiscoverCategoryBlock extends StatelessWidget {
             ),
           )
         else
-          for (var r = 0; r < rows.length; r++) ...[
-            if (r > 0) const SizedBox(height: Spacing.sm),
+          for (var r = 0; r < rows.length; r++)
             _DiscoverProductRow(products: rows[r]),
-          ],
       ],
     );
   }
@@ -162,7 +164,10 @@ class _DiscoverProductRow extends StatelessWidget {
       height: _kRowHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: _kRowVerticalInset,
+        ),
         itemCount: products.length,
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
         itemBuilder: (BuildContext context, int index) {
@@ -215,13 +220,15 @@ class _DiscoverLoading extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Spacing.sm),
-          for (var row = 0; row < _kMaxRows; row++) ...[
-            if (row > 0) const SizedBox(height: Spacing.sm),
+          for (var row = 0; row < 2; row++)
             SizedBox(
               height: _kRowHeight,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.md,
+                  vertical: _kRowVerticalInset,
+                ),
                 itemCount: _kProductsPerRow,
                 separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
                 itemBuilder: (_, __) => Container(
@@ -233,7 +240,6 @@ class _DiscoverLoading extends StatelessWidget {
                 ),
               ),
             ),
-          ],
         ],
       ],
     );

@@ -129,6 +129,23 @@ class _ProductCardState extends State<ProductCard> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Horizontal lists give a tight height: fill it and pin the button to
+        // the bottom so every card in a row has an identical outline.
+        final bool bounded =
+            widget.fillCell || constraints.hasBoundedHeight;
+        return _buildCard(context, scheme, isDark, bounded);
+      },
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    ColorScheme scheme,
+    bool isDark,
+    bool bounded,
+  ) {
     final Widget imageSection = _buildImageSection(context, scheme);
 
     final Widget detailsSection = Padding(
@@ -246,7 +263,10 @@ class _ProductCardState extends State<ProductCard> {
             ),
           ],
           if (_canAddToCart) ...[
-            SizedBox(height: widget.fillCell ? 4 : Spacing.xs),
+            if (bounded)
+              const Spacer()
+            else
+              SizedBox(height: widget.fillCell ? 4 : Spacing.xs),
             SizedBox(
               width: double.infinity,
               height: widget.fillCell ? 28 : 32,
@@ -301,14 +321,22 @@ class _ProductCardState extends State<ProductCard> {
                 Expanded(flex: 48, child: detailsSection),
               ],
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                imageSection,
-                detailsSection,
-              ],
-            ),
+          : bounded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    imageSection,
+                    Expanded(child: detailsSection),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    imageSection,
+                    detailsSection,
+                  ],
+                ),
     );
   }
 
