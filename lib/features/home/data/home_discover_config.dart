@@ -16,14 +16,19 @@ class HomeDiscoverSectionConfig {
 /// Alibaba wholesale rows that omit those fields.
 const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
   HomeDiscoverSectionConfig(
+    id: 'todays_deals',
+    title: "Today's Deals",
+    searchQuery: 'phone sale',
+  ),
+  HomeDiscoverSectionConfig(
     id: 'smart_phones',
     title: 'Smart phones',
-    searchQuery: 'global firmware phone',
+    searchQuery: 'phones sale phone case',
   ),
   HomeDiscoverSectionConfig(
     id: 'watches',
     title: 'Watches',
-    searchQuery: 'wrist watch',
+    searchQuery: 'smart watch discount',
   ),
   HomeDiscoverSectionConfig(
     id: 'cosmetics',
@@ -38,7 +43,7 @@ const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
   HomeDiscoverSectionConfig(
     id: 'womens_fashion',
     title: "Women's Fashion",
-    searchQuery: 'women dress clothing',
+    searchQuery: 'women dress deal',
   ),
   HomeDiscoverSectionConfig(
     id: 'abayas',
@@ -51,8 +56,13 @@ const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
     searchQuery: 'mens fashion',
   ),
   HomeDiscoverSectionConfig(
+    id: 'shoes',
+    title: 'Shoes',
+    searchQuery: 'shoes sneakers',
+  ),
+  HomeDiscoverSectionConfig(
     id: 'audio',
     title: 'Audio',
-    searchQuery: 'earbuds',
+    searchQuery: 'bluetooth earbuds offer',
   ),
 ];

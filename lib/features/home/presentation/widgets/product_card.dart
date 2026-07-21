@@ -175,8 +175,8 @@ class _ProductCardState extends State<ProductCard> {
       ),
     );
 
-    // Web-style price row: discounted price with the crossed-out original
-    // beside it, then the star rating with review count underneath.
+    // Discounted price stacked above the crossed-out original, then the
+    // star rating with review count underneath.
     final Widget priceSection = InkWell(
       onTap: () => _openProductDetail(context),
       borderRadius: BorderRadius.circular(8),
@@ -184,29 +184,21 @@ class _ProductCardState extends State<ProductCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: <Widget>[
-              Flexible(child: _buildPriceText(context, isDark, priceSize)),
-              if (widget.originalPrice != null) ...[
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    widget.originalPrice!,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: originalSize,
-                      height: 1.1,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ],
-          ),
+          _buildPriceText(context, isDark, priceSize),
+          if (widget.originalPrice != null) ...[
+            const SizedBox(height: 1),
+            Text(
+              widget.originalPrice!,
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontSize: originalSize,
+                height: 1.1,
+                decoration: TextDecoration.lineThrough,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
           if ((widget.rating != null && widget.rating! > 0) ||
               (widget.reviewCount != null && widget.reviewCount! > 0)) ...[
             const SizedBox(height: 2),

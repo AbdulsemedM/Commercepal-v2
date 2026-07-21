@@ -18,7 +18,7 @@ class HomeDiscoverRepository {
   final ProductSearchRepository _productSearchRepository;
   final Storage _storage;
 
-  static const int _pageSize = 32;
+  static const int _pageSize = 20;
 
   Future<HomeDiscoverCachePayload?> getCachedPayload() async {
     final raw = await _storage.getCachedHomeDiscover();

@@ -1,140 +1,128 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/update/app_update_remote_config.dart';
+import 'package:commercepal/core/theme/colors.dart';
 
-/// Hero banner: pink → orange → gold gradient card with a marketplace
-/// chip, headline, subtitle and an "Explore deals" call to action.
-class BannerSection extends StatelessWidget {
+/// Auto-advancing carousel of branded promo banners (matches the web).
+class BannerSection extends StatefulWidget {
   const BannerSection({super.key});
 
-  static const LinearGradient _heroGradient = LinearGradient(
-    begin: Alignment.bottomLeft,
-    end: Alignment.topRight,
-    colors: <Color>[
-      Color(0xFFE9146B),
-      Color(0xFFF97316),
-      Color(0xFFFBBF24),
-    ],
-    stops: <double>[0.0, 0.6, 1.0],
-  );
+  @override
+  State<BannerSection> createState() => _BannerSectionState();
+}
+
+class _BannerSectionState extends State<BannerSection> {
+  static const List<String> _bannerAssets = <String>[
+    'assets/images/banner_mega_sale.png',
+    'assets/images/banner_new_arrivals.png',
+    'assets/images/banner_cashback.png',
+    'assets/images/banner_flashdeals.png',
+  ];
+
+  /// Banner images are 1024x683 (3:2); rendered slightly wider crop.
+  static const double _bannerAspectRatio = 2.15;
+
+  static const Duration _autoAdvanceInterval = Duration(seconds: 5);
+
+  late final PageController _pageController;
+  Timer? _autoAdvanceTimer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _scheduleAutoAdvance();
+  }
+
+  void _scheduleAutoAdvance() {
+    _autoAdvanceTimer?.cancel();
+    _autoAdvanceTimer = Timer.periodic(_autoAdvanceInterval, (_) {
+      if (!mounted || !_pageController.hasClients) return;
+      final int next = (_currentPage + 1) % _bannerAssets.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+    _scheduleAutoAdvance();
+  }
+
+  @override
+  void dispose() {
+    _autoAdvanceTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    String promo = '';
-    try {
-      promo = AppUpdateRemoteConfig.homePromoBanner;
-    } catch (_) {}
-    final String subtitle = promo.isNotEmpty
-        ? promo
-        : 'Millions of products from every corner of the globe, delivered to your door.';
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.md),
       decoration: BoxDecoration(
-        gradient: _heroGradient,
         borderRadius: BorderRadius.circular(24),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: const Color(0xFFE9146B).withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.10),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: <Widget>[
-          // Globe line-art decoration
-          Positioned(
-            top: -12,
-            right: -16,
-            child: Icon(
-              Icons.public,
-              size: 130,
-              color: Colors.white.withValues(alpha: 0.22),
+      child: AspectRatio(
+        aspectRatio: _bannerAspectRatio,
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: _bannerAssets.length,
+              itemBuilder: (BuildContext context, int index) {
+                return GestureDetector(
+                  onTap: () => context.push(AppRoutes.productSearch),
+                  child: Image.asset(
+                    _bannerAssets[index],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                  ),
+                );
+              },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(Spacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'GLOBAL MARKETPLACE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: Spacing.sm,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List<Widget>.generate(_bannerAssets.length, (int i) {
+                  final bool active = i == _currentPage;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: active ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: active
+                          ? AppColors.secondary
+                          : Colors.white.withValues(alpha: 0.55),
                     ),
-                  ),
-                ),
-                const SizedBox(height: Spacing.sm),
-                const Text(
-                  'Shop the World',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 30,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  subtitle,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.95),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: Spacing.md),
-                FilledButton(
-                  onPressed: () => context.push(AppRoutes.productSearch),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF17162B),
-                    foregroundColor: Colors.white,
-                    minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Explore deals',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_rounded, size: 16),
-                    ],
-                  ),
-                ),
-              ],
+                  );
+                }),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

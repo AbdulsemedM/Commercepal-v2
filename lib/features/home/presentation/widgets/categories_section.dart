@@ -375,6 +375,20 @@ class _CategoryBubbleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = getIcon(category.name);
+    final bool hasNetworkImage =
+        category.imageUrl != null && category.imageUrl!.isNotEmpty;
+    final String? assetPath =
+        CategoryImageAssets.assetPathForName(category.name);
+    final bool hasImage = hasNetworkImage || assetPath != null;
+
+    final Widget iconFallback = Container(
+      color: selected ? AppColors.pink : Colors.white,
+      child: Icon(
+        icon,
+        color: selected ? Colors.white : AppColors.navy,
+        size: 24,
+      ),
+    );
 
     return InkWell(
       onTap: onTap,
@@ -386,9 +400,9 @@ class _CategoryBubbleTile extends StatelessWidget {
             height: AppDecorations.categoryChipSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: selected ? AppColors.pink : Colors.white,
+              color: (selected && !hasImage) ? AppColors.pink : Colors.white,
               border: selected
-                  ? null
+                  ? Border.all(color: AppColors.pink, width: 2.5)
                   : Border.all(color: const Color(0xFFF0E6D8)),
               boxShadow: <BoxShadow>[
                 BoxShadow(
@@ -400,10 +414,22 @@ class _CategoryBubbleTile extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: selected ? Colors.white : AppColors.navy,
-              size: 24,
+            child: ClipOval(
+              child: hasNetworkImage
+                  ? Image.network(
+                      category.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => assetPath != null
+                          ? Image.asset(assetPath, fit: BoxFit.cover)
+                          : iconFallback,
+                    )
+                  : (assetPath != null
+                      ? Image.asset(
+                          assetPath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => iconFallback,
+                        )
+                      : iconFallback),
             ),
           ),
           const SizedBox(height: Spacing.xs),

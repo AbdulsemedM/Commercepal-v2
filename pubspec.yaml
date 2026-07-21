@@ -118,6 +118,10 @@ flutter:
     - assets/images/banner.png
     - assets/images/banner1.jpeg
     - assets/images/banner2.jpeg
+    - assets/images/banner_mega_sale.png
+    - assets/images/banner_new_arrivals.png
+    - assets/images/banner_cashback.png
+    - assets/images/banner_flashdeals.png
     - assets/images/accessories.jpg
     - assets/images/cosmetics.jpg
     - assets/images/desktop.jpg
