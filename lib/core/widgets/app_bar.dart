@@ -42,7 +42,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     final String placeholder =
         searchPlaceholder ??
         LocalizationService.t(context, 'appBar.searchPlaceholder');
-    final Color barColor = isDark ? scheme.surface : AppColors.cream;
+    final Color barColor = isDark ? scheme.surface : AppColors.primary;
     final Color searchFill = isDark ? scheme.surfaceContainerLow : Colors.white;
     final Color searchSecondary = scheme.onSurfaceVariant;
 

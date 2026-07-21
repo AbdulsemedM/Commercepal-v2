@@ -11,45 +11,48 @@ class HomeDiscoverSectionConfig {
   final String searchQuery;
 }
 
+/// Queries tuned to match commercepal.com search phrasing so the API returns
+/// affiliate catalog items (with originalPrice / discount% / ratings), not
+/// Alibaba wholesale rows that omit those fields.
 const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
   HomeDiscoverSectionConfig(
     id: 'smart_phones',
     title: 'Smart phones',
-    searchQuery: 'smart phones',
+    searchQuery: 'global firmware phone',
   ),
   HomeDiscoverSectionConfig(
     id: 'watches',
     title: 'Watches',
-    searchQuery: 'watch',
+    searchQuery: 'wrist watch',
   ),
   HomeDiscoverSectionConfig(
     id: 'cosmetics',
     title: 'Cosmetics',
-    searchQuery: 'cosmetics',
+    searchQuery: 'makeup',
   ),
   HomeDiscoverSectionConfig(
     id: 'computers',
     title: 'Computers',
-    searchQuery: 'laptop computer',
+    searchQuery: 'laptop',
   ),
   HomeDiscoverSectionConfig(
     id: 'womens_fashion',
     title: "Women's Fashion",
-    searchQuery: "women's fashion",
+    searchQuery: 'women dress clothing',
   ),
   HomeDiscoverSectionConfig(
     id: 'abayas',
     title: 'Abayas',
-    searchQuery: 'abaya',
+    searchQuery: 'islamic abaya',
   ),
   HomeDiscoverSectionConfig(
     id: 'mens_fashion',
     title: "Men's Fashion",
-    searchQuery: "men's fashion",
+    searchQuery: 'mens fashion',
   ),
   HomeDiscoverSectionConfig(
     id: 'audio',
     title: 'Audio',
-    searchQuery: 'earpods and headsets',
+    searchQuery: 'earbuds',
   ),
 ];

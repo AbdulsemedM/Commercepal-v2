@@ -92,7 +92,7 @@ class Product {
       
       originalPrice: pricing?['originalPrice'] != null
           ? (pricing!['originalPrice'] as num).toDouble()
-          : null,
+          : (json['originalPrice'] as num?)?.toDouble(),
       
       // Extract image from nested images or flat structure
       imageUrl: images?['thumbnail'] as String? ?? 
@@ -119,12 +119,17 @@ class Product {
       // Extract rating and review count from meta
       rating: meta?['rating'] != null
           ? (meta!['rating'] as num).toDouble()
-          : null,
-      reviewCount: meta?['reviewCount'] as int?,
+          : (json['rating'] as num?)?.toDouble(),
+      reviewCount: meta?['reviewCount'] is num
+          ? (meta!['reviewCount'] as num).toInt()
+          : (json['reviewCount'] as num?)?.toInt(),
       
-      // Extract discount info from pricing
-      isOnDiscount: pricing?['isOnDiscount'] as bool? ?? false,
-      discountPercentage: pricing?['discountPercentage'] as int?,
+      // Extract discount info from pricing (API may send int or double)
+      isOnDiscount: pricing?['isOnDiscount'] as bool? ??
+          ((pricing?['discountPercentage'] as num?)?.toDouble() ?? 0) > 0,
+      discountPercentage: pricing?['discountPercentage'] != null
+          ? (pricing!['discountPercentage'] as num).round()
+          : (json['discountPercentage'] as num?)?.round(),
     );
   }
 

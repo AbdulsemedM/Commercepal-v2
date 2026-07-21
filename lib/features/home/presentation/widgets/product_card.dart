@@ -162,33 +162,66 @@ class _ProductCardState extends State<ProductCard> {
     final Widget titleAndRating = InkWell(
       onTap: () => _openProductDetail(context),
       borderRadius: BorderRadius.circular(8),
+      child: Text(
+        widget.description,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: isDark ? scheme.onSurface : AppColors.navy,
+              fontSize: titleSize,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+            ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+
+    // Web-style price row: discounted price with the crossed-out original
+    // beside it, then the star rating with review count underneath.
+    final Widget priceSection = InkWell(
+      onTap: () => _openProductDetail(context),
+      borderRadius: BorderRadius.circular(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            widget.description,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isDark ? scheme.onSurface : AppColors.navy,
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.w700,
-                  height: 1.15,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: <Widget>[
+              Flexible(child: _buildPriceText(context, isDark, priceSize)),
+              if (widget.originalPrice != null) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    widget.originalPrice!,
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: originalSize,
+                      height: 1.1,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+              ],
+            ],
           ),
-          if (widget.rating != null && widget.rating! > 0) ...[
+          if ((widget.rating != null && widget.rating! > 0) ||
+              (widget.reviewCount != null && widget.reviewCount! > 0)) ...[
             const SizedBox(height: 2),
             Row(
               children: <Widget>[
                 Icon(
                   Icons.star,
                   color: AppColors.secondary,
-                  size: compact ? 11 : 14,
+                  size: compact ? 12 : 14,
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  widget.rating!.toStringAsFixed(1),
+                  (widget.rating != null && widget.rating! > 0)
+                      ? widget.rating!.toStringAsFixed(1)
+                      : '—',
                   style: TextStyle(
                     fontSize: compact ? 10 : 12,
                     color: scheme.onSurfaceVariant,
@@ -209,32 +242,6 @@ class _ProductCardState extends State<ProductCard> {
                   ),
                 ],
               ],
-            ),
-          ],
-        ],
-      ),
-    );
-
-    final Widget priceSection = InkWell(
-      onTap: () => _openProductDetail(context),
-      borderRadius: BorderRadius.circular(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          _buildPriceText(context, isDark, priceSize),
-          if (widget.originalPrice != null) ...[
-            const SizedBox(height: 1),
-            Text(
-              widget.originalPrice!,
-              style: TextStyle(
-                color: scheme.onSurfaceVariant,
-                fontSize: originalSize,
-                height: 1.1,
-                decoration: TextDecoration.lineThrough,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
           ],
         ],
@@ -484,23 +491,20 @@ class _ProductCardState extends State<ProductCard> {
               top: 8,
               left: 8,
               child: Container(
-                width: expand ? 34 : 40,
-                height: expand ? 34 : 40,
-                alignment: Alignment.center,
+                padding: EdgeInsets.symmetric(
+                  horizontal: expand ? 6 : 8,
+                  vertical: expand ? 3 : 4,
+                ),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withValues(alpha: 0.18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    width: 1.4,
-                  ),
+                  color: const Color(0xFFF97316),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '-${widget.discountPercentage}%',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: expand ? 9 : 11,
-                    fontWeight: FontWeight.bold,
+                    fontSize: expand ? 10 : 12,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
