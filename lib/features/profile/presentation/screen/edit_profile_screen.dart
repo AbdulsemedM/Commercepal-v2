@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
@@ -120,22 +121,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Builder(
           builder: (BuildContext context) {
             final ColorScheme scheme = Theme.of(context).colorScheme;
+            final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
             return Scaffold(
-          backgroundColor: scheme.surface,
+          backgroundColor: pageBg,
           appBar: AppBar(
-            backgroundColor: scheme.surface,
+            backgroundColor: pageBg,
             elevation: 0,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(Spacing.xs),
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
+                  color: AppDecorations.softCream,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.arrow_back_ios_new,
                   size: 18,
-                  color: scheme.onSurface,
+                  color: AppColors.navy,
                 ),
               ),
               onPressed: () => context.pop(),
@@ -144,7 +146,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               LocalizationService.t(context, 'profile.editProfile'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: scheme.onSurface,
+                color: AppColors.navy,
               ),
             ),
           ),
@@ -276,71 +278,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       // Update Button
                       SizedBox(
                         width: double.infinity,
-                        child: FilledButton(
-                          onPressed: isLoading
-                              ? null
-                              : () {
-                                  if (_formKey.currentState?.validate() ??
-                                      false) {
-                                    final request = UpdateProfileRequest(
-                                      firstName: _firstNameController.text
-                                          .trim(),
-                                      lastName: _lastNameController.text.trim(),
-                                      country: _selectedCountry!,
-                                      city: _cityController.text.trim().isEmpty
-                                          ? null
-                                          : _cityController.text.trim(),
-                                      stateProvince:
-                                          _stateProvinceController.text
-                                              .trim()
-                                              .isEmpty
-                                          ? null
-                                          : _stateProvinceController.text
-                                                .trim(),
-                                      preferredLanguage: _selectedLanguage,
-                                      preferredCurrency: _selectedCurrency,
-                                      customerNotes:
-                                          _customerNotesController.text
-                                              .trim()
-                                              .isEmpty
-                                          ? null
-                                          : _customerNotesController.text
-                                                .trim(),
-                                    );
-
-                                    context.read<ProfileBloc>().add(
-                                      ProfileUpdateRequested(request),
-                                    );
-                                  }
-                                },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: Spacing.md,
-                            ),
-                            disabledBackgroundColor:
-                                scheme.surfaceContainerHighest,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: isLoading
+                                ? null
+                                : AppDecorations.primaryCtaGradient,
+                            color: isLoading
+                                ? scheme.surfaceContainerHighest
+                                : null,
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                          child: isLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      scheme.onPrimary,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  LocalizationService.t(context, 'profile.updateProfile'),
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        color: scheme.onPrimary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: isLoading
+                                  ? null
+                                  : () {
+                                      if (_formKey.currentState?.validate() ??
+                                          false) {
+                                        final request = UpdateProfileRequest(
+                                          firstName: _firstNameController.text
+                                              .trim(),
+                                          lastName:
+                                              _lastNameController.text.trim(),
+                                          country: _selectedCountry!,
+                                          city: _cityController.text
+                                                  .trim()
+                                                  .isEmpty
+                                              ? null
+                                              : _cityController.text.trim(),
+                                          stateProvince:
+                                              _stateProvinceController.text
+                                                      .trim()
+                                                      .isEmpty
+                                                  ? null
+                                                  : _stateProvinceController
+                                                        .text
+                                                        .trim(),
+                                          preferredLanguage: _selectedLanguage,
+                                          preferredCurrency: _selectedCurrency,
+                                          customerNotes:
+                                              _customerNotesController.text
+                                                      .trim()
+                                                      .isEmpty
+                                                  ? null
+                                                  : _customerNotesController
+                                                        .text
+                                                        .trim(),
+                                        );
+
+                                        context.read<ProfileBloc>().add(
+                                          ProfileUpdateRequested(request),
+                                        );
+                                      }
+                                    },
+                              borderRadius: BorderRadius.circular(28),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: Spacing.md,
                                 ),
+                                child: Center(
+                                  child: isLoading
+                                      ? SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                              scheme.onPrimary,
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          LocalizationService.t(
+                                            context,
+                                            'profile.updateProfile',
+                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: Spacing.lg),
@@ -387,7 +413,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: scheme.surface,
+            fillColor: AppDecorations.softCream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: scheme.outlineVariant),
@@ -449,7 +475,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: scheme.surface,
+            fillColor: AppDecorations.softCream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: scheme.outlineVariant),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class OrderSummaryScreen extends StatelessWidget {
@@ -13,7 +14,7 @@ class OrderSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: <Widget>[
           // Dark magenta background extending behind status bar
@@ -151,7 +152,8 @@ class OrderSummaryScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(Spacing.md),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                          boxShadow: AppDecorations.softCardShadow(),
                         ),
                         child: Row(
                           children: <Widget>[
@@ -236,7 +238,8 @@ class OrderSummaryScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(Spacing.md),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                          boxShadow: AppDecorations.softCardShadow(),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -306,7 +309,8 @@ class OrderSummaryScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(Spacing.md),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                          boxShadow: AppDecorations.softCardShadow(),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

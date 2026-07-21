@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../constants/spacing.dart';
+import '../theme/app_decorations.dart';
 import '../theme/colors.dart';
 
 class AppDialogAction {
@@ -32,157 +32,68 @@ class AppDialog {
     bool isLoading = false,
     WillPopCallback? onWillPop,
   }) {
-    final ThemeData theme = Theme.of(context);
-    final TargetPlatform platform = theme.platform;
-
-    final Widget dialogContent = _DialogBody(
-      title: title,
-      message: message,
-      content: content,
-      icon: icon,
-      isLoading: isLoading,
-    );
-
-    final Widget dialog = _buildAdaptiveDialog(
-      context: context,
-      platform: platform,
-      theme: theme,
-      body: dialogContent,
-      actions: actions,
-    );
-
-    final Widget wrapped = WillPopScope(
-      onWillPop: onWillPop ?? () async => isDismissible,
-      child: dialog,
-    );
-
-    return showDialog<T>(
+    return showGeneralDialog<T>(
       context: context,
       barrierDismissible: isDismissible,
-      builder: (ctx) => wrapped,
-    );
-  }
-
-  static Widget _buildAdaptiveDialog({
-    required BuildContext context,
-    required TargetPlatform platform,
-    required ThemeData theme,
-    required Widget body,
-    required List<AppDialogAction> actions,
-  }) {
-    final ColorScheme scheme = theme.colorScheme;
-
-    if (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS) {
-      return CupertinoAlertDialog(
-        title: _CupertinoTitle(child: body),
-        content: const SizedBox.shrink(),
-        actions: actions.map((a) {
-          final TextStyle? base = CupertinoTheme.of(
-            context,
-          ).textTheme.actionTextStyle;
-          TextStyle style = (base ?? const TextStyle()).copyWith(
-            fontWeight: a.isPrimary ? FontWeight.w600 : FontWeight.w400,
-            color: a.isDestructive
-                ? CupertinoColors.systemRed
-                : (a.isPrimary
-                      ? Color(AppColors.primary.value)
-                      : CupertinoColors.activeBlue),
-          );
-          return CupertinoDialogAction(
-            onPressed: () {
-              a.onPressed?.call();
-              Navigator.of(context).maybePop();
-            },
-            isDestructiveAction: a.isDestructive,
-            child: Text(a.label, style: style),
-          );
-        }).toList(),
-      );
-    }
-
-    final List<Widget> materialActions = actions.map((a) {
-      final ButtonStyle baseStyle = TextButton.styleFrom(
-        foregroundColor: a.isDestructive
-            ? scheme.error
-            : (a.isPrimary ? scheme.onPrimary : scheme.primary),
-        textStyle: TextStyle(
-          fontWeight: a.isPrimary ? FontWeight.w600 : FontWeight.w400,
-        ),
-      );
-
-      if (a.isPrimary) {
-        return FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: scheme.primary,
-            foregroundColor: scheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
-          onPressed: () {
-            a.onPressed?.call();
-            Navigator.of(context).maybePop();
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (
+        BuildContext dialogContext,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+      ) {
+        return PopScope(
+          canPop: isDismissible,
+          onPopInvokedWithResult: (bool didPop, Object? result) async {
+            if (didPop) return;
+            if (onWillPop != null) {
+              final bool allow = await onWillPop();
+              if (allow && dialogContext.mounted) {
+                Navigator.of(dialogContext).maybePop();
+              }
+            }
           },
-          child: Text(a.label),
-        );
-      }
-
-      if (a.isDestructive) {
-        return OutlinedButton(
-          style: baseStyle.copyWith(
-            shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          child: _AppDialogShell(
+            title: title,
+            message: message,
+            content: content,
+            icon: icon,
+            actions: actions,
+            isLoading: isLoading,
           ),
-          onPressed: () {
-            a.onPressed?.call();
-            Navigator.of(context).maybePop();
-          },
-          child: Text(a.label),
         );
-      }
-
-      return TextButton(
-        style: baseStyle.copyWith(
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      },
+      transitionBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        Widget child,
+      ) {
+        final CurvedAnimation curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.92, end: 1.0).animate(curved),
+            child: child,
           ),
-        ),
-        onPressed: () {
-          a.onPressed?.call();
-          Navigator.of(context).maybePop();
-        },
-        child: Text(a.label),
-      );
-    }).toList();
-
-    return AlertDialog(
-      backgroundColor: scheme.surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: 14,
-      shadowColor: Colors.black.withOpacity(0.18),
-      contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(22)),
-        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.45)),
-      ),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: body,
-      ),
-      actions: materialActions,
+        );
+      },
     );
   }
 }
 
-class _DialogBody extends StatelessWidget {
-  const _DialogBody({
+class _AppDialogShell extends StatelessWidget {
+  const _AppDialogShell({
     this.title,
     this.message,
     this.content,
     this.icon,
+    required this.actions,
     this.isLoading = false,
   });
 
@@ -190,114 +101,386 @@ class _DialogBody extends StatelessWidget {
   final String? message;
   final Widget? content;
   final Widget? icon;
+  final List<AppDialogAction> actions;
   final bool isLoading;
+
+  bool get _hasDestructive =>
+      actions.any((AppDialogAction a) => a.isDestructive);
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color cardColor = isDark
+        ? Theme.of(context).colorScheme.surface
+        : Colors.white;
 
-    final List<Widget> columnChildren = <Widget>[
-      if (icon != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 14),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[
-                  scheme.primary.withOpacity(0.18),
-                  scheme.primary.withOpacity(0.06),
-                ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: cardColor.withValues(alpha: isDark ? 0.95 : 0.98),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: _hasDestructive
+                          ? AppColors.error.withValues(alpha: 0.18)
+                          : AppColors.pink.withValues(alpha: 0.12),
+                    ),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: (_hasDestructive
+                                ? AppColors.error
+                                : AppColors.primary)
+                            .withValues(alpha: 0.18),
+                        blurRadius: 32,
+                        offset: const Offset(0, 16),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: <Widget>[
+                      // Soft decorative gradient wash behind the icon.
+                      Positioned(
+                        top: -40,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            width: 160,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: <Color>[
+                                  (_hasDestructive
+                                          ? AppColors.error
+                                          : AppColors.pink)
+                                      .withValues(alpha: 0.18),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(22, 28, 22, 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            if (icon != null) ...[
+                              _DialogIconHalo(
+                                icon: icon!,
+                                destructive: _hasDestructive,
+                              ),
+                              const SizedBox(height: Spacing.md),
+                            ],
+                            if (title != null)
+                              Text(
+                                title!,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark
+                                          ? null
+                                          : AppColors.navy,
+                                      fontSize: 20,
+                                      height: 1.25,
+                                    ),
+                              ),
+                            if (message != null) ...[
+                              const SizedBox(height: Spacing.sm),
+                              Text(
+                                message!,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                      height: 1.45,
+                                    ),
+                              ),
+                            ],
+                            if (content != null) ...[
+                              const SizedBox(height: Spacing.md),
+                              content!,
+                            ],
+                            if (isLoading) ...[
+                              const SizedBox(height: Spacing.lg),
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                            if (actions.isNotEmpty) ...[
+                              const SizedBox(height: Spacing.lg),
+                              _DialogActions(actions: actions),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: scheme.primary.withOpacity(0.22),
-              ),
-            ),
-            child: IconTheme(
-              data: IconThemeData(color: scheme.primary, size: 24),
-              child: icon!,
             ),
           ),
         ),
-      if (title != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Text(
-            title!,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.1,
-            ),
-          ),
-        ),
-      if (message != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Text(
-            message!,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.35,
-            ),
-          ),
-        ),
-      if (content != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: content!,
-        ),
-      if (isLoading)
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.4,
-                color: scheme.primary,
-              ),
-            ),
-          ),
-        ),
-    ];
-
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: columnChildren,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _CupertinoTitle extends StatelessWidget {
-  const _CupertinoTitle({required this.child});
+class _DialogIconHalo extends StatelessWidget {
+  const _DialogIconHalo({
+    required this.icon,
+    required this.destructive,
+  });
 
-  final Widget child;
+  final Widget icon;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
-    // CupertinoAlertDialog expects a title and an optional content; we place our composed body into the title area.
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: child,
+    final Color accent = destructive ? AppColors.error : AppColors.pink;
+    final LinearGradient gradient = destructive
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[
+              Color(0xFFF87171),
+              AppColors.error,
+            ],
+          )
+        : AppDecorations.primaryCtaGradient;
+
+    return Container(
+      width: 76,
+      height: 76,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: accent.withValues(alpha: 0.12),
+      ),
+      child: Container(
+        width: 58,
+        height: 58,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: gradient,
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: accent.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: IconTheme(
+          data: const IconThemeData(color: Colors.white, size: 28),
+          child: icon,
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogActions extends StatelessWidget {
+  const _DialogActions({required this.actions});
+
+  final List<AppDialogAction> actions;
+
+  List<AppDialogAction> get _resolved {
+    final bool anyPrimary = actions.any((AppDialogAction a) => a.isPrimary);
+    final bool anyDestructive =
+        actions.any((AppDialogAction a) => a.isDestructive);
+    if (anyPrimary || anyDestructive || actions.isEmpty) return actions;
+
+    // Neutral confirm dialogs: give the last action the gradient pill.
+    final int last = actions.length - 1;
+    return <AppDialogAction>[
+      for (int i = 0; i < actions.length; i++)
+        if (i == last)
+          AppDialogAction(
+            label: actions[i].label,
+            onPressed: actions[i].onPressed,
+            isPrimary: true,
+          )
+        else
+          actions[i],
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<AppDialogAction> resolved = _resolved;
+
+    if (resolved.length == 1) {
+      return SizedBox(
+        width: double.infinity,
+        child: _ActionButton(
+          action: resolved.first,
+          expanded: true,
+        ),
+      );
+    }
+
+    if (resolved.length == 2) {
+      return Row(
+        children: <Widget>[
+          Expanded(
+            child: _ActionButton(
+              action: resolved.first,
+              expanded: true,
+            ),
+          ),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: _ActionButton(
+              action: resolved.last,
+              expanded: true,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (int i = 0; i < resolved.length; i++) ...[
+          if (i > 0) const SizedBox(height: Spacing.sm),
+          _ActionButton(action: resolved[i], expanded: true),
+        ],
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.action,
+    this.expanded = false,
+  });
+
+  final AppDialogAction action;
+  final bool expanded;
+
+  void _handleTap(BuildContext context) {
+    action.onPressed?.call();
+    Navigator.of(context).maybePop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (action.isDestructive) {
+      return _buildOutlined(
+        context,
+        foreground: AppColors.error,
+        border: AppColors.error.withValues(alpha: 0.45),
+        fill: AppColors.error.withValues(alpha: 0.06),
+      );
+    }
+
+    if (action.isPrimary) {
+      return _buildGradient(context);
+    }
+
+    return _buildOutlined(
+      context,
+      foreground: AppColors.navy,
+      border: const Color(0xFFE8DFD2),
+      fill: AppDecorations.softCream,
+    );
+  }
+
+  Widget _buildGradient(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: AppDecorations.primaryCtaGradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: AppColors.pink.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleTap(context),
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Text(
+              action.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutlined(
+    BuildContext context, {
+    required Color foreground,
+    required Color border,
+    required Color fill,
+  }) {
+    return Material(
+      color: fill,
+      borderRadius: BorderRadius.circular(28),
+      child: InkWell(
+        onTap: () => _handleTap(context),
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: border),
+          ),
+          child: Text(
+            action.label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: foreground,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

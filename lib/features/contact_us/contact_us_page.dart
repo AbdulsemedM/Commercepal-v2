@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -93,20 +94,14 @@ class _ContactUsPageState extends State<ContactUsPage> {
       margin: const EdgeInsets.only(bottom: Spacing.md),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(Spacing.md),
             child: Row(
@@ -134,7 +129,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: Colors.grey[800],
+                          color: AppColors.navy,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -164,21 +159,21 @@ class _ContactUsPageState extends State<ContactUsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AppDecorations.softCream,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: Colors.black,
+              color: AppColors.navy,
             ),
           ),
           onPressed: () => context.pop(),
@@ -187,7 +182,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           LocalizationService.t(context, "contactUs.title"),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: AppColors.navy,
           ),
         ),
       ),
@@ -204,12 +199,13 @@ class _ContactUsPageState extends State<ContactUsPage> {
                 Spacing.xl,
                 Spacing.xl,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
+                boxShadow: AppDecorations.softCardShadow(),
               ),
               child: Column(
                 children: [
@@ -232,7 +228,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 28,
-                      color: Colors.black87,
+                      color: AppColors.navy,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -309,14 +305,8 @@ class _ContactUsPageState extends State<ContactUsPage> {
               padding: const EdgeInsets.all(Spacing.md),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+                boxShadow: AppDecorations.softCardShadow(),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class TermsConditionsScreen extends StatelessWidget {
@@ -8,22 +10,23 @@ class TermsConditionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: scheme.surface,
+        backgroundColor: pageBg,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
+              color: AppDecorations.softCream,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: scheme.onSurface,
+              color: AppColors.navy,
             ),
           ),
           onPressed: () => context.pop(),
@@ -32,7 +35,7 @@ class TermsConditionsScreen extends StatelessWidget {
           'Terms & privacy',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
+            color: AppColors.navy,
           ),
         ),
       ),
@@ -46,7 +49,7 @@ class TermsConditionsScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
+                color: AppColors.navy,
               ),
             ),
             const SizedBox(height: Spacing.sm),
@@ -71,7 +74,7 @@ class TermsConditionsScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
+                color: AppColors.navy,
               ),
             ),
             const SizedBox(height: Spacing.md),
@@ -266,7 +269,7 @@ class TermsConditionsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: scheme.onSurface,
+            color: AppColors.navy,
           ),
         ),
         const SizedBox(height: Spacing.sm),

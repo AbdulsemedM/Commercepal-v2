@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/auth/signup/presentation/widgets/signup_widgets.dart';
@@ -50,7 +51,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
     return BlocProvider(
       create: (context) => AffiliateRegisterCubit(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocListener<AffiliateRegisterCubit, AffiliateRegisterState>(
             listener: (context, state) {
@@ -81,13 +82,13 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                           icon: Container(
                             padding: const EdgeInsets.all(Spacing.xs),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: AppDecorations.softCream,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
                               Icons.arrow_back_ios_new,
                               size: 18,
-                              color: Colors.black,
+                              color: AppColors.navy,
                             ),
                           ),
                           onPressed: () => context.pop(),
@@ -100,7 +101,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                           ),
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
-                                color: AppColors.primary,
+                                color: AppColors.navy,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -210,85 +211,107 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                         const SizedBox(height: Spacing.lg),
                         SizedBox(
                           width: double.infinity,
-                          child: FilledButton(
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    if (_formKey.currentState?.validate() ??
-                                        false) {
-                                      final phoneNumber =
-                                          _completePhoneNumber.isNotEmpty
-                                          ? _completePhoneNumber
-                                          : _phoneController.text.trim();
-
-                                      context
-                                          .read<AffiliateRegisterCubit>()
-                                          .registerAffiliate(
-                                            firstName: _firstNameController.text
-                                                .trim(),
-                                            lastName: _lastNameController.text
-                                                .trim(),
-                                            email: _emailController.text.trim(),
-                                            phoneNumber: phoneNumber,
-                                            countryCode:
-                                                _selectedCountry.phoneCode,
-                                            country:
-                                                _selectedCountry.countryCode,
-                                            password: _passwordController.text,
-                                            confirmPassword:
-                                                _confirmPasswordController.text,
-                                            commissionType:
-                                                _selectedCommissionType,
-                                            referralCode:
-                                                _referralCodeController.text
-                                                    .trim()
-                                                    .isEmpty
-                                                ? ''
-                                                : _referralCodeController.text
-                                                      .trim(),
-                                          );
-                                    }
-                                  },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Spacing.md,
-                              ),
-                              disabledBackgroundColor: Colors.grey[300],
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: isLoading
+                                  ? null
+                                  : AppDecorations.primaryCtaGradient,
+                              color: isLoading ? Colors.grey[300] : null,
+                              borderRadius: BorderRadius.circular(28),
                             ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      Text(
-                                        LocalizationService.t(
-                                          context,
-                                          'affiliate.registerButton',
-                                        ),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(width: Spacing.xs),
-                                      const Icon(
-                                        Icons.arrow_forward,
-                                        size: 20,
-                                        color: Colors.white,
-                                      ),
-                                    ],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: isLoading
+                                    ? null
+                                    : () {
+                                        if (_formKey.currentState?.validate() ??
+                                            false) {
+                                          final phoneNumber =
+                                              _completePhoneNumber.isNotEmpty
+                                              ? _completePhoneNumber
+                                              : _phoneController.text.trim();
+
+                                          context
+                                              .read<AffiliateRegisterCubit>()
+                                              .registerAffiliate(
+                                                firstName: _firstNameController
+                                                    .text
+                                                    .trim(),
+                                                lastName: _lastNameController
+                                                    .text
+                                                    .trim(),
+                                                email: _emailController.text
+                                                    .trim(),
+                                                phoneNumber: phoneNumber,
+                                                countryCode:
+                                                    _selectedCountry.phoneCode,
+                                                country: _selectedCountry
+                                                    .countryCode,
+                                                password:
+                                                    _passwordController.text,
+                                                confirmPassword:
+                                                    _confirmPasswordController
+                                                        .text,
+                                                commissionType:
+                                                    _selectedCommissionType,
+                                                referralCode:
+                                                    _referralCodeController
+                                                        .text
+                                                        .trim()
+                                                        .isEmpty
+                                                    ? ''
+                                                    : _referralCodeController
+                                                          .text
+                                                          .trim(),
+                                              );
+                                        }
+                                      },
+                                borderRadius: BorderRadius.circular(28),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: Spacing.md,
                                   ),
+                                  child: Center(
+                                    child: isLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<
+                                                      Color>(
+                                                Colors.white,
+                                              ),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: <Widget>[
+                                              Text(
+                                                LocalizationService.t(
+                                                  context,
+                                                  'affiliate.registerButton',
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(width: Spacing.xs),
+                                              const Icon(
+                                                Icons.arrow_forward,
+                                                size: 20,
+                                                color: Colors.white,
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: Spacing.xl),
@@ -333,7 +356,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppDecorations.softCream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -389,7 +412,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppDecorations.softCream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -489,7 +512,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
               vertical: Spacing.md,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppDecorations.softCream,
               border: Border.all(color: Colors.grey[300]!),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -531,7 +554,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
           value: _selectedCommissionType,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppDecorations.softCream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),

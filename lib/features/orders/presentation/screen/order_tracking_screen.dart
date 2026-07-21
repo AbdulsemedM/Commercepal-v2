@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
@@ -51,7 +52,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: <Widget>[
           _buildAppBar(context),
@@ -317,7 +318,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       padding: const EdgeInsets.all(Spacing.sm),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

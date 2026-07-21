@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -83,9 +84,9 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           }
         },
         child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
@@ -127,7 +128,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              color: AppColors.navy,
                             ),
                           ),
                           const SizedBox(height: Spacing.sm),
@@ -156,7 +157,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: AppDecorations.softCream,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -207,7 +208,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: AppDecorations.softCream,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -290,7 +291,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: AppDecorations.softCream,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -336,48 +337,71 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           SizedBox(
                             width: double.infinity,
                             height: 50,
-                            child: ElevatedButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      if (_formKey.currentState?.validate() ?? false) {
-                                        context.read<ChangePasswordBloc>().add(
-                                          ChangePasswordSubmitted(
-                                            currentPassword: _currentPasswordController.text,
-                                            newPassword: _newPasswordController.text,
-                                            confirmPassword: _confirmPasswordController.text,
-                                            channel: PlatformUtils.getChannel(),
-                                          ),
-                                        );
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: Colors.grey.shade300,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: isLoading
+                                    ? null
+                                    : AppDecorations.primaryCtaGradient,
+                                color: isLoading ? Colors.grey.shade300 : null,
+                                borderRadius: BorderRadius.circular(28),
                               ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      LocalizationService.t(context, 'changePassword.updateButton'),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: isLoading
+                                      ? null
+                                      : () {
+                                          if (_formKey.currentState
+                                                  ?.validate() ??
+                                              false) {
+                                            context
+                                                .read<ChangePasswordBloc>()
+                                                .add(
+                                              ChangePasswordSubmitted(
+                                                currentPassword:
+                                                    _currentPasswordController
+                                                        .text,
+                                                newPassword:
+                                                    _newPasswordController
+                                                        .text,
+                                                confirmPassword:
+                                                    _confirmPasswordController
+                                                        .text,
+                                                channel:
+                                                    PlatformUtils.getChannel(),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                  borderRadius: BorderRadius.circular(28),
+                                  child: Center(
+                                    child: isLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<
+                                                      Color>(
+                                                Colors.white,
+                                              ),
+                                            ),
+                                          )
+                                        : Text(
+                                            LocalizationService.t(
+                                              context,
+                                              'changePassword.updateButton',
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -399,8 +423,8 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blue.shade50,
-            Colors.purple.shade50,
+            AppDecorations.softCream,
+            AppColors.cream,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -417,7 +441,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.purple.shade100.withOpacity(0.3),
+                color: AppColors.pink.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
             ),
@@ -429,7 +453,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.blue.shade100.withOpacity(0.3),
+                color: AppColors.primary.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
             ),

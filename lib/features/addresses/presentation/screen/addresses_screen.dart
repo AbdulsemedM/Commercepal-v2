@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -26,22 +27,23 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: pageBg,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AppDecorations.softCream,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: Colors.black,
+              color: AppColors.navy,
             ),
           ),
           onPressed: () => context.pop(),
@@ -50,7 +52,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
           LocalizationService.t(context, 'addresses.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: AppColors.navy,
           ),
         ),
       ),

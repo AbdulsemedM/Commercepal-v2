@@ -8,6 +8,7 @@ import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/update/app_update_check_result.dart';
 import 'package:commercepal/core/update/app_update_check_service.dart';
 import 'package:commercepal/core/update/app_update_modal.dart';
+import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 
 /// Splash matching the Commercepal maroon/gold intro mockup.
 class SplashScreen extends StatefulWidget {
@@ -137,12 +138,23 @@ class _SplashScreenState extends State<SplashScreen>
     await _navigateAfterAuth();
   }
 
+  Future<void> _preloadProfileIfAuthenticated() async {
+    try {
+      final bool hasTokens = await _storage.hasTokens();
+      if (!hasTokens) return;
+      await ProfileRepository().refreshProfileCache();
+    } catch (_) {
+      // Best-effort: keep any existing cache and continue to the app.
+    }
+  }
+
   Future<void> _runSplashAndVersionCheck() async {
     const Duration minSplashDuration = Duration(seconds: 3);
 
     final results = await Future.wait(<Future<dynamic>>[
       Future<void>.delayed(minSplashDuration),
       AppUpdateCheckService.check(),
+      _preloadProfileIfAuthenticated(),
     ]);
 
     final AppUpdateCheckResult result = results[1] as AppUpdateCheckResult;

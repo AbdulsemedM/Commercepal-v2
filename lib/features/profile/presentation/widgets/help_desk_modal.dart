@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -33,7 +34,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -64,7 +65,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: AppColors.navy,
                 ),
               ),
               const SizedBox(height: Spacing.sm),
@@ -87,14 +88,14 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
+                  color: AppColors.navy,
                 ),
               ),
               const SizedBox(height: Spacing.sm),
               // Text area
               Container(
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
+                  color: AppDecorations.softCream,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
@@ -117,24 +118,29 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Handle send message
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: scheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: AppDecorations.primaryCtaGradient,
+                    borderRadius: BorderRadius.all(Radius.circular(28)),
                   ),
-                  child: Text(
-                    LocalizationService.t(context, 'profile.sendMessage'),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Handle send message
+                        Navigator.of(context).pop();
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Center(
+                        child: Text(
+                          LocalizationService.t(context, 'profile.sendMessage'),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -151,7 +157,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: AppDecorations.softCream,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Stack(
@@ -164,7 +170,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
             child: Container(
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.blue.shade200,
+                color: AppColors.primary.withOpacity(0.2),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
@@ -231,7 +237,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               width: 80,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue.shade300,
+                color: AppColors.primary.withOpacity(0.35),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Center(
@@ -239,7 +245,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
                   width: 60,
                   height: 35,
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade400,
+                    color: AppColors.primary.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -254,7 +260,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               width: 30,
               height: 20,
               decoration: BoxDecoration(
-                color: Colors.blue.shade300,
+                color: AppColors.primary.withOpacity(0.35),
                 borderRadius: BorderRadius.circular(15),
               ),
             ),
@@ -267,7 +273,7 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               width: 30,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue.shade200,
+                color: AppColors.primary.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Center(
@@ -290,13 +296,14 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               width: 40,
               height: 30,
               decoration: BoxDecoration(
-                color: Colors.blue.shade100,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
+                boxShadow: AppDecorations.softCardShadow(),
               ),
               child: const Icon(
                 Icons.chat_bubble_outline,
                 size: 20,
-                color: Colors.blue,
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -307,13 +314,14 @@ class _HelpDeskModalState extends State<HelpDeskModal> {
               width: 40,
               height: 30,
               decoration: BoxDecoration(
-                color: Colors.blue.shade100,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
+                boxShadow: AppDecorations.softCardShadow(),
               ),
               child: const Icon(
                 Icons.help_outline,
                 size: 20,
-                color: Colors.blue,
+                color: AppColors.pink,
               ),
             ),
           ),

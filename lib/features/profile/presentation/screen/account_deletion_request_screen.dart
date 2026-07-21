@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:commercepal/services/localization_service.dart';
+import 'package:commercepal/core/theme/colors.dart';
 
 /// CommercePal account deletion request (Google Form). Do not load arbitrary URLs.
 const String kAccountDeletionFormUrl =
@@ -120,13 +121,23 @@ class _AccountDeletionRequestScreenState
       context,
       'profile.accountDeletionRequestTitle',
     );
+    final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
 
     if (_loadError != null) {
       return Scaffold(
+        backgroundColor: pageBg,
         appBar: AppBar(
-          title: Text(title),
+          backgroundColor: pageBg,
+          elevation: 0,
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.navy,
+            ),
+          ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: AppColors.navy),
             onPressed: () => context.pop(),
           ),
         ),
@@ -151,6 +162,9 @@ class _AccountDeletionRequestScreenState
                 if (_loadError == '__config__')
                   FilledButton(
                     onPressed: () => context.pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
                     child: Text(
                       LocalizationService.t(context, 'profile.cancel'),
                     ),
@@ -161,6 +175,9 @@ class _AccountDeletionRequestScreenState
                       setState(() => _loadError = null);
                       _loadForm();
                     },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
                     child: Text(
                       LocalizationService.t(context, 'cart.retry'),
                     ),
@@ -173,10 +190,19 @@ class _AccountDeletionRequestScreenState
     }
 
     return Scaffold(
+      backgroundColor: pageBg,
       appBar: AppBar(
-        title: Text(title),
+        backgroundColor: pageBg,
+        elevation: 0,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.navy,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: AppColors.navy),
           onPressed: () => context.pop(),
         ),
         actions: <Widget>[
@@ -185,7 +211,7 @@ class _AccountDeletionRequestScreenState
               context,
               'profile.accountDeletionOpenInBrowser',
             ),
-            icon: const Icon(Icons.open_in_browser),
+            icon: const Icon(Icons.open_in_browser, color: AppColors.navy),
             onPressed: () async {
               final Uri uri = Uri.parse(kAccountDeletionFormUrl);
               if (await canLaunchUrl(uri)) {
@@ -197,13 +223,19 @@ class _AccountDeletionRequestScreenState
       ),
       body: Column(
         children: <Widget>[
-          if (_isLoading) const LinearProgressIndicator(minHeight: 3),
+          if (_isLoading)
+            const LinearProgressIndicator(
+              minHeight: 3,
+              color: AppColors.primary,
+            ),
           Expanded(
             child: Stack(
               children: <Widget>[
                 WebViewWidget(controller: _controller),
                 if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
+                  const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
               ],
             ),
           ),

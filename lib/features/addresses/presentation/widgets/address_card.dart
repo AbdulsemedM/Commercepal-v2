@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/address.dart';
@@ -24,18 +25,12 @@ class AddressCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: Spacing.md),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
         border: Border.all(
           color: address.isDefault ? AppColors.primary : Colors.grey.shade300,
           width: address.isDefault ? 2 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Padding(
         padding: const EdgeInsets.all(Spacing.md),
@@ -73,7 +68,7 @@ class AddressCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: AppColors.navy,
                           ),
                         ),
                       ),

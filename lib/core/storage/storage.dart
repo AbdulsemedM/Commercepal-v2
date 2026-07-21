@@ -41,6 +41,7 @@ class Storage {
   static const String _keyRememberedPasswordCipher = 'remembered_password_cipher';
   static const String _keyRememberMeDeviceId = 'remember_me_device_id';
   static const String _keyJustLoggedOut = 'just_logged_out';
+  static const String _keyProfileCache = 'profile_cache_v1';
 
   static const int _maxRecentProductSearches = 12;
   static const int _maxLocalRecentProductViews = 24;
@@ -96,6 +97,7 @@ class Storage {
       _storage.delete(key: _keyExpiresIn),
       _storage.delete(key: _keyUserEmail),
       _storage.delete(key: _keyCustomerId),
+      _storage.delete(key: _keyProfileCache),
     ]);
   }
 
@@ -166,6 +168,19 @@ class Storage {
   Future<int?> getCustomerId() async {
     final value = await _storage.read(key: _keyCustomerId);
     return value != null ? int.tryParse(value) : null;
+  }
+
+  /// Cached profile JSON (profile + optional affiliate). Cleared with auth session.
+  Future<void> saveProfileCacheJson(String json) async {
+    await _storage.write(key: _keyProfileCache, value: json);
+  }
+
+  Future<String?> getProfileCacheJson() async {
+    return await _storage.read(key: _keyProfileCache);
+  }
+
+  Future<void> clearProfileCache() async {
+    await _storage.delete(key: _keyProfileCache);
   }
 
   // Wishlist management

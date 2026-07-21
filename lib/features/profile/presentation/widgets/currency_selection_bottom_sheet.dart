@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -97,7 +98,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
     return Container(
       height: screenHeight * 0.85,
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -130,7 +131,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: AppColors.navy,
                     ),
                   ),
                   const SizedBox(height: Spacing.sm),
@@ -150,7 +151,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                   // Search field
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: AppDecorations.softCream,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -216,15 +217,18 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                               margin: const EdgeInsets.only(bottom: Spacing.sm),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.green.shade50
-                                    : Colors.transparent,
+                                    ? AppColors.primary.withOpacity(0.1)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.green.shade400
+                                      ? AppColors.primary
                                       : Colors.grey.shade200,
                                   width: isSelected ? 2 : 1,
                                 ),
+                                boxShadow: isSelected
+                                    ? null
+                                    : AppDecorations.softCardShadow(),
                               ),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
@@ -238,11 +242,11 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                     gradient: LinearGradient(
                                       colors: isSelected
                                           ? [
-                                              Colors.green.shade300,
-                                              Colors.green.shade500,
+                                              AppColors.pink,
+                                              AppColors.primary,
                                             ]
                                           : [
-                                              Colors.grey.shade100,
+                                              AppDecorations.softCream,
                                               Colors.grey.shade200,
                                             ],
                                       begin: Alignment.topLeft,
@@ -252,7 +256,8 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                     boxShadow: isSelected
                                         ? [
                                             BoxShadow(
-                                              color: Colors.green.shade200,
+                                              color: AppColors.pink
+                                                  .withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
@@ -295,7 +300,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.green.shade500,
+                                      color: AppColors.primary,
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(

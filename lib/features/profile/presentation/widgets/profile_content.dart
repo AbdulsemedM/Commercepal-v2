@@ -10,7 +10,6 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/biometric_service.dart';
-import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
@@ -21,8 +20,6 @@ import 'package:commercepal/features/auth/change_password/presentation/widgets/c
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
-import 'package:commercepal/features/dashboard/dashboard_screen.dart';
-import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/affiliate_register/presentation/widgets/affiliate_registration_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -30,140 +27,93 @@ import 'package:package_info_plus/package_info_plus.dart';
 class ProfileContent extends StatelessWidget {
   const ProfileContent({super.key});
 
-  void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState =
-        context.findAncestorStateOfType<DashboardScreenState>();
-    if (dashboardState != null) {
-      dashboardState.changeTab(tabIndex);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => ProfileBloc()..add(ProfileLoadRequested()),
-      child: BlocBuilder<CartBloc, CartState>(
-        builder: (context, cartState) {
-          int cartCount = 0;
-          if (cartState is CartLoaded ||
-              cartState is CartItemAdded ||
-              cartState is CartItemUpdated ||
-              cartState is CartItemDeleted) {
-            final cart = cartState is CartLoaded
-                ? cartState.cart
-                : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
-            cartCount = cart.totalItems;
-          }
-
-          return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: AppBarWidget(
-              cartCount: cartCount,
-              userInitials: AuthService().userInitials ?? 'U',
-              onSearchTap: () {
-                context.push(AppRoutes.productSearch);
-              },
-              onSearchSubmitted: (String query) {
-                context.push(
-                  '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          bottom: false,
+          child: BlocListener<ProfileBloc, ProfileState>(
+            listener: (context, state) {
+              if (state is ProfileError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
                 );
-                return null;
-              },
-              onCartTap: () {
-                _navigateToTab(context, 2);
-              },
-              onProfileTap: () {
-                _navigateToTab(context, 3);
-              },
-              hasNotification: false,
-              searchPlaceholder: LocalizationService.t(
-                context,
-                'profile.searchPlaceholder',
-              ),
-            ),
-            body: BlocListener<ProfileBloc, ProfileState>(
-              listener: (context, state) {
-                if (state is ProfileError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+              }
+            },
+            child: BlocBuilder<ProfileBloc, ProfileState>(
+              builder: (context, state) {
+                if (state is ProfileLoading && state is! ProfileLoaded) {
+                  return const Center(child: CircularProgressIndicator());
                 }
-              },
-              child: BlocBuilder<ProfileBloc, ProfileState>(
-                builder: (context, state) {
-                  if (state is ProfileLoading && state is! ProfileLoaded) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
 
-                  final profile = state is ProfileLoaded ? state.profile : null;
-                  final bool isAffiliate =
-                      state is ProfileLoaded && state.affiliateProfile != null;
+                final profile = state is ProfileLoaded ? state.profile : null;
+                final bool isAffiliate =
+                    state is ProfileLoaded && state.affiliateProfile != null;
 
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      context.read<ProfileBloc>().add(
-                            ProfileRefreshRequested(),
-                          );
-                    },
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<ProfileBloc>().add(
+                          ProfileRefreshRequested(),
+                        );
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const SizedBox(height: Spacing.md),
+                        _buildUserInfoCard(context, profile),
+                        if (profile != null &&
+                            (profile.referralCode ?? '').isNotEmpty) ...[
                           const SizedBox(height: Spacing.md),
-                          _buildUserInfoCard(context, profile),
-                          if (profile != null &&
-                              (profile.referralCode ?? '').isNotEmpty) ...[
-                            const SizedBox(height: Spacing.md),
-                            _buildReferralCodeCard(
-                              context,
-                              profile.referralCode!,
-                            ),
-                          ],
-                          const SizedBox(height: Spacing.lg),
-                          _buildThemeSection(context),
-                          const SizedBox(height: Spacing.lg),
-                          _buildSection(
+                          _buildReferralCodeCard(
                             context,
-                            title: 'ACCOUNT',
-                            items: _accountItems(context, isAffiliate),
+                            profile.referralCode!,
                           ),
-                          const SizedBox(height: Spacing.md),
-                          _buildSection(
-                            context,
-                            title: 'SECURITY & SETTINGS',
-                            items: _securityItems(context),
-                            trailingBuilders: <String, Widget Function(BuildContext)>{
-                              'biometric': (_) => const _BiometricToggle(),
-                            },
-                          ),
-                          const SizedBox(height: Spacing.md),
-                          _buildSection(
-                            context,
-                            title: 'LEGAL & SUPPORT',
-                            items: _legalItems(context),
-                          ),
-                          const SizedBox(height: Spacing.md),
-                          _buildDangerZone(context),
-                          const SizedBox(height: Spacing.md),
-                          _buildAppVersionFooter(context),
-                          const SizedBox(height: Spacing.xl),
                         ],
-                      ),
+                        const SizedBox(height: Spacing.lg),
+                        _buildThemeSection(context),
+                        const SizedBox(height: Spacing.lg),
+                        _buildSection(
+                          context,
+                          title: 'ACCOUNT',
+                          items: _accountItems(context, isAffiliate),
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        _buildSection(
+                          context,
+                          title: 'SECURITY & SETTINGS',
+                          items: _securityItems(context),
+                          trailingBuilders:
+                              <String, Widget Function(BuildContext)>{
+                            'biometric': (_) => const _BiometricToggle(),
+                          },
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        _buildSection(
+                          context,
+                          title: 'LEGAL & SUPPORT',
+                          items: _legalItems(context),
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        _buildDangerZone(context),
+                        const SizedBox(height: Spacing.md),
+                        _buildAppVersionFooter(context),
+                        const SizedBox(height: Spacing.xl),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

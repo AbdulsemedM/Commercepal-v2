@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -96,7 +97,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
     return Container(
       height: screenHeight * 0.85,
       decoration: BoxDecoration(
-        color: scheme.surface,
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -129,7 +130,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: AppColors.navy,
                     ),
                   ),
                   const SizedBox(height: Spacing.sm),
@@ -152,7 +153,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                   // Search field
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: AppDecorations.softCream,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -219,7 +220,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary.withOpacity(0.1)
-                                    : Colors.transparent,
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
@@ -227,6 +228,9 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                                       : Colors.grey.shade200,
                                   width: isSelected ? 2 : 1,
                                 ),
+                                boxShadow: isSelected
+                                    ? null
+                                    : AppDecorations.softCardShadow(),
                               ),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
@@ -297,8 +301,8 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blue.shade50,
-            Colors.cyan.shade50,
+            AppDecorations.softCream,
+            AppColors.cream,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
@@ -152,21 +153,21 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGrey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AppDecorations.softCream,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: Colors.black,
+              color: AppColors.navy,
             ),
           ),
           onPressed: () => context.pop(),
@@ -175,7 +176,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           LocalizationService.t(context, 'wishlist.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.navy,
               ),
         ),
       ),
@@ -195,12 +196,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
                         Spacing.xl,
                         Spacing.xl,
                       ),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(24),
                           bottomRight: Radius.circular(24),
                         ),
+                        boxShadow: AppDecorations.softCardShadow(),
                       ),
                       child: Column(
                         children: <Widget>[
@@ -224,7 +226,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 22,
-                              color: Colors.black87,
+                              color: AppColors.navy,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -338,20 +340,14 @@ class _WishlistCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(Spacing.md),
             child: Row(
@@ -366,7 +362,7 @@ class _WishlistCard extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Container(
                       width: 80,
                       height: 80,
-                      color: Colors.grey[200],
+                      color: AppDecorations.softCream,
                       child: const Icon(
                         Icons.image_not_supported_outlined,
                         color: Colors.grey,
@@ -382,7 +378,7 @@ class _WishlistCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: Colors.grey[800],
+                          color: AppColors.navy,
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -391,7 +387,7 @@ class _WishlistCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(
                     Icons.favorite,
-                    color: AppColors.primary,
+                    color: AppColors.pink,
                     size: 24,
                   ),
                   onPressed: onRemove,

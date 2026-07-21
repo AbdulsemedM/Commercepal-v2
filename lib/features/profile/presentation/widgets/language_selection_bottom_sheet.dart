@@ -25,7 +25,7 @@ class LanguageSelectionBottomSheet {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -43,6 +43,7 @@ class LanguageSelectionBottomSheet {
                     LocalizationService.t(sheetContext, 'profile.language'),
                     style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: AppColors.navy,
                         ),
                   ),
                 ),
