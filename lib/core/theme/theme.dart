@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app_decorations.dart';
 import 'colors.dart';
 import 'typography.dart';
 
@@ -12,10 +13,12 @@ class AppTheme {
       brightness: Brightness.light,
     );
     final ColorScheme scheme = base.copyWith(
+      surface: Colors.white,
       secondary: AppColors.secondary,
+      onSecondary: AppColors.onSecondary,
       tertiary: AppColors.secondary,
     );
-    return _themeFromScheme(scheme);
+    return _themeFromScheme(scheme, isLight: true);
   }
 
   static ThemeData get dark {
@@ -25,25 +28,29 @@ class AppTheme {
     );
     final ColorScheme scheme = base.copyWith(
       secondary: AppColors.secondary,
+      onSecondary: AppColors.onSecondary,
       tertiary: AppColors.secondary,
     );
-    return _themeFromScheme(scheme);
+    return _themeFromScheme(scheme, isLight: false);
   }
 
-  static ThemeData _themeFromScheme(ColorScheme scheme) {
+  static ThemeData _themeFromScheme(ColorScheme scheme, {required bool isLight}) {
     final ThemeData base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       primaryColor: AppColors.primary,
     );
 
+    final Color scaffoldBg = isLight ? Colors.white : scheme.surface;
+    final Color cardColor = isLight ? Colors.white : scheme.surfaceContainerLow;
+
     return base.copyWith(
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: scaffoldBg,
       textTheme: AppTypography.workSans(scheme.onSurface),
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: scheme.surface,
+        backgroundColor: scaffoldBg,
         foregroundColor: scheme.onSurface,
         surfaceTintColor: Colors.transparent,
         iconTheme: IconThemeData(color: scheme.onSurface),
@@ -52,10 +59,10 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: scheme.surfaceContainerLow,
+        color: cardColor,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppDecorations.cardBorderRadius,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -78,19 +85,19 @@ class AppTheme {
         fillColor: scheme.surfaceContainerHighest.withOpacity(0.65),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           borderSide: BorderSide(color: scheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           borderSide: BorderSide(color: scheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           borderSide: BorderSide(color: scheme.error),
         ),
         labelStyle: TextStyle(color: scheme.onSurfaceVariant),
@@ -125,7 +132,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
         ),
         titleTextStyle: AppTypography.workSans(scheme.onSurface).titleMedium
             ?.copyWith(fontWeight: FontWeight.w700),
@@ -138,7 +145,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           ),
         ),
       ),

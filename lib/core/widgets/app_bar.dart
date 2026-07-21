@@ -32,7 +32,6 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    // Height will be calculated dynamically based on status bar + content
     return const Size.fromHeight(kToolbarHeight + 20);
   }
 
@@ -42,16 +41,19 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     final String placeholder =
         searchPlaceholder ??
         LocalizationService.t(context, 'appBar.searchPlaceholder');
-    final Color searchFill = scheme.surface;
+    final Color searchFill = Colors.white;
     final Color searchSecondary = scheme.onSurfaceVariant;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -64,7 +66,6 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           ),
           child: Row(
             children: <Widget>[
-              // Logo on the left
               InkWell(
                 onTap: onLogoTap,
                 borderRadius: BorderRadius.circular(12),
@@ -76,19 +77,17 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                     'assets/images/app_icon.png',
                     width: 40,
                     height: 40,
-                    errorBuilder:
-                        (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return const SizedBox(width: 40, height: 40);
-                        },
+                    errorBuilder: (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return const SizedBox(width: 40, height: 40);
+                    },
                   ),
                 ),
               ),
               const SizedBox(width: Spacing.sm),
-              // Search bar in the center
               Expanded(
                 child: InkWell(
                   onTap: onSearchTap,
@@ -142,7 +141,6 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 ...additionalActions!,
               ],
               const SizedBox(width: Spacing.sm),
-              // Shopping cart with badge
               InkWell(
                 onTap: onCartTap,
                 borderRadius: BorderRadius.circular(22),
@@ -179,7 +177,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                             child: Text(
                               cartCount > 99 ? '99+' : '$cartCount',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.onSecondary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 height: 1.2,
@@ -193,7 +191,6 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               const SizedBox(width: Spacing.sm),
-              // User avatar with notification dot
               InkWell(
                 onTap: onProfileTap,
                 borderRadius: BorderRadius.circular(22),
@@ -207,8 +204,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
-                          color: searchFill,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
                           shape: BoxShape.circle,
                         ),
                         child: Center(

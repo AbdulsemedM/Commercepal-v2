@@ -10,10 +10,15 @@ class AppColors {
   // Neutrals / Surfaces
   static const Color cream = Color(0xFFFFF7ED); // light cream for surfaces
   static const Color lightGrey = Color(0xFFF5F6F8); // very light grey bg
+  /// Dark navy for section titles (matches commercepal.com headings).
+  static const Color navy = Color(0xFF1E293B);
 
   // Semantic brand colors (can be extended)
   static const Color success = Color(0xFF16A34A);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFDC2626);
   static const Color info = Color(0xFF0EA5E9);
+
+  /// Gold price / primary commerce CTA text-on-gold.
+  static const Color onSecondary = Color(0xFF1E293B);
 }

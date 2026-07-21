@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -10,6 +11,7 @@ import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/core/utils/category_image_assets.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
 import 'package:shimmer/shimmer.dart';
 
 class CategoriesSection extends StatefulWidget {
@@ -21,8 +23,8 @@ class CategoriesSection extends StatefulWidget {
 
 class _CategoriesSectionState extends State<CategoriesSection> {
   Category? _selectedCategory;
+  int _selectedIndex = 0; // 0 = "All"
 
-  // Icon mapping for categories
   static IconData _getCategoryIcon(String categoryName) {
     final name = categoryName.toLowerCase();
     if (name.contains('cosmetic') || name.contains('beauty')) {
@@ -57,7 +59,6 @@ class _CategoriesSectionState extends State<CategoriesSection> {
     return Icons.category;
   }
 
-  // Color mapping for categories
   static Color _getCategoryColor(int index) {
     const colors = [
       Color(0xFFFF6B9D),
@@ -76,63 +77,45 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     if (_selectedCategory != null) {
       return _buildSubcategoriesView(context, _selectedCategory!);
     }
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  LocalizationService.t(context, 'home.categories.title'),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: scheme.onSurface,
-                      ),
-                ),
-                InkWell(
-                  onTap: () {
-                    context.findAncestorStateOfType<DashboardScreenState>()?.changeTab(1);
-                  },
-                  child: Text(
-                    LocalizationService.t(context, 'home.categories.seeAll'),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.md),
-          // Horizontal scrollable categories
-          BlocBuilder<CategoriesBloc, CategoriesState>(
-            builder: (context, state) {
-              if (state is CategoriesLoading) {
-                return _buildLoadingShimmer(context);
-              }
-
-              if (state is CategoriesError) {
-                return _buildError(context, state.message);
-              }
-
-              if (state is CategoriesLoaded) {
-                return _buildCategoriesList(context, state.categories);
-              }
-
-              return _buildLoadingShimmer(context);
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          child: HomeSectionHeader(
+            title: LocalizationService.t(context, 'home.categories.title'),
+            actionLabel: LocalizationService.t(context, 'home.categories.seeAll'),
+            onAction: () {
+              context
+                  .findAncestorStateOfType<DashboardScreenState>()
+                  ?.changeTab(1);
             },
           ),
-        ],
-      );
+        ),
+        const SizedBox(height: Spacing.md),
+        BlocBuilder<CategoriesBloc, CategoriesState>(
+          builder: (context, state) {
+            if (state is CategoriesLoading) {
+              return _buildLoadingShimmer(context);
+            }
+
+            if (state is CategoriesError) {
+              return _buildError(context, state.message);
+            }
+
+            if (state is CategoriesLoaded) {
+              return _buildCategoriesList(context, state.categories);
+            }
+
+            return _buildLoadingShimmer(context);
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildSubcategoriesView(BuildContext context, Category category) {
@@ -147,7 +130,10 @@ class _CategoriesSectionState extends State<CategoriesSection> {
             children: <Widget>[
               IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => setState(() => _selectedCategory = null),
+                onPressed: () => setState(() {
+                  _selectedCategory = null;
+                  _selectedIndex = 0;
+                }),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
@@ -157,7 +143,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   category.name,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: scheme.onSurface,
+                        color: AppColors.navy,
                       ),
                 ),
               ),
@@ -167,44 +153,36 @@ class _CategoriesSectionState extends State<CategoriesSection> {
         const SizedBox(height: Spacing.sm),
         if (subCategories.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.lg),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.lg,
+            ),
             child: Text(
               'No subcategories',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
             ),
           )
         else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.md,
-                vertical: Spacing.md,
-              ),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
-              ),
-              child: SizedBox(
-                height: 86,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: subCategories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-                  itemBuilder: (BuildContext context, int index) {
-                    final subCategory = subCategories[index];
-                    return SizedBox(
-                      width: 64,
-                      child: _SubCategoryBubbleTile(
-                        subCategory: subCategory,
-                        icon: _getCategoryIcon(subCategory.name),
-                        color: _getCategoryColor(index),
-                      ),
-                    );
-                  },
-                ),
-              ),
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+              itemCount: subCategories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: Spacing.md),
+              itemBuilder: (BuildContext context, int index) {
+                final subCategory = subCategories[index];
+                return SizedBox(
+                  width: 72,
+                  child: _SubCategoryBubbleTile(
+                    subCategory: subCategory,
+                    icon: _getCategoryIcon(subCategory.name),
+                    color: _getCategoryColor(index),
+                  ),
+                );
+              },
             ),
           ),
       ],
@@ -213,55 +191,42 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   Widget _buildLoadingShimmer(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
-        ),
-        child: SizedBox(
-          height: 86,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: 5,
-            separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-            itemBuilder: (BuildContext context, int index) {
-              return SizedBox(
-                width: 64,
-                child: Shimmer.fromColors(
-                  baseColor: scheme.surfaceContainerHighest,
-                  highlightColor: scheme.surface.withOpacity(0.85),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: scheme.surface,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(height: Spacing.xs),
-                      Container(
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: scheme.surface,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        itemCount: 6,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.md),
+        itemBuilder: (BuildContext context, int index) {
+          return SizedBox(
+            width: 72,
+            child: Shimmer.fromColors(
+              baseColor: scheme.surfaceContainerHighest,
+              highlightColor: scheme.surface.withOpacity(0.85),
+              child: Column(
+                children: [
+                  Container(
+                    width: AppDecorations.categoryChipSize,
+                    height: AppDecorations.categoryChipSize,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-        ),
+                  const SizedBox(height: Spacing.xs),
+                  Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -284,50 +249,106 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   }
 
   Widget _buildCategoriesList(BuildContext context, List<Category> categories) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
-        ),
-        child: SizedBox(
-          height: 86,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-            itemBuilder: (BuildContext context, int index) {
-              final category = categories[index];
-              return SizedBox(
-                width: 64,
-                child: _CategoryBubbleTile(
-                  category: category,
-                  index: index,
-                  onTap: () => setState(() => _selectedCategory = category),
-                  getIcon: _getCategoryIcon,
-                  getColor: _getCategoryColor,
-                ),
-              );
-            },
-          ),
-        ),
+    // Index 0 = "All" chip; categories start at index 1
+    final int itemCount = categories.length + 1;
+
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.md),
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return SizedBox(
+              width: 72,
+              child: _AllCategoryChip(
+                selected: _selectedIndex == 0,
+                onTap: () => setState(() => _selectedIndex = 0),
+              ),
+            );
+          }
+          final category = categories[index - 1];
+          final bool selected = _selectedIndex == index;
+          return SizedBox(
+            width: 72,
+            child: _CategoryBubbleTile(
+              category: category,
+              index: index - 1,
+              selected: selected,
+              onTap: () {
+                setState(() {
+                  _selectedIndex = index;
+                  _selectedCategory = category;
+                });
+              },
+              getIcon: _getCategoryIcon,
+              getColor: _getCategoryColor,
+            ),
+          );
+        },
       ),
     );
   }
+}
 
+class _AllCategoryChip extends StatelessWidget {
+  const _AllCategoryChip({
+    required this.selected,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: AppDecorations.categoryChipSize,
+            height: AppDecorations.categoryChipSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.lightGrey,
+              border: Border.all(
+                color: selected ? AppColors.secondary : Colors.transparent,
+                width: 2.5,
+              ),
+            ),
+            child: Icon(
+              Icons.apps_rounded,
+              color: selected ? AppColors.secondary : AppColors.navy,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            'All',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.secondary : AppColors.navy,
+                ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _CategoryBubbleTile extends StatelessWidget {
   const _CategoryBubbleTile({
     required this.category,
     required this.index,
+    required this.selected,
     required this.onTap,
     required this.getIcon,
     required this.getColor,
@@ -335,13 +356,13 @@ class _CategoryBubbleTile extends StatelessWidget {
 
   final Category category;
   final int index;
+  final bool selected;
   final VoidCallback onTap;
   final IconData Function(String name) getIcon;
   final Color Function(int index) getColor;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     final hasNetworkImage =
         category.imageUrl != null && category.imageUrl!.isNotEmpty;
     final assetPath = CategoryImageAssets.assetPathForName(category.name);
@@ -354,11 +375,15 @@ class _CategoryBubbleTile extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Container(
-            width: 52,
-            height: 52,
+            width: AppDecorations.categoryChipSize,
+            height: AppDecorations.categoryChipSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(0.08),
+              border: Border.all(
+                color: selected ? AppColors.secondary : Colors.transparent,
+                width: 2.5,
+              ),
             ),
             child: ClipOval(
               child: hasNetworkImage
@@ -376,7 +401,8 @@ class _CategoryBubbleTile extends StatelessWidget {
                       ? Image.asset(
                           assetPath,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildFallbackIcon(icon, color),
+                          errorBuilder: (_, __, ___) =>
+                              _buildFallbackIcon(icon, color),
                         )
                       : _buildFallbackIcon(icon, color)),
             ),
@@ -384,9 +410,11 @@ class _CategoryBubbleTile extends StatelessWidget {
           const SizedBox(height: Spacing.xs),
           Text(
             category.name,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(fontSize: 12, color: scheme.onSurface),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.secondary : AppColors.navy,
+                ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -417,7 +445,6 @@ class _SubCategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     final hasNetworkImage =
         subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
     final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
@@ -433,8 +460,8 @@ class _SubCategoryBubbleTile extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Container(
-            width: 52,
-            height: 52,
+            width: AppDecorations.categoryChipSize,
+            height: AppDecorations.categoryChipSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color.withOpacity(0.08),
@@ -465,7 +492,7 @@ class _SubCategoryBubbleTile extends StatelessWidget {
             subCategory.name,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
-                  color: scheme.onSurface,
+                  color: AppColors.navy,
                 ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -480,9 +507,8 @@ class _SubCategoryBubbleTile extends StatelessWidget {
     return Container(
       color: color.withOpacity(0.12),
       child: Center(
-        child: Icon(icon, color: color, size: 36),
+        child: Icon(icon, color: color, size: 28),
       ),
     );
   }
 }
-

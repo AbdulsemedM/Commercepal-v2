@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,48 +5,30 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
 import 'package:commercepal/features/home/data/home_discover_config.dart';
+import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
+import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 
-import 'compact_discover_product_tile.dart';
+/// Max products shown per category on Home (4 rows x 5).
+const int _kProductsPerRow = 5;
+const int _kMaxRows = 4;
+const int _kMaxProductsPerSection = _kProductsPerRow * _kMaxRows;
+const double _kCardWidth = 150;
+const double _kRowHeight = 290;
 
-/// 5×4 grid layout: explicit height avoids unbounded-height render errors inside
-/// vertical `SingleChildScrollView` → `Column` → horizontal scroll.
-class _DiscoverGridMetrics {
-  const _DiscoverGridMetrics({
-    required this.gridWidth,
-    required this.gridHeight,
-    required this.childAspectRatio,
-    required this.spacing,
-  });
-
-  final double gridWidth;
-  final double gridHeight;
-  final double childAspectRatio;
-  final double spacing;
-}
-
-_DiscoverGridMetrics _discoverGridMetrics(double parentMaxWidth) {
-  const int columns = 5;
-  const int rows = 4;
-  const double spacing = 8;
-  const double minCellWidth = 84;
-  final double minGridWidth = columns * minCellWidth + (columns - 1) * spacing;
-  final double gridWidth = math.max(parentMaxWidth, minGridWidth);
-  final double cellWidth = (gridWidth - (columns - 1) * spacing) / columns;
-  /// Slightly lower ratio => taller cells => more room for title/price (avoids overflow).
-  const double childAspectRatio = 0.68;
-  final double cellHeight = cellWidth / childAspectRatio;
-  final double gridHeight = rows * cellHeight + (rows - 1) * spacing;
-  return _DiscoverGridMetrics(
-    gridWidth: gridWidth,
-    gridHeight: gridHeight,
-    childAspectRatio: childAspectRatio,
-    spacing: spacing,
-  );
+List<List<Product>> _chunkProducts(List<Product> products) {
+  final int capped = products.length.clamp(0, _kMaxProductsPerSection);
+  final List<Product> slice = products.take(capped).toList();
+  final List<List<Product>> rows = <List<Product>>[];
+  for (var i = 0; i < slice.length; i += _kProductsPerRow) {
+    final int end = (i + _kProductsPerRow).clamp(0, slice.length);
+    rows.add(slice.sublist(i, end));
+  }
+  return rows;
 }
 
 class HomeDiscoverSection extends StatelessWidget {
@@ -61,10 +41,19 @@ class HomeDiscoverSection extends StatelessWidget {
   }
 
   static String? _formatOriginalPrice(Product product) {
-    if (product.originalPrice == null) return null;
+    double? original = product.originalPrice;
+    // Search API often omits originalPrice; derive it from the discount so
+    // both prices still show on discounted products.
+    if (original == null &&
+        product.discountPercentage != null &&
+        product.discountPercentage! > 0 &&
+        product.discountPercentage! < 100) {
+      original = product.price / (1 - product.discountPercentage! / 100);
+    }
+    if (original == null || original <= product.price) return null;
     final symbol = CountryCurrencyConstants.getCurrencySymbol(product.currency);
     final prefix = symbol.length > 1 ? '$symbol ' : symbol;
-    return '$prefix${MoneyFormatter.formatAmount(product.originalPrice!)}';
+    return '$prefix${MoneyFormatter.formatAmount(original)}';
   }
 
   @override
@@ -72,7 +61,7 @@ class HomeDiscoverSection extends StatelessWidget {
     return BlocBuilder<HomeDiscoverBloc, HomeDiscoverState>(
       builder: (context, state) {
         if (state is HomeDiscoverLoading || state is HomeDiscoverInitial) {
-          return _DiscoverLoading();
+          return const _DiscoverLoading();
         }
         if (state is HomeDiscoverError) {
           return Padding(
@@ -124,136 +113,84 @@ class _DiscoverCategoryBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<List<Product>> rows = _chunkProducts(products);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 4,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Text(
-                  config.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  context.push(
-                    '${AppRoutes.productSearch}?query=${Uri.encodeComponent(config.searchQuery)}',
-                  );
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: Spacing.sm),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'See all',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
+          child: HomeSectionHeader(
+            title: config.title,
+            actionLabel: 'See more',
+            onAction: () {
+              context.push(
+                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(config.searchQuery)}',
+              );
+            },
           ),
         ),
         const SizedBox(height: Spacing.sm),
-        LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final double parentW = constraints.maxWidth.isFinite
-                ? constraints.maxWidth
-                : MediaQuery.sizeOf(context).width;
-
-            if (products.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                child: Text(
-                  'No products in this category right now.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              );
-            }
-
-            final _DiscoverGridMetrics m = _discoverGridMetrics(parentW);
-
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-              child: SizedBox(
-                width: m.gridWidth,
-                height: m.gridHeight,
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: m.spacing,
-                    crossAxisSpacing: m.spacing,
-                    childAspectRatio: m.childAspectRatio,
+        if (rows.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+            child: Text(
+              'No products in this category right now.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  itemCount: 20,
-                  itemBuilder: (BuildContext context, int index) {
-                    if (index >= products.length) {
-                      return _EmptyDiscoverSlot();
-                    }
-                    final Product p = products[index];
-                    return CompactDiscoverProductTile(
-                      productId: p.id,
-                      imageUrl: p.imageUrl ?? '',
-                      title: p.name,
-                      price: HomeDiscoverSection._formatPrice(p),
-                      originalPrice: HomeDiscoverSection._formatOriginalPrice(p),
-                      discountPercentage: p.discountPercentage,
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        ),
+            ),
+          )
+        else
+          for (var r = 0; r < rows.length; r++) ...[
+            if (r > 0) const SizedBox(height: Spacing.sm),
+            _DiscoverProductRow(products: rows[r]),
+          ],
       ],
     );
   }
 }
 
-class _EmptyDiscoverSlot extends StatelessWidget {
+class _DiscoverProductRow extends StatelessWidget {
+  const _DiscoverProductRow({required this.products});
+
+  final List<Product> products;
+
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.add_photo_alternate_outlined,
-          size: 20,
-          color: scheme.onSurfaceVariant,
-        ),
+    return SizedBox(
+      height: _kRowHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        itemCount: products.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+        itemBuilder: (BuildContext context, int index) {
+          final Product p = products[index];
+          return SizedBox(
+            width: _kCardWidth,
+            child: ProductCard(
+              product: p,
+              productId: p.id,
+              imageUrl: p.imageUrl ?? '',
+              description: p.name,
+              price: HomeDiscoverSection._formatPrice(p),
+              originalPrice: HomeDiscoverSection._formatOriginalPrice(p),
+              rating: p.rating,
+              reviewCount: p.reviewCount,
+              discountPercentage: p.discountPercentage,
+              currency: p.currency,
+            ),
+          );
+        },
       ),
     );
   }
 }
 
 class _DiscoverLoading extends StatelessWidget {
+  const _DiscoverLoading();
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -278,38 +215,25 @@ class _DiscoverLoading extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Spacing.sm),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double parentW = constraints.maxWidth.isFinite
-                  ? constraints.maxWidth
-                  : MediaQuery.sizeOf(context).width;
-              final _DiscoverGridMetrics m = _discoverGridMetrics(parentW);
-              return SingleChildScrollView(
+          for (var row = 0; row < _kMaxRows; row++) ...[
+            if (row > 0) const SizedBox(height: Spacing.sm),
+            SizedBox(
+              height: _kRowHeight,
+              child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                child: SizedBox(
-                  width: m.gridWidth,
-                  height: m.gridHeight,
-                  child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: m.spacing,
-                      crossAxisSpacing: m.spacing,
-                      childAspectRatio: m.childAspectRatio,
-                    ),
-                    itemCount: 20,
-                    itemBuilder: (_, __) => Container(
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                itemCount: _kProductsPerRow,
+                separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+                itemBuilder: (_, __) => Container(
+                  width: _kCardWidth,
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: AppDecorations.cardBorderRadius,
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ],
       ],
     );

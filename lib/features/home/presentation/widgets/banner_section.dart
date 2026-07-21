@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
+import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/update/app_update_remote_config.dart';
 
 class BannerSection extends StatefulWidget {
@@ -58,7 +60,6 @@ class _BannerSectionState extends State<BannerSection> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     String promo = '';
     try {
       promo = AppUpdateRemoteConfig.homePromoBanner;
@@ -66,12 +67,16 @@ class _BannerSectionState extends State<BannerSection> {
 
     Widget placeholder() {
       return Container(
-        color: scheme.surfaceContainerHighest,
-        child: Center(
-          child: Icon(
-            Icons.image,
-            color: scheme.onSurfaceVariant,
-            size: 60,
+        decoration: const BoxDecoration(gradient: AppDecorations.heroGradient),
+        child: const Center(
+          child: Text(
+            'Shop the World',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 28,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       );
@@ -80,9 +85,12 @@ class _BannerSectionState extends State<BannerSection> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.md),
       height: 180,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: AppDecorations.cardBorderRadius,
+        boxShadow: AppDecorations.softCardShadow(),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppDecorations.cardBorderRadius,
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
@@ -95,65 +103,83 @@ class _BannerSectionState extends State<BannerSection> {
                   _bannerAssets[index],
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  errorBuilder:
-                      (BuildContext context, Object error, StackTrace? stackTrace) {
+                  errorBuilder: (
+                    BuildContext context,
+                    Object error,
+                    StackTrace? stackTrace,
+                  ) {
                     return placeholder();
                   },
                 );
               },
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  if (promo.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.md,
-                        vertical: Spacing.sm,
+            // Maroon → gold overlay for website-like hero presence
+            DecoratedBox(
+              decoration: BoxDecoration(gradient: AppDecorations.heroImageOverlay),
+            ),
+            // Headline
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Text(
+                      'Shop the World',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 28,
+                        letterSpacing: 0.4,
+                        shadows: <Shadow>[
+                          Shadow(
+                            color: Colors.black26,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      color: Colors.black54,
-                      child: Text(
+                    ),
+                    if (promo.isNotEmpty) ...[
+                      const SizedBox(height: Spacing.xs),
+                      Text(
                         promo,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.95),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
                       ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: Spacing.sm,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List<Widget>.generate(_bannerAssets.length, (int i) {
+                  final bool active = i == _currentPage;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: active ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: active
+                          ? AppColors.secondary
+                          : Colors.white.withValues(alpha: 0.45),
                     ),
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: promo.isNotEmpty ? Spacing.xs : 0,
-                      bottom: Spacing.sm,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List<Widget>.generate(_bannerAssets.length, (int i) {
-                        final bool active = i == _currentPage;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: active ? 18 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            color: active
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.45),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ],
+                  );
+                }),
               ),
             ),
           ],

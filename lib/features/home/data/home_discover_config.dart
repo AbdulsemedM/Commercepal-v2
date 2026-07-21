@@ -28,8 +28,28 @@ const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
     searchQuery: 'cosmetics',
   ),
   HomeDiscoverSectionConfig(
-    id: 'fashion',
-    title: 'Fashion',
-    searchQuery: 'fashion',
+    id: 'computers',
+    title: 'Computers',
+    searchQuery: 'laptop computer',
+  ),
+  HomeDiscoverSectionConfig(
+    id: 'womens_fashion',
+    title: "Women's Fashion",
+    searchQuery: "women's fashion",
+  ),
+  HomeDiscoverSectionConfig(
+    id: 'abayas',
+    title: 'Abayas',
+    searchQuery: 'abaya',
+  ),
+  HomeDiscoverSectionConfig(
+    id: 'mens_fashion',
+    title: "Men's Fashion",
+    searchQuery: "men's fashion",
+  ),
+  HomeDiscoverSectionConfig(
+    id: 'audio',
+    title: 'Audio',
+    searchQuery: 'headphones speaker audio',
   ),
 ];

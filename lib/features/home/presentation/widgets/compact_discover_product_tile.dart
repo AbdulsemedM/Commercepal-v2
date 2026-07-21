@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
 
 /// Dense tile for 5-column home discover grids; taps navigate to product detail.
@@ -29,9 +30,10 @@ class CompactDiscoverProductTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -44,54 +46,77 @@ class CompactDiscoverProductTile extends StatelessWidget {
           },
           child: Ink(
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: scheme.shadow.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: isDark ? scheme.surfaceContainerLow : Colors.white,
+              borderRadius: BorderRadius.circular(AppDecorations.radiusSm),
+              boxShadow: AppDecorations.softCardShadow(scheme.shadow),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Expanded(
                   flex: 58,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(9),
-                    ),
-                    child: imageUrl.isNotEmpty
-                        ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            gaplessPlayback: true,
-                            errorBuilder: (_, __, ___) => _placeholder(context),
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return ColoredBox(
-                                color: scheme.surfaceContainerHighest
-                                    .withOpacity(0.6),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      value: progress.expectedTotalBytes != null
-                                          ? progress.cumulativeBytesLoaded /
-                                              progress.expectedTotalBytes!
-                                          : null,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppDecorations.radiusSm - 1),
+                        ),
+                        child: imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                gaplessPlayback: true,
+                                errorBuilder: (_, __, ___) =>
+                                    _placeholder(context),
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return ColoredBox(
+                                    color: scheme.surfaceContainerHighest
+                                        .withOpacity(0.6),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          value: progress.expectedTotalBytes !=
+                                                  null
+                                              ? progress.cumulativeBytesLoaded /
+                                                  progress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : _placeholder(context),
+                                  );
+                                },
+                              )
+                            : _placeholder(context),
+                      ),
+                      if (discountPercentage != null && discountPercentage! > 0)
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 3,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '-$discountPercentage%',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -115,7 +140,9 @@ class CompactDiscoverProductTile extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.left,
                               style: textTheme.labelSmall?.copyWith(
-                                color: scheme.onSurface,
+                                color: isDark
+                                    ? scheme.onSurface
+                                    : AppColors.navy,
                                 height: 1.15,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 10,
@@ -137,52 +164,15 @@ class CompactDiscoverProductTile extends StatelessWidget {
                           ),
                         ],
                         const SizedBox(height: 2),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                price,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: originalPrice != null
-                                      ? AppColors.error
-                                      : AppColors.primary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                            if (discountPercentage != null &&
-                                discountPercentage! > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 2),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerRight,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 2,
-                                      vertical: 1,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppColors.error.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      '-$discountPercentage%',
-                                      style: textTheme.labelSmall?.copyWith(
-                                        color: AppColors.error,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                        Text(
+                          price,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.secondary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),

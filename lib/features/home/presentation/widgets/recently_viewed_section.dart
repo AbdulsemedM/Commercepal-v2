@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
+import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 import 'product_card.dart';
 
@@ -19,10 +21,18 @@ class RecentlyViewedSection extends StatelessWidget {
   }
 
   static String? _formatOriginalPrice(Product product) {
-    if (product.originalPrice == null) return null;
+    double? original = product.originalPrice;
+    // Derive from discount when the API omits originalPrice.
+    if (original == null &&
+        product.discountPercentage != null &&
+        product.discountPercentage! > 0 &&
+        product.discountPercentage! < 100) {
+      original = product.price / (1 - product.discountPercentage! / 100);
+    }
+    if (original == null || original <= product.price) return null;
     final symbol = CountryCurrencyConstants.getCurrencySymbol(product.currency);
     final prefix = symbol.length > 1 ? '$symbol ' : symbol;
-    return '$prefix${MoneyFormatter.formatAmount(product.originalPrice!)}';
+    return '$prefix${MoneyFormatter.formatAmount(original)}';
   }
 
   @override
@@ -32,17 +42,8 @@ class RecentlyViewedSection extends StatelessWidget {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                LocalizationService.t(context, 'home.recentlyViewed.title'),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-            ],
+          child: HomeSectionHeader(
+            title: LocalizationService.t(context, 'home.recentlyViewed.title'),
           ),
         ),
         const SizedBox(height: Spacing.md),
@@ -71,7 +72,7 @@ class RecentlyViewedSection extends StatelessWidget {
   Widget _buildLoading(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 220,
+      height: 320,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
@@ -79,14 +80,14 @@ class RecentlyViewedSection extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
         itemBuilder: (context, index) {
           return SizedBox(
-            width: 160,
+            width: 180,
             child: Shimmer.fromColors(
               baseColor: scheme.surfaceContainerHighest,
               highlightColor: scheme.surface,
               child: Container(
                 decoration: BoxDecoration(
                   color: scheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppDecorations.cardBorderRadius,
                 ),
               ),
             ),
@@ -127,7 +128,7 @@ class RecentlyViewedSection extends StatelessWidget {
 
   Widget _buildProductList(BuildContext context, List<Product> products) {
     return SizedBox(
-      height: 240,
+      height: 320,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
@@ -136,8 +137,9 @@ class RecentlyViewedSection extends StatelessWidget {
         itemBuilder: (context, index) {
           final product = products[index];
           return SizedBox(
-            width: 160,
+            width: 180,
             child: ProductCard(
+              product: product,
               productId: product.id,
               imageUrl: product.imageUrl ?? '',
               description: product.name,
@@ -146,6 +148,7 @@ class RecentlyViewedSection extends StatelessWidget {
               rating: product.rating,
               reviewCount: product.reviewCount,
               discountPercentage: product.discountPercentage,
+              currency: product.currency,
               showProgressBar: false,
             ),
           );

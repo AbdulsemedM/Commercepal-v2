@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
+import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 class DealOfDaySection extends StatefulWidget {
@@ -17,7 +19,6 @@ class _DealOfDaySectionState extends State<DealOfDaySection> {
   @override
   void initState() {
     super.initState();
-    // Update timer every second
     Future<void>.delayed(const Duration(seconds: 1), _updateTimer);
   }
 
@@ -80,6 +81,19 @@ class _DealOfDaySectionState extends State<DealOfDaySection> {
     );
   }
 
+  void _openDealDialog() {
+    AppDialog.show<void>(
+      context,
+      icon: const Icon(Icons.workspace_premium_outlined),
+      title: 'Deal of the Day is almost ready',
+      content: _buildDealDialogContent(context),
+      actions: const <AppDialogAction>[
+        AppDialogAction(label: 'Not now'),
+        AppDialogAction(label: 'Close', isPrimary: true),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -87,6 +101,13 @@ class _DealOfDaySectionState extends State<DealOfDaySection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          HomeSectionHeader(
+            title: LocalizationService.t(context, 'home.dealOfDay.title'),
+            actionLabel:
+                LocalizationService.t(context, 'home.dealOfDay.viewAll'),
+            onAction: _openDealDialog,
+          ),
+          const SizedBox(height: Spacing.sm),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
@@ -94,88 +115,49 @@ class _DealOfDaySectionState extends State<DealOfDaySection> {
               vertical: Spacing.md,
             ),
             decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(16),
+              gradient: AppDecorations.heroGradient,
+              borderRadius: AppDecorations.cardBorderRadius,
+              boxShadow: AppDecorations.softCardShadow(),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                const Icon(
+                  Icons.access_time,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: Spacing.xs),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        LocalizationService.t(context, 'home.dealOfDay.title'),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: Spacing.xs),
-                      Row(
-                        children: <Widget>[
-                          const Icon(
-                            Icons.access_time,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: Spacing.xs),
-                          Text(
-                            '${_formatDuration(_remainingTime)} ${LocalizationService.t(context, 'home.dealOfDay.remaining')}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: Text(
+                    '${_formatDuration(_remainingTime)} ${LocalizationService.t(context, 'home.dealOfDay.remaining')}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                   ),
                 ),
-                const SizedBox(width: Spacing.md),
-                OutlinedButton(
-                  onPressed: () {
-                    AppDialog.show<void>(
-                      context,
-                      icon: const Icon(Icons.workspace_premium_outlined),
-                      title: 'Deal of the Day is almost ready',
-                      content: _buildDealDialogContent(context),
-                      actions: const <AppDialogAction>[
-                        AppDialogAction(label: 'Not now'),
-                        AppDialogAction(label: 'Close', isPrimary: true),
-                      ],
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
+                TextButton(
+                  onPressed: _openDealDialog,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.navy,
+                    backgroundColor: AppColors.secondary,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.md,
+                      horizontal: Spacing.sm,
                       vertical: 4,
                     ),
-                    minimumSize: const Size(0, 30),
+                    minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    side: const BorderSide(color: Colors.white, width: 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        LocalizationService.t(context, 'home.dealOfDay.viewAll'),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                      const SizedBox(width: Spacing.xs),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
+                  child: Text(
+                    LocalizationService.t(context, 'home.dealOfDay.viewAll'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -215,4 +197,3 @@ class _DialogFeatureRow extends StatelessWidget {
     );
   }
 }
-

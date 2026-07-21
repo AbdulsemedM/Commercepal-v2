@@ -16,7 +16,7 @@ import '../widgets/categories_section.dart';
 import '../widgets/deal_of_day_section.dart';
 import '../widgets/home_discover_section.dart';
 import '../widgets/recently_viewed_section.dart';
-import '../widgets/local_recent_product_views_strip.dart';
+import '../widgets/trust_badges_strip.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,9 +26,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final GlobalKey<LocalRecentProductViewsStripState> _localRecentKey =
-      GlobalKey<LocalRecentProductViewsStripState>();
-
   void _navigateToTab(BuildContext context, int tabIndex) {
     final DashboardScreenState? dashboardState = context
         .findAncestorStateOfType<DashboardScreenState>();
@@ -46,7 +43,6 @@ class _HomePageState extends State<HomePage> {
     } catch (_) {
       // CartBloc may be absent outside dashboard
     }
-    await _localRecentKey.currentState?.reload();
     await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 
@@ -101,8 +97,9 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: Spacing.lg),
                 const HomeDiscoverSection(),
                 const SizedBox(height: Spacing.lg),
-                LocalRecentProductViewsStrip(key: _localRecentKey),
                 const RecentlyViewedSection(),
+                const TrustBadgesStrip(),
+                const SizedBox(height: Spacing.xl),
               ],
             ),
           ),
