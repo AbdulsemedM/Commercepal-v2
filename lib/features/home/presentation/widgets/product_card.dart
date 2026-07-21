@@ -147,11 +147,11 @@ class _ProductCardState extends State<ProductCard> {
     // Compact metrics when height is constrained (home rows / grid cells).
     final bool compact = bounded;
     final double pad = compact ? Spacing.xs : Spacing.sm;
-    final double titleSize = compact ? 11 : 13;
+    final double titleSize = compact ? 12.5 : 14.5;
     final double priceSize = compact ? 13 : 15;
     final double originalSize = compact ? 9 : 11;
-    final double buttonHeight = compact ? 28 : 32;
-    final double buttonFont = compact ? 9 : 11;
+    final double buttonHeight = compact ? 30 : 36;
+    final double buttonFont = compact ? 10 : 12;
 
     final Widget imageSection = _buildImageSection(
       context,
@@ -159,7 +159,7 @@ class _ProductCardState extends State<ProductCard> {
       expand: compact,
     );
 
-    final Widget textBlock = InkWell(
+    final Widget titleAndRating = InkWell(
       onTap: () => _openProductDetail(context),
       borderRadius: BorderRadius.circular(8),
       child: Column(
@@ -171,14 +171,14 @@ class _ProductCardState extends State<ProductCard> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isDark ? scheme.onSurface : AppColors.navy,
                   fontSize: titleSize,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
                   height: 1.15,
                 ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
           if (widget.rating != null && widget.rating! > 0) ...[
+            const SizedBox(height: 2),
             Row(
               children: <Widget>[
                 Icon(
@@ -210,19 +210,19 @@ class _ProductCardState extends State<ProductCard> {
                 ],
               ],
             ),
-            const SizedBox(height: 2),
           ],
-          Text(
-            widget.price,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: priceSize,
-                  height: 1.15,
-                ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
+        ],
+      ),
+    );
+
+    final Widget priceSection = InkWell(
+      onTap: () => _openProductDetail(context),
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          _buildPriceText(context, isDark, priceSize),
           if (widget.originalPrice != null) ...[
             const SizedBox(height: 1),
             Text(
@@ -237,6 +237,20 @@ class _ProductCardState extends State<ProductCard> {
               maxLines: 1,
             ),
           ],
+        ],
+      ),
+    );
+
+    final Widget textBlock = InkWell(
+      onTap: () => _openProductDetail(context),
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          titleAndRating,
+          const SizedBox(height: 2),
+          priceSection,
           if (widget.showProgressBar &&
               widget.sold != null &&
               widget.inStock != null) ...[
@@ -280,7 +294,7 @@ class _ProductCardState extends State<ProductCard> {
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: _isAdding
@@ -311,15 +325,16 @@ class _ProductCardState extends State<ProductCard> {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                // Shrink/clip text if space is tight; button stays pinned.
                 Flexible(
                   child: ClipRect(
                     child: Align(
                       alignment: Alignment.topLeft,
-                      child: textBlock,
+                      child: titleAndRating,
                     ),
                   ),
                 ),
+                const Spacer(),
+                priceSection,
                 if (addButton != null) ...[
                   const SizedBox(height: 4),
                   addButton,
@@ -361,6 +376,45 @@ class _ProductCardState extends State<ProductCard> {
                 detailsSection,
               ],
             ),
+    );
+  }
+
+  /// Price like the web: currency prefix in pink, amount in navy.
+  Widget _buildPriceText(BuildContext context, bool isDark, double priceSize) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color amountColor = isDark ? scheme.onSurface : AppColors.navy;
+
+    final String price = widget.price.trim();
+    final int splitIndex = price.indexOf(' ');
+    final String prefix = splitIndex > 0 ? price.substring(0, splitIndex) : '';
+    final String amount =
+        splitIndex > 0 ? price.substring(splitIndex + 1) : price;
+
+    return Text.rich(
+      TextSpan(
+        children: <InlineSpan>[
+          if (prefix.isNotEmpty)
+            TextSpan(
+              text: '$prefix ',
+              style: TextStyle(
+                color: AppColors.pink,
+                fontWeight: FontWeight.w700,
+                fontSize: priceSize - 2,
+              ),
+            ),
+          TextSpan(
+            text: amount,
+            style: TextStyle(
+              color: amountColor,
+              fontWeight: FontWeight.w800,
+              fontSize: priceSize,
+            ),
+          ),
+        ],
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+      style: const TextStyle(height: 1.15),
     );
   }
 
@@ -427,22 +481,25 @@ class _ProductCardState extends State<ProductCard> {
           if (widget.discountPercentage != null &&
               widget.discountPercentage! > 0)
             Positioned(
-              top: 6,
-              left: 6,
+              top: 8,
+              left: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
+                width: expand ? 34 : 40,
+                height: expand ? 34 : 40,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.error,
-                  borderRadius: BorderRadius.circular(5),
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    width: 1.4,
+                  ),
                 ),
                 child: Text(
                   '-${widget.discountPercentage}%',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: expand ? 8 : 10,
+                    fontSize: expand ? 9 : 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -43,9 +43,9 @@ class HomeSectionHeader extends StatelessWidget {
             child: Text(
               actionLabel!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.secondary,
+                    color: AppColors.pink,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 14,
                   ),
             ),
           ),

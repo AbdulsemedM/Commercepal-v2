@@ -156,6 +156,11 @@ class _CartPageState extends State<CartPage> {
                   onPrimary: () {
                     context.read<CartBloc>().add(CartLoadRequested());
                   },
+                  secondaryLabel:
+                      LocalizationService.t(context, 'cart.clearCart'),
+                  onSecondary: () {
+                    _showClearCartDialog(context);
+                  },
                 ),
               );
             }

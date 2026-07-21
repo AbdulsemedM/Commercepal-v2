@@ -5,10 +5,13 @@ class AppColors {
 
   // Brand colors
   static const Color primary = Color(0xFF99045E); // #99045E
-  static const Color secondary = Color(0xFFFACC15); // #FACC15
+  static const Color secondary = Color(0xFFF5B301); // warm gold (CTAs, stars)
+
+  /// Vibrant pink accent for links, selected states and price highlights.
+  static const Color pink = Color(0xFFE9146B);
 
   // Neutrals / Surfaces
-  static const Color cream = Color(0xFFFFF7ED); // light cream for surfaces
+  static const Color cream = Color(0xFFFEF9F1); // warm off-white app background
   static const Color lightGrey = Color(0xFFF5F6F8); // very light grey bg
   /// Dark navy for section titles (matches commercepal.com headings).
   static const Color navy = Color(0xFF1E293B);

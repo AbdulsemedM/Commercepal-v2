@@ -1,62 +1,24 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/update/app_update_remote_config.dart';
 
-class BannerSection extends StatefulWidget {
+/// Hero banner: pink → orange → gold gradient card with a marketplace
+/// chip, headline, subtitle and an "Explore deals" call to action.
+class BannerSection extends StatelessWidget {
   const BannerSection({super.key});
 
-  @override
-  State<BannerSection> createState() => _BannerSectionState();
-}
-
-class _BannerSectionState extends State<BannerSection> {
-  static const List<String> _bannerAssets = <String>[
-    'assets/images/banner.png',
-    'assets/images/banner1.jpeg',
-    'assets/images/banner2.jpeg',
-  ];
-
-  static const Duration _autoAdvanceInterval = Duration(seconds: 4);
-
-  late final PageController _pageController;
-  Timer? _autoAdvanceTimer;
-  int _currentPage = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-    _scheduleAutoAdvance();
-  }
-
-  void _scheduleAutoAdvance() {
-    _autoAdvanceTimer?.cancel();
-    _autoAdvanceTimer = Timer.periodic(_autoAdvanceInterval, (_) {
-      if (!mounted || !_pageController.hasClients) return;
-      final int next = (_currentPage + 1) % _bannerAssets.length;
-      _pageController.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
-    _scheduleAutoAdvance();
-  }
-
-  @override
-  void dispose() {
-    _autoAdvanceTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
+  static const LinearGradient _heroGradient = LinearGradient(
+    begin: Alignment.bottomLeft,
+    end: Alignment.topRight,
+    colors: <Color>[
+      Color(0xFFE9146B),
+      Color(0xFFF97316),
+      Color(0xFFFBBF24),
+    ],
+    stops: <double>[0.0, 0.6, 1.0],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -64,126 +26,115 @@ class _BannerSectionState extends State<BannerSection> {
     try {
       promo = AppUpdateRemoteConfig.homePromoBanner;
     } catch (_) {}
-
-    Widget placeholder() {
-      return Container(
-        decoration: const BoxDecoration(gradient: AppDecorations.heroGradient),
-        child: const Center(
-          child: Text(
-            'Shop the World',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      );
-    }
+    final String subtitle = promo.isNotEmpty
+        ? promo
+        : 'Millions of products from every corner of the globe, delivered to your door.';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      height: 180,
       decoration: BoxDecoration(
-        borderRadius: AppDecorations.cardBorderRadius,
-        boxShadow: AppDecorations.softCardShadow(),
+        gradient: _heroGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(0xFFE9146B).withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: ClipRRect(
-        borderRadius: AppDecorations.cardBorderRadius,
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: _bannerAssets.length,
-              itemBuilder: (BuildContext context, int index) {
-                return Image.asset(
-                  _bannerAssets[index],
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (
-                    BuildContext context,
-                    Object error,
-                    StackTrace? stackTrace,
-                  ) {
-                    return placeholder();
-                  },
-                );
-              },
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: <Widget>[
+          // Globe line-art decoration
+          Positioned(
+            top: -12,
+            right: -16,
+            child: Icon(
+              Icons.public,
+              size: 130,
+              color: Colors.white.withValues(alpha: 0.22),
             ),
-            // Maroon → gold overlay for website-like hero presence
-            DecoratedBox(
-              decoration: BoxDecoration(gradient: AppDecorations.heroImageOverlay),
-            ),
-            // Headline
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Text(
-                      'Shop the World',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 28,
-                        letterSpacing: 0.4,
-                        shadows: <Shadow>[
-                          Shadow(
-                            color: Colors.black26,
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(Spacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'GLOBAL MARKETPLACE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
                     ),
-                    if (promo.isNotEmpty) ...[
-                      const SizedBox(height: Spacing.xs),
+                  ),
+                ),
+                const SizedBox(height: Spacing.sm),
+                const Text(
+                  'Shop the World',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 30,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  subtitle,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: Spacing.md),
+                FilledButton(
+                  onPressed: () => context.push(AppRoutes.productSearch),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF17162B),
+                    foregroundColor: Colors.white,
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
                       Text(
-                        promo,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        'Explore deals',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward_rounded, size: 16),
                     ],
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: Spacing.sm,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List<Widget>.generate(_bannerAssets.length, (int i) {
-                  final bool active = i == _currentPage;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: active ? 18 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: active
-                          ? AppColors.secondary
-                          : Colors.white.withValues(alpha: 0.45),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

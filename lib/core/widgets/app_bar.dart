@@ -38,23 +38,16 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final String placeholder =
         searchPlaceholder ??
         LocalizationService.t(context, 'appBar.searchPlaceholder');
-    final Color searchFill = Colors.white;
+    final Color barColor = isDark ? scheme.surface : AppColors.cream;
+    final Color searchFill = isDark ? scheme.surfaceContainerLow : Colors.white;
     final Color searchSecondary = scheme.onSurfaceVariant;
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: barColor,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -68,22 +61,34 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             children: <Widget>[
               InkWell(
                 onTap: onLogoTap,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   alignment: Alignment.center,
-                  child: Image.asset(
-                    'assets/images/app_icon.png',
-                    width: 40,
-                    height: 40,
-                    errorBuilder: (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return const SizedBox(width: 40, height: 40);
-                    },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 38,
+                      height: 38,
+                      fit: BoxFit.cover,
+                      errorBuilder: (
+                        BuildContext context,
+                        Object error,
+                        StackTrace? stackTrace,
+                      ) {
+                        return const Icon(
+                          Icons.bolt_rounded,
+                          color: AppColors.navy,
+                          size: 26,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -91,12 +96,19 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               Expanded(
                 child: InkWell(
                   onTap: onSearchTap,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(23),
                   child: Container(
-                    height: 44,
+                    height: 46,
                     decoration: BoxDecoration(
                       color: searchFill,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(23),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: TextField(
                       enabled: onSearchTap == null,
@@ -143,41 +155,52 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: Spacing.sm),
               InkWell(
                 onTap: onCartTap,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: searchFill,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   alignment: Alignment.center,
                   child: Stack(
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: <Widget>[
-                      const Icon(
+                      Icon(
                         Icons.shopping_cart_outlined,
-                        color: Colors.white,
+                        color: isDark ? scheme.onSurface : AppColors.navy,
                         size: 24,
                       ),
                       if (cartCount > 0)
                         Positioned(
-                          right: 8,
-                          top: 6,
+                          right: -12,
+                          top: -14,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 5,
                               vertical: 2,
                             ),
                             constraints: const BoxConstraints(
-                              minWidth: 10,
-                              minHeight: 10,
+                              minWidth: 18,
+                              minHeight: 18,
                             ),
                             decoration: const BoxDecoration(
-                              color: AppColors.secondary,
+                              color: AppColors.pink,
                               shape: BoxShape.circle,
                             ),
                             child: Text(
                               cartCount > 99 ? '99+' : '$cartCount',
                               style: const TextStyle(
-                                color: AppColors.onSecondary,
+                                color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 height: 1.2,
@@ -193,26 +216,26 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: Spacing.sm),
               InkWell(
                 onTap: onProfileTap,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
                   alignment: Alignment.center,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: <Widget>[
                       Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: AppColors.pink,
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Center(
                           child: Text(
                             userInitials.toUpperCase(),
                             style: const TextStyle(
-                              color: AppColors.primary,
+                              color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
@@ -222,8 +245,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                       ),
                       if (hasNotification)
                         Positioned(
-                          right: 0,
-                          top: 0,
+                          right: -2,
+                          top: -2,
                           child: Container(
                             width: 14,
                             height: 14,
@@ -231,7 +254,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                               color: AppColors.secondary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.primary,
+                                color: barColor,
                                 width: 2,
                               ),
                             ),

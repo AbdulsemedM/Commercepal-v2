@@ -41,7 +41,7 @@ class AppTheme {
       primaryColor: AppColors.primary,
     );
 
-    final Color scaffoldBg = isLight ? Colors.white : scheme.surface;
+    final Color scaffoldBg = isLight ? AppColors.cream : scheme.surface;
     final Color cardColor = isLight ? Colors.white : scheme.surfaceContainerLow;
 
     return base.copyWith(

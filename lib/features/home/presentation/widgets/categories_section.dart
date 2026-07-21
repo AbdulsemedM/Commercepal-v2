@@ -28,35 +28,36 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   static IconData _getCategoryIcon(String categoryName) {
     final name = categoryName.toLowerCase();
     if (name.contains('cosmetic') || name.contains('beauty')) {
-      return Icons.face;
+      return Icons.face_outlined;
     } else if (name.contains('fashion') || name.contains('cloth')) {
-      return Icons.checkroom;
+      return Icons.shopping_bag_outlined;
     } else if (name.contains('comput') || name.contains('electronic')) {
-      return Icons.laptop;
+      return Icons.laptop_mac_outlined;
     } else if (name.contains('sport') || name.contains('fitness')) {
-      return Icons.sports_soccer;
+      return Icons.sports_soccer_outlined;
     } else if (name.contains('furniture') || name.contains('home')) {
-      return Icons.chair;
+      return Icons.chair_outlined;
     } else if (name.contains('food') || name.contains('grocery')) {
-      return Icons.restaurant;
+      return Icons.restaurant_outlined;
     } else if (name.contains('book') || name.contains('education')) {
-      return Icons.book;
+      return Icons.menu_book_outlined;
     } else if (name.contains('toy') || name.contains('game')) {
-      return Icons.toys;
+      return Icons.toys_outlined;
     } else if (name.contains('health') || name.contains('medical')) {
-      return Icons.local_hospital;
+      return Icons.medical_services_outlined;
     } else if (name.contains('auto') || name.contains('vehicle')) {
-      return Icons.directions_car;
+      return Icons.directions_car_outlined;
     } else if (name.contains('pet')) {
-      return Icons.pets;
+      return Icons.pets_outlined;
     } else if (name.contains('jewelry') || name.contains('watch')) {
-      return Icons.watch;
-    } else if (name.contains('phone') || name.contains('mobile')) {
-      return Icons.phone_android;
+      return Icons.watch_outlined;
+    } else if (name.contains('phone') || name.contains('mobile') ||
+        name.contains('technolog')) {
+      return Icons.smartphone_outlined;
     } else if (name.contains('garden')) {
-      return Icons.yard;
+      return Icons.yard_outlined;
     }
-    return Icons.category;
+    return Icons.category_outlined;
   }
 
   static Color _getCategoryColor(int index) {
@@ -314,16 +315,24 @@ class _AllCategoryChip extends StatelessWidget {
             height: AppDecorations.categoryChipSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.lightGrey,
-              border: Border.all(
-                color: selected ? AppColors.secondary : Colors.transparent,
-                width: 2.5,
-              ),
+              color: selected ? AppColors.pink : Colors.white,
+              border: selected
+                  ? null
+                  : Border.all(color: const Color(0xFFF0E6D8)),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: selected
+                      ? AppColors.pink.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.apps_rounded,
-              color: selected ? AppColors.secondary : AppColors.navy,
-              size: 26,
+              Icons.grid_view_rounded,
+              color: selected ? Colors.white : AppColors.navy,
+              size: 24,
             ),
           ),
           const SizedBox(height: Spacing.xs),
@@ -332,7 +341,9 @@ class _AllCategoryChip extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.secondary : AppColors.navy,
+                  color: selected
+                      ? AppColors.navy
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -363,11 +374,7 @@ class _CategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasNetworkImage =
-        category.imageUrl != null && category.imageUrl!.isNotEmpty;
-    final assetPath = CategoryImageAssets.assetPathForName(category.name);
     final icon = getIcon(category.name);
-    final color = getColor(index);
 
     return InkWell(
       onTap: onTap,
@@ -379,32 +386,24 @@ class _CategoryBubbleTile extends StatelessWidget {
             height: AppDecorations.categoryChipSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withOpacity(0.08),
-              border: Border.all(
-                color: selected ? AppColors.secondary : Colors.transparent,
-                width: 2.5,
-              ),
+              color: selected ? AppColors.pink : Colors.white,
+              border: selected
+                  ? null
+                  : Border.all(color: const Color(0xFFF0E6D8)),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: selected
+                      ? AppColors.pink.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: ClipOval(
-              child: hasNetworkImage
-                  ? Image.network(
-                      category.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => (assetPath != null
-                          ? Image.asset(
-                              assetPath,
-                              fit: BoxFit.cover,
-                            )
-                          : _buildFallbackIcon(icon, color)),
-                    )
-                  : (assetPath != null
-                      ? Image.asset(
-                          assetPath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _buildFallbackIcon(icon, color),
-                        )
-                      : _buildFallbackIcon(icon, color)),
+            child: Icon(
+              icon,
+              color: selected ? Colors.white : AppColors.navy,
+              size: 24,
             ),
           ),
           const SizedBox(height: Spacing.xs),
@@ -413,7 +412,9 @@ class _CategoryBubbleTile extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 12,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.secondary : AppColors.navy,
+                  color: selected
+                      ? AppColors.navy
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -421,13 +422,6 @@ class _CategoryBubbleTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFallbackIcon(IconData icon, Color color) {
-    return Container(
-      color: color.withOpacity(0.12),
-      child: Center(child: Icon(icon, color: color, size: 24)),
     );
   }
 }
