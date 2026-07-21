@@ -18,12 +18,11 @@ class _BannerSectionState extends State<BannerSection> {
   static const List<String> _bannerAssets = <String>[
     'assets/images/banner_mega_sale.png',
     'assets/images/banner_new_arrivals.png',
-    'assets/images/banner_cashback.png',
     'assets/images/banner_flashdeals.png',
   ];
 
-  /// Banner images are 1024x683 (3:2); rendered slightly wider crop.
-  static const double _bannerAspectRatio = 2.15;
+  /// Matches the generated banner assets (1536x1024, 3:2) so nothing crops.
+  static const double _bannerAspectRatio = 3 / 2;
 
   static const Duration _autoAdvanceInterval = Duration(seconds: 5);
 

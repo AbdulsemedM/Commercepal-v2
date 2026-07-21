@@ -18,12 +18,16 @@ const List<HomeDiscoverSectionConfig> kHomeDiscoverSections = [
   HomeDiscoverSectionConfig(
     id: 'todays_deals',
     title: "Today's Deals",
-    searchQuery: 'phone sale',
+    // 'phone sale' returned only Alibaba rows (no discount/rating meta).
+    searchQuery: 'trending popular',
   ),
   HomeDiscoverSectionConfig(
     id: 'smart_phones',
     title: 'Smart phones',
-    searchQuery: 'phones sale phone case',
+    // Only query found that returns actual affiliate smartphones
+    // (HONOR/realme/etc. with discount + rating meta). Broader phone
+    // queries fall back to Alibaba accessories without meta.
+    searchQuery: 'smartphone discount',
   ),
   HomeDiscoverSectionConfig(
     id: 'watches',

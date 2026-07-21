@@ -111,6 +111,7 @@ flutter:
     - assets/images/background.svg
     - assets/images/logo.png
     - assets/images/app_icon.png
+    - assets/images/removebg.png
     - assets/images/Icon.png
     - assets/images/Google.png
     - assets/images/Facebook.png
@@ -120,7 +121,6 @@ flutter:
     - assets/images/banner2.jpeg
     - assets/images/banner_mega_sale.png
     - assets/images/banner_new_arrivals.png
-    - assets/images/banner_cashback.png
     - assets/images/banner_flashdeals.png
     - assets/images/accessories.jpg
     - assets/images/cosmetics.jpg
