@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
+import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
@@ -613,12 +615,26 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
     if (cart == null || addressId == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(LocalizationService.t(context, 'checkout.payment')),
-          backgroundColor: scheme.surface,
-          iconTheme: IconThemeData(color: scheme.onSurface),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: <Widget>[
+              CheckoutScreenHeader(
+                title: LocalizationService.t(context, 'checkout.payment'),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    LocalizationService.t(
+                      context,
+                      'checkout.missingCheckoutData',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        body: Center(child: Text(LocalizationService.t(context, 'checkout.missingCheckoutData'))),
       );
     }
 
@@ -699,112 +715,122 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         : '';
 
     return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(
-        title: Text(
-          LocalizationService.t(context, 'checkout.selectPaymentMethod'),
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: scheme.onSurface,
-          ),
-        ),
-        backgroundColor: scheme.surface,
-        elevation: 0,
-        iconTheme: IconThemeData(color: scheme.onSurface),
-      ),
-      body: Column(
-        children: [
-          CheckoutStepIndicator(
-            currentStep: 2,
-            totalSteps: 3,
-            labels: <String>[
-              LocalizationService.t(context, 'checkout.stepCart'),
-              LocalizationService.t(context, 'checkout.stepPayment'),
-              LocalizationService.t(context, 'checkout.stepConfirm'),
-            ],
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Spacing.md,
-                    Spacing.md,
-                    Spacing.md,
-                    Spacing.sm,
-                  ),
-                  child: Text(
-                    LocalizationService.t(context, 'checkout.choosePreferredPaymentMethod'),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-                ),
-                Expanded(
-                  child: _isLoadingPaymentMethods
-                      ? const Center(child: CircularProgressIndicator())
-                      : _errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.red),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: Spacing.md),
-                              ElevatedButton(
-                                onPressed: _loadPaymentMethods,
-                                child: Text(LocalizationService.t(context, 'cart.retry')),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _paymentMethodCategories.isEmpty
-                      ? Center(
-                          child: Text(LocalizationService.t(context, 'checkout.noPaymentMethodsAvailable')),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(Spacing.md),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: Spacing.sm,
-                                mainAxisSpacing: Spacing.sm,
-                                childAspectRatio: 0.85,
-                              ),
-                          itemCount: _allSelectableMethods.length,
-                          itemBuilder: (context, index) {
-                            final method = _allSelectableMethods[index];
-                            return PaymentMethodCard(
-                              paymentMethodId: method.id,
-                              paymentMethodName: method.displayName,
-                              iconUrl: method.iconUrl,
-                              isSelected:
-                                  _selectedPaymentMethodId == method.id,
-                              onTap: () {
-                                if (method.hasVariants) {
-                                  _showVariantSelectionDialog(
-                                    context,
-                                    method,
-                                  );
-                                } else {
-                                  setState(() {
-                                    _selectedPaymentMethodId = method.id;
-                                    _selectedVariantCode = null;
-                                  });
-                                }
-                              },
-                            );
-                          },
-                        ),
-                ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            CheckoutScreenHeader(
+              title: LocalizationService.t(
+                context,
+                'checkout.selectPaymentMethod',
+              ),
+            ),
+            CheckoutStepIndicator(
+              currentStep: 2,
+              totalSteps: 3,
+              labels: <String>[
+                LocalizationService.t(context, 'checkout.stepCart'),
+                LocalizationService.t(context, 'checkout.stepPayment'),
+                LocalizationService.t(context, 'checkout.stepConfirm'),
               ],
             ),
-          ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.md,
+                      Spacing.md,
+                      Spacing.md,
+                      Spacing.sm,
+                    ),
+                    child: Text(
+                      LocalizationService.t(
+                        context,
+                        'checkout.choosePreferredPaymentMethod',
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _isLoadingPaymentMethods
+                        ? const Center(child: CircularProgressIndicator())
+                        : _errorMessage != null
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _errorMessage!,
+                                      style: const TextStyle(color: Colors.red),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: Spacing.md),
+                                    ElevatedButton(
+                                      onPressed: _loadPaymentMethods,
+                                      child: Text(
+                                        LocalizationService.t(
+                                          context,
+                                          'cart.retry',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : _paymentMethodCategories.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      LocalizationService.t(
+                                        context,
+                                        'checkout.noPaymentMethodsAvailable',
+                                      ),
+                                    ),
+                                  )
+                                : GridView.builder(
+                                    padding: const EdgeInsets.all(Spacing.md),
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: Spacing.sm,
+                                      mainAxisSpacing: Spacing.sm,
+                                      childAspectRatio: 0.85,
+                                    ),
+                                    itemCount: _allSelectableMethods.length,
+                                    itemBuilder: (context, index) {
+                                      final method =
+                                          _allSelectableMethods[index];
+                                      return PaymentMethodCard(
+                                        paymentMethodId: method.id,
+                                        paymentMethodName: method.displayName,
+                                        iconUrl: method.iconUrl,
+                                        isSelected:
+                                            _selectedPaymentMethodId ==
+                                                method.id,
+                                        onTap: () {
+                                          if (method.hasVariants) {
+                                            _showVariantSelectionDialog(
+                                              context,
+                                              method,
+                                            );
+                                          } else {
+                                            setState(() {
+                                              _selectedPaymentMethodId =
+                                                  method.id;
+                                              _selectedVariantCode = null;
+                                            });
+                                          }
+                                        },
+                                      );
+                                    },
+                                  ),
+                  ),
+                ],
+              ),
+            ),
           // Phone number for payment (ETB mobile money or Waafi/Edahab/iPay)
           if (showPhoneField)
             Container(
@@ -1099,61 +1125,83 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               ),
             ),
           // Place Order Button
-          Container(
-            padding: const EdgeInsets.all(Spacing.md),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              boxShadow: [
-                BoxShadow(
-                  color: scheme.shadow.withOpacity(0.12),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.md,
+              Spacing.sm,
+              Spacing.md,
+              Spacing.md,
             ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: (_selectedPaymentMethodId == null ||
-                          _isPlacingOrder ||
-                          (showPhoneField &&
-                              (!methodPhoneValid ||
-                                  effectivePhone == null ||
-                                  effectivePhone.isEmpty)))
-                      ? null
-                      : () {
-                          _placeOrder(cart, addressId, effectivePhone);
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: scheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+            child: Builder(
+              builder: (BuildContext context) {
+                final bool canPlace = !(_selectedPaymentMethodId == null ||
+                    _isPlacingOrder ||
+                    (showPhoneField &&
+                        (!methodPhoneValid ||
+                            effectivePhone == null ||
+                            effectivePhone.isEmpty)));
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient:
+                        canPlace ? AppDecorations.primaryCtaGradient : null,
+                    color: canPlace ? null : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: canPlace
+                        ? <BoxShadow>[
+                            BoxShadow(
+                              color: AppColors.pink.withOpacity(0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
-                  child: _isPlacingOrder
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: scheme.onPrimary,
-                          ),
-                        )
-                      : Text(
-                          LocalizationService.t(context, 'checkout.placeOrder'),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: canPlace
+                          ? () {
+                              _placeOrder(cart, addressId, effectivePhone);
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(28),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: Spacing.md + 2,
                         ),
-                ),
-              ),
+                        child: Center(
+                          child: _isPlacingOrder
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  LocalizationService.t(
+                                    context,
+                                    'checkout.placeOrder',
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: canPlace
+                                        ? Colors.white
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
+        ),
       ),
     );
   }

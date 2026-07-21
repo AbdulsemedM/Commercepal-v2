@@ -69,58 +69,67 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
               ),
             ),
           ),
-          const SizedBox(height: Spacing.xs),
-          // Price (large red)
-          Text(
-            widget.price,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
+          // Price (large red) — hidden when the API had no pricing at all
+          if (widget.price.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            Text(
+              widget.price,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
             ),
-          ),
+          ],
           if (widget.variantSelector != null) ...[
             const SizedBox(height: Spacing.sm),
             widget.variantSelector!,
           ],
-          const SizedBox(height: Spacing.sm),
-          // Rating and reviews
-          Row(
-            children: <Widget>[
-              _buildStarRating(widget.rating),
-              const SizedBox(width: Spacing.xs),
-              Text(
-                '(${widget.reviewCount} ${widget.reviewCount == 1 ? LocalizationService.t(context, 'productDetail.review') : LocalizationService.t(context, 'productDetail.reviews')})',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+          // Rating and reviews — only when there is actual rating data
+          if (widget.rating > 0 || widget.reviewCount > 0) ...[
+            const SizedBox(height: Spacing.sm),
+            Row(
+              children: <Widget>[
+                _buildStarRating(widget.rating),
+                const SizedBox(width: Spacing.xs),
+                Text(
+                  '(${widget.reviewCount} ${widget.reviewCount == 1 ? LocalizationService.t(context, 'productDetail.review') : LocalizationService.t(context, 'productDetail.reviews')})',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
           const SizedBox(height: Spacing.md),
           // Code
-          _buildDetailRow(
-            context,
-            LocalizationService.t(context, 'productDetail.code'),
-            widget.code,
-          ),
-          const SizedBox(height: Spacing.xs),
+          if (widget.code.isNotEmpty)
+            _buildDetailRow(
+              context,
+              LocalizationService.t(context, 'productDetail.code'),
+              widget.code,
+            ),
           // Category
-          _buildDetailRow(
-            context,
-            LocalizationService.t(context, 'productDetail.category'),
-            widget.category,
-            isHighlighted: true,
-          ),
-          const SizedBox(height: Spacing.xs),
+          if (widget.category.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(
+              context,
+              LocalizationService.t(context, 'productDetail.category'),
+              widget.category,
+              isHighlighted: true,
+            ),
+          ],
           // Keywords
-          _buildDetailRow(
-            context,
-            LocalizationService.t(context, 'productDetail.keyword'),
-            widget.keywords,
-            isHighlighted: true,
-          ),
+          if (widget.keywords.isNotEmpty) ...[
+            const SizedBox(height: Spacing.xs),
+            _buildDetailRow(
+              context,
+              LocalizationService.t(context, 'productDetail.keyword'),
+              widget.keywords,
+              isHighlighted: true,
+            ),
+          ],
           if (widget.vendorName != null && widget.vendorName!.isNotEmpty) ...[
             const SizedBox(height: Spacing.xs),
             _buildDetailRow(

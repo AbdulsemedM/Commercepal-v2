@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
+import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/app_analytics.dart';
 import '../../../../app/router/app_router.dart';
@@ -25,126 +27,152 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    // Get cart from route extra parameter
     final cart = GoRouterState.of(context).extra as Cart?;
 
     if (cart == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(LocalizationService.t(context, 'checkout.checkout')),
-          backgroundColor: scheme.surface,
-          iconTheme: IconThemeData(color: scheme.onSurface),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: <Widget>[
+              CheckoutScreenHeader(
+                title: LocalizationService.t(context, 'checkout.checkout'),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    LocalizationService.t(context, 'checkout.cartDataNotFound'),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        body: Center(child: Text(LocalizationService.t(context, 'checkout.cartDataNotFound'))),
       );
     }
 
     return BlocProvider(
       create: (context) => AddressBloc()..add(AddressLoadRequested()),
       child: Scaffold(
-        backgroundColor: scheme.surface,
-        appBar: AppBar(
-          title: Text(
-            LocalizationService.t(context, 'checkout.checkout'),
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-              color: scheme.onSurface,
-            ),
-          ),
-          backgroundColor: scheme.surface,
-          elevation: 0,
-          iconTheme: IconThemeData(color: scheme.onSurface),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CheckoutStepIndicator(
-                      currentStep: 1,
-                      totalSteps: 3,
-                      labels: <String>[
-                        LocalizationService.t(context, 'checkout.stepCart'),
-                        LocalizationService.t(context, 'checkout.stepPayment'),
-                        LocalizationService.t(context, 'checkout.stepConfirm'),
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.sm),
-                    // Order Summary
-                    OrderSummaryCard(cart: cart),
-                    const SizedBox(height: Spacing.sm),
-                    // Address Selection
-                    AddressSelectionSection(
-                      onAddressSelected: (addressId, phoneNumber) {
-                        setState(() {
-                          _selectedAddressId = addressId;
-                          _selectedAddressPhoneNumber = phoneNumber;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: Spacing.xl),
-                  ],
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              CheckoutScreenHeader(
+                title: LocalizationService.t(context, 'checkout.checkout'),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CheckoutStepIndicator(
+                        currentStep: 1,
+                        totalSteps: 3,
+                        labels: <String>[
+                          LocalizationService.t(context, 'checkout.stepCart'),
+                          LocalizationService.t(
+                            context,
+                            'checkout.stepPayment',
+                          ),
+                          LocalizationService.t(
+                            context,
+                            'checkout.stepConfirm',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                      OrderSummaryCard(cart: cart),
+                      const SizedBox(height: Spacing.sm),
+                      AddressSelectionSection(
+                        onAddressSelected: (addressId, phoneNumber) {
+                          setState(() {
+                            _selectedAddressId = addressId;
+                            _selectedAddressPhoneNumber = phoneNumber;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: Spacing.xl),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            // Continue Button
-            Container(
-              padding: const EdgeInsets.all(Spacing.md),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.shadow.withOpacity(0.12),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.md,
+                    Spacing.sm,
+                    Spacing.md,
+                    Spacing.md,
                   ),
-                ],
-              ),
-              child: SafeArea(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _selectedAddressId == null
-                        ? null
-                        : () {
-                            AppAnalytics.logBeginCheckout(
-                              value: cart.estimatedTotal,
-                              currency: cart.currency,
-                            );
-                            // Navigate to payment selection screen
-                            context.push(
-                              AppRoutes.paymentSelection,
-                              extra: {
-                                'cart': cart,
-                                'addressId': _selectedAddressId,
-                                'phoneNumber': _selectedAddressPhoneNumber,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: _selectedAddressId == null
+                          ? null
+                          : AppDecorations.primaryCtaGradient,
+                      color: _selectedAddressId == null
+                          ? Colors.grey.shade300
+                          : null,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: _selectedAddressId == null
+                          ? null
+                          : <BoxShadow>[
+                              BoxShadow(
+                                color: AppColors.pink.withOpacity(0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _selectedAddressId == null
+                            ? null
+                            : () {
+                                AppAnalytics.logBeginCheckout(
+                                  value: cart.estimatedTotal,
+                                  currency: cart.currency,
+                                );
+                                context.push(
+                                  AppRoutes.paymentSelection,
+                                  extra: {
+                                    'cart': cart,
+                                    'addressId': _selectedAddressId,
+                                    'phoneNumber':
+                                        _selectedAddressPhoneNumber,
+                                  },
+                                );
                               },
-                            );
-                          },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                    ),
-                    child: Text(
-                      LocalizationService.t(context, 'checkout.continueToPayment'),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        borderRadius: BorderRadius.circular(28),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Spacing.md + 2,
+                          ),
+                          child: Center(
+                            child: Text(
+                              LocalizationService.t(
+                                context,
+                                'checkout.continueToPayment',
+                              ),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: _selectedAddressId == null
+                                    ? Colors.grey.shade600
+                                    : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

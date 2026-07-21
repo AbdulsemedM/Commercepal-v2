@@ -66,4 +66,54 @@ class AppDecorations {
       boxShadow: softCardShadow(shadowColor),
     );
   }
+
+  /// Soft cream used for quantity steppers / icon tiles on cream pages.
+  static const Color softCream = Color(0xFFFDF3E3);
+
+  /// Primary action gradient (magenta → deep maroon).
+  static const LinearGradient primaryCtaGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: <Color>[
+      AppColors.pink,
+      AppColors.primary,
+    ],
+  );
+
+  /// Cycled pastel gradients for category / subcategory tiles.
+  static const List<LinearGradient> accentGradients = <LinearGradient>[
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFFA78BFA), Color(0xFF7C3AED)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFFF472B6), Color(0xFFDB2777)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFFFBBF24), Color(0xFFD97706)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFF2DD4BF), Color(0xFF0D9488)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFF4ADE80), Color(0xFF16A34A)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFF94A3B8), Color(0xFF475569)],
+    ),
+  ];
+
+  static LinearGradient accentGradientAt(int index) =>
+      accentGradients[index % accentGradients.length];
 }

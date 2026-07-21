@@ -8,6 +8,7 @@ import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/core/widgets/app_empty_state.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -113,7 +114,7 @@ class _CartPageState extends State<CartPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBarWidget(
           cartCount: 0,
           userInitials: AuthService().userInitials ?? 'U',
@@ -239,15 +240,15 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartSummary(BuildContext context, Cart cart) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: scheme.shadow.withOpacity(0.12),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
             offset: const Offset(0, -2),
           ),
         ],
@@ -266,7 +267,7 @@ class _CartPageState extends State<CartPage> {
               ),
               child: Row(
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.savings_outlined,
                     size: 20,
                     color: AppColors.success,
@@ -289,12 +290,15 @@ class _CartPageState extends State<CartPage> {
             children: <Widget>[
               Text(
                 LocalizationService.t(context, 'cart.subtotal'),
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                    ),
               ),
               Text(
                 MoneyFormatter.format(cart.subtotal, cart.currency),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
                     ),
               ),
             ],
@@ -307,6 +311,7 @@ class _CartPageState extends State<CartPage> {
                 LocalizationService.t(context, 'cart.estimatedTotal'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
                     ),
               ),
               Text(
@@ -327,11 +332,9 @@ class _CartPageState extends State<CartPage> {
                     _showClearCartDialog(context);
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    foregroundColor: Colors.grey[700],
+                    side: BorderSide(color: Colors.grey.shade400),
+                    shape: const StadiumBorder(),
                     padding: const EdgeInsets.symmetric(
                       vertical: Spacing.md,
                     ),
@@ -342,27 +345,42 @@ class _CartPageState extends State<CartPage> {
               const SizedBox(width: Spacing.md),
               Expanded(
                 flex: 2,
-                child: FilledButton(
-                  onPressed: () {
-                    context.push(
-                      AppRoutes.checkoutSummary,
-                      extra: cart,
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: Spacing.md,
-                    ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: AppDecorations.primaryCtaGradient,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: AppColors.pink.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    LocalizationService.t(context, 'cart.checkout'),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        context.push(
+                          AppRoutes.checkoutSummary,
+                          extra: cart,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: Spacing.md,
+                        ),
+                        child: Text(
+                          LocalizationService.t(context, 'cart.checkout'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),

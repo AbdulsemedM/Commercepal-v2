@@ -136,6 +136,9 @@ final GoRouter appRouter = GoRouter(
           productId: params['id'],
           productName: params['name'],
           productPrice: params['price'],
+          productImage: params['image'],
+          productRating: double.tryParse(params['rating'] ?? ''),
+          productReviewCount: int.tryParse(params['reviews'] ?? ''),
         );
       },
     ),

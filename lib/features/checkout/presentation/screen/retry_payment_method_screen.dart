@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -6,7 +6,9 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/constants/spacing.dart';
+import '../../../../core/widgets/checkout_screen_header.dart';
 import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
 import '../../data/models/payment_method_type.dart';
@@ -111,7 +113,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> methods = [];
 
-        // Some methods (Telebirr, CBE Birr, QPay, Amole, …) come with no inner
+        // Some methods (Telebirr, CBE Birr, QPay, Amole, â€¦) come with no inner
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
@@ -530,333 +532,455 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         (!requiresMethodPhone &&
             (_paymentPhoneNumber != null &&
                 _paymentPhoneNumber!.isNotEmpty &&
-                _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '').length >= 9));
+                _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '').length >=
+                    9));
 
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool canPay = !(_getSelectedMethod() == null ||
+        (showPhoneField && !methodPhoneValid));
+
     return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: scheme.surface,
-        iconTheme: IconThemeData(color: scheme.onSurface),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _categories.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(Spacing.lg),
-                    child: Text(
-                      _errorMessage ?? LocalizationService.t(context, 'checkout.noPaymentMethodsAvailableRetry'),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              Spacing.md,
-                              Spacing.md,
-                              Spacing.md,
-                              Spacing.sm,
-                            ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            CheckoutScreenHeader(title: title),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _categories.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(Spacing.lg),
                             child: Text(
-                              LocalizationService.t(
-                                context,
-                                'checkout.selectPaymentMethodToRetry',
-                              ),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(color: Colors.black54),
+                              _errorMessage ??
+                                  LocalizationService.t(
+                                    context,
+                                    'checkout.noPaymentMethodsAvailableRetry',
+                                  ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                          Expanded(
-                            child: GridView.builder(
-                              padding: const EdgeInsets.all(Spacing.md),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: Spacing.sm,
-                                mainAxisSpacing: Spacing.sm,
-                                childAspectRatio: 0.85,
-                              ),
-                              itemCount: _allSelectableMethods.length,
-                              itemBuilder: (context, index) {
-                                final method = _allSelectableMethods[index];
-                                return PaymentMethodCard(
-                                  paymentMethodId: method.id,
-                                  paymentMethodName: method.displayName,
-                                  iconUrl: method.iconUrl,
-                                  isSelected:
-                                      _selectedPaymentMethodId == method.id,
-                                  onTap: () {
-                                    if (method.hasVariants) {
-                                      _showVariantDialog(method);
-                                    } else {
-                                      setState(() {
-                                        _selectedPaymentMethodId = method.id;
-                                        _selectedVariantCode = null;
-                                      });
-                                    }
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (showPhoneField)
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(
-                            Spacing.md, Spacing.sm, Spacing.md, 0),
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.06),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                            BoxShadow(
-                              color: scheme.shadow.withOpacity(0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
+                        )
+                      : Column(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                  Spacing.md, Spacing.md, Spacing.md, Spacing.xs),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.06),
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(15)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.phone_android_rounded,
-                                      size: 22,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: Spacing.sm),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          LocalizationService.t(context, 'checkout.phoneNumberForPayment'),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.primary,
-                                                letterSpacing: 0.2,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          LocalizationService.t(context, 'checkout.enterNumberLinkedToAccount'),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: Colors.grey[600],
-                                                height: 1.3,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                            if (methodType == PaymentMethodType.waafi &&
-                                waafiPrefix != null)
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 16),
-                                    child: Text(
-                                      '+$waafiPrefix ',
-                                      style:
-                                          Theme.of(context).textTheme.titleMedium,
+                                    padding: const EdgeInsets.fromLTRB(
+                                      Spacing.md,
+                                      Spacing.md,
+                                      Spacing.md,
+                                      Spacing.sm,
                                     ),
-                                  ),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _methodSpecificDigitsController,
-                                      keyboardType: TextInputType.number,
-                                      maxLength: 7,
-                                      decoration: InputDecoration(
-                                        hintText: '1234567',
-                                        counterText: '',
-                                        filled: true,
-                                        fillColor: scheme.surface,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide:
-                                              BorderSide(color: Colors.grey[300]!),
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: Spacing.md,
-                                                vertical: Spacing.md),
+                                    child: Text(
+                                      LocalizationService.t(
+                                        context,
+                                        'checkout.selectPaymentMethodToRetry',
                                       ),
-                                      onChanged: (_) => setState(() {}),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else if (methodType == PaymentMethodType.edahab)
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 16),
-                                    child: Text(
-                                      '+25265 ',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .titleMedium,
+                                          .titleSmall
+                                          ?.copyWith(color: Colors.black54),
                                     ),
                                   ),
                                   Expanded(
-                                    child: TextField(
-                                      controller: _methodSpecificDigitsController,
-                                      keyboardType: TextInputType.number,
-                                      maxLength: 7,
-                                      decoration: InputDecoration(
-                                        hintText: '1234567',
-                                        counterText: '',
-                                        filled: true,
-                                        fillColor: scheme.surface,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide:
-                                              BorderSide(color: Colors.grey[300]!),
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: Spacing.md,
-                                                vertical: Spacing.md),
+                                    child: GridView.builder(
+                                      padding:
+                                          const EdgeInsets.all(Spacing.md),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: Spacing.sm,
+                                        mainAxisSpacing: Spacing.sm,
+                                        childAspectRatio: 0.85,
                                       ),
-                                      onChanged: (_) => setState(() {}),
+                                      itemCount: _allSelectableMethods.length,
+                                      itemBuilder: (context, index) {
+                                        final method =
+                                            _allSelectableMethods[index];
+                                        return PaymentMethodCard(
+                                          paymentMethodId: method.id,
+                                          paymentMethodName:
+                                              method.displayName,
+                                          iconUrl: method.iconUrl,
+                                          isSelected:
+                                              _selectedPaymentMethodId ==
+                                                  method.id,
+                                          onTap: () {
+                                            if (method.hasVariants) {
+                                              _showVariantDialog(method);
+                                            } else {
+                                              setState(() {
+                                                _selectedPaymentMethodId =
+                                                    method.id;
+                                                _selectedVariantCode = null;
+                                              });
+                                            }
+                                          },
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
-                              )
-                            else if (methodType == PaymentMethodType.ipay)
-                              IntlPhoneField(
-                                onChanged: (phone) {
-                                  setState(() {
-                                    _ipayPhoneNumber =
-                                        phone.completeNumber.isNotEmpty
-                                            ? phone.completeNumber
-                                            : null;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'Phone number',
-                                  filled: true,
-                                  fillColor: scheme.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide:
-                                        BorderSide(color: Colors.grey[300]!),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: Spacing.md,
-                                      vertical: Spacing.md),
-                                ),
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              )
-                            else
-                              IntlPhoneField(
-                                onChanged: (phone) {
-                                  setState(() {
-                                    _paymentPhoneNumber =
-                                        phone.completeNumber.isNotEmpty
-                                            ? phone.completeNumber
-                                            : null;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'Phone number',
-                                  filled: true,
-                                  fillColor: scheme.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide:
-                                        BorderSide(color: Colors.grey[300]!),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: Spacing.md,
-                                      vertical: Spacing.md),
-                                ),
-                                style: Theme.of(context).textTheme.bodyLarge,
                               ),
-                                ],
+                            ),
+                            if (showPhoneField)
+                              Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                  Spacing.md,
+                                  Spacing.sm,
+                                  Spacing.md,
+                                  0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: scheme.surfaceContainerLow,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          AppColors.primary.withOpacity(0.06),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: scheme.shadow.withOpacity(0.06),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        Spacing.md,
+                                        Spacing.md,
+                                        Spacing.md,
+                                        Spacing.xs,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary
+                                            .withOpacity(0.06),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(15),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primary
+                                                  .withOpacity(0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: const Icon(
+                                              Icons.phone_android_rounded,
+                                              size: 22,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: Spacing.sm),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  LocalizationService.t(
+                                                    context,
+                                                    'checkout.phoneNumberForPayment',
+                                                  ),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color:
+                                                            AppColors.primary,
+                                                        letterSpacing: 0.2,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  LocalizationService.t(
+                                                    context,
+                                                    'checkout.enterNumberLinkedToAccount',
+                                                  ),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.grey[600],
+                                                        height: 1.3,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        Spacing.md,
+                                        Spacing.sm,
+                                        Spacing.md,
+                                        Spacing.md,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (methodType ==
+                                                  PaymentMethodType.waafi &&
+                                              waafiPrefix != null)
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 16,
+                                                  ),
+                                                  child: Text(
+                                                    '+$waafiPrefix ',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller:
+                                                        _methodSpecificDigitsController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    maxLength: 7,
+                                                    decoration:
+                                                        InputDecoration(
+                                                      hintText: '1234567',
+                                                      counterText: '',
+                                                      filled: true,
+                                                      fillColor: scheme.surface,
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        borderSide: BorderSide(
+                                                          color: Colors
+                                                              .grey[300]!,
+                                                        ),
+                                                      ),
+                                                      contentPadding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: Spacing.md,
+                                                        vertical: Spacing.md,
+                                                      ),
+                                                    ),
+                                                    onChanged: (_) =>
+                                                        setState(() {}),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          else if (methodType ==
+                                              PaymentMethodType.edahab)
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 16,
+                                                  ),
+                                                  child: Text(
+                                                    '+25265 ',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller:
+                                                        _methodSpecificDigitsController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    maxLength: 7,
+                                                    decoration:
+                                                        InputDecoration(
+                                                      hintText: '1234567',
+                                                      counterText: '',
+                                                      filled: true,
+                                                      fillColor: scheme.surface,
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        borderSide: BorderSide(
+                                                          color: Colors
+                                                              .grey[300]!,
+                                                        ),
+                                                      ),
+                                                      contentPadding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: Spacing.md,
+                                                        vertical: Spacing.md,
+                                                      ),
+                                                    ),
+                                                    onChanged: (_) =>
+                                                        setState(() {}),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          else if (methodType ==
+                                              PaymentMethodType.ipay)
+                                            IntlPhoneField(
+                                              onChanged: (phone) {
+                                                setState(() {
+                                                  _ipayPhoneNumber = phone
+                                                          .completeNumber
+                                                          .isNotEmpty
+                                                      ? phone.completeNumber
+                                                      : null;
+                                                });
+                                              },
+                                              decoration: InputDecoration(
+                                                hintText: 'Phone number',
+                                                filled: true,
+                                                fillColor: scheme.surface,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Colors.grey[300]!,
+                                                  ),
+                                                ),
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: Spacing.md,
+                                                  vertical: Spacing.md,
+                                                ),
+                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyLarge,
+                                            )
+                                          else
+                                            IntlPhoneField(
+                                              onChanged: (phone) {
+                                                setState(() {
+                                                  _paymentPhoneNumber = phone
+                                                          .completeNumber
+                                                          .isNotEmpty
+                                                      ? phone.completeNumber
+                                                      : null;
+                                                });
+                                              },
+                                              decoration: InputDecoration(
+                                                hintText: 'Phone number',
+                                                filled: true,
+                                                fillColor: scheme.surface,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Colors.grey[300]!,
+                                                  ),
+                                                ),
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: Spacing.md,
+                                                  vertical: Spacing.md,
+                                                ),
+                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyLarge,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            Padding(
+                              padding: const EdgeInsets.all(Spacing.md),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: canPay
+                                      ? AppDecorations.primaryCtaGradient
+                                      : null,
+                                  color: canPay ? null : Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(28),
+                                  boxShadow: canPay
+                                      ? <BoxShadow>[
+                                          BoxShadow(
+                                            color: AppColors.pink
+                                                .withOpacity(0.35),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: canPay
+                                        ? _payWithSelectedMethod
+                                        : null,
+                                    borderRadius: BorderRadius.circular(28),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: Spacing.md + 2,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          LocalizationService.t(
+                                            context,
+                                            'checkout.payWithThisMethod',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: canPay
+                                                ? Colors.white
+                                                : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(Spacing.md),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: (_getSelectedMethod() == null ||
-                                    (showPhoneField && !methodPhoneValid))
-                                ? null
-                                : _payWithSelectedMethod,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              disabledBackgroundColor: Colors.grey[300],
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Spacing.md,
-                              ),
-                            ),
-                            child: Text(LocalizationService.t(context, 'checkout.payWithThisMethod')),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

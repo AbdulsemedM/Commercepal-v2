@@ -34,7 +34,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBarWidget(
           cartCount: 2,
           userInitials: AuthService().userInitials ?? 'U',

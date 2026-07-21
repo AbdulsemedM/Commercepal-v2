@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
 import 'package:commercepal/core/utils/category_image_assets.dart';
@@ -18,10 +19,9 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
-      width: 120,
-      color: scheme.surfaceContainerLow,
+      width: 118,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: Spacing.md),
         itemCount: categories.length,
@@ -32,6 +32,7 @@ class CategorySidebar extends StatelessWidget {
               category.imageUrl != null && category.imageUrl!.isNotEmpty;
           final assetPath = CategoryImageAssets.assetPathForName(category.name);
           final fallbackIcon = CategoryImageAssets.iconForName(category.name);
+          final gradient = AppDecorations.accentGradientAt(index);
 
           return Padding(
             padding: const EdgeInsets.symmetric(
@@ -40,7 +41,7 @@ class CategorySidebar extends StatelessWidget {
             ),
             child: InkWell(
               onTap: () => onCategorySelected(category),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: Spacing.sm,
@@ -48,61 +49,59 @@ class CategorySidebar extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    ClipOval(
-                      child: SizedBox(
-                        width: 34,
-                        height: 34,
+                  children: <Widget>[
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: (hasNetworkImage || assetPath != null)
+                            ? null
+                            : (isSelected
+                                ? const LinearGradient(
+                                    colors: <Color>[
+                                      AppColors.pink,
+                                      AppColors.primary,
+                                    ],
+                                  )
+                                : gradient),
+                        color: (hasNetworkImage || assetPath != null)
+                            ? Colors.white
+                            : null,
+                      ),
+                      child: ClipOval(
                         child: hasNetworkImage
                             ? Image.network(
                                 category.imageUrl!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => assetPath != null
-                                    ? Image.asset(
-                                        assetPath,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Center(
-                                        child: Icon(
-                                          fallbackIcon,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : scheme.onSurfaceVariant,
-                                          size: 18,
-                                        ),
-                                      ),
+                                    ? Image.asset(assetPath, fit: BoxFit.cover)
+                                    : _iconFallback(fallbackIcon),
                               )
                             : (assetPath != null
                                 ? Image.asset(
                                     assetPath,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        _iconFallback(fallbackIcon),
                                   )
-                                : Center(
-                                    child: Icon(
-                                      fallbackIcon,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : scheme.onSurfaceVariant,
-                                      size: 18,
-                                    ),
-                                  )),
+                                : _iconFallback(fallbackIcon)),
                       ),
                     ),
                     const SizedBox(height: Spacing.xs),
                     Text(
                       category.name,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isSelected
-                                ? Colors.white
-                                : scheme.onSurface,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            fontSize: 14,
+                            color: isSelected ? Colors.white : AppColors.navy,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 13,
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -117,5 +116,10 @@ class CategorySidebar extends StatelessWidget {
       ),
     );
   }
-}
 
+  Widget _iconFallback(IconData icon) {
+    return Center(
+      child: Icon(icon, color: Colors.white, size: 20),
+    );
+  }
+}

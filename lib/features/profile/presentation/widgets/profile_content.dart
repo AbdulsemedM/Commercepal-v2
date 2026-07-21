@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/theme_controller.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -60,27 +60,23 @@ class ProfileContent extends StatelessWidget {
           }
 
           return Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBarWidget(
               cartCount: cartCount,
               userInitials: AuthService().userInitials ?? 'U',
               onSearchTap: () {
-                // Navigate to search screen when search bar is tapped
                 context.push(AppRoutes.productSearch);
               },
               onSearchSubmitted: (String query) {
-                // Navigate to search screen with query
                 context.push(
                   '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
                 );
                 return null;
               },
               onCartTap: () {
-                // Navigate to cart tab
                 _navigateToTab(context, 2);
               },
               onProfileTap: () {
-                // Navigate to profile tab
                 _navigateToTab(context, 3);
               },
               hasNotification: false,
@@ -107,6 +103,8 @@ class ProfileContent extends StatelessWidget {
                   }
 
                   final profile = state is ProfileLoaded ? state.profile : null;
+                  final bool isAffiliate =
+                      state is ProfileLoaded && state.affiliateProfile != null;
 
                   return RefreshIndicator(
                     onRefresh: () async {
@@ -120,7 +118,6 @@ class ProfileContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           const SizedBox(height: Spacing.md),
-                          // User Info Card
                           _buildUserInfoCard(context, profile),
                           if (profile != null &&
                               (profile.referralCode ?? '').isNotEmpty) ...[
@@ -132,9 +129,29 @@ class ProfileContent extends StatelessWidget {
                           ],
                           const SizedBox(height: Spacing.lg),
                           _buildThemeSection(context),
+                          const SizedBox(height: Spacing.lg),
+                          _buildSection(
+                            context,
+                            title: 'ACCOUNT',
+                            items: _accountItems(context, isAffiliate),
+                          ),
                           const SizedBox(height: Spacing.md),
-                          // Profile Menu Items
-                          _buildMenuItems(context),
+                          _buildSection(
+                            context,
+                            title: 'SECURITY & SETTINGS',
+                            items: _securityItems(context),
+                            trailingBuilders: <String, Widget Function(BuildContext)>{
+                              'biometric': (_) => const _BiometricToggle(),
+                            },
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          _buildSection(
+                            context,
+                            title: 'LEGAL & SUPPORT',
+                            items: _legalItems(context),
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          _buildDangerZone(context),
                           const SizedBox(height: Spacing.md),
                           _buildAppVersionFooter(context),
                           const SizedBox(height: Spacing.xl),
@@ -165,12 +182,14 @@ class ProfileContent extends StatelessWidget {
         );
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-          child: Text(
-            '$label ${info.version} (${info.buildNumber})',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+          child: Center(
+            child: Text(
+              '$label ${info.version} (${info.buildNumber})',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[500],
+                  ),
+            ),
           ),
         );
       },
@@ -183,7 +202,6 @@ class ProfileContent extends StatelessWidget {
     final String? userEmail = profile?.emailAddress ?? authService.userEmail;
     final String? userImageUrl = authService.userImageUrl;
 
-    // Generate initials from profile or auth service
     String userInitials = 'U';
     if (profile != null) {
       final firstName = profile.firstName.isNotEmpty
@@ -200,38 +218,22 @@ class ProfileContent extends StatelessWidget {
       userInitials = authService.userInitials ?? 'U';
     }
 
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: Spacing.sm),
+      padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.08),
-          width: 1,
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: scheme.shadow.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Row(
         children: <Widget>[
-          // Profile picture with subtle ring
           Container(
-            width: 48,
-            height: 48,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.08),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.25),
-                width: 1.5,
-              ),
+              gradient: AppDecorations.primaryCtaGradient,
               image: userImageUrl != null
                   ? DecorationImage(
                       image: NetworkImage(userImageUrl),
@@ -243,51 +245,47 @@ class ProfileContent extends StatelessWidget {
                 ? Center(
                     child: Text(
                       userInitials,
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 15,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   )
                 : null,
           ),
-          const SizedBox(width: Spacing.sm),
-          // Name, email, phone
+          const SizedBox(width: Spacing.md),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
                   userName ?? LocalizationService.t(context, 'profile.user'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
-                    fontSize: 15,
-                    letterSpacing: -0.2,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.navy,
+                        fontSize: 17,
+                      ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Icon(
                       Icons.mail_outline_rounded,
-                      size: 12,
-                      color: scheme.onSurfaceVariant,
+                      size: 14,
+                      color: Colors.grey[600],
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         userEmail ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 12,
-                        ),
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -298,21 +296,21 @@ class ProfileContent extends StatelessWidget {
                     profile!.phoneNumber.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Icon(
                         Icons.phone_outlined,
-                        size: 12,
-                        color: scheme.onSurfaceVariant,
+                        size: 14,
+                        color: Colors.grey[600],
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           profile.phoneNumber,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -329,17 +327,18 @@ class ProfileContent extends StatelessWidget {
   }
 
   Widget _buildThemeSection(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            LocalizationService.t(context, 'profile.theme'),
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            LocalizationService.t(context, 'profile.theme').toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[600],
+                  letterSpacing: 1.1,
+                ),
           ),
           const SizedBox(height: Spacing.sm),
           ListenableBuilder(
@@ -347,35 +346,44 @@ class ProfileContent extends StatelessWidget {
             builder: (BuildContext context, Widget? child) {
               final ThemeController controller =
                   ThemeControllerScope.of(context);
-              return SegmentedButton<ThemeMode>(
-                segments: <ButtonSegment<ThemeMode>>[
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.light,
-                    label: Text(
-                      LocalizationService.t(context, 'profile.themeLight'),
+              return Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: AppDecorations.softCardShadow(),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    _ThemePill(
+                      label: LocalizationService.t(
+                        context,
+                        'profile.themeLight',
+                      ),
+                      icon: Icons.light_mode_outlined,
+                      selected: controller.themeMode == ThemeMode.light,
+                      onTap: () => controller.setThemeMode(ThemeMode.light),
                     ),
-                    icon: const Icon(Icons.light_mode_outlined, size: 18),
-                  ),
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.dark,
-                    label: Text(
-                      LocalizationService.t(context, 'profile.themeDark'),
+                    _ThemePill(
+                      label: LocalizationService.t(
+                        context,
+                        'profile.themeDark',
+                      ),
+                      icon: Icons.dark_mode_outlined,
+                      selected: controller.themeMode == ThemeMode.dark,
+                      onTap: () => controller.setThemeMode(ThemeMode.dark),
                     ),
-                    icon: const Icon(Icons.dark_mode_outlined, size: 18),
-                  ),
-                  ButtonSegment<ThemeMode>(
-                    value: ThemeMode.system,
-                    label: Text(
-                      LocalizationService.t(context, 'profile.themeSystem'),
+                    _ThemePill(
+                      label: LocalizationService.t(
+                        context,
+                        'profile.themeSystem',
+                      ),
+                      icon: Icons.brightness_auto_outlined,
+                      selected: controller.themeMode == ThemeMode.system,
+                      onTap: () => controller.setThemeMode(ThemeMode.system),
                     ),
-                    icon: const Icon(Icons.brightness_auto_outlined, size: 18),
-                  ),
-                ],
-                selected: <ThemeMode>{controller.themeMode},
-                onSelectionChanged: (Set<ThemeMode> selected) async {
-                  if (selected.isEmpty) return;
-                  await controller.setThemeMode(selected.first);
-                },
+                  ],
+                ),
               );
             },
           ),
@@ -385,24 +393,34 @@ class ProfileContent extends StatelessWidget {
   }
 
   Widget _buildReferralCodeCard(BuildContext context, String referralCode) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.md,
+        vertical: Spacing.sm + 2,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.secondary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.15),
-          width: 1,
+          color: AppColors.secondary.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
         children: <Widget>[
-          Icon(
-            Icons.card_giftcard_rounded,
-            size: 20,
-            color: AppColors.primary,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.pink.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.card_giftcard_rounded,
+              size: 20,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: Spacing.sm),
           Expanded(
@@ -413,52 +431,61 @@ class ProfileContent extends StatelessWidget {
                 Text(
                   LocalizationService.t(context, 'profile.referralCode'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   referralCode,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                    letterSpacing: 1.2,
-                    fontSize: 15,
-                  ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 1.2,
+                        fontSize: 15,
+                      ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: referralCode));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(LocalizationService.t(context, 'profile.referralCodeCopied')),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: referralCode));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      LocalizationService.t(
+                        context,
+                        'profile.referralCodeCopied',
+                      ),
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: const SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(
+                  Icons.copy_rounded,
+                  color: AppColors.primary,
+                  size: 20,
                 ),
-              );
-            },
-            icon: const Icon(Icons.copy_rounded),
-            color: AppColors.primary,
-            style: IconButton.styleFrom(
-              backgroundColor: scheme.surfaceContainerLow,
+              ),
             ),
-            tooltip: LocalizationService.t(context, 'profile.copyCode'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItems(BuildContext context) {
-    final state = context.read<ProfileBloc>().state;
-    final isAffiliate =
-        state is ProfileLoaded && state.affiliateProfile != null;
-
-    final List<_MenuItem> menuItems = <_MenuItem>[
+  List<_MenuItem> _accountItems(BuildContext context, bool isAffiliate) {
+    return <_MenuItem>[
       if (isAffiliate)
         _MenuItem(
           icon: Icons.dashboard_outlined,
@@ -502,17 +529,10 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
-        icon: Icons.lock_outline,
-        title: LocalizationService.t(context, 'profile.termsConditions'),
+        icon: Icons.location_on_outlined,
+        title: LocalizationService.t(context, 'profile.myAddresses'),
         onTap: () {
-          context.push('/terms-conditions');
-        },
-      ),
-      _MenuItem(
-        icon: Icons.receipt_outlined,
-        title: LocalizationService.t(context, 'profile.refundPolicy'),
-        onTap: () {
-          context.push('/refund-policy');
+          context.push(AppRoutes.addresses);
         },
       ),
       _MenuItem(
@@ -529,20 +549,11 @@ class ProfileContent extends StatelessWidget {
           context.push(AppRoutes.wishlist);
         },
       ),
-      _MenuItem(
-        icon: Icons.location_on_outlined,
-        title: LocalizationService.t(context, 'profile.myAddresses'),
-        onTap: () {
-          context.push(AppRoutes.addresses);
-        },
-      ),
-      _MenuItem(
-        icon: Icons.help_outline,
-        title: LocalizationService.t(context, 'profile.faqs'),
-        onTap: () {
-          context.push(AppRoutes.faqs);
-        },
-      ),
+    ];
+  }
+
+  List<_MenuItem> _securityItems(BuildContext context) {
+    return <_MenuItem>[
       _MenuItem(
         icon: Icons.lock_reset_outlined,
         title: LocalizationService.t(context, 'profile.changePassword'),
@@ -551,11 +562,11 @@ class ProfileContent extends StatelessWidget {
         },
       ),
       _MenuItem(
+        id: 'biometric',
         icon: Icons.fingerprint,
         title: LocalizationService.t(context, 'profile.enableBiometric'),
-        onTap: () {
-          _enableBiometricLogin(context);
-        },
+        onTap: () {},
+        hideChevron: true,
       ),
       _MenuItem(
         icon: Icons.flag_outlined,
@@ -604,6 +615,32 @@ class ProfileContent extends StatelessWidget {
           LanguageSelectionBottomSheet.show(context);
         },
       ),
+    ];
+  }
+
+  List<_MenuItem> _legalItems(BuildContext context) {
+    return <_MenuItem>[
+      _MenuItem(
+        icon: Icons.description_outlined,
+        title: LocalizationService.t(context, 'profile.termsConditions'),
+        onTap: () {
+          context.push('/terms-conditions');
+        },
+      ),
+      _MenuItem(
+        icon: Icons.receipt_outlined,
+        title: LocalizationService.t(context, 'profile.refundPolicy'),
+        onTap: () {
+          context.push('/refund-policy');
+        },
+      ),
+      _MenuItem(
+        icon: Icons.help_outline,
+        title: LocalizationService.t(context, 'profile.faqs'),
+        onTap: () {
+          context.push(AppRoutes.faqs);
+        },
+      ),
       _MenuItem(
         icon: Icons.contact_support_outlined,
         title: LocalizationService.t(context, 'profile.contactUs'),
@@ -618,6 +655,64 @@ class ProfileContent extends StatelessWidget {
           HelpDeskModal.show(context);
         },
       ),
+    ];
+  }
+
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required List<_MenuItem> items,
+    Map<String, Widget Function(BuildContext)>? trailingBuilders,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[600],
+                  letterSpacing: 1.1,
+                ),
+          ),
+          const SizedBox(height: Spacing.sm),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: AppDecorations.softCardShadow(),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: <Widget>[
+                for (int i = 0; i < items.length; i++) ...[
+                  _MenuItemWidget(
+                    item: items[i],
+                    trailing: items[i].id != null &&
+                            trailingBuilders?[items[i].id!] != null
+                        ? trailingBuilders![items[i].id!]!(context)
+                        : null,
+                  ),
+                  if (i < items.length - 1)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 68,
+                      color: Colors.grey.shade200,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDangerZone(BuildContext context) {
+    final List<_MenuItem> dangerItems = <_MenuItem>[
       _MenuItem(
         icon: Icons.person_off_outlined,
         title: LocalizationService.t(context, 'profile.accountDeletionRequest'),
@@ -636,98 +731,33 @@ class ProfileContent extends StatelessWidget {
       ),
     ];
 
-    return Column(
-      children: menuItems.map((_MenuItem item) {
-        return _MenuItemWidget(item: item);
-      }).toList(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.error.withValues(alpha: 0.2),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: <Widget>[
+            for (int i = 0; i < dangerItems.length; i++) ...[
+              _MenuItemWidget(item: dangerItems[i]),
+              if (i < dangerItems.length - 1)
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  indent: 68,
+                  color: AppColors.error.withValues(alpha: 0.12),
+                ),
+            ],
+          ],
+        ),
+      ),
     );
-  }
-
-  Future<void> _enableBiometricLogin(BuildContext context) async {
-    try {
-      final Storage storage = Storage();
-      final BiometricService biometricService = BiometricService();
-
-      final bool alreadyEnabled = await storage.getBiometricEnabled();
-      if (alreadyEnabled) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                LocalizationService.t(context, 'profile.biometricAlreadyEnabled'),
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      final bool hasBiometrics = await biometricService.hasEnrolledBiometrics;
-      if (!hasBiometrics) {
-        debugPrint(
-          '[Profile][Biometric] Enable failed: no enrolled biometrics found.',
-        );
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                LocalizationService.t(context, 'profile.biometricUnavailable'),
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      final BiometricAuthResult authResult = await biometricService.authenticate(
-        reason: LocalizationService.t(context, 'auth.biometric.signInReason'),
-      );
-      if (!context.mounted) return;
-
-      if (authResult != BiometricAuthResult.success) {
-        debugPrint(
-          '[Profile][Biometric] Enable failed: authResult=$authResult.',
-        );
-        if (authResult == BiometricAuthResult.cancel) {
-          return;
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'auth.biometric.signInFailed'),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      await storage.setBiometricEnabled(true);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'profile.biometricEnabledSuccess'),
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (error, stackTrace) {
-      debugPrint('[Profile][Biometric] Enable exception: $error');
-      debugPrint(stackTrace.toString());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'auth.biometric.signInFailed'),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   void _showLogoutDialog(BuildContext context) {
@@ -744,14 +774,13 @@ class ProfileContent extends StatelessWidget {
           onPressed: () async {
             try {
               await AuthService().logout();
-              // Navigation will be handled automatically by ProfilePage
-              // which listens to AuthService changes
             } catch (e) {
-              // Show error message if logout fails
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(LocalizationService.t(context, 'profile.logoutFailed')),
+                    content: Text(
+                      LocalizationService.t(context, 'profile.logoutFailed'),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -764,62 +793,244 @@ class ProfileContent extends StatelessWidget {
   }
 }
 
+class _ThemePill extends StatelessWidget {
+  const _ThemePill({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              gradient: selected ? AppDecorations.primaryCtaGradient : null,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: selected
+                  ? <BoxShadow>[
+                      BoxShadow(
+                        color: AppColors.pink.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected ? Colors.white : Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? Colors.white : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BiometricToggle extends StatefulWidget {
+  const _BiometricToggle();
+
+  @override
+  State<_BiometricToggle> createState() => _BiometricToggleState();
+}
+
+class _BiometricToggleState extends State<_BiometricToggle> {
+  bool _enabled = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final bool enabled = await Storage().getBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _enabled = enabled;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _onChanged(bool value) async {
+    if (_loading) return;
+    final Storage storage = Storage();
+    final BiometricService biometricService = BiometricService();
+
+    if (!value) {
+      await storage.setBiometricEnabled(false);
+      if (mounted) setState(() => _enabled = false);
+      return;
+    }
+
+    final bool hasBiometrics = await biometricService.hasEnrolledBiometrics;
+    if (!hasBiometrics) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'profile.biometricUnavailable'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final BiometricAuthResult authResult = await biometricService.authenticate(
+      reason: LocalizationService.t(context, 'auth.biometric.signInReason'),
+    );
+    if (!mounted) return;
+
+    if (authResult != BiometricAuthResult.success) {
+      if (authResult == BiometricAuthResult.cancel) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'auth.biometric.signInFailed'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await storage.setBiometricEnabled(true);
+    if (mounted) {
+      setState(() => _enabled = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'profile.biometricEnabledSuccess'),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+    return Switch.adaptive(
+      value: _enabled,
+      activeTrackColor: AppColors.primary,
+      onChanged: _onChanged,
+    );
+  }
+}
+
 class _MenuItem {
   const _MenuItem({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.id,
     this.isDestructive = false,
+    this.hideChevron = false,
   });
 
+  final String? id;
   final IconData icon;
   final String title;
   final VoidCallback onTap;
   final bool isDestructive;
+  final bool hideChevron;
 }
 
 class _MenuItemWidget extends StatelessWidget {
-  const _MenuItemWidget({required this.item});
+  const _MenuItemWidget({
+    required this.item,
+    this.trailing,
+  });
 
   final _MenuItem item;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color accent =
+        item.isDestructive ? AppColors.error : AppColors.pink;
+    final Color labelColor =
+        item.isDestructive ? AppColors.error : AppColors.navy;
+
     return InkWell(
-      onTap: item.onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-        padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: scheme.outlineVariant, width: 1),
-          ),
+      onTap: item.hideChevron && trailing != null ? null : item.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.sm + 4,
         ),
         child: Row(
           children: <Widget>[
-            Icon(
-              item.icon,
-              color: item.isDestructive ? AppColors.error : AppColors.primary,
-              size: 24,
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Icon(item.icon, color: accent, size: 20),
             ),
             const SizedBox(width: Spacing.md),
             Expanded(
               child: Text(
                 item.title,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: item.isDestructive
-                          ? AppColors.error
-                          : scheme.onSurface,
-                      fontWeight: FontWeight.w500,
+                      color: labelColor,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: scheme.onSurfaceVariant,
-              size: 24,
-            ),
+            if (trailing != null)
+              trailing!
+            else if (!item.hideChevron)
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey[400],
+                size: 22,
+              ),
           ],
         ),
       ),

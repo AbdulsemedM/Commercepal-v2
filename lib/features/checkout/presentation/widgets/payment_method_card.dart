@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 
 class PaymentMethodCard extends StatelessWidget {
   const PaymentMethodCard({
@@ -21,94 +22,110 @@ class PaymentMethodCard extends StatelessWidget {
   final VoidCallback onTap;
   final String? description;
 
+  /// The API returns relative icon paths (e.g. `/images/payment/mpesa.png`)
+  /// that belong to the website; resolve them against commercepal.com.
+  String? get _resolvedIconUrl {
+    final String? url = iconUrl;
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return 'https://commercepal.com$url';
+    return null;
+  }
+
+  /// Branded fallback icon per method when no usable logo exists.
+  IconData get _fallbackIcon {
+    if (icon != null) return icon!;
+    final String key = '$paymentMethodId $paymentMethodName'.toLowerCase();
+    if (key.contains('cash')) return Icons.shopping_bag_outlined;
+    if (key.contains('card') ||
+        key.contains('visa') ||
+        key.contains('master')) {
+      return Icons.credit_card_outlined;
+    }
+    if (key.contains('wallet')) return Icons.account_balance_wallet_outlined;
+    if (key.contains('qpay') || key.contains('bank')) {
+      return Icons.account_balance_outlined;
+    }
+    if (key.contains('birr') ||
+        key.contains('pesa') ||
+        key.contains('airtel') ||
+        key.contains('amole') ||
+        key.contains('tele')) {
+      return Icons.phone_android_outlined;
+    }
+    return Icons.payment_outlined;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final String? resolvedUrl = _resolvedIconUrl;
+    final Widget fallback = Icon(
+      _fallbackIcon,
+      color: AppColors.primary,
+      size: 26,
+    );
+
     return Container(
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? AppColors.primary : scheme.outline,
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: isSelected
+            ? Border.all(color: AppColors.primary, width: 2)
+            : null,
+        boxShadow: AppDecorations.softCardShadow(),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon or Image
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: iconUrl != null && iconUrl!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          iconUrl!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              icon ?? Icons.payment,
-                              color: AppColors.primary,
-                              size: 60,
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return SizedBox(
-                              width: 60,
-                              height: 60,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Icon(
-                        icon ?? Icons.payment,
-                        color: AppColors.primary,
-                        size: 60,
-                      ),
-              ),
-              const SizedBox(height: 4),
-              // Payment method name
-              Flexible(
-                child: Text(
-                  paymentMethodName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppDecorations.softCream,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  alignment: Alignment.center,
+                  child: resolvedUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            resolvedUrl,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                fallback,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return fallback;
+                            },
+                          ),
+                        )
+                      : fallback,
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Flexible(
+                  child: Text(
+                    paymentMethodName,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

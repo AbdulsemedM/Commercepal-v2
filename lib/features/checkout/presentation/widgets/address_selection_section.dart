@@ -136,14 +136,22 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                             fontWeight: FontWeight.bold,
                           ),
                     ),
-                    TextButton.icon(
+                    TextButton(
                       onPressed: () {
                         AddEditAddressDialog.show(context);
                       },
-                      icon: const Icon(Icons.add, size: 18),
-                      label: Text(LocalizationService.t(context, 'checkout.addNew')),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
+                        foregroundColor: AppColors.pink,
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        '+ ${LocalizationService.t(context, 'checkout.addNew')}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -219,26 +227,29 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
     Address address,
     bool isSelected,
   ) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: Spacing.md,
         vertical: Spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        color: isSelected
+            ? AppColors.cream
+            : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? AppColors.primary : scheme.outline,
-          width: isSelected ? 2 : 1,
+          color: isSelected ? AppColors.primary : Colors.grey.shade300,
+          width: isSelected ? 1.5 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isSelected
+            ? null
+            : <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: InkWell(
         onTap: () {
@@ -247,7 +258,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
             widget.onAddressSelected(address.id, address.phoneNumber);
           });
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(Spacing.md),
           child: Row(
@@ -275,19 +286,23 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         if (address.isDefault)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.xs,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              LocalizationService.t(context, 'checkout.defaultLabel'),
+                              LocalizationService.t(
+                                context,
+                                'checkout.defaultLabel',
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
                               ),
                             ),
                           ),
@@ -295,10 +310,10 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Expanded(
                           child: Text(
                             address.receiverName,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: scheme.onSurface,
+                              color: AppColors.navy,
                             ),
                           ),
                         ),
@@ -310,14 +325,14 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Icon(
                           Icons.phone_outlined,
                           size: 14,
-                          color: scheme.onSurfaceVariant,
+                          color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
                         Text(
                           address.phoneNumber,
                           style: TextStyle(
                             fontSize: 13,
-                            color: scheme.onSurfaceVariant,
+                            color: Colors.grey[600],
                           ),
                         ),
                       ],
@@ -329,15 +344,15 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                         Icon(
                           Icons.location_on_outlined,
                           size: 14,
-                          color: scheme.onSurfaceVariant,
+                          color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
                         Expanded(
-                            child: Text(
-                              _formatAddress(context, address),
+                          child: Text(
+                            _formatAddress(context, address),
                             style: TextStyle(
                               fontSize: 13,
-                              color: scheme.onSurfaceVariant,
+                              color: Colors.grey[600],
                               height: 1.4,
                             ),
                           ),

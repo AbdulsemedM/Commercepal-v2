@@ -82,15 +82,20 @@ class _ProductCardState extends State<ProductCard> {
 
   void _openProductDetail(BuildContext context) {
     final id = widget.product?.id ?? widget.productId;
-    if (id != null && id.isNotEmpty) {
-      context.push(
-        '${AppRoutes.productDetail}?id=${Uri.encodeComponent(id)}',
-      );
-    } else {
-      context.push(
-        '${AppRoutes.productDetail}?name=${Uri.encodeComponent(widget.description)}&price=${Uri.encodeComponent(widget.price)}',
-      );
-    }
+    // Always forward what the card already knows so the detail page can fall
+    // back on it when the API returns an empty product record.
+    final Map<String, String> query = <String, String>{
+      if (id != null && id.isNotEmpty) 'id': id,
+      if (widget.description.isNotEmpty) 'name': widget.description,
+      if (widget.price.isNotEmpty) 'price': widget.price,
+      if (widget.imageUrl.isNotEmpty) 'image': widget.imageUrl,
+      if ((widget.rating ?? 0) > 0) 'rating': widget.rating!.toString(),
+      if ((widget.reviewCount ?? 0) > 0)
+        'reviews': widget.reviewCount!.toString(),
+    };
+    context.push(
+      Uri(path: AppRoutes.productDetail, queryParameters: query).toString(),
+    );
   }
 
   void _handleAddToCart() {

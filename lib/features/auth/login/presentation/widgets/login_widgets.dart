@@ -2,11 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/phone_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 enum LoginMethod { email, phone }
+
+InputDecoration _authFieldDecoration(
+  BuildContext context, {
+  required String hintText,
+  Widget? suffixIcon,
+}) {
+  return InputDecoration(
+    hintText: hintText,
+    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.grey[500],
+        ),
+    filled: true,
+    fillColor: AppDecorations.softCream,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: Colors.red, width: 1),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: Spacing.md,
+      vertical: Spacing.md,
+    ),
+    suffixIcon: suffixIcon,
+  );
+}
+
+TextStyle _fieldLabelStyle(BuildContext context) {
+  return Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: AppColors.navy,
+        fontWeight: FontWeight.w700,
+      ) ??
+      const TextStyle(
+        color: AppColors.navy,
+        fontWeight: FontWeight.w700,
+      );
+}
 
 /// Email / Phone segmented tabs for login.
 class LoginMethodTabs extends StatelessWidget {
@@ -21,12 +73,11 @@ class LoginMethodTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        color: AppDecorations.softCream,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: <Widget>[
@@ -63,26 +114,35 @@ class _LoginMethodTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+          padding: const EdgeInsets.symmetric(vertical: Spacing.sm + 2),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            gradient: isSelected ? AppDecorations.primaryCtaGradient : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: isSelected
+                ? <BoxShadow>[
+                    BoxShadow(
+                      color: AppColors.pink.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: isSelected ? Colors.white : Colors.grey[600],
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ),
       ),
@@ -105,26 +165,12 @@ class PhoneLoginInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        RichText(
-          text: TextSpan(
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-            children: <TextSpan>[
-              TextSpan(
-                text: LocalizationService.t(context, 'auth.login.phone'),
-              ),
-              TextSpan(
-                text: ' *',
-                style: TextStyle(color: scheme.error),
-              ),
-            ],
-          ),
+        Text(
+          LocalizationService.t(context, 'auth.login.phone'),
+          style: _fieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         IntlPhoneField(
@@ -134,49 +180,20 @@ class PhoneLoginInputField extends StatelessWidget {
             horizontal: Spacing.sm,
           ),
           dropdownIconPosition: IconPosition.trailing,
-          decoration: InputDecoration(
+          decoration: _authFieldDecoration(
+            context,
             hintText: LocalizationService.t(
               context,
               'auth.login.phonePlaceholder',
             ),
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
-            ),
-            filled: true,
-            fillColor: scheme.surfaceContainerHighest,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
           ),
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurface,
-          ),
+                color: AppColors.navy,
+              ),
           onChanged: (PhoneNumber phone) {
             onCompleteNumberChanged?.call(phone.completeNumber);
           },
-          validator:
-              validator ??
+          validator: validator ??
               (PhoneNumber? phone) {
                 if (phone == null || phone.number.isEmpty) {
                   return LocalizationService.t(
@@ -221,23 +238,18 @@ class EmailInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.email'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
+          style: _fieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextFormField(
           controller: controller,
           onChanged: onChanged,
-          validator:
-              validator ??
+          validator: validator ??
               (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your email';
@@ -249,41 +261,13 @@ class EmailInputField extends StatelessWidget {
               },
           keyboardType: TextInputType.emailAddress,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurface,
-          ),
-          decoration: InputDecoration(
+                color: AppColors.navy,
+              ),
+          decoration: _authFieldDecoration(
+            context,
             hintText: LocalizationService.t(
               context,
               'auth.login.emailPlaceholder',
-            ),
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
-            ),
-            filled: true,
-            fillColor: scheme.surfaceContainerHighest,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
             ),
           ),
         ),
@@ -314,23 +298,18 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.password'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
+          style: _fieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextFormField(
           controller: widget.controller,
           onChanged: widget.onChanged,
-          validator:
-              widget.validator ??
+          validator: widget.validator ??
               (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your password';
@@ -342,46 +321,18 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
               },
           obscureText: _obscureText,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurface,
-          ),
-          decoration: InputDecoration(
+                color: AppColors.navy,
+              ),
+          decoration: _authFieldDecoration(
+            context,
             hintText: LocalizationService.t(
               context,
               'auth.login.passwordPlaceholder',
             ),
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
-            ),
-            filled: true,
-            fillColor: scheme.surfaceContainerHighest,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: scheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: scheme.onSurfaceVariant,
+                color: Colors.grey[600],
               ),
               onPressed: () {
                 setState(() {
@@ -411,61 +362,67 @@ class SocialLoginButton extends StatelessWidget {
       SocialLoginType.google: <String, dynamic>{
         'label': LocalizationService.t(context, 'auth.login.socialGoogle'),
         'backgroundColor': Colors.white,
-        'textColor': Colors.black,
-        'borderColor': Colors.grey[300]!,
+        'textColor': AppColors.navy,
         'imagePath': 'assets/images/Google.png',
       },
       SocialLoginType.facebook: <String, dynamic>{
         'label': LocalizationService.t(context, 'auth.login.socialFacebook'),
         'backgroundColor': const Color(0xFF1877F2),
         'textColor': Colors.white,
-        'borderColor': const Color(0xFF1877F2),
         'imagePath': 'assets/images/Facebook.png',
       },
       SocialLoginType.apple: <String, dynamic>{
         'label': LocalizationService.t(context, 'auth.login.socialApple'),
         'backgroundColor': Colors.black,
         'textColor': Colors.white,
-        'borderColor': Colors.black,
         'imagePath': 'assets/images/Apple.png',
       },
     };
 
     final Map<String, dynamic> config = buttonConfig[type]!;
+    final bool isGoogle = type == SocialLoginType.google;
 
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: config['backgroundColor'] as Color,
-          side: BorderSide(color: config['borderColor'] as Color),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.md,
-            vertical: Spacing.md,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Image.asset(
-              config['imagePath'] as String,
-              width: 24,
-              height: 24,
-              fit: BoxFit.contain,
+      child: Material(
+        color: config['backgroundColor'] as Color,
+        borderRadius: BorderRadius.circular(28),
+        elevation: 0,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.md,
             ),
-            const SizedBox(width: Spacing.sm),
-            Text(
-              config['label'] as String,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: config['textColor'] as Color,
-                fontWeight: FontWeight.w600,
-              ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: isGoogle ? AppDecorations.softCardShadow() : null,
+              border: isGoogle
+                  ? Border.all(color: const Color(0xFFF0E6D8))
+                  : null,
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Image.asset(
+                  config['imagePath'] as String,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: Spacing.sm),
+                Text(
+                  config['label'] as String,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: config['textColor'] as Color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -481,14 +438,14 @@ class ForgotPasswordLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: Alignment.centerLeft,
       child: GestureDetector(
         onTap: onTap,
         child: RichText(
           text: TextSpan(
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
             children: <TextSpan>[
               TextSpan(
                 text:
@@ -500,10 +457,9 @@ class ForgotPasswordLink extends StatelessWidget {
                   'auth.login.resetPassword',
                 ),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
+                      color: AppColors.pink,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),
@@ -526,9 +482,9 @@ class SignUpLink extends StatelessWidget {
         onTap: onTap,
         child: RichText(
           text: TextSpan(
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
             children: <TextSpan>[
               TextSpan(
                 text:
@@ -537,10 +493,9 @@ class SignUpLink extends StatelessWidget {
               TextSpan(
                 text: LocalizationService.t(context, 'auth.login.join'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
+                      color: AppColors.pink,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ],
           ),

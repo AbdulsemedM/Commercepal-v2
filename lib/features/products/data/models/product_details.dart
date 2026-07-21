@@ -77,21 +77,22 @@ class ProductDetails {
               .toList() ??
           [],
       physicalParameters: PhysicalParameters.fromJson(
-        json['physicalParameters'] as Map<String, dynamic>,
+        json['physicalParameters'] as Map<String, dynamic>? ??
+            const <String, dynamic>{},
       ),
       status: json['status'] as String? ?? '',
       stockLevel: json['stockLevel'] as int? ?? 0,
       isSellAllowed: json['isSellAllowed'] as bool? ?? false,
       stuffStatus: json['stuffStatus'] as String? ?? '',
       pricing: Pricing.fromJson(
-        json['pricing'] as Map<String, dynamic>,
+        json['pricing'] as Map<String, dynamic>? ?? const <String, dynamic>{},
       ),
       images: (json['images'] as List<dynamic>?)
               ?.map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
               .toList() ??
           [],
       mainImage: ProductImage.fromJson(
-        json['mainImage'] as Map<String, dynamic>,
+        json['mainImage'] as Map<String, dynamic>? ?? const <String, dynamic>{},
       ),
       videos: (json['videos'] as List<dynamic>?)
               ?.map((item) => ProductVideo.fromJson(item as Map<String, dynamic>))
@@ -109,7 +110,7 @@ class ProductDetails {
       createdTime: json['createdTime'] as String? ?? '',
       updatedTime: json['updatedTime'] as String? ?? '',
       meta: ProductMeta.fromJson(
-        json['meta'] as Map<String, dynamic>,
+        json['meta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
       ),
       customerReviews: (json['customerReviews'] as List<dynamic>?)
               ?.map((item) => CustomerReview.fromJson(item as Map<String, dynamic>))

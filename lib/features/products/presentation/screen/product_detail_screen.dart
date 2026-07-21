@@ -23,6 +23,7 @@ import '../widgets/product_specifications.dart';
 import '../widgets/add_to_cart_section.dart';
 import '../widgets/multi_variant_selector_widget.dart';
 import '../../data/models/product_details.dart';
+import '../../data/models/product_image.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
@@ -37,11 +38,20 @@ class ProductDetailScreen extends StatefulWidget {
     this.productId,
     this.productName,
     this.productPrice,
+    this.productImage,
+    this.productRating,
+    this.productReviewCount,
   });
 
   final String? productId;
+
+  /// Fallback data carried over from the card that opened this screen, used
+  /// when the API returns an empty product record.
   final String? productName;
   final String? productPrice;
+  final String? productImage;
+  final double? productRating;
+  final int? productReviewCount;
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -110,6 +120,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _recordLocalViewAndLogAnalytics(ProductDetails product) async {
+    // Skip empty records (dead catalog entries) so recently-viewed doesn't
+    // fill up with blank tiles.
+    if (product.title.isEmpty) return;
     if (_lastRecordedViewProductId == product.id) return;
     _lastRecordedViewProductId = product.id;
     final String imageUrl = product.mainImage.main.isNotEmpty
@@ -461,9 +474,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     final selectedVariant = product.variants.isNotEmpty
                         ? product.variants[state.selectedVariantIndex]
                         : null;
-                    final currentPrice =
+                    final apiPrice =
                         selectedVariant?.pricing?.formattedCurrentPrice ??
                         product.pricing.formattedCurrentPrice;
+
+                    // The API sometimes returns an almost empty record (null
+                    // title/pricing/images). Fall back to the data the card
+                    // that opened this screen already displayed.
+                    final String displayTitle = product.title.isNotEmpty
+                        ? product.title
+                        : (widget.productName ?? '');
+                    final String currentPrice = apiPrice.isNotEmpty
+                        ? apiPrice
+                        : (widget.productPrice ?? '');
+                    final double displayRating = product.meta.rating > 0
+                        ? product.meta.rating
+                        : (widget.productRating ?? 0);
+                    final int displayReviewCount = product.meta.reviewCount > 0
+                        ? product.meta.reviewCount
+                        : (widget.productReviewCount ?? 0);
+                    final List<ProductImage> galleryImages =
+                        product.images.isNotEmpty
+                            ? product.images
+                            : (product.mainImage.main.isNotEmpty
+                                ? [product.mainImage]
+                                : (widget.productImage != null &&
+                                        widget.productImage!.isNotEmpty
+                                    ? [
+                                        ProductImage(
+                                          thumbnail: widget.productImage!,
+                                          main: widget.productImage!,
+                                        ),
+                                      ]
+                                    : []));
 
                     return Column(
                       children: [
@@ -483,21 +526,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: Spacing.sm),
-                                  // Product images (use mainImage when images list is empty)
+                                  // Product images (falls back to the image
+                                  // from the opening card when API has none)
                                   ProductImageGallery(
-                                    images: product.images.isNotEmpty
-                                        ? product.images
-                                        : (product.mainImage.main.isNotEmpty
-                                            ? [product.mainImage]
-                                            : []),
+                                    images: galleryImages,
                                   ),
                                   const SizedBox(height: Spacing.md),
                                   // Product info
                                   ProductInfoSection(
-                                    title: product.title,
+                                    title: displayTitle,
                                     price: currentPrice,
-                                    rating: product.meta.rating,
-                                    reviewCount: product.meta.reviewCount,
+                                    rating: displayRating,
+                                    reviewCount: displayReviewCount,
                                     code: product.id,
                                     category: product.categoryId,
                                     keywords: product.brandName,

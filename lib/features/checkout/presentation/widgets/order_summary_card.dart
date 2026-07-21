@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../cart/data/models/cart.dart';
@@ -15,21 +16,13 @@ class OrderSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.all(Spacing.md),
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppDecorations.softCardShadow(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,96 +31,87 @@ class OrderSummaryCard extends StatelessWidget {
             LocalizationService.t(context, 'checkout.orderSummary'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: AppColors.navy,
                 ),
           ),
           const SizedBox(height: Spacing.md),
-          // Product list
-          ...cart.items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: Spacing.sm),
-                child: Row(
-                  children: [
-                    // Product image
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: item.productImageUrl.isNotEmpty
-                          ? Image.network(
-                              item.productImageUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (
-                                BuildContext context,
-                                Object error,
-                                StackTrace? stackTrace,
-                              ) {
-                                return Container(
-                                  width: 50,
-                                  height: 50,
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.image_not_supported,
-                                    color: Colors.grey,
+          ...cart.items.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final item = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.sm),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: item.productImageUrl.isNotEmpty
+                        ? Image.network(
+                            item.productImageUrl,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (
+                              BuildContext context,
+                              Object error,
+                              StackTrace? stackTrace,
+                            ) {
+                              return _imageFallback(index);
+                            },
+                          )
+                        : _imageFallback(index),
+                  ),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.productName,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.navy,
                                   ),
-                                );
-                              },
-                            )
-                          : Container(
-                              width: 50,
-                              height: 50,
-                              color: Colors.grey[200],
-                              child: const Icon(
-                                Icons.image_not_supported,
-                                color: Colors.grey,
-                              ),
-                            ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item.quantity} × ${MoneyFormatter.format(item.unitPrice, item.currency)}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: Spacing.sm),
-                    // Product details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.productName,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${item.quantity} × ${MoneyFormatter.format(item.unitPrice, item.currency)}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Subtotal
-                    Text(
-                      '${MoneyFormatter.format(item.subtotal, item.currency)}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                  Text(
+                    MoneyFormatter.format(item.subtotal, item.currency),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.navy,
+                        ),
+                  ),
+                ],
+              ),
+            );
+          }),
           const Divider(height: Spacing.lg),
-          // Summary totals
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 LocalizationService.t(context, 'checkout.subtotal'),
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                    ),
               ),
               Text(
-                '${MoneyFormatter.format(cart.subtotal, cart.currency)}',
+                MoneyFormatter.format(cart.subtotal, cart.currency),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
                     ),
               ),
             ],
@@ -140,10 +124,11 @@ class OrderSummaryCard extends StatelessWidget {
                 LocalizationService.t(context, 'checkout.total'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
                     ),
               ),
               Text(
-                '${MoneyFormatter.format(cart.estimatedTotal, cart.currency)}',
+                MoneyFormatter.format(cart.estimatedTotal, cart.currency),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
@@ -152,6 +137,21 @@ class OrderSummaryCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _imageFallback(int index) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: AppDecorations.accentGradientAt(index),
+      ),
+      child: const Icon(
+        Icons.shopping_bag_outlined,
+        color: Colors.white,
+        size: 24,
       ),
     );
   }

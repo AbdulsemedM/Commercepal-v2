@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/core/utils/phone_utils.dart';
@@ -386,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _goToDashboardProfileTab();
         },
         child: Scaffold(
-          backgroundColor: scheme.surface,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: BlocListener<LoginBloc, LoginState>(
             listener: (context, state) {
@@ -451,7 +452,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 26,
                               ),
                         ),
                         const SizedBox(height: Spacing.xs),
@@ -459,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           LocalizationService.t(context, 'auth.login.subtitle'),
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                           const SizedBox(height: Spacing.lg),
                         LoginMethodTabs(
@@ -618,53 +620,74 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: Spacing.lg),
                         // Login button with arrow icon
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: isLoading
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: isLoading
                                 ? null
-                                : () => _submitLogin(context),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Spacing.md,
-                              ),
-                              disabledBackgroundColor: scheme.surfaceContainerHighest,
-                            ),
-                            child: isLoading
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: scheme.onPrimary,
+                                : AppDecorations.primaryCtaGradient,
+                            color: isLoading ? Colors.grey.shade300 : null,
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: isLoading
+                                ? null
+                                : <BoxShadow>[
+                                    BoxShadow(
+                                      color: AppColors.pink.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      Text(
-                                        LocalizationService.t(
-                                          context,
-                                          'auth.login.loginButton',
+                                  ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: isLoading
+                                  ? null
+                                  : () => _submitLogin(context),
+                              borderRadius: BorderRadius.circular(28),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: Spacing.md + 2,
+                                ),
+                                child: isLoading
+                                    ? const Center(
+                                        child: SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
                                         ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.copyWith(
-                                              color: scheme.onPrimary,
-                                              fontWeight: FontWeight.w600,
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Text(
+                                            LocalizationService.t(
+                                              context,
+                                              'auth.login.loginButton',
                                             ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(width: Spacing.xs),
+                                          const Icon(
+                                            Icons.arrow_forward,
+                                            size: 20,
+                                            color: Colors.white,
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: Spacing.xs),
-                                      Icon(
-                                        Icons.arrow_forward,
-                                        size: 20,
-                                        color: scheme.onPrimary,
-                                      ),
-                                    ],
-                                  ),
+                              ),
+                            ),
                           ),
                         ),
                         if (PlatformUtils.shouldShowGoogleSignInButton) ...[
@@ -757,19 +780,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                       },
                                     );
                                   },
-                            icon: Icon(
-                              Icons.star_outline,
+                            icon: const Icon(
+                              Icons.star_rounded,
                               size: 20,
-                              color: AppColors.primary,
+                              color: AppColors.secondary,
                             ),
                             label: Text(
                               LocalizationService.t(
                                 context,
                                 'affiliate.becomeAffiliatePartner',
                               ),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
@@ -800,7 +823,6 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -813,15 +835,10 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: scheme.surfaceContainerHighest,
-            border: Border.all(color: scheme.outline),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: AppColors.pink.withValues(alpha: 0.08),
+            border: Border.all(
+              color: AppColors.pink.withValues(alpha: 0.25),
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -833,23 +850,9 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
                 Container(
                   width: 56,
                   height: 56,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: <Color>[
-                        AppColors.primary,
-                        AppColors.primary.withValues(alpha: 0.82),
-                      ],
-                    ),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    gradient: AppDecorations.primaryCtaGradient,
                   ),
                   alignment: Alignment.center,
                   child: const FaIcon(
@@ -869,9 +872,9 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
                           'auth.biometric.unlockSavedLogin',
                         ),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface,
-                        ),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.navy,
+                            ),
                       ),
                       const SizedBox(height: Spacing.xs),
                       Text(
@@ -880,17 +883,17 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
                           'auth.biometric.unlockSavedLoginHint',
                         ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          height: 1.35,
-                        ),
+                              color: Colors.grey[600],
+                              height: 1.35,
+                            ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
                   size: 28,
-                  color: scheme.onSurfaceVariant,
+                  color: AppColors.pink,
                 ),
               ],
             ),
