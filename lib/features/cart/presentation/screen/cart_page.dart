@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
-import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/core/widgets/app_empty_state.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/cart_bloc.dart';
@@ -115,30 +113,6 @@ class _CartPageState extends State<CartPage> {
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBarWidget(
-          cartCount: 0,
-          userInitials: AuthService().userInitials ?? 'U',
-          onSearchTap: () {
-            context.push(AppRoutes.productSearch);
-          },
-          onSearchSubmitted: (String query) {
-            context.push(
-              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-            );
-            return null;
-          },
-          onCartTap: () {
-            _navigateToTab(context, 2);
-          },
-          onProfileTap: () {
-            _navigateToTab(context, 3);
-          },
-          hasNotification: false,
-          searchPlaceholder: LocalizationService.t(
-            context,
-            'profile.searchPlaceholder',
-          ),
-        ),
         body: BlocBuilder<CartBloc, CartState>(
           builder: (BuildContext context, CartState state) {
             if (state is CartLoading) {

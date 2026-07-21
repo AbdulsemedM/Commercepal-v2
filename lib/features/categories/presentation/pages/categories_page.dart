@@ -8,6 +8,7 @@ import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
 // import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import '../widgets/category_sidebar.dart';
 import '../widgets/product_grid.dart';
 
@@ -29,14 +30,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
   }
 
+  int _cartCountFromState(CartState cartState) {
+    if (cartState is CartLoaded) return cartState.cart.totalItems;
+    if (cartState is CartItemAdded) return cartState.cart.totalItems;
+    if (cartState is CartItemUpdated) return cartState.cart.totalItems;
+    if (cartState is CartItemDeleted) return cartState.cart.totalItems;
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final int cartCount = _cartCountFromState(context.watch<CartBloc>().state);
+
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBarWidget(
-          cartCount: 2,
+          cartCount: cartCount,
           userInitials: AuthService().userInitials ?? 'U',
           onSearchTap: () {
             // Navigate to search screen when search bar is tapped

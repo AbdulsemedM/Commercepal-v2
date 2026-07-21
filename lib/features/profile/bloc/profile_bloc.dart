@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 
 import 'package:commercepal/features/affiliate/data/models/affiliate_profile_data.dart';
 import 'package:commercepal/features/profile/data/models/profile_cache_payload.dart';
+import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/features/profile/data/models/update_profile_request.dart';
 import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
 import 'package:commercepal/services/navigation_service.dart';
