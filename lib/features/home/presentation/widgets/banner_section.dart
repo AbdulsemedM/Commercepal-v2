@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
 
 /// Auto-advancing carousel of branded promo banners (matches the web).
@@ -55,6 +56,91 @@ class _BannerSectionState extends State<BannerSection> {
     _scheduleAutoAdvance();
   }
 
+  void _onBannerTap(int index) {
+    switch (index) {
+      case 0:
+        context.push(AppRoutes.megaSale);
+        break;
+      case 1:
+        context.push(AppRoutes.salePromotion);
+        break;
+      case 2:
+        _showComingSoonDialog();
+        break;
+    }
+  }
+
+  void _showComingSoonDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(Spacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.bolt_rounded,
+                    size: 36,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: Spacing.md),
+                Text(
+                  'Coming Soon',
+                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.navy,
+                      ),
+                ),
+                const SizedBox(height: Spacing.sm),
+                Text(
+                  'Flash Deals are on the way. We are putting together '
+                  'lightning-fast offers — check back soon.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.navy.withValues(alpha: 0.7),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: Spacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: AppColors.onSecondary,
+                      padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Got it',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _autoAdvanceTimer?.cancel();
@@ -88,7 +174,7 @@ class _BannerSectionState extends State<BannerSection> {
               itemCount: _bannerAssets.length,
               itemBuilder: (BuildContext context, int index) {
                 return GestureDetector(
-                  onTap: () => context.push(AppRoutes.productSearch),
+                  onTap: () => _onBannerTap(index),
                   child: Image.asset(
                     _bannerAssets[index],
                     fit: BoxFit.cover,

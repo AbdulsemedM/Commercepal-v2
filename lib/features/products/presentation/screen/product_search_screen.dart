@@ -7,12 +7,12 @@ import 'package:commercepal/core/widgets/app_empty_state.dart';
 import 'package:commercepal/core/widgets/shimmer_loading.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
-import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/products/bloc/product_search_bloc.dart';
 import 'package:commercepal/features/products/data/models/product_search_request.dart';
 import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
@@ -35,8 +35,15 @@ class ProductSearchScreen extends StatefulWidget {
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
   static const double _loadMoreScrollThreshold = 200;
+  static const List<String> _suggestions = <String>[
+    'Watches',
+    'Perfume',
+    'Laptop',
+    'Shoes',
+  ];
 
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   late final ScrollController _scrollController;
   final Storage _storage = Storage();
   PriceRange _priceRange = const PriceRange();
@@ -94,6 +101,12 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     if (mounted) {
       await _loadRecentSearches();
     }
+  }
+
+  void _runSuggestion(String query) {
+    _searchController.text = query;
+    setState(() {});
+    _performSearch();
   }
 
   void _onProductListScroll() {
@@ -158,10 +171,377 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     );
   }
 
+  String _sortLabel(BuildContext context, _ClientProductSort sort) {
+    switch (sort) {
+      case _ClientProductSort.relevance:
+        return LocalizationService.t(context, 'productSearch.sortRelevance');
+      case _ClientProductSort.priceAsc:
+        return LocalizationService.t(context, 'productSearch.sortPriceLow');
+      case _ClientProductSort.priceDesc:
+        return LocalizationService.t(context, 'productSearch.sortPriceHigh');
+      case _ClientProductSort.nameAz:
+        return LocalizationService.t(context, 'productSearch.sortName');
+    }
+  }
+
+  Future<void> _openSortSheet() async {
+    final _ClientProductSort? selected =
+        await showModalBottomSheet<_ClientProductSort>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppDecorations.radiusLg),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            left: Spacing.lg,
+            right: Spacing.lg,
+            top: Spacing.md,
+            bottom: MediaQuery.of(ctx).padding.bottom + Spacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Spacing.md),
+              Text(
+                LocalizationService.t(ctx, 'productSearch.sortLabel'),
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.navy,
+                    ),
+              ),
+              const SizedBox(height: Spacing.sm),
+              for (final _ClientProductSort option in _ClientProductSort.values)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    _sortLabel(ctx, option),
+                    style: TextStyle(
+                      fontWeight: option == _clientSort
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                  trailing: option == _clientSort
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(option),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null && mounted) {
+      setState(() => _clientSort = selected);
+    }
+  }
+
+  Widget _brandedEmptyWrap({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color(0xFFFFF4FA),
+            AppColors.cream,
+            Color(0xFFFFF8E8),
+          ],
+        ),
+      ),
+      child: Center(child: child),
+    );
+  }
+
+  Widget _idleHero(BuildContext context) {
+    final String hint = LocalizationService.t(
+      context,
+      'productSearch.emptyHint',
+    );
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.md,
+        Spacing.sm,
+        Spacing.md,
+        Spacing.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(Spacing.lg),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  Color(0xFFFFF4FA),
+                  AppColors.cream,
+                  Color(0xFFFFF8E8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
+              boxShadow: AppDecorations.softCardShadow(),
+            ),
+            child: Column(
+              children: <Widget>[
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.45),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.search_rounded,
+                    size: 34,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: Spacing.md),
+                Text(
+                  'Find something you love',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy,
+                      ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  hint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.navy.withValues(alpha: 0.65),
+                    fontSize: 14,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: Spacing.md),
+                Wrap(
+                  spacing: Spacing.sm,
+                  runSpacing: Spacing.sm,
+                  alignment: WrapAlignment.center,
+                  children: _suggestions.map((String q) {
+                    return ActionChip(
+                      label: Text(q),
+                      backgroundColor: Colors.white,
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.25),
+                      ),
+                      labelStyle: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      onPressed: () => _runSuggestion(q),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          if (_recentSearches.isNotEmpty) ...[
+            const SizedBox(height: Spacing.lg),
+            Container(
+              padding: const EdgeInsets.all(Spacing.md),
+              decoration: AppDecorations.elevatedCard(
+                background: Colors.white,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          LocalizationService.t(
+                            context,
+                            'productSearch.recentSearches',
+                          ),
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.navy,
+                                  ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await _storage.clearRecentProductSearches();
+                          if (mounted) {
+                            setState(() => _recentSearches = <String>[]);
+                          }
+                        },
+                        child: Text(
+                          LocalizationService.t(
+                            context,
+                            'productSearch.clearRecent',
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.pink,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                  Wrap(
+                    spacing: Spacing.sm,
+                    runSpacing: Spacing.sm,
+                    children: _recentSearches.map((String q) {
+                      return InputChip(
+                        label: Text(
+                          q,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        backgroundColor: const Color(0xFFFFF4FA),
+                        side: BorderSide(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                        deleteIconColor: AppColors.primary,
+                        onPressed: () => _runSuggestion(q),
+                        onDeleted: () async {
+                          await _storage.removeRecentProductSearch(q);
+                          if (mounted) {
+                            await _loadRecentSearches();
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(ColorScheme scheme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.md,
+        Spacing.sm,
+        Spacing.md,
+        Spacing.sm,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppDecorations.softCardShadow(),
+        ),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          autofocus: !_hasInitialQuery(),
+          style: const TextStyle(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.cream,
+            hintText: LocalizationService.t(
+              context,
+              'productSearch.fieldHint',
+            ),
+            hintStyle: TextStyle(
+              color: scheme.onSurfaceVariant,
+              fontSize: 15,
+            ),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(
+                Icons.search_rounded,
+                color: AppColors.primary,
+                size: 22,
+              ),
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {});
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(
+                color: AppColors.primary.withValues(alpha: 0.08),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: Spacing.sm,
+              vertical: Spacing.md,
+            ),
+          ),
+          onSubmitted: (_) => _performSearch(),
+          onChanged: (_) => setState(() {}),
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
+    _searchFocusNode = FocusNode();
     _scrollController = ScrollController();
     _scrollController.addListener(_onProductListScroll);
 
@@ -178,13 +558,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   void dispose() {
     _scrollController.removeListener(_onProductListScroll);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get or create CartBloc
     CartBloc? cartBloc;
     try {
       cartBloc = context.read<CartBloc>();
@@ -243,19 +623,15 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               context.read<ProductSearchBloc>().add(ClearSearchNotice());
             },
             child: Scaffold(
-              backgroundColor: scheme.surface,
+              backgroundColor: AppColors.cream,
               appBar: AppBarWidget(
                 cartCount: cartCount,
                 userInitials: AuthService().userInitials ?? 'U',
-                onSearchTap: () {
-                  // Navigate to search screen when search bar is tapped
-                  context.push(AppRoutes.productSearch);
-                },
+                onSearchTap: () => _searchFocusNode.requestFocus(),
                 onSearchSubmitted: (String query) {
-                  // Navigate to search screen with query
-                  context.push(
-                    '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-                  );
+                  _searchController.text = query;
+                  setState(() {});
+                  _performSearch();
                   return null;
                 },
                 onLogoTap: () => context.pop(),
@@ -265,171 +641,15 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               ),
               body: Column(
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(Spacing.md),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: !_hasInitialQuery(),
-                      decoration: InputDecoration(
-                        hintText: LocalizationService.t(
-                          context,
-                          'productSearch.fieldHint',
-                        ),
-                        hintStyle: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 15,
-                        ),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.search,
-                            color: scheme.onSurfaceVariant,
-                            size: 20,
-                          ),
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {});
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              BorderSide(color: scheme.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              BorderSide(color: scheme.outlineVariant),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.sm,
-                          vertical: Spacing.sm,
-                        ),
-                      ),
-                      onSubmitted: (_) {
-                        _performSearch();
-                      },
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  // Results
+                  _buildSearchField(scheme),
                   Expanded(
                     child: BlocBuilder<ProductSearchBloc, ProductSearchState>(
                       builder: (context, state) {
                         if (state is ProductSearchInitial) {
-                          final String hint = LocalizationService.t(
-                            context,
-                            'productSearch.emptyHint',
-                          );
-                          if (!_hasInitialQuery() &&
-                              _recentSearches.isNotEmpty) {
-                            return SingleChildScrollView(
-                              padding: const EdgeInsets.all(Spacing.md),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Row(
-                                    children: <Widget>[
-                                      Expanded(
-                                        child: Text(
-                                          LocalizationService.t(
-                                            context,
-                                            'productSearch.recentSearches',
-                                          ),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: scheme.onSurface,
-                                              ),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          await _storage
-                                              .clearRecentProductSearches();
-                                          if (mounted) {
-                                            setState(() =>
-                                                _recentSearches = <String>[]);
-                                          }
-                                        },
-                                        child: Text(
-                                          LocalizationService.t(
-                                            context,
-                                            'productSearch.clearRecent',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: Spacing.sm),
-                                  Wrap(
-                                    spacing: Spacing.sm,
-                                    runSpacing: Spacing.sm,
-                                    children: _recentSearches.map((String q) {
-                                      return InputChip(
-                                        label: Text(
-                                          q,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        onPressed: () {
-                                          _searchController.text = q;
-                                          setState(() {});
-                                          _performSearch();
-                                        },
-                                        onDeleted: () async {
-                                          await _storage
-                                              .removeRecentProductSearch(q);
-                                          if (mounted) {
-                                            await _loadRecentSearches();
-                                          }
-                                        },
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(height: Spacing.xl),
-                                  Center(
-                                    child: Text(
-                                      hint,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: scheme.onSurfaceVariant,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return Center(
-                            child: Text(
-                              hint,
-                              style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
+                          return _idleHero(context);
                         }
 
                         if (state is ProductSearchLoading) {
-                          // Show shimmer loading effect
                           return GridView.builder(
                             padding: const EdgeInsets.all(Spacing.md),
                             gridDelegate:
@@ -437,7 +657,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: Spacing.md,
                               mainAxisSpacing: Spacing.md,
-                              childAspectRatio: 0.62,
+                              childAspectRatio: 0.52,
                             ),
                             itemCount: 6,
                             itemBuilder: (context, index) {
@@ -459,7 +679,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               'productSearch.errorNetwork';
                           final bool isSession =
                               err.localizationKey == 'checkout.sessionExpired';
-                          return Center(
+                          return _brandedEmptyWrap(
                             child: AppEmptyState(
                               icon: isNetwork
                                   ? Icons.wifi_off_outlined
@@ -507,7 +727,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                           if (allProducts.isEmpty) {
                             final bool canRetry =
                                 _searchController.text.trim().isNotEmpty;
-                            return Center(
+                            return _brandedEmptyWrap(
                               child: AppEmptyState(
                                 icon: Icons.search_off,
                                 title: _emptyResultsTitle(context),
@@ -534,114 +754,91 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
                           return Column(
                             children: <Widget>[
-                              // Results count + price filter
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: Spacing.md,
-                                  vertical: Spacing.xs,
                                 ),
-                                child: Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Text(
-                                        hasActiveFilter
-                                            ? 'Showing ${filteredProducts.length} of $totalElements'
-                                            : '$totalElements results found',
-                                        style: TextStyle(
-                                          color: scheme.onSurfaceVariant,
-                                          fontSize: 14,
-                                        ),
-                                      ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Spacing.md,
+                                    vertical: Spacing.sm,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(
+                                      AppDecorations.radiusMd,
                                     ),
-                                    PopupMenuButton<_ClientProductSort>(
-                                      initialValue: _clientSort,
-                                      tooltip: LocalizationService.t(
-                                        context,
-                                        'productSearch.sortLabel',
+                                    boxShadow: AppDecorations.softCardShadow(),
+                                  ),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: Text(
+                                          hasActiveFilter
+                                              ? 'Showing ${filteredProducts.length} of $totalElements'
+                                              : '$totalElements results found',
+                                          style: const TextStyle(
+                                            color: AppColors.navy,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
                                       ),
-                                      onSelected: (_ClientProductSort value) {
-                                        setState(() => _clientSort = value);
-                                      },
-                                      itemBuilder: (BuildContext ctx) =>
-                                          <PopupMenuEntry<_ClientProductSort>>[
-                                        PopupMenuItem(
-                                          value: _ClientProductSort.relevance,
-                                          child: Text(
-                                            LocalizationService.t(
-                                              ctx,
-                                              'productSearch.sortRelevance',
-                                            ),
+                                      InkWell(
+                                        onTap: _openSortSheet,
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: Spacing.xs,
+                                            vertical: 4,
                                           ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: _ClientProductSort.priceAsc,
-                                          child: Text(
-                                            LocalizationService.t(
-                                              ctx,
-                                              'productSearch.sortPriceLow',
-                                            ),
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: _ClientProductSort.priceDesc,
-                                          child: Text(
-                                            LocalizationService.t(
-                                              ctx,
-                                              'productSearch.sortPriceHigh',
-                                            ),
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: _ClientProductSort.nameAz,
-                                          child: Text(
-                                            LocalizationService.t(
-                                              ctx,
-                                              'productSearch.sortName',
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: Spacing.sm,
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: <Widget>[
-                                            Icon(
-                                              Icons.sort,
-                                              size: 20,
-                                              color: scheme.onSurface,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              LocalizationService.t(
-                                                context,
-                                                'productSearch.sortLabel',
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: <Widget>[
+                                              const Icon(
+                                                Icons.sort_rounded,
+                                                size: 18,
+                                                color: AppColors.primary,
                                               ),
-                                              style: TextStyle(
-                                                color: scheme.onSurface,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13,
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                LocalizationService.t(
+                                                  context,
+                                                  'productSearch.sortLabel',
+                                                ),
+                                                style: const TextStyle(
+                                                  color: AppColors.primary,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    if (hasActiveFilter)
-                                      TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _priceRange = const PriceRange();
-                                          });
-                                        },
-                                        child: const Text('Clear filter'),
-                                      ),
-                                  ],
+                                      if (hasActiveFilter)
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _priceRange = const PriceRange();
+                                            });
+                                          },
+                                          child: Text(
+                                            LocalizationService.t(
+                                              context,
+                                              'productSearch.clearPriceFilter',
+                                            ),
+                                            style: const TextStyle(
+                                              color: AppColors.pink,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              // Price filter chips
+                              const SizedBox(height: Spacing.sm),
                               Padding(
                                 padding:
                                     const EdgeInsets.only(bottom: Spacing.sm),
@@ -656,10 +853,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                   },
                                 ),
                               ),
-                              // Product grid or empty filter state
                               Expanded(
                                 child: filteredProducts.isEmpty
-                                    ? Center(
+                                    ? _brandedEmptyWrap(
                                         child: AppEmptyState(
                                           icon: Icons.filter_list_off,
                                           title: LocalizationService.t(
@@ -681,6 +877,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                         children: <Widget>[
                                           Expanded(
                                             child: RefreshIndicator(
+                                              color: AppColors.primary,
                                               onRefresh: _performSearch,
                                               child: GridView.builder(
                                                 controller: _scrollController,
@@ -693,44 +890,70 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                   crossAxisCount: 2,
                                                   crossAxisSpacing: Spacing.md,
                                                   mainAxisSpacing: Spacing.md,
-                                                  childAspectRatio: 0.62,
+                                                  childAspectRatio: 0.52,
                                                 ),
                                                 itemCount:
                                                     filteredProducts.length,
                                                 itemBuilder: (context, index) {
                                                   final product =
                                                       filteredProducts[index];
-                                                  return ProductCard(
-                                                    key: ValueKey(
-                                                      'product_${product.id}_$index',
+                                                  return TweenAnimationBuilder<
+                                                      double>(
+                                                    tween: Tween<double>(
+                                                      begin: 0,
+                                                      end: 1,
                                                     ),
-                                                    product: product,
-                                                    productId: product.id,
-                                                    imageUrl:
-                                                        product.imageUrl ?? '',
-                                                    description: product.name,
-                                                    price:
-                                                        MoneyFormatter.format(
-                                                      product.price,
-                                                      product.currency,
+                                                    duration: Duration(
+                                                      milliseconds:
+                                                          220 + (index % 6) * 40,
                                                     ),
-                                                    originalPrice:
-                                                        product.originalPrice !=
-                                                                null
-                                                            ? MoneyFormatter
-                                                                .format(
-                                                                product
-                                                                    .originalPrice!,
-                                                                product
-                                                                    .currency,
-                                                              )
-                                                            : null,
-                                                    rating: product.rating,
-                                                    reviewCount:
-                                                        product.reviewCount,
-                                                    discountPercentage: product
-                                                        .discountPercentage,
-                                                    fillCell: true,
+                                                    curve: Curves.easeOut,
+                                                    builder: (context, value,
+                                                        child) {
+                                                      return Opacity(
+                                                        opacity: value,
+                                                        child: Transform
+                                                            .translate(
+                                                          offset: Offset(
+                                                            0,
+                                                            12 * (1 - value),
+                                                          ),
+                                                          child: child,
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: ProductCard(
+                                                      key: ValueKey(
+                                                        'product_${product.id}_$index',
+                                                      ),
+                                                      product: product,
+                                                      productId: product.id,
+                                                      imageUrl:
+                                                          product.imageUrl ?? '',
+                                                      description: product.name,
+                                                      price: MoneyFormatter
+                                                          .format(
+                                                        product.price,
+                                                        product.currency,
+                                                      ),
+                                                      originalPrice: product
+                                                                  .originalPrice !=
+                                                              null
+                                                          ? MoneyFormatter
+                                                              .format(
+                                                              product
+                                                                  .originalPrice!,
+                                                              product.currency,
+                                                            )
+                                                          : null,
+                                                      rating: product.rating,
+                                                      reviewCount:
+                                                          product.reviewCount,
+                                                      discountPercentage:
+                                                          product
+                                                              .discountPercentage,
+                                                      fillCell: true,
+                                                    ),
                                                   );
                                                 },
                                               ),
@@ -747,6 +970,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                   child:
                                                       CircularProgressIndicator(
                                                     strokeWidth: 2,
+                                                    color: AppColors.primary,
                                                   ),
                                                 ),
                                               ),

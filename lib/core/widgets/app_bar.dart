@@ -33,7 +33,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize {
     // Floating bar: toolbar + padding + outer margins.
-    return const Size.fromHeight(kToolbarHeight + 36);
+    // Extra room avoids content colliding with the status bar on dense devices.
+    return const Size.fromHeight(kToolbarHeight + 48);
   }
 
   @override

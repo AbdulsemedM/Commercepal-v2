@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 
@@ -70,16 +71,21 @@ class PriceFilterChips extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? Colors.white : Colors.grey[800],
+                    color: selected ? Colors.white : AppColors.navy,
                   ),
                 ),
                 selected: selected,
                 onSelected: (_) => onRangeChanged(range),
-                backgroundColor: Colors.grey[200],
+                backgroundColor: const Color(0xFFFFF4FA),
                 selectedColor: AppColors.primary,
                 checkmarkColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppDecorations.chipBorderRadius,
+                ),
                 side: BorderSide(
-                  color: selected ? AppColors.primary : Colors.grey[300]!,
+                  color: selected
+                      ? AppColors.primary
+                      : AppColors.primary.withValues(alpha: 0.18),
                   width: selected ? 2 : 1,
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -96,20 +102,23 @@ class PriceFilterChips extends StatelessWidget {
                 Icons.tune,
                 size: 18,
                 color: _sameRange(currentRange, const PriceRange(min: null, max: null))
-                    ? Colors.grey[600]
+                    ? AppColors.navy.withValues(alpha: 0.55)
                     : AppColors.primary,
               ),
               label: const Text('Custom'),
               selected: !currentRange.isAny &&
                   !presets.any((p) => _sameRange(p, currentRange)),
               onSelected: (_) => _openCustomRange(context),
-              backgroundColor: Colors.grey[200],
-              selectedColor: AppColors.primary.withOpacity(0.2),
+              backgroundColor: const Color(0xFFFFF4FA),
+              selectedColor: AppColors.primary.withValues(alpha: 0.18),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDecorations.chipBorderRadius,
+              ),
               side: BorderSide(
                 color: !currentRange.isAny &&
                         !presets.any((p) => _sameRange(p, currentRange))
                     ? AppColors.primary
-                    : Colors.grey[300]!,
+                    : AppColors.primary.withValues(alpha: 0.18),
                 width: 1,
               ),
               padding: const EdgeInsets.symmetric(

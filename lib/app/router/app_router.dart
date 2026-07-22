@@ -14,6 +14,8 @@ import '../../features/products/presentation/screen/product_detail_screen.dart';
 import '../../features/products/presentation/screen/product_details_reviews_screen.dart';
 import '../../features/products/presentation/screen/product_search_screen.dart';
 import '../../features/products/bloc/product_search_bloc.dart';
+import '../../features/home/presentation/screen/mega_sale_screen.dart';
+import '../../features/home/presentation/screen/sale_promotion_screen.dart';
 import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
 import '../../features/profile/presentation/screen/refund_policy_screen.dart';
 import '../../features/profile/presentation/screen/edit_profile_screen.dart';
@@ -51,6 +53,8 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String productDetailsReviews = '/product-details-reviews';
   static const String productSearch = '/product-search';
+  static const String megaSale = '/mega-sale';
+  static const String salePromotion = '/sale-promotion';
   static const String termsConditions = '/terms-conditions';
   static const String refundPolicy = '/refund-policy';
   static const String editProfile = '/edit-profile';
@@ -165,6 +169,18 @@ final GoRouter appRouter = GoRouter(
           ),
         );
       },
+    ),
+    GoRoute(
+      path: AppRoutes.megaSale,
+      name: 'megaSale',
+      builder: (BuildContext context, GoRouterState state) =>
+          const MegaSaleScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.salePromotion,
+      name: 'salePromotion',
+      builder: (BuildContext context, GoRouterState state) =>
+          const SalePromotionScreen(),
     ),
     GoRoute(
       path: AppRoutes.termsConditions,

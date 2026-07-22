@@ -328,19 +328,19 @@ class _ProductCardState extends State<ProductCard> {
       child: compact
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Flexible(
-                  child: ClipRect(
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: titleAndRating,
-                    ),
+                SizedBox(
+                  height: titleSize * 1.15 * 2,
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: titleAndRating,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 4),
                 priceSection,
                 if (addButton != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   addButton,
                 ],
               ],
@@ -368,8 +368,8 @@ class _ProductCardState extends State<ProductCard> {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Expanded(flex: 52, child: imageSection),
-                Expanded(flex: 48, child: detailsSection),
+                Expanded(child: imageSection),
+                detailsSection,
               ],
             )
           : Column(
