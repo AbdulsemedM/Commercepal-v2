@@ -18,6 +18,7 @@ import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
+import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
@@ -286,16 +287,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             itemBuilder: (context, index) {
               final variant = method.variants[index];
               return ListTile(
-                leading: variant.iconUrl.isNotEmpty
-                    ? Image.network(
-                        variant.iconUrl,
-                        width: 40,
-                        height: 40,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.payment, size: 40);
-                        },
-                      )
-                    : Icon(Icons.payment, size: 40),
+                leading: PaymentMethodAssets.logo(
+                  size: 40,
+                  name: variant.displayName,
+                  code: variant.variantCode,
+                  iconUrl: variant.iconUrl,
+                ),
                 title: Text(variant.displayName),
                 onTap: () {
                   Navigator.of(context).pop(variant);

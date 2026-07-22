@@ -164,5 +164,63 @@ void main() {
         'smart-watches',
       );
     });
+
+    test('generated fillers receive curated HTTPS image URLs', () {
+      final enriched = CategorySubcategoryFallbacks.enrich(
+        _category(name: 'Cosmetics'),
+      );
+
+      expect(enriched.subCategories, isNotEmpty);
+      for (final sub in enriched.subCategories) {
+        expect(sub.imageUrl, isNotNull);
+        expect(sub.imageUrl, startsWith('https://'));
+      }
+      final makeup =
+          enriched.subCategories.firstWhere((s) => s.name == 'Makeup');
+      expect(makeup.imageUrl, contains('images.unsplash.com'));
+    });
+
+    test('preserves API-provided imageUrl on existing subcategories', () {
+      final existing = <SubCategory>[
+        SubCategory(
+          name: 'Custom Widgets',
+          slug: 'custom-widgets',
+          imageUrl: 'https://cdn.example.com/api-image.jpg',
+          displayOrder: 1,
+          categoryName: 'Fashion',
+          providerId: 'provider-1',
+        ),
+        _sub(name: 'Custom Gadgets', categoryName: 'Fashion', displayOrder: 2),
+      ];
+      final enriched = CategorySubcategoryFallbacks.enrich(
+        _category(name: 'Fashion', subCategories: existing),
+      );
+
+      expect(enriched.subCategories.first.imageUrl,
+          'https://cdn.example.com/api-image.jpg');
+      // Fillers appended for the remaining slots should have curated URLs.
+      final fillers = enriched.subCategories.skip(2);
+      expect(fillers.every((s) => (s.imageUrl ?? '').startsWith('https://')),
+          isTrue);
+    });
+
+    test('unknown parents get generic fillers with images', () {
+      final enriched = CategorySubcategoryFallbacks.enrich(
+        _category(name: 'Quantum Widgets X'),
+      );
+      for (final sub in enriched.subCategories) {
+        expect(sub.imageUrl, isNotNull);
+        expect(sub.imageUrl, startsWith('https://'));
+      }
+    });
+
+    test('imageUrlFor resolves known subcategory names', () {
+      expect(
+        CategorySubcategoryFallbacks.imageUrlFor('Smartphones'),
+        startsWith('https://images.unsplash.com/'),
+      );
+      expect(CategorySubcategoryFallbacks.imageUrlFor('Totally Unknown XYZ'),
+          isNull);
+    });
   });
 }

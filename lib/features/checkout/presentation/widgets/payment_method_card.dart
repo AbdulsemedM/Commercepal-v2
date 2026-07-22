@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
+import 'package:commercepal/features/checkout/data/models/payment_method_assets.dart';
 
 class PaymentMethodCard extends StatelessWidget {
   const PaymentMethodCard({
@@ -21,16 +22,6 @@ class PaymentMethodCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final String? description;
-
-  /// The API returns relative icon paths (e.g. `/images/payment/mpesa.png`)
-  /// that belong to the website; resolve them against commercepal.com.
-  String? get _resolvedIconUrl {
-    final String? url = iconUrl;
-    if (url == null || url.isEmpty) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/')) return 'https://commercepal.com$url';
-    return null;
-  }
 
   /// Branded fallback icon per method when no usable logo exists.
   IconData get _fallbackIcon {
@@ -58,7 +49,6 @@ class PaymentMethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? resolvedUrl = _resolvedIconUrl;
     final Widget fallback = Icon(
       _fallbackIcon,
       color: AppColors.primary,
@@ -92,23 +82,16 @@ class PaymentMethodCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   alignment: Alignment.center,
-                  child: resolvedUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            resolvedUrl,
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                fallback,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return fallback;
-                            },
-                          ),
-                        )
-                      : fallback,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: PaymentMethodAssets.logo(
+                      size: 40,
+                      id: paymentMethodId,
+                      name: paymentMethodName,
+                      iconUrl: iconUrl,
+                      fallback: fallback,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Flexible(

@@ -14,6 +14,7 @@ import '../../data/models/payment_retry_request.dart';
 import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
+import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
 import '../widgets/payment_method_card.dart';
@@ -229,9 +230,12 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
             itemBuilder: (context, index) {
               final v = method.variants[index];
               return ListTile(
-                leading: v.iconUrl.isNotEmpty
-                    ? Image.network(v.iconUrl, width: 40, height: 40, fit: BoxFit.contain)
-                    : const Icon(Icons.payment),
+                leading: PaymentMethodAssets.logo(
+                  size: 40,
+                  name: v.displayName,
+                  code: v.variantCode,
+                  iconUrl: v.iconUrl,
+                ),
                 title: Text(v.displayName),
                 onTap: () => Navigator.of(context).pop(v),
               );
