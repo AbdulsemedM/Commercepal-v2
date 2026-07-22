@@ -50,8 +50,8 @@ class OrdersDataProvider {
         queryParameters['direction'] = direction;
       }
 
-      print('🟠 OrdersDataProvider: Making API call to $_ordersEndpoint');
-      print('🟠 OrdersDataProvider: Query params: $queryParameters');
+      // print('🟠 OrdersDataProvider: Making API call to $_ordersEndpoint');
+      // print('🟠 OrdersDataProvider: Query params: $queryParameters');
       AppLogger.i(
         'Making API call to $_ordersEndpoint with query params: $queryParameters',
       );
@@ -60,9 +60,9 @@ class OrdersDataProvider {
         query: queryParameters,
       );
 
-      print(
-        '🟠 OrdersDataProvider: API response received: ${response.statusCode}',
-      );
+      // print(
+      //   '🟠 OrdersDataProvider: API response received: ${response.statusCode}',
+      // );
       AppLogger.i('API response received: ${response.statusCode}');
       if (response.data == null) {
         throw DioException(

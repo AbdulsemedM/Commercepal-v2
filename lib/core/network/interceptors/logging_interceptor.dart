@@ -151,13 +151,9 @@ class LoggingInterceptor extends Interceptor {
         error: err,
         stack: err.stackTrace,
       );
-    } else {
-      // Release: log only safe summary to avoid leaking tokens/PII in error payloads
-      AppLogger.e(
-        'API Error: ${err.requestOptions.method} ${err.requestOptions.uri} '
-        'type=${err.type} message=${err.message}',
-      );
     }
+    // Release: do not log URIs/messages (commented AppLogger.e is a no-op today;
+    // keep this branch empty so re-enabling AppLogger.e cannot leak in prod).
     super.onError(err, handler);
   }
 

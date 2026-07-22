@@ -37,6 +37,16 @@ class Env {
       );
     }
     final resolvedBaseUrl = baseUrl.isNotEmpty ? baseUrl : placeholderUrl;
+    final Uri? baseUri = Uri.tryParse(resolvedBaseUrl);
+    if (kReleaseMode &&
+        (baseUri == null ||
+            !baseUri.hasScheme ||
+            baseUri.scheme.toLowerCase() != 'https')) {
+      throw StateError(
+        'BASE_URL must be an https:// URL in release builds. '
+        'Cleartext HTTP is not allowed.',
+      );
+    }
     _current = EnvConfig(
       baseUrl: resolvedBaseUrl,
       connectTimeoutMs:

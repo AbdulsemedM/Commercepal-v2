@@ -6,20 +6,20 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
 
-/// Allowed host suffixes for payment WebView (backend must only return URLs for these).
-/// Add your payment gateway domains (e.g. sahaypay, telebirr, cbe birr) to reduce open-redirect risk.
+/// Allowed hosts for payment WebView (exact host or subdomain).
+/// Backend must only return URLs for these gateways.
 const Set<String> _allowedPaymentHostSuffixes = {
   'sahaypay.com',
-  'sahaypay.',
-  'telebirr.',
-  'ebirr.',
-  'pesapal.',
-  'cbe.com.et', // CBE Birr payment gateway
+  'telebirr.com',
+  'ebirr.com',
+  'pesapal.com',
+  'cbe.com.et',
+  'commercepal.com',
 };
 
 /// In-app WebView screen for completing payment at [paymentUrl].
 /// [orderNumber] is optional and can be shown in the AppBar.
-/// Only HTTPS URLs are loaded; empty or invalid URLs show an error and do not load.
+/// Only HTTPS URLs on allowlisted hosts are loaded; navigations off-list are blocked.
 class PaymentWebViewScreen extends StatefulWidget {
   const PaymentWebViewScreen({
     super.key,
@@ -39,19 +39,23 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   bool _isLoading = true;
   String? _loadError;
 
+  static bool _isHostAllowed(String host) {
+    final String h = host.toLowerCase();
+    if (h.isEmpty) return false;
+    for (final String suffix in _allowedPaymentHostSuffixes) {
+      if (h == suffix || h.endsWith('.$suffix')) return true;
+    }
+    return false;
+  }
+
   static bool _isPaymentUrlAllowed(String url) {
-    final trimmed = url.trim();
+    final String trimmed = url.trim();
     if (trimmed.isEmpty) return false;
-    final uri = Uri.tryParse(trimmed);
+    final Uri? uri = Uri.tryParse(trimmed);
     if (uri == null || !uri.hasScheme || uri.scheme.toLowerCase() != 'https') {
       return false;
     }
-    final host = uri.host.toLowerCase();
-    if (host.isEmpty) return false;
-    for (final suffix in _allowedPaymentHostSuffixes) {
-      if (host == suffix || host.endsWith('.$suffix')) return true;
-    }
-    return false;
+    return _isHostAllowed(uri.host);
   }
 
   /// Browser-like User-Agent so payment gateways (e.g. CBE Birr) that block WebView accept the request.
@@ -71,6 +75,12 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            if (!_isPaymentUrlAllowed(request.url)) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
           onPageStarted: (_) {
             if (mounted) setState(() => _isLoading = true);
           },

@@ -6,6 +6,9 @@ import 'package:cryptography/cryptography.dart';
 import 'package:commercepal/core/storage/storage.dart';
 
 /// Device-bound AES-GCM for remember-me password storage.
+///
+/// Token/session data uses flutter_secure_storage v10+ (AES-GCM, not CBC).
+/// Residual MobSF CBC hits may still appear from other Google SDK bytecode.
 class RememberMeCrypto {
   RememberMeCrypto._();
 

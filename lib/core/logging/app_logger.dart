@@ -24,7 +24,8 @@ class AppLogger {
     StackTrace? stack,
     Object? data,
   }) {
-    _log('ERROR', message, data, error: error, stack: stack);
+    // Commented out for release / MobSF — uncomment for local debugging.
+    // _log('ERROR', message, data, error: error, stack: stack);
   }
 
   static void _log(

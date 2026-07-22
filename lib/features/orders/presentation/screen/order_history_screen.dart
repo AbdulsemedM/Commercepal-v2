@@ -93,13 +93,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     // Load orders when screen initializes - use postFrameCallback to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        print('🔵 OrderHistoryScreen: Dispatching OrdersLoadRequested event');
+        // print('🔵 OrderHistoryScreen: Dispatching OrdersLoadRequested event');
         try {
           final bloc = context.read<OrdersBloc>();
-          print('🔵 OrderHistoryScreen: BLoC found, adding event');
+          // print('🔵 OrderHistoryScreen: BLoC found, adding event');
           bloc.add(OrdersLoadRequested());
         } catch (e) {
-          print('❌ OrderHistoryScreen: Error accessing BLoC: $e');
+          // print('❌ OrderHistoryScreen: Error accessing BLoC: $e');
         }
       }
     });
@@ -197,9 +197,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       ),
       body: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
-          print(
-            '🔵 OrderHistoryScreen: BlocBuilder rebuild - state: ${state.runtimeType}',
-          );
+          // print(
+          //   '🔵 OrderHistoryScreen: BlocBuilder rebuild - state: ${state.runtimeType}',
+          // );
           if (state is OrdersLoading) {
             return const Center(child: CircularProgressIndicator());
           }

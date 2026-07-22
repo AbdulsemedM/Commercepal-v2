@@ -7,15 +7,42 @@ import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-/// Normalizes bare hosts to https for players.
+/// Normalizes bare hosts to https. Rejects cleartext http (upgrade or leave empty).
 String normalizeVideoHttpUrl(String url) {
   final String t = url.trim();
   if (t.isEmpty) return t;
-  final lower = t.toLowerCase();
-  if (lower.startsWith('http://') || lower.startsWith('https://')) {
-    return t;
+  final String lower = t.toLowerCase();
+  if (lower.startsWith('https://')) return t;
+  if (lower.startsWith('http://')) {
+    return 'https://${t.substring(7)}';
   }
   return 'https://$t';
+}
+
+bool _isAllowedVideoNavigationHost(String host) {
+  final String h = host.toLowerCase();
+  if (h.isEmpty) return false;
+  const Set<String> allowed = <String>{
+    'youtube.com',
+    'youtu.be',
+    'youtube-nocookie.com',
+    'googlevideo.com',
+    'ytimg.com',
+    'gstatic.com',
+    'commercepal.com',
+    'amazonaws.com',
+    'cloudfront.net',
+    'aliyuncs.com',
+  };
+  for (final String suffix in allowed) {
+    if (h == suffix || h.endsWith('.$suffix')) return true;
+  }
+  return false;
+}
+
+bool _isAllowedVideoNavigationUri(Uri uri) {
+  if (!uri.hasScheme || uri.scheme.toLowerCase() != 'https') return false;
+  return _isAllowedVideoNavigationHost(uri.host);
 }
 
 /// YouTube video ids are 11 chars ([0-9A-Za-z_-]).
@@ -228,10 +255,24 @@ video{width:100%;height:100%;object-fit:contain;}
 </html>''';
 
     final WebViewController c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // HTML5 <video> does not require JS; keep disabled to reduce XSS surface.
+      ..setJavaScriptMode(JavaScriptMode.disabled)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            final Uri? uri = Uri.tryParse(request.url);
+            // Allow about:blank / data for the loaded HTML document.
+            if (uri == null) return NavigationDecision.prevent;
+            final String scheme = uri.scheme.toLowerCase();
+            if (scheme == 'about' || scheme == 'data') {
+              return NavigationDecision.navigate;
+            }
+            if (!_isAllowedVideoNavigationUri(uri)) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
           onPageFinished: (_) {
             if (mounted) setState(() {});
           },
@@ -258,17 +299,32 @@ video{width:100%;height:100%;object-fit:contain;}
   }
 
   void _openWebFallback(String normalized) {
+    final Uri? initial = Uri.tryParse(normalized);
+    if (initial == null || !_isAllowedVideoNavigationUri(initial)) {
+      setState(() {
+        _loading = false;
+        _error = 'Disallowed or insecure video URL';
+      });
+      return;
+    }
     final WebViewController c = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            final Uri? uri = Uri.tryParse(request.url);
+            if (uri == null || !_isAllowedVideoNavigationUri(uri)) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
           onPageFinished: (_) {
             if (mounted) setState(() {});
           },
         ),
       )
-      ..loadRequest(Uri.parse(normalized));
+      ..loadRequest(initial);
     setState(() {
       _webFallbackController = c;
       _loading = false;

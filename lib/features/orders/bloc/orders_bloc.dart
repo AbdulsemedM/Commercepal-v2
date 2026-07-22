@@ -23,10 +23,10 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     OrdersLoadRequested event,
     Emitter<OrdersState> emit,
   ) async {
-    print('🟢 OrdersBloc: OrdersLoadRequested event received');
+    // print('🟢 OrdersBloc: OrdersLoadRequested event received');
     AppLogger.i('OrdersLoadRequested event received');
     emit(OrdersLoading());
-    print('🟢 OrdersBloc: Emitted OrdersLoading state');
+    // print('🟢 OrdersBloc: Emitted OrdersLoading state');
 
     try {
       AppLogger.i('Fetching orders with customerId: ${event.customerId}, stageCategory: ${event.stageCategory}');
@@ -43,9 +43,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       );
 
       AppLogger.i('Orders fetched successfully: ${response.content.length} orders');
-      print('🟢 OrdersBloc: Orders fetched successfully: ${response.content.length} orders');
+      // print('🟢 OrdersBloc: Orders fetched successfully: ${response.content.length} orders');
       emit(OrdersLoaded(response));
-      print('🟢 OrdersBloc: Emitted OrdersLoaded state');
+      // print('🟢 OrdersBloc: Emitted OrdersLoaded state');
     } catch (e, stack) {
       AppLogger.e('Error loading orders', error: e, stack: stack);
       String errorMessage = 'Failed to load orders. Please try again.';
@@ -63,9 +63,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
         }
       }
 
-      print('❌ OrdersBloc: Error occurred: $errorMessage');
+      // print('❌ OrdersBloc: Error occurred: $errorMessage');
       emit(OrdersError(errorMessage));
-      print('❌ OrdersBloc: Emitted OrdersError state');
+      // print('❌ OrdersBloc: Emitted OrdersError state');
     }
   }
 

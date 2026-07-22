@@ -10,7 +10,14 @@ class Storage {
   factory Storage() => _instance;
 
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    // v10+ defaults: AES-GCM storage + RSA-OAEP key wrap (no AES/CBC in APK).
+    // migrateOnAlgorithmChange migrates tokens from older EncryptedSharedPreferences.
+    aOptions: AndroidOptions(
+      migrateOnAlgorithmChange: true,
+      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+      keyCipherAlgorithm:
+          KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+    ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),

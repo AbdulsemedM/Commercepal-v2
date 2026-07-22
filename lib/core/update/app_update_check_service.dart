@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../logging/app_logger.dart';
@@ -38,9 +37,9 @@ class AppUpdateCheckService {
       }
 
       final updateType = VersionParser.getUpdateType(current, latest);
-      debugPrint(
-        'App update check -> current: $current, remote: $latest, type: $updateType',
-      );
+      // debugPrint(
+      //   'App update check -> current: $current, remote: $latest, type: $updateType',
+      // );
       AppLogger.i(
         'App update check: current=$current latest=$latest type=$updateType',
       );
