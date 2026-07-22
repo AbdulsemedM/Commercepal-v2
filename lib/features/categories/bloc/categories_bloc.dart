@@ -44,7 +44,9 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
       final bSubs = b[i].subCategories;
       if (aSubs.length != bSubs.length) return false;
       for (var j = 0; j < aSubs.length; j++) {
-        if (aSubs[j].name != bSubs[j].name || aSubs[j].slug != bSubs[j].slug) {
+        if (aSubs[j].name != bSubs[j].name ||
+            aSubs[j].slug != bSubs[j].slug ||
+            aSubs[j].imageUrl != bSubs[j].imageUrl) {
           return false;
         }
       }

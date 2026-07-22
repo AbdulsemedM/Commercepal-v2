@@ -15,6 +15,7 @@ import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/cart_bloc.dart';
 import '../../data/models/cart.dart';
 import '../../data/models/cart_item.dart';
+import '../widgets/cart_empty_view.dart';
 import '../widgets/cart_item_widget.dart';
 
 class CartPage extends StatefulWidget {
@@ -167,14 +168,9 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildEmptyCart(BuildContext context) {
-    return Center(
-      child: AppEmptyState(
-        icon: Icons.shopping_cart_outlined,
-        title: LocalizationService.t(context, 'cart.emptyTitle'),
-        subtitle: LocalizationService.t(context, 'cart.emptySubtitle'),
-        primaryLabel: LocalizationService.t(context, 'cart.startShopping'),
-        onPrimary: () => _navigateToTab(context, 0),
-      ),
+    return CartEmptyView(
+      onStartShopping: () => _navigateToTab(context, 0),
+      onBrowseCategories: () => _navigateToTab(context, 1),
     );
   }
 

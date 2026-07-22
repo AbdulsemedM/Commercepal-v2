@@ -166,16 +166,48 @@ class _SubCategoryCard extends StatelessWidget {
     final fallbackIcon = CategoryImageAssets.iconForName(subCategory.name);
     final hasNetworkImage =
         subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
-    final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
+    final String? assetPath =
+        CategoryImageAssets.assetPathForName(subCategory.name);
     final gradient = AppDecorations.accentGradientAt(gradientIndex);
+
+    Widget imageBody() {
+      // Nested folder assets: assets/images/subcategories/{parent}/{slug}.jpg
+      final String? path = assetPath;
+      if (path != null &&
+          path.contains('/subcategories/') &&
+          path.split('/subcategories/').last.contains('/')) {
+        return Image.asset(
+          path,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            if (!hasNetworkImage) return _buildIconBody(fallbackIcon);
+            return Image.network(
+              subCategory.imageUrl!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (_, __, ___) => _buildIconBody(fallbackIcon),
+            );
+          },
+        );
+      }
+      if (hasNetworkImage) {
+        return Image.network(
+          subCategory.imageUrl!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildIconBody(fallbackIcon),
+        );
+      }
+      return _buildIconBody(fallbackIcon);
+    }
 
     return InkWell(
       onTap: () {
-        final query = Uri.encodeComponent(subCategory.name);
-        final provider = Uri.encodeComponent(subCategory.providerId);
-        context.push(
-          '${AppRoutes.productSearch}?query=$query&provider=$provider',
-        );
+        // Keep spaces/punctuation in the display name; encode for the route only.
+        final query = Uri.encodeComponent(subCategory.name.trim());
+        context.push('${AppRoutes.productSearch}?query=$query');
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
@@ -191,34 +223,7 @@ class _SubCategoryCard extends StatelessWidget {
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(gradient: gradient),
-                child: hasNetworkImage
-                    ? Image.network(
-                        subCategory.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return assetPath != null
-                              ? Image.asset(assetPath, fit: BoxFit.cover)
-                              : _buildIconBody(fallbackIcon);
-                        },
-                      )
-                    : (assetPath != null
-                        ? Image.asset(
-                            assetPath,
-                            fit: BoxFit.cover,
-                            errorBuilder: (
-                              BuildContext context,
-                              Object error,
-                              StackTrace? stackTrace,
-                            ) {
-                              return _buildIconBody(fallbackIcon);
-                            },
-                          )
-                        : _buildIconBody(fallbackIcon)),
+                child: imageBody(),
               ),
             ),
             Container(

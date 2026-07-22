@@ -465,16 +465,11 @@ class _SubCategoryBubbleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasNetworkImage =
-        subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
-    final assetPath = CategoryImageAssets.assetPathForName(subCategory.name);
     return InkWell(
       onTap: () {
-        final query = Uri.encodeComponent(subCategory.name);
-        final provider = Uri.encodeComponent(subCategory.providerId);
-        context.push(
-          '${AppRoutes.productSearch}?query=$query&provider=$provider',
-        );
+        // Keep spaces/punctuation in the display name; encode for the route only.
+        final query = Uri.encodeComponent(subCategory.name.trim());
+        context.push('${AppRoutes.productSearch}?query=$query');
       },
       borderRadius: BorderRadius.circular(12),
       child: Column(
@@ -486,26 +481,7 @@ class _SubCategoryBubbleTile extends StatelessWidget {
               shape: BoxShape.circle,
               color: color.withOpacity(0.08),
             ),
-            child: ClipOval(
-              child: hasNetworkImage
-                  ? Image.network(
-                      subCategory.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => (assetPath != null
-                          ? Image.asset(
-                              assetPath,
-                              fit: BoxFit.cover,
-                            )
-                          : _buildPlaceholder()),
-                    )
-                  : (assetPath != null
-                      ? Image.asset(
-                          assetPath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                        )
-                      : _buildPlaceholder()),
-            ),
+            child: ClipOval(child: _buildImage()),
           ),
           const SizedBox(height: Spacing.xs),
           Text(
@@ -521,6 +497,37 @@ class _SubCategoryBubbleTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildImage() {
+    final bool hasNetworkImage =
+        subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
+    final String? path =
+        CategoryImageAssets.assetPathForName(subCategory.name);
+    // Nested folder assets: assets/images/subcategories/{parent}/{slug}.jpg
+    if (path != null &&
+        path.contains('/subcategories/') &&
+        path.split('/subcategories/').last.contains('/')) {
+      return Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => hasNetworkImage
+            ? Image.network(
+                subCategory.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildPlaceholder(),
+              )
+            : _buildPlaceholder(),
+      );
+    }
+    if (hasNetworkImage) {
+      return Image.network(
+        subCategory.imageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+      );
+    }
+    return _buildPlaceholder();
   }
 
   Widget _buildPlaceholder() {

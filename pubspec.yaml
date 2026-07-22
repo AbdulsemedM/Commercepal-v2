@@ -140,7 +140,18 @@ flutter:
     - assets/images/technology.jpg
     - assets/images/watch.jpg
     - "assets/images/women's watches.jpg"
+    # Nested subcategory images (Flutter does not recurse; list each folder).
+    - assets/images/subcategories/automotive/
+    - assets/images/subcategories/baby/
+    - assets/images/subcategories/cosmetics/
+    - assets/images/subcategories/electronics/
+    - assets/images/subcategories/fashion/
+    - assets/images/subcategories/home/
+    - assets/images/subcategories/sport/
+    - assets/images/subcategories/technology/
+    - assets/images/subcategories/watch/
     - assets/images/airtel.png
+    - assets/images/amole.png
     - "assets/images/cash on delivery.png"
     - "assets/images/cbe birr.jpg"
     - "assets/images/debit-credit card.png"

@@ -5,6 +5,7 @@ class PaymentMethodAssets {
   PaymentMethodAssets._();
 
   static const String airtel = 'assets/images/airtel.png';
+  static const String amole = 'assets/images/amole.png';
   static const String cashOnDelivery = 'assets/images/cash on delivery.png';
   static const String cbeBirr = 'assets/images/cbe birr.jpg';
   static const String debitCreditCard = 'assets/images/debit-credit card.png';
@@ -15,6 +16,7 @@ class PaymentMethodAssets {
   static const String telebirr = 'assets/images/telebirr.png';
 
   /// Resolves a local asset path from payment method id and/or display name.
+  /// Returns null for M-Pesa so the API [iconUrl] is used instead.
   static String? assetPathFor({
     String? id,
     String? name,
@@ -22,11 +24,21 @@ class PaymentMethodAssets {
   }) {
     final String key = '$id $name $code'.toLowerCase();
 
+    // M-Pesa ships its own icon URL from the payment-methods API.
+    if (key.contains('m-pesa') ||
+        key.contains('mpesa') ||
+        RegExp(r'\bm\s*pesa\b').hasMatch(key)) {
+      return null;
+    }
+
     if (key.contains('telebirr') || key.contains('tele birr')) {
       return telebirr;
     }
     if (key.contains('airtel')) {
       return airtel;
+    }
+    if (key.contains('amole')) {
+      return amole;
     }
     if (key.contains('cash on delivery') ||
         key.contains('cash_on_delivery') ||
@@ -52,10 +64,11 @@ class PaymentMethodAssets {
     if (key.contains('qpay') || key.contains('q-pay')) {
       return qpay;
     }
-    if (key.contains('debit') ||
-        key.contains('credit') ||
-        key.contains('visa') ||
+    // Visa / Mastercard / debit / credit cards share one branded asset.
+    if (key.contains('visa') ||
         key.contains('master') ||
+        key.contains('debit') ||
+        key.contains('credit') ||
         RegExp(r'\bcard\b').hasMatch(key)) {
       return debitCreditCard;
     }

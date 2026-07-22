@@ -25,10 +25,9 @@ import 'package:commercepal/services/app_analytics.dart';
 enum _ClientProductSort { relevance, priceAsc, priceDesc, nameAz }
 
 class ProductSearchScreen extends StatefulWidget {
-  const ProductSearchScreen({super.key, this.initialQuery, this.providerId});
+  const ProductSearchScreen({super.key, this.initialQuery});
 
   final String? initialQuery;
-  final String? providerId;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -75,28 +74,25 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
 
-    // Allow search if either query or providerId is provided
-    if (query.isEmpty && widget.providerId == null) {
+    if (query.isEmpty) {
       return;
     }
 
     if (!mounted) return;
 
+    // Spaces stay in the query (e.g. "men watch"); Dio encodes them for the API.
     final request = ProductSearchRequest(
-      query: query.isNotEmpty ? query : null,
-      provider: widget.providerId,
+      query: query,
       page: 0,
-      size: 20,
+      size: 60,
     );
 
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
 
-    if (query.isNotEmpty) {
-      await AppAnalytics.logSearch(searchTerm: query);
-      await _storage.recordRecentProductSearch(query);
-      if (mounted) {
-        await _loadRecentSearches();
-      }
+    await AppAnalytics.logSearch(searchTerm: query);
+    await _storage.recordRecentProductSearch(query);
+    if (mounted) {
+      await _loadRecentSearches();
     }
   }
 
@@ -120,10 +116,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     NavigationService.instance.navigateToDashboardTab(context, tabIndex);
   }
 
-  /// True when opened from subcategories (query + provider in URL).
-  bool _isFromSubcategories() {
-    return (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) &&
-        (widget.providerId != null && widget.providerId!.isNotEmpty);
+  /// Opened with a prefilled query (e.g. subcategory tap).
+  bool _hasInitialQuery() {
+    return widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty;
   }
 
   /// Uses backend product currency to get the symbol for the price filter.
@@ -138,7 +133,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   }
 
   String _emptyResultsTitle(BuildContext context) {
-    if (widget.providerId != null && widget.providerId!.isNotEmpty) {
+    if (_hasInitialQuery()) {
       return LocalizationService.t(
         context,
         'productSearch.noResultsSubcategoryTitle',
@@ -151,7 +146,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   }
 
   String _emptyResultsSubtitle(BuildContext context) {
-    if (widget.providerId != null && widget.providerId!.isNotEmpty) {
+    if (_hasInitialQuery()) {
       return LocalizationService.t(
         context,
         'productSearch.noResultsSubcategorySubtitle',
@@ -173,8 +168,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecentSearches();
       if (!mounted) return;
-      if ((widget.initialQuery != null && widget.initialQuery!.isNotEmpty) ||
-          (widget.providerId != null && widget.providerId!.isNotEmpty)) {
+      if (_hasInitialQuery()) {
         await _performSearch();
       }
     });
@@ -271,83 +265,75 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               ),
               body: Column(
                 children: <Widget>[
-                  // Search bar (hidden when coming from subcategories with query + provider)
-                  if (!_isFromSubcategories())
-                    Padding(
-                      padding: const EdgeInsets.all(Spacing.md),
-                      child: TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: LocalizationService.t(
-                            context,
-                            'productSearch.fieldHint',
-                          ),
-                          hintStyle: TextStyle(
+                  Padding(
+                    padding: const EdgeInsets.all(Spacing.md),
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: !_hasInitialQuery(),
+                      decoration: InputDecoration(
+                        hintText: LocalizationService.t(
+                          context,
+                          'productSearch.fieldHint',
+                        ),
+                        hintStyle: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 15,
+                        ),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.search,
                             color: scheme.onSurfaceVariant,
-                            fontSize: 15,
-                          ),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Icon(
-                              Icons.search,
-                              color: scheme.onSurfaceVariant,
-                              size: 20,
-                            ),
-                          ),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {});
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                BorderSide(color: scheme.outlineVariant),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                BorderSide(color: scheme.outlineVariant),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.sm,
-                            vertical: Spacing.sm,
+                            size: 20,
                           ),
                         ),
-                        onSubmitted: (_) {
-                          _performSearch();
-                        },
-                        onChanged: (_) => setState(() {}),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: scheme.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: scheme.outlineVariant),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.sm,
+                          vertical: Spacing.sm,
+                        ),
                       ),
+                      onSubmitted: (_) {
+                        _performSearch();
+                      },
+                      onChanged: (_) => setState(() {}),
                     ),
+                  ),
                   // Results
                   Expanded(
                     child: BlocBuilder<ProductSearchBloc, ProductSearchState>(
                       builder: (context, state) {
                         if (state is ProductSearchInitial) {
-                          final String hint = widget.providerId != null
-                              ? LocalizationService.t(
-                                  context,
-                                  'productSearch.loadingProducts',
-                                )
-                              : LocalizationService.t(
-                                  context,
-                                  'productSearch.emptyHint',
-                                );
-                          if (!_isFromSubcategories() &&
-                              widget.providerId == null &&
+                          final String hint = LocalizationService.t(
+                            context,
+                            'productSearch.emptyHint',
+                          );
+                          if (!_hasInitialQuery() &&
                               _recentSearches.isNotEmpty) {
                             return SingleChildScrollView(
                               padding: const EdgeInsets.all(Spacing.md),
@@ -451,7 +437,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: Spacing.md,
                               mainAxisSpacing: Spacing.md,
-                              childAspectRatio: 0.75,
+                              childAspectRatio: 0.62,
                             ),
                             itemCount: 6,
                             itemBuilder: (context, index) {
@@ -492,8 +478,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                 'cart.retry',
                               ),
                               onPrimary: () {
-                                if (_searchController.text.isNotEmpty ||
-                                    widget.providerId != null) {
+                                if (_searchController.text.trim().isNotEmpty) {
                                   _performSearch();
                                 }
                               },
@@ -521,9 +506,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
                           if (allProducts.isEmpty) {
                             final bool canRetry =
-                                _searchController.text.isNotEmpty ||
-                                    (widget.providerId != null &&
-                                        widget.providerId!.isNotEmpty);
+                                _searchController.text.trim().isNotEmpty;
                             return Center(
                               child: AppEmptyState(
                                 icon: Icons.search_off,
@@ -710,7 +693,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                   crossAxisCount: 2,
                                                   crossAxisSpacing: Spacing.md,
                                                   mainAxisSpacing: Spacing.md,
-                                                  childAspectRatio: 0.75,
+                                                  childAspectRatio: 0.62,
                                                 ),
                                                 itemCount:
                                                     filteredProducts.length,
@@ -721,6 +704,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                     key: ValueKey(
                                                       'product_${product.id}_$index',
                                                     ),
+                                                    product: product,
                                                     productId: product.id,
                                                     imageUrl:
                                                         product.imageUrl ?? '',
@@ -746,6 +730,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                         product.reviewCount,
                                                     discountPercentage: product
                                                         .discountPercentage,
+                                                    fillCell: true,
                                                   );
                                                 },
                                               ),

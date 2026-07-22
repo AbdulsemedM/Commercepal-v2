@@ -17,7 +17,7 @@ class ProductSearchRequest {
 
   ProductSearchRequest({
     this.page = 0,
-    this.size = 20,
+    this.size = 60,
     this.query,
     this.categoryId,
     this.provider,

@@ -20,7 +20,7 @@ class ProductSearchResponse {
   });
 
   /// Empty page (e.g. null body or unparseable payload treated as no results).
-  factory ProductSearchResponse.empty({int currentPage = 0, int size = 20}) {
+  factory ProductSearchResponse.empty({int currentPage = 0, int size = 60}) {
     return ProductSearchResponse(
       products: <Product>[],
       totalElements: 0,
