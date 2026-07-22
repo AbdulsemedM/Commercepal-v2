@@ -16,17 +16,42 @@ class CartDataProvider {
   static const String _cartItemsEndpoint = '/api/v1/cart/items';
 
   Future<Cart> addToCart(AddToCartRequest request) async {
+    // The API expects camelCase fields; keep the snake_case body only as a
+    // fallback for older backend deployments.
     try {
-      return await _addToCartWithBody(request.toJsonSnakeCase());
+      return await _addToCartWithBody(request.toJson());
     } on DioException catch (e) {
       if (e.response?.statusCode == 400) {
         try {
-          return await _addToCartWithBody(request.toJson());
-        } on DioException catch (_) {
+          return await _addToCartWithBody(request.toJsonSnakeCase());
+        } on DioException catch (retryError) {
+          if (retryError.response?.statusCode == 500) {
+            return await _reconcileCartAfterAddFailure(retryError);
+          }
           rethrow;
         }
       }
+      if (e.response?.statusCode == 500) {
+        return await _reconcileCartAfterAddFailure(e);
+      }
       rethrow;
+    }
+  }
+
+  /// The backend sometimes persists the added item but fails while
+  /// serializing its own response (500 "Type definition error:
+  /// LocalDateTime"). Fetch the authoritative cart so the UI reflects
+  /// whatever actually happened server-side.
+  Future<Cart> _reconcileCartAfterAddFailure(DioException original) async {
+    try {
+      final cart = await getCart();
+      AppLogger.i(
+        'Add-to-cart response failed (500); reconciled with server cart '
+        '(${cart.totalItems} items)',
+      );
+      return cart;
+    } catch (_) {
+      throw original;
     }
   }
 
