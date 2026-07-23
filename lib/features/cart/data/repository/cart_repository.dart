@@ -20,121 +20,125 @@ class CartRepository {
         _localDataProvider = localDataProvider ?? LocalCartDataProvider(),
         _authService = authService ?? AuthService();
 
-  final CartDataProvider _dataProvider;
+  final CartDataProvider _dataProvider; // ignore: unused_field
   final LocalCartDataProvider _localDataProvider;
   final AuthService _authService;
 
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
+    AddToCartRequest resolvedRequest = request;
     if (_authService.isLoggedIn) {
       final storage = Storage();
       final country = await storage.getSelectedCountry();
       final currency = await storage.getSelectedCurrency();
-      final resolvedRequest = AddToCartRequest(
+      resolvedRequest = AddToCartRequest(
         items: [
           for (final item in request.items)
             AddToCartItem(
               productId: item.productId,
-              configId: item.configId.trim().isEmpty ? '0' : item.configId,
+              configId: item.configId,
               quantity: item.quantity,
               currency: currency,
               country: country,
             ),
         ],
       );
-      final cart = await _dataProvider.addToCart(resolvedRequest);
-      // Keep local cache aligned with server cart after authenticated add.
-      await _localDataProvider.saveCart(cart);
-      return cart;
-    } else {
-      return await _localDataProvider.addToCart(request, product: product);
     }
+
+    return _localDataProvider.addToCart(resolvedRequest, product: product);
+
+    // TODO: re-enable remote cart
+    // if (_authService.isLoggedIn) {
+    //   final cart = await _dataProvider.addToCart(resolvedRequest);
+    //   await _localDataProvider.saveCart(cart);
+    //   return cart;
+    // }
+    // return await _localDataProvider.addToCart(resolvedRequest, product: product);
   }
 
   Future<Cart> getCart() async {
-    if (_authService.isLoggedIn) {
-      // Sync happens in Bloc usually, but we can also ensure sync here if needed?
-      // Better to keep simple: just fetch.
-      return await _dataProvider.getCart();
-    } else {
-      return await _localDataProvider.getCart();
-    }
+    return _localDataProvider.getCart();
+
+    // TODO: re-enable remote cart
+    // if (_authService.isLoggedIn) {
+    //   return await _dataProvider.getCart();
+    // }
+    // return await _localDataProvider.getCart();
   }
 
   Future<Cart> updateCartItem(int itemId, UpdateCartItemRequest request) async {
-    if (_authService.isLoggedIn) {
-      final cart = await _dataProvider.updateCartItem(itemId, request);
-      // Keep local cache aligned with server cart after authenticated update.
-      await _localDataProvider.saveCart(cart);
-      return cart;
-    } else {
-      return await _localDataProvider.updateCartItem(itemId, request);
-    }
+    return _localDataProvider.updateCartItem(itemId, request);
+
+    // TODO: re-enable remote cart
+    // if (_authService.isLoggedIn) {
+    //   final cart = await _dataProvider.updateCartItem(itemId, request);
+    //   await _localDataProvider.saveCart(cart);
+    //   return cart;
+    // }
+    // return await _localDataProvider.updateCartItem(itemId, request);
   }
 
   Future<Cart> deleteCartItem(int itemId) async {
-    if (_authService.isLoggedIn) {
-      final cart = await _dataProvider.deleteCartItem(itemId);
-      // Keep local cache in sync for offline/fast reads after authenticated actions.
-      await _localDataProvider.saveCart(cart);
-      return cart;
-    } else {
-      return await _localDataProvider.deleteCartItem(itemId);
-    }
+    return _localDataProvider.deleteCartItem(itemId);
+
+    // TODO: re-enable remote cart
+    // if (_authService.isLoggedIn) {
+    //   final cart = await _dataProvider.deleteCartItem(itemId);
+    //   await _localDataProvider.saveCart(cart);
+    //   return cart;
+    // }
+    // return await _localDataProvider.deleteCartItem(itemId);
   }
 
   Future<ClearCartResponse> clearCart() async {
-    if (_authService.isLoggedIn) {
-      final response = await _dataProvider.clearCart();
-      // Ensure local storage reflects an empty cart after remote clear.
-      await _localDataProvider.clearCart();
-      return response;
-    } else {
-      return await _localDataProvider.clearCart();
-    }
+    return _localDataProvider.clearCart();
+
+    // TODO: re-enable remote cart
+    // if (_authService.isLoggedIn) {
+    //   final response = await _dataProvider.clearCart();
+    //   await _localDataProvider.clearCart();
+    //   return response;
+    // }
+    // return await _localDataProvider.clearCart();
   }
 
   Future<void> syncLocalCartToRemote() async {
-    // Get local cart items
-    final localCart = await _localDataProvider.getCart();
-    
-    // Upload local items to backend if any exist
-    if (localCart.items.isNotEmpty) {
-      // Get saved country code from settings
-      final storage = Storage();
-      final savedCountry = await storage.getSelectedCountry();
-      
-      AppLogger.i("Syncing ${localCart.items.length} local cart items to backend");
-      
-      final savedCurrency = await storage.getSelectedCurrency();
-      for (final item in localCart.items) {
-         final request = AddToCartRequest(
-           items: [
-             AddToCartItem(
-               productId: item.productId,
-               configId: item.configId ?? "0",
-               quantity: item.quantity,
-               currency: savedCurrency,
-               country: savedCountry,
-             )
-           ],
-         );
-         
-         // Upload item to backend (let errors propagate)
-         await _dataProvider.addToCart(request);
-      }
-      
-      AppLogger.i("Successfully uploaded local cart items to backend");
-    }
-    
-    // Fetch complete merged cart from backend (includes local + pre-existing items)
-    final mergedCart = await _dataProvider.getCart();
-    AppLogger.i("Fetched merged cart with ${mergedCart.items.length} items from backend");
-    
-    // Save merged cart locally for offline access
-    await _localDataProvider.saveCart(mergedCart);
-    AppLogger.i("Saved merged cart locally");
-    
-    // Note: No catch block - errors propagate to CartBloc for proper handling
+    AppLogger.i('Remote cart sync skipped (local-only cart mode)');
+
+    // TODO: re-enable remote cart sync
+    // final localCart = await _localDataProvider.getCart();
+    //
+    // if (localCart.items.isNotEmpty) {
+    //   final storage = Storage();
+    //   final savedCountry = await storage.getSelectedCountry();
+    //   final savedCurrency = await storage.getSelectedCurrency();
+    //
+    //   AppLogger.i(
+    //     "Syncing ${localCart.items.length} local cart items to backend",
+    //   );
+    //
+    //   for (final item in localCart.items) {
+    //     final request = AddToCartRequest(
+    //       items: [
+    //         AddToCartItem(
+    //           productId: item.productId,
+    //           configId: item.configId ?? "0",
+    //           quantity: item.quantity,
+    //           currency: savedCurrency,
+    //           country: savedCountry,
+    //         ),
+    //       ],
+    //     );
+    //     await _dataProvider.addToCart(request);
+    //   }
+    //
+    //   AppLogger.i("Successfully uploaded local cart items to backend");
+    // }
+    //
+    // final mergedCart = await _dataProvider.getCart();
+    // AppLogger.i(
+    //   "Fetched merged cart with ${mergedCart.items.length} items from backend",
+    // );
+    // await _localDataProvider.saveCart(mergedCart);
+    // AppLogger.i("Saved merged cart locally");
   }
 }
-

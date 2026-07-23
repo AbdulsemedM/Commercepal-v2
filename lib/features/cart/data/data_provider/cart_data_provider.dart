@@ -7,6 +7,10 @@ import '../models/cart.dart';
 import '../models/clear_cart_response.dart';
 import '../models/update_cart_item_request.dart';
 
+/// Remote cart API client for `/api/v1/cart*`.
+///
+/// Temporarily unused: [CartRepository] routes all cart operations through
+/// [LocalCartDataProvider] only. Keep this class intact for future re-enable.
 class CartDataProvider {
   CartDataProvider({ApiService? apiService})
     : _apiService = apiService ?? ApiService();
