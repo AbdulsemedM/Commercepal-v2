@@ -108,6 +108,20 @@ void main() {
       expect(r.isCheckoutCompleteForCartClear, isFalse);
     });
 
+    test('true for SCAN_QR when QR payload present', () {
+      final r = CheckoutResponse.fromJson(<String, dynamic>{
+        'orderNumber': 'CPA0723FB6U6ZS7',
+        'paymentInitiation': <String, dynamic>{
+          'success': true,
+          'orderNumber': 'CPA0723FB6U6ZS7',
+          'paymentReference': 'CP-20260723-Q37HLKD3',
+          'paymentUrl': '00020101021128370007RMFI',
+          'nextAction': 'SCAN_QR',
+        },
+      });
+      expect(r.isCheckoutCompleteForCartClear, isTrue);
+    });
+
     test('false for unknown nextAction', () {
       final r = CheckoutResponse.fromJson(<String, dynamic>{
         'orderNumber': 'ORD-1',

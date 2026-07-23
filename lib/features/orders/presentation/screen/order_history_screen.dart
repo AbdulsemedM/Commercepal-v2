@@ -168,7 +168,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               color: AppColors.navy,
             ),
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.dashboard);
+            }
+          },
         ),
         title: Text(
           LocalizationService.t(context, 'orderHistory.title'),

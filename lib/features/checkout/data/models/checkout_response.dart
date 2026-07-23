@@ -103,6 +103,7 @@ class CheckoutResponse {
   /// Backend [nextAction] values we treat as a completed checkout for cart clearing.
   static const String nextActionOpenAdditionalInput = 'OPEN_ADDITIONAL_INPUT';
   static const String nextActionRedirectToPaymentUrl = 'REDIRECT_TO_PAYMENT_URL';
+  static const String nextActionScanQr = 'SCAN_QR';
 
   /// When true, the order is reserved and payment started; safe to clear the cart.
   /// Based on [paymentInitiation] (not HTTP status alone).
@@ -128,6 +129,10 @@ class CheckoutResponse {
     if (action == nextActionRedirectToPaymentUrl) {
       final url = init.paymentUrl?.trim() ?? '';
       return url.isNotEmpty;
+    }
+    if (action == nextActionScanQr) {
+      final payload = init.paymentUrl?.trim() ?? '';
+      return payload.isNotEmpty;
     }
     if (action == nextActionOpenAdditionalInput) {
       final instructions = init.paymentInstructions?.trim() ?? '';

@@ -35,6 +35,8 @@ import '../../features/checkout/presentation/screen/payment_selection_screen.dar
 import '../../features/checkout/presentation/screen/payment_webview_screen.dart';
 import '../../features/checkout/presentation/screen/order_placed_screen.dart';
 import '../../features/checkout/presentation/screen/order_confirmed_payment_pending_screen.dart';
+import '../../features/checkout/presentation/screen/cash_on_delivery_success_screen.dart';
+import '../../features/checkout/presentation/screen/qpay_qr_payment_screen.dart';
 import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
 import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
@@ -69,6 +71,8 @@ class AppRoutes {
   static const String orderPlaced = '/order-placed';
   static const String orderConfirmedPaymentPending =
       '/order-confirmed-payment-pending';
+  static const String cashOnDeliverySuccess = '/cash-on-delivery-success';
+  static const String qpayQrPayment = '/qpay-qr-payment';
   static const String retryPaymentMethod = '/retry-payment-method';
   static const String affiliateRegister = '/affiliate-register';
   static const String faqs = '/faqs';
@@ -308,6 +312,36 @@ final GoRouter appRouter = GoRouter(
         return OrderConfirmedPaymentPendingScreen(
           response: response,
         );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.cashOnDeliverySuccess,
+      name: 'cashOnDeliverySuccess',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final response = extra?['checkoutResponse'] as CheckoutResponse?;
+        if (response == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Order')),
+            body: const Center(child: Text('Missing order data')),
+          );
+        }
+        return CashOnDeliverySuccessScreen(response: response);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.qpayQrPayment,
+      name: 'qpayQrPayment',
+      builder: (BuildContext context, GoRouterState state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final response = extra?['checkoutResponse'] as CheckoutResponse?;
+        if (response == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Payment')),
+            body: const Center(child: Text('Missing payment data')),
+          );
+        }
+        return QpayQrPaymentScreen(response: response);
       },
     ),
     GoRoute(

@@ -1,7 +1,6 @@
 ﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
@@ -11,12 +10,14 @@ import '../../../../core/constants/spacing.dart';
 import '../../../../core/widgets/checkout_screen_header.dart';
 import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
-import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
+import '../utils/payment_phone_utils.dart';
+import '../utils/checkout_payment_navigation.dart';
+import '../widgets/payment_account_phone_field.dart';
 import '../widgets/payment_method_card.dart';
 import 'ussd_payment_success_screen.dart';
 
@@ -85,10 +86,10 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   String? _errorMessage;
   String? _selectedPaymentMethodId;
   String? _selectedVariantCode;
-  final TextEditingController _methodSpecificDigitsController =
-      TextEditingController();
-  String? _ipayPhoneNumber;
+  final TextEditingController _paymentPhoneController = TextEditingController();
   String? _paymentPhoneNumber;
+  String _initialCountryCode = 'ET';
+  bool _paymentPhonePrefilled = false;
 
   bool _currencyMatches(String? methodCurrency) {
     if (widget.currency.isEmpty || methodCurrency == null) return true;
@@ -274,63 +275,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         ? _selectedVariantCode!
         : method.id;
 
-    final categoryName = _getCategoryNameForSelectedMethod();
-    final variantDisplayName = _getSelectedVariantDisplayName();
-    final methodType = getPaymentMethodType(
-      categoryName,
-      method.displayName,
-      variantDisplayName,
-    );
-    final waafiPrefix = getWaafiPrefix(
-      categoryName,
-      method.displayName,
-      variantDisplayName,
-    );
-
-    final effectiveRequireAccount = _getSelectedVariant()
-            ?.requireAccountNumberOnInitiation ??
-        method.requireAccountNumberOnInitiation;
-    final requiresMethodPhone = requiresMethodSpecificPhone(methodType);
-    final showPhoneField = effectiveRequireAccount == true ||
-        (effectiveRequireAccount != false && requiresMethodPhone);
-
-    String? paymentAccount;
-    if (requiresMethodPhone) {
-      final digits = _methodSpecificDigitsController.text.trim();
-      final digitsValid =
-          digits.length == 7 && RegExp(r'^\d{7}$').hasMatch(digits);
-      if (methodType == PaymentMethodType.waafi &&
-          waafiPrefix != null &&
-          digitsValid) {
-        paymentAccount = waafiPrefix + digits;
-      } else if (methodType == PaymentMethodType.edahab && digitsValid) {
-        paymentAccount = '65$digits';
-      } else if (methodType == PaymentMethodType.ipay &&
-          (_ipayPhoneNumber?.isNotEmpty ?? false)) {
-        paymentAccount =
-            _ipayPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
-        if (paymentAccount.isEmpty) paymentAccount = null;
-      }
-      if (paymentAccount == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-        return;
-      }
-    } else if (showPhoneField &&
-        (_paymentPhoneNumber?.isNotEmpty ?? false)) {
-      paymentAccount =
-          _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
-      if (paymentAccount.isEmpty) paymentAccount = null;
-    }
-
-    if (showPhoneField &&
-        effectiveRequireAccount == true &&
-        !requiresMethodPhone &&
-        (paymentAccount == null || paymentAccount.length < 9)) {
+    if (!isValidPaymentAccount(_paymentPhoneNumber)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
@@ -340,17 +285,10 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       return;
     }
 
+    final paymentAccount = normalizePaymentAccount(_paymentPhoneNumber!);
+
     // Sahay: customer lookup, show customer name and confirm before retrying payment
     if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
-      if (paymentAccount == null || paymentAccount.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-        return;
-      }
       try {
         final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount);
         if (!mounted) return;
@@ -427,8 +365,18 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         if (!mounted) return;
       }
 
-      final paymentUrl = updated.paymentInitiation?.paymentUrl;
-      if (paymentUrl != null && paymentUrl.isNotEmpty) {
+      final init = updated.paymentInitiation;
+      final nextAction = init?.nextAction?.trim() ?? '';
+      final paymentUrl = init?.paymentUrl?.trim() ?? '';
+
+      if (nextAction == CheckoutResponse.nextActionScanQr &&
+          paymentUrl.isNotEmpty) {
+        navigateAfterRetryPaymentSuccess(context, updated);
+        return;
+      }
+
+      if (nextAction == CheckoutResponse.nextActionRedirectToPaymentUrl &&
+          paymentUrl.isNotEmpty) {
         context.push(
           AppRoutes.paymentWebView,
           extra: <String, dynamic>{
@@ -457,44 +405,33 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   void initState() {
     super.initState();
     _loadPaymentMethods();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillPaymentPhone());
+  }
+
+  Future<void> _prefillPaymentPhone() async {
+    if (_paymentPhonePrefilled || !mounted) return;
+
+    final raw = await loadDefaultPaymentPhone();
+    if (!mounted || raw == null || raw.isEmpty) return;
+
+    final parsed = parseProfilePhoneForField(raw);
+    setState(() {
+      _paymentPhonePrefilled = true;
+      _initialCountryCode = parsed.initialCountryCode;
+      _paymentPhoneController.text = parsed.localNumber;
+      _paymentPhoneNumber = parsed.completeNumber;
+    });
   }
 
   @override
   void dispose() {
-    _methodSpecificDigitsController.dispose();
+    _paymentPhoneController.dispose();
     super.dispose();
-  }
-
-  String? _getCategoryNameForSelectedMethod() {
-    if (_selectedPaymentMethodId == null) return null;
-    for (final cat in _categories) {
-      if (cat.methods.any((m) => m.id == _selectedPaymentMethodId)) {
-        return cat.categoryName;
-      }
-    }
-    return null;
   }
 
   List<_SelectablePaymentMethod> get _allSelectableMethods => [
         for (final category in _categories) ...category.methods,
       ];
-
-  String? _getSelectedVariantDisplayName() {
-    final v = _getSelectedVariant();
-    return v?.displayName;
-  }
-
-  PaymentMethodVariant? _getSelectedVariant() {
-    final method = _getSelectedMethod();
-    if (method == null || _selectedVariantCode == null) return null;
-    try {
-      return method.variants.firstWhere(
-        (e) => e.variantCode == _selectedVariantCode,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -502,46 +439,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         ? '${LocalizationService.t(context, 'checkout.payOrder')} ${widget.orderNumber}'
         : LocalizationService.t(context, 'checkout.selectPaymentMethod');
 
-    final selectedMethod = _getSelectedMethod();
-    final categoryName = _getCategoryNameForSelectedMethod();
-    final variantDisplayName = _getSelectedVariantDisplayName();
-    final methodType = getPaymentMethodType(
-      categoryName,
-      selectedMethod?.displayName,
-      variantDisplayName,
-    );
-    final waafiPrefix = getWaafiPrefix(
-      categoryName,
-      selectedMethod?.displayName,
-      variantDisplayName,
-    );
-    final effectiveRequireAccount = _getSelectedVariant()
-            ?.requireAccountNumberOnInitiation ??
-        selectedMethod?.requireAccountNumberOnInitiation;
-    final requiresMethodPhone = selectedMethod != null &&
-        requiresMethodSpecificPhone(methodType);
-    final showPhoneField = effectiveRequireAccount == true ||
-        (effectiveRequireAccount != false && requiresMethodPhone);
-    final digits = _methodSpecificDigitsController.text.trim();
-    final digitsValid =
-        digits.length == 7 && RegExp(r'^\d{7}$').hasMatch(digits);
-    final methodPhoneValid = !showPhoneField ||
-        (requiresMethodPhone &&
-            ((methodType == PaymentMethodType.waafi &&
-                    waafiPrefix != null &&
-                    digitsValid) ||
-                (methodType == PaymentMethodType.edahab && digitsValid) ||
-                (methodType == PaymentMethodType.ipay &&
-                    (_ipayPhoneNumber?.isNotEmpty ?? false)))) ||
-        (!requiresMethodPhone &&
-            (_paymentPhoneNumber != null &&
-                _paymentPhoneNumber!.isNotEmpty &&
-                _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '').length >=
-                    9));
-
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool canPay = !(_getSelectedMethod() == null ||
-        (showPhoneField && !methodPhoneValid));
+    final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
+    final bool canPay = _getSelectedMethod() != null && phoneValid;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -631,303 +530,15 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                 ],
                               ),
                             ),
-                            if (showPhoneField)
-                              Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                  Spacing.md,
-                                  Spacing.sm,
-                                  Spacing.md,
-                                  0,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: scheme.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          AppColors.primary.withOpacity(0.06),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                    BoxShadow(
-                                      color: scheme.shadow.withOpacity(0.06),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                  border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        Spacing.md,
-                                        Spacing.md,
-                                        Spacing.md,
-                                        Spacing.xs,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary
-                                            .withOpacity(0.06),
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                          top: Radius.circular(15),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.primary
-                                                  .withOpacity(0.12),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(
-                                              Icons.phone_android_rounded,
-                                              size: 22,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: Spacing.sm),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  LocalizationService.t(
-                                                    context,
-                                                    'checkout.phoneNumberForPayment',
-                                                  ),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleMedium
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color:
-                                                            AppColors.primary,
-                                                        letterSpacing: 0.2,
-                                                      ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  LocalizationService.t(
-                                                    context,
-                                                    'checkout.enterNumberLinkedToAccount',
-                                                  ),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        color: Colors.grey[600],
-                                                        height: 1.3,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        Spacing.md,
-                                        Spacing.sm,
-                                        Spacing.md,
-                                        Spacing.md,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (methodType ==
-                                                  PaymentMethodType.waafi &&
-                                              waafiPrefix != null)
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    top: 16,
-                                                  ),
-                                                  child: Text(
-                                                    '+$waafiPrefix ',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: TextField(
-                                                    controller:
-                                                        _methodSpecificDigitsController,
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    maxLength: 7,
-                                                    decoration:
-                                                        InputDecoration(
-                                                      hintText: '1234567',
-                                                      counterText: '',
-                                                      filled: true,
-                                                      fillColor: scheme.surface,
-                                                      border:
-                                                          OutlineInputBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                        borderSide: BorderSide(
-                                                          color: Colors
-                                                              .grey[300]!,
-                                                        ),
-                                                      ),
-                                                      contentPadding:
-                                                          const EdgeInsets
-                                                              .symmetric(
-                                                        horizontal: Spacing.md,
-                                                        vertical: Spacing.md,
-                                                      ),
-                                                    ),
-                                                    onChanged: (_) =>
-                                                        setState(() {}),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          else if (methodType ==
-                                              PaymentMethodType.edahab)
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    top: 16,
-                                                  ),
-                                                  child: Text(
-                                                    '+25265 ',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium,
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: TextField(
-                                                    controller:
-                                                        _methodSpecificDigitsController,
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    maxLength: 7,
-                                                    decoration:
-                                                        InputDecoration(
-                                                      hintText: '1234567',
-                                                      counterText: '',
-                                                      filled: true,
-                                                      fillColor: scheme.surface,
-                                                      border:
-                                                          OutlineInputBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                        borderSide: BorderSide(
-                                                          color: Colors
-                                                              .grey[300]!,
-                                                        ),
-                                                      ),
-                                                      contentPadding:
-                                                          const EdgeInsets
-                                                              .symmetric(
-                                                        horizontal: Spacing.md,
-                                                        vertical: Spacing.md,
-                                                      ),
-                                                    ),
-                                                    onChanged: (_) =>
-                                                        setState(() {}),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          else if (methodType ==
-                                              PaymentMethodType.ipay)
-                                            IntlPhoneField(
-                                              onChanged: (phone) {
-                                                setState(() {
-                                                  _ipayPhoneNumber = phone
-                                                          .completeNumber
-                                                          .isNotEmpty
-                                                      ? phone.completeNumber
-                                                      : null;
-                                                });
-                                              },
-                                              decoration: InputDecoration(
-                                                hintText: 'Phone number',
-                                                filled: true,
-                                                fillColor: scheme.surface,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  borderSide: BorderSide(
-                                                    color: Colors.grey[300]!,
-                                                  ),
-                                                ),
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: Spacing.md,
-                                                  vertical: Spacing.md,
-                                                ),
-                                              ),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge,
-                                            )
-                                          else
-                                            IntlPhoneField(
-                                              onChanged: (phone) {
-                                                setState(() {
-                                                  _paymentPhoneNumber = phone
-                                                          .completeNumber
-                                                          .isNotEmpty
-                                                      ? phone.completeNumber
-                                                      : null;
-                                                });
-                                              },
-                                              decoration: InputDecoration(
-                                                hintText: 'Phone number',
-                                                filled: true,
-                                                fillColor: scheme.surface,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  borderSide: BorderSide(
-                                                    color: Colors.grey[300]!,
-                                                  ),
-                                                ),
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: Spacing.md,
-                                                  vertical: Spacing.md,
-                                                ),
-                                              ),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge,
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            PaymentAccountPhoneField(
+                              controller: _paymentPhoneController,
+                              initialCountryCode: _initialCountryCode,
+                              onChanged: (value) {
+                                setState(() {
+                                  _paymentPhoneNumber = value;
+                                });
+                              },
+                            ),
                             Padding(
                               padding: const EdgeInsets.all(Spacing.md),
                               child: DecoratedBox(

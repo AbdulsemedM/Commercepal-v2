@@ -19,4 +19,16 @@ class PaymentConstants {
     if (code == null || code.isEmpty) return false;
     return ussdPaymentProviderCodes.contains(code.toUpperCase());
   }
+
+  /// Provider codes for cash-on-delivery checkout (no online payment step).
+  static const Set<String> cashOnDeliveryProviderCodes = <String>{
+    'CASH',
+    'CASH_ON_DELIVERY',
+    'COD',
+  };
+
+  static bool isCashOnDelivery(String? code) {
+    if (code == null || code.isEmpty) return false;
+    return cashOnDeliveryProviderCodes.contains(code.toUpperCase());
+  }
 }
