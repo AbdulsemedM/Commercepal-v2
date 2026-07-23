@@ -12,6 +12,7 @@ class ProductSearchRequest {
   final int? minVolume;
   final double? minPrice;
   final double? maxPrice;
+  final String? accountType;
   final String? country;
   final String? currency;
 
@@ -29,6 +30,7 @@ class ProductSearchRequest {
     this.minVolume,
     this.minPrice,
     this.maxPrice,
+    this.accountType,
     this.country,
     this.currency,
   });
@@ -72,6 +74,9 @@ class ProductSearchRequest {
     if (maxPrice != null) {
       params['maxPrice'] = maxPrice;
     }
+    if (accountType != null && accountType!.isNotEmpty) {
+      params['accountType'] = accountType;
+    }
 
     return params;
   }
@@ -103,6 +108,7 @@ class ProductSearchRequest {
     int? minVolume,
     double? minPrice,
     double? maxPrice,
+    String? accountType,
     String? country,
     String? currency,
   }) {
@@ -120,6 +126,7 @@ class ProductSearchRequest {
       minVolume: minVolume ?? this.minVolume,
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
+      accountType: accountType ?? this.accountType,
       country: country ?? this.country,
       currency: currency ?? this.currency,
     );

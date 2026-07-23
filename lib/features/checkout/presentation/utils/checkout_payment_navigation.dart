@@ -27,6 +27,24 @@ void navigateToCashOnDeliverySuccess(
   });
 }
 
+/// Navigates to the payment-pending confirmation screen after checkout.
+void navigateToPaymentPending(
+  BuildContext context,
+  CheckoutResponse response, {
+  VoidCallback? onAfterNavigate,
+}) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    context.go(
+      AppRoutes.orderConfirmedPaymentPending,
+      extra: <String, dynamic>{
+        'checkoutResponse': response,
+      },
+    );
+    _scheduleAfterNavigate(onAfterNavigate);
+  });
+}
+
 /// Navigates after checkout based on [paymentInitiation.nextAction].
 ///
 /// Deferred to the next frame so navigation does not run while the navigator

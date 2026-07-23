@@ -3,14 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/widgets/pill_bottom_nav_bar.dart';
 import 'package:commercepal/features/home/presentation/pages/home_page.dart';
 import 'package:commercepal/features/categories/presentation/pages/categories_page.dart';
 import 'package:commercepal/features/cart/presentation/screen/cart_page.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
-import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/profile/presentation/screen/profile_page.dart';
 import 'package:commercepal/features/onboarding/dashboard_coach_overlay.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -139,85 +136,10 @@ class DashboardScreenState extends State<DashboardScreen> {
 
           final List<int> badges = <int>[0, 0, cartCount, 0];
 
-          Cart? miniCart;
-          if (cartState is CartLoaded ||
-              cartState is CartItemAdded ||
-              cartState is CartItemUpdated ||
-              cartState is CartItemDeleted) {
-            miniCart = cartState is CartLoaded
-                ? cartState.cart
-                : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
-          }
-
           final ColorScheme scheme = Theme.of(context).colorScheme;
           return Scaffold(
             backgroundColor: scheme.surface,
-            body: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                IndexedStack(index: _currentIndex, children: _pages),
-                if (miniCart != null &&
-                    miniCart.totalItems > 0 &&
-                    _currentIndex < 2)
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 88,
-                    child: Material(
-                      elevation: 8,
-                      borderRadius: BorderRadius.circular(12),
-                      color: scheme.surfaceContainerLow,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => changeTab(2),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              const Icon(
-                                Icons.shopping_bag_outlined,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  '${miniCart.totalItems} items',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
-                                    color: scheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                MoneyFormatter.format(
-                                  miniCart.estimatedTotal,
-                                  miniCart.currency,
-                                ),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            body: IndexedStack(index: _currentIndex, children: _pages),
             bottomNavigationBar: PillBottomNavBar(
               // activeColor: Theme.of(context).colorScheme.primary,
               currentIndex: _currentIndex,

@@ -141,6 +141,15 @@ class CheckoutResponse {
     return false;
   }
 
+  /// Order was reserved with payment still pending (HTTP checkout may be 200
+  /// even when [PaymentInitiation.success] is false).
+  bool get isOrderReservedPaymentPending {
+    final status = (paymentStatus ?? '').trim().toUpperCase();
+    if (status != 'PENDING') return false;
+    final order = resolvedOrderNumber;
+    return order != null && order.isNotEmpty;
+  }
+
   /// Non-empty [paymentInitiation.paymentReference] when present (for retry flow).
   String? get paymentReferenceOrNull {
     final r = paymentInitiation?.paymentReference?.trim() ?? '';

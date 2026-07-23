@@ -5,23 +5,24 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
-import 'package:commercepal/features/home/data/home_discover_config.dart';
+import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
+import 'package:commercepal/features/home/data/home_wholesale_config.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_product_rows.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
+import 'package:commercepal/services/localization_service.dart';
 
-class HomeDiscoverSection extends StatelessWidget {
-  const HomeDiscoverSection({super.key});
+class HomeWholesaleSection extends StatelessWidget {
+  const HomeWholesaleSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeDiscoverBloc, HomeDiscoverState>(
+    return BlocBuilder<HomeWholesaleBloc, HomeWholesaleState>(
       builder: (context, state) {
-        if (state is HomeDiscoverLoading || state is HomeDiscoverInitial) {
-          return const _DiscoverLoading();
+        if (state is HomeWholesaleLoading || state is HomeWholesaleInitial) {
+          return const _WholesaleLoading();
         }
-        if (state is HomeDiscoverError) {
+        if (state is HomeWholesaleError) {
           return Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: Spacing.md,
@@ -38,15 +39,15 @@ class HomeDiscoverSection extends StatelessWidget {
             ),
           );
         }
-        if (state is HomeDiscoverLoaded) {
+        if (state is HomeWholesaleLoaded) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              for (var i = 0; i < kHomeDiscoverSections.length; i++) ...[
+              for (var i = 0; i < kHomeWholesaleSections.length; i++) ...[
                 if (i > 0) const SizedBox(height: Spacing.lg),
-                _DiscoverCategoryBlock(
-                  config: kHomeDiscoverSections[i],
-                  products: state.sections[kHomeDiscoverSections[i].id] ??
+                _WholesaleCategoryBlock(
+                  config: kHomeWholesaleSections[i],
+                  products: state.sections[kHomeWholesaleSections[i].id] ??
                       <Product>[],
                 ),
               ],
@@ -60,20 +61,20 @@ class HomeDiscoverSection extends StatelessWidget {
   }
 }
 
-class _DiscoverCategoryBlock extends StatelessWidget {
-  const _DiscoverCategoryBlock({
+class _WholesaleCategoryBlock extends StatelessWidget {
+  const _WholesaleCategoryBlock({
     required this.config,
     required this.products,
   });
 
-  final HomeDiscoverSectionConfig config;
+  final HomeWholesaleSectionConfig config;
   final List<Product> products;
 
   @override
   Widget build(BuildContext context) {
-    final List<List<Product>> rows = chunkHomeProducts(
+    final rows = chunkHomeProducts(
       products,
-      maxProducts: kHomeDiscoverMaxProductsPerSection,
+      maxProducts: config.pageSize,
     );
 
     return Column(
@@ -82,11 +83,11 @@ class _DiscoverCategoryBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
           child: HomeSectionHeader(
-            title: config.title,
-            actionLabel: 'See more',
+            title: LocalizationService.t(context, config.titleKey),
+            actionLabel: LocalizationService.t(context, 'home.categories.seeAll'),
             onAction: () {
               context.push(
-                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(config.searchQuery)}',
+                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(config.searchQuery)}&accountType=${Uri.encodeComponent(config.accountType)}',
               );
             },
           ),
@@ -96,7 +97,7 @@ class _DiscoverCategoryBlock extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
             child: Text(
-              'No products in this category right now.',
+              LocalizationService.t(context, 'home.wholesale.emptySection'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -109,8 +110,8 @@ class _DiscoverCategoryBlock extends StatelessWidget {
   }
 }
 
-class _DiscoverLoading extends StatelessWidget {
-  const _DiscoverLoading();
+class _WholesaleLoading extends StatelessWidget {
+  const _WholesaleLoading();
 
   @override
   Widget build(BuildContext context) {
@@ -118,44 +119,39 @@ class _DiscoverLoading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        for (var s = 0; s < 4; s++) ...[
+        for (var s = 0; s < 3; s++) ...[
           if (s > 0) const SizedBox(height: Spacing.lg),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 120,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-              ],
+            child: Container(
+              width: 120,
+              height: 18,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
           ),
           const SizedBox(height: Spacing.sm),
-          for (var row = 0; row < 2; row++)
-            SizedBox(
-              height: kHomeProductRowHeight,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: kHomeProductRowVerticalInset,
-                ),
-                itemCount: kHomeProductsPerRow,
-                separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-                itemBuilder: (_, __) => Container(
-                  width: kHomeProductCardWidth,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: AppDecorations.cardBorderRadius,
-                  ),
+          SizedBox(
+            height: kHomeProductRowHeight,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.md,
+                vertical: kHomeProductRowVerticalInset,
+              ),
+              itemCount: kHomeProductsPerRow,
+              separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+              itemBuilder: (_, __) => Container(
+                width: kHomeProductCardWidth,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: AppDecorations.cardBorderRadius,
                 ),
               ),
             ),
+          ),
         ],
       ],
     );

@@ -478,42 +478,54 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         return;
       }
 
-      if (!response.isCheckoutCompleteForCartClear) {
-        final ref = response.paymentReferenceOrNull;
-        final ord = response.resolvedOrderNumber;
-        if (ref != null &&
-            ref.isNotEmpty &&
-            ord != null &&
-            ord.isNotEmpty) {
-          await context.push<void>(
-            AppRoutes.retryPaymentMethod,
-            extra: <String, dynamic>{
-              'paymentReference': ref,
-              'currency': cart.currency,
-              'orderNumber': ord,
-            },
-          );
-        } else {
-          await Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
-                message: LocalizationService.t(
-                  ctx,
-                  'checkout.initiationFailedGeneric',
-                ),
-              ),
-            ),
-          );
-        }
+      if (response.isCheckoutCompleteForCartClear) {
+        navigateAfterCheckoutSuccess(
+          context,
+          response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
         return;
       }
 
-      navigateAfterCheckoutSuccess(
-        context,
-        response,
-        onAfterNavigate: () =>
-            context.read<CartBloc>().add(CartClearRequested()),
-      );
+      // Order created (HTTP 200) but payment still pending / initiation failed —
+      // show pending details and direct user to order history to pay later.
+      if (response.isOrderReservedPaymentPending) {
+        navigateToPaymentPending(
+          context,
+          response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
+        return;
+      }
+
+      final ref = response.paymentReferenceOrNull;
+      final ord = response.resolvedOrderNumber;
+      if (ref != null &&
+          ref.isNotEmpty &&
+          ord != null &&
+          ord.isNotEmpty) {
+        await context.push<void>(
+          AppRoutes.retryPaymentMethod,
+          extra: <String, dynamic>{
+            'paymentReference': ref,
+            'currency': cart.currency,
+            'orderNumber': ord,
+          },
+        );
+      } else {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
+              message: LocalizationService.t(
+                ctx,
+                'checkout.initiationFailedGeneric',
+              ),
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

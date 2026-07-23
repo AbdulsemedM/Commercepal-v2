@@ -170,6 +170,7 @@ final GoRouter appRouter = GoRouter(
           create: (context) => ProductSearchBloc(),
           child: ProductSearchScreen(
             initialQuery: params['query'],
+            initialAccountType: params['accountType'],
           ),
         );
       },

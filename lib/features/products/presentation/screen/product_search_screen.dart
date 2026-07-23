@@ -25,9 +25,14 @@ import 'package:commercepal/services/app_analytics.dart';
 enum _ClientProductSort { relevance, priceAsc, priceDesc, nameAz }
 
 class ProductSearchScreen extends StatefulWidget {
-  const ProductSearchScreen({super.key, this.initialQuery});
+  const ProductSearchScreen({
+    super.key,
+    this.initialQuery,
+    this.initialAccountType,
+  });
 
   final String? initialQuery;
+  final String? initialAccountType;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
@@ -92,6 +97,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       query: query,
       page: 0,
       size: 60,
+      accountType: widget.initialAccountType,
     );
 
     context.read<ProductSearchBloc>().add(SearchProducts(request: request));
