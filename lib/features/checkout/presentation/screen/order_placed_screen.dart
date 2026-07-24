@@ -469,6 +469,8 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                         'paymentReference': paymentReference,
                         'currency': response.currency ?? '',
                         'orderNumber': response.orderNumber,
+                        'orderTotal':
+                            response.pricingSummary?.totalAmount?.toDouble(),
                       },
                     );
                     if (result != null && mounted) {

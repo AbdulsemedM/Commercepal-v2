@@ -15,9 +15,12 @@ import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
+import '../../data/repository/exchange_rates_repository.dart';
+import '../../data/models/exchange_rates_response.dart';
 import '../utils/payment_phone_utils.dart';
 import '../utils/checkout_payment_navigation.dart';
 import '../widgets/payment_account_phone_field.dart';
+import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
 import 'ussd_payment_success_screen.dart';
 
@@ -65,11 +68,13 @@ class RetryPaymentMethodScreen extends StatefulWidget {
     required this.paymentReference,
     required this.currency,
     this.orderNumber,
+    this.orderTotal,
   });
 
   final String paymentReference;
   final String currency;
   final String? orderNumber;
+  final double? orderTotal;
 
   @override
   State<RetryPaymentMethodScreen> createState() =>
@@ -80,12 +85,17 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   final PaymentMethodsRepository _paymentMethodsRepository =
       PaymentMethodsRepository();
   final CheckoutRepository _checkoutRepository = CheckoutRepository();
+  final ExchangeRatesRepository _exchangeRatesRepository =
+      ExchangeRatesRepository();
 
   List<_PaymentMethodCategory> _categories = [];
   bool _isLoading = true;
   String? _errorMessage;
   String? _selectedPaymentMethodId;
   String? _selectedVariantCode;
+  ExchangeRatesData? _exchangeRates;
+  bool _isLoadingExchangeRates = false;
+  String? _exchangeRatesError;
   final TextEditingController _paymentPhoneController = TextEditingController();
   String? _paymentPhoneNumber;
   String _initialCountryCode = 'ET';
@@ -94,6 +104,65 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   bool _currencyMatches(String? methodCurrency) {
     if (widget.currency.isEmpty || methodCurrency == null) return true;
     return widget.currency.toUpperCase() == methodCurrency.toUpperCase();
+  }
+
+  bool _methodVisibleForCart(String itemCode, String? methodCurrency) {
+    if (PaymentConstants.isPayPal(itemCode) &&
+        PaymentConstants.isPayPalSupportedCartCurrency(widget.currency)) {
+      return true;
+    }
+    return _currencyMatches(methodCurrency);
+  }
+
+  String? get _selectedPaymentProviderCode {
+    final method = _getSelectedMethod();
+    if (method == null) return null;
+    return method.hasVariants && _selectedVariantCode != null
+        ? _selectedVariantCode
+        : method.id;
+  }
+
+  bool get _isPayPalSelected =>
+      PaymentConstants.isPayPal(_selectedPaymentProviderCode);
+
+  bool _paypalReadyForCheckout() {
+    if (!_isPayPalSelected) return true;
+    final String code = widget.currency.toUpperCase();
+    if (code == 'USD') return true;
+    return !_isLoadingExchangeRates &&
+        _exchangeRatesError == null &&
+        _exchangeRates != null &&
+        _exchangeRates!.hasRateFor(code);
+  }
+
+  Future<void> _loadExchangeRatesIfNeeded() async {
+    if (!PaymentConstants.isPayPalSupportedCartCurrency(widget.currency)) {
+      return;
+    }
+    if (widget.currency.toUpperCase() == 'USD') {
+      return;
+    }
+    setState(() {
+      _isLoadingExchangeRates = true;
+      _exchangeRatesError = null;
+    });
+    try {
+      final rates = await _exchangeRatesRepository.getExchangeRates();
+      if (!mounted) return;
+      setState(() {
+        _exchangeRates = rates;
+        _isLoadingExchangeRates = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingExchangeRates = false;
+        _exchangeRatesError = LocalizationService.t(
+          context,
+          'checkout.paypalRatesUnavailable',
+        );
+      });
+    }
   }
 
   Future<void> _loadPaymentMethods() async {
@@ -119,6 +188,12 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          if (!_methodVisibleForCart(
+            paymentMethod.code,
+            widget.currency,
+          )) {
+            continue;
+          }
           categories.add(
             _PaymentMethodCategory(
               categoryName: paymentMethod.displayName,
@@ -141,7 +216,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         for (final item in paymentMethod.paymentMethodItemResponses) {
           if (item.hasVariants) {
             final matchingVariants = item.paymentMethodItemResponses
-                .where((v) => _currencyMatches(v.currency))
+                .where((v) => _methodVisibleForCart(v.variantCode, v.currency))
                 .toList();
             if (matchingVariants.isEmpty) continue;
             methods.add(
@@ -158,7 +233,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
               ),
             );
           } else {
-            if (!_currencyMatches(item.currency)) continue;
+            if (!_methodVisibleForCart(item.itemCode, item.currency)) continue;
             methods.add(
               _SelectablePaymentMethod(
                 id: item.itemCode,
@@ -275,22 +350,28 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         ? _selectedVariantCode!
         : method.id;
 
-    if (!isValidPaymentAccount(_paymentPhoneNumber)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
-          backgroundColor: AppColors.warning,
-        ),
-      );
-      return;
-    }
+    final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
 
-    final paymentAccount = normalizePaymentAccount(_paymentPhoneNumber!);
+    String? paymentAccount;
+    if (isPayPal) {
+      paymentAccount = null;
+    } else {
+      if (!isValidPaymentAccount(_paymentPhoneNumber)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
+      paymentAccount = normalizePaymentAccount(_paymentPhoneNumber!);
+    }
 
     // Sahay: customer lookup, show customer name and confirm before retrying payment
     if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
       try {
-        final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount);
+        final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount!);
         if (!mounted) return;
         if (!lookup.success) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -405,6 +486,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   void initState() {
     super.initState();
     _loadPaymentMethods();
+    _loadExchangeRatesIfNeeded();
     WidgetsBinding.instance.addPostFrameCallback((_) => _prefillPaymentPhone());
   }
 
@@ -440,7 +522,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         : LocalizationService.t(context, 'checkout.selectPaymentMethod');
 
     final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
-    final bool canPay = _getSelectedMethod() != null && phoneValid;
+    final bool canPay = _getSelectedMethod() != null &&
+        (_isPayPalSelected ? _paypalReadyForCheckout() : phoneValid);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -530,15 +613,28 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                 ],
                               ),
                             ),
-                            PaymentAccountPhoneField(
-                              controller: _paymentPhoneController,
-                              initialCountryCode: _initialCountryCode,
-                              onChanged: (value) {
-                                setState(() {
-                                  _paymentPhoneNumber = value;
-                                });
-                              },
-                            ),
+                            if (_isPayPalSelected && widget.orderTotal != null)
+                              PayPalPaymentSummary(
+                                cartCurrency: widget.currency,
+                                orderTotal: widget.orderTotal!,
+                                exchangeRates: _exchangeRates,
+                                isLoading: _isLoadingExchangeRates &&
+                                    widget.currency.toUpperCase() != 'USD',
+                                errorMessage:
+                                    widget.currency.toUpperCase() != 'USD'
+                                        ? _exchangeRatesError
+                                        : null,
+                              )
+                            else if (!_isPayPalSelected)
+                              PaymentAccountPhoneField(
+                                controller: _paymentPhoneController,
+                                initialCountryCode: _initialCountryCode,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _paymentPhoneNumber = value;
+                                  });
+                                },
+                              ),
                             Padding(
                               padding: const EdgeInsets.all(Spacing.md),
                               child: DecoratedBox(

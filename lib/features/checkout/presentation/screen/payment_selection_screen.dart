@@ -18,9 +18,12 @@ import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
+import '../../data/repository/exchange_rates_repository.dart';
+import '../../data/models/exchange_rates_response.dart';
 import '../utils/payment_phone_utils.dart';
 import '../utils/checkout_payment_navigation.dart';
 import '../widgets/payment_account_phone_field.dart';
+import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
 import 'checkout_initiation_failed_screen.dart';
 
@@ -83,8 +86,13 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   final CheckoutRepository _checkoutRepository = CheckoutRepository();
   final PaymentMethodsRepository _paymentMethodsRepository =
       PaymentMethodsRepository();
+  final ExchangeRatesRepository _exchangeRatesRepository =
+      ExchangeRatesRepository();
   List<_PaymentMethodCategory> _paymentMethodCategories = [];
   bool _paymentMethodsLoadStarted = false;
+  ExchangeRatesData? _exchangeRates;
+  bool _isLoadingExchangeRates = false;
+  String? _exchangeRatesError;
   final TextEditingController _paymentPhoneController = TextEditingController();
   String? _paymentPhoneNumber;
   String _initialCountryCode = 'ET';
@@ -139,12 +147,84 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     if (!_paymentMethodsLoadStarted) {
       _paymentMethodsLoadStarted = true;
       _loadPaymentMethods();
+      _loadExchangeRatesIfNeeded();
     }
   }
 
   bool _currencyMatches(String? methodCurrency) {
     if (_cartCurrency == null || methodCurrency == null) return true;
     return _cartCurrency!.toUpperCase() == methodCurrency.toUpperCase();
+  }
+
+  bool _methodVisibleForCart(String itemCode, String? methodCurrency) {
+    if (PaymentConstants.isPayPal(itemCode) &&
+        PaymentConstants.isPayPalSupportedCartCurrency(_cartCurrency)) {
+      return true;
+    }
+    return _currencyMatches(methodCurrency);
+  }
+
+  _SelectablePaymentMethod? _getSelectedMethod() {
+    if (_selectedPaymentMethodId == null) return null;
+    for (final category in _paymentMethodCategories) {
+      for (final method in category.methods) {
+        if (method.id == _selectedPaymentMethodId) {
+          return method;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? get _selectedPaymentProviderCode {
+    final method = _getSelectedMethod();
+    if (method == null) return null;
+    return method.hasVariants && _selectedVariantCode != null
+        ? _selectedVariantCode
+        : method.id;
+  }
+
+  bool get _isPayPalSelected =>
+      PaymentConstants.isPayPal(_selectedPaymentProviderCode);
+
+  bool _paypalReadyForCheckout(String cartCurrency) {
+    if (!_isPayPalSelected) return true;
+    final String code = cartCurrency.toUpperCase();
+    if (code == 'USD') return true;
+    return !_isLoadingExchangeRates &&
+        _exchangeRatesError == null &&
+        _exchangeRates != null &&
+        _exchangeRates!.hasRateFor(code);
+  }
+
+  Future<void> _loadExchangeRatesIfNeeded() async {
+    if (!PaymentConstants.isPayPalSupportedCartCurrency(_cartCurrency)) {
+      return;
+    }
+    if (_cartCurrency!.toUpperCase() == 'USD') {
+      return;
+    }
+    setState(() {
+      _isLoadingExchangeRates = true;
+      _exchangeRatesError = null;
+    });
+    try {
+      final rates = await _exchangeRatesRepository.getExchangeRates();
+      if (!mounted) return;
+      setState(() {
+        _exchangeRates = rates;
+        _isLoadingExchangeRates = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingExchangeRates = false;
+        _exchangeRatesError = LocalizationService.t(
+          context,
+          'checkout.paypalRatesUnavailable',
+        );
+      });
+    }
   }
 
   /// Flat list of every selectable method across categories (for the grid).
@@ -178,6 +258,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          if (!_methodVisibleForCart(
+            paymentMethod.code,
+            _cartCurrency,
+          )) {
+            continue;
+          }
           categories.add(
             _PaymentMethodCategory(
               categoryName: paymentMethod.displayName,
@@ -203,7 +289,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           if (item.hasVariants) {
             // Filter variants by cart currency; only show method if at least one variant matches
             final matchingVariants = item.paymentMethodItemResponses
-                .where((v) => _currencyMatches(v.currency))
+                .where((v) => _methodVisibleForCart(v.variantCode, v.currency))
                 .toList();
             if (matchingVariants.isEmpty) continue;
             categoryMethods.add(
@@ -223,7 +309,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             );
           } else {
             // No variants: only show if method currency matches cart currency
-            if (!_currencyMatches(item.currency)) continue;
+            if (!_methodVisibleForCart(item.itemCode, item.currency)) continue;
             categoryMethods.add(
               _SelectablePaymentMethod(
                 id: item.itemCode,
@@ -358,6 +444,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
           ? _selectedVariantCode!
           : selectedMethod.id;
 
+      final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
+
       // Sahay: customer lookup, show customer name and confirm before placing order
       if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
         if (phoneNumber == null || phoneNumber.isEmpty) {
@@ -426,23 +514,28 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         );
       }).toList();
 
-      final paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
-          ? normalizePaymentAccount(phoneNumber)
-          : null;
+      final String? paymentAccount;
+      if (isPayPal) {
+        paymentAccount = null;
+      } else {
+        paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
+            ? normalizePaymentAccount(phoneNumber)
+            : null;
 
-      if (paymentAccount == null || !isValidPaymentAccount(phoneNumber)) {
-        if (mounted) {
-          setState(() => _isPlacingOrder = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                LocalizationService.t(context, 'checkout.pleaseEnterValidPhone'),
+        if (paymentAccount == null || !isValidPaymentAccount(phoneNumber)) {
+          if (mounted) {
+            setState(() => _isPlacingOrder = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  LocalizationService.t(context, 'checkout.pleaseEnterValidPhone'),
+                ),
+                backgroundColor: AppColors.warning,
               ),
-              backgroundColor: AppColors.warning,
-            ),
-          );
+            );
+          }
+          return;
         }
-        return;
       }
 
       final checkoutRequest = CheckoutRequest(
@@ -512,6 +605,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             'paymentReference': ref,
             'currency': cart.currency,
             'orderNumber': ord,
+            'orderTotal': response.pricingSummary?.totalAmount?.toDouble() ??
+                cart.estimatedTotal,
           },
         );
       } else {
@@ -606,6 +701,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     }
 
     final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
+    final bool canPlace = _selectedPaymentMethodId != null &&
+        !_isPlacingOrder &&
+        (_isPayPalSelected
+            ? _paypalReadyForCheckout(cart.currency)
+            : phoneValid);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -724,15 +824,27 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 ],
               ),
             ),
-          PaymentAccountPhoneField(
-            controller: _paymentPhoneController,
-            initialCountryCode: _initialCountryCode,
-            onChanged: (value) {
-              setState(() {
-                _paymentPhoneNumber = value;
-              });
-            },
-          ),
+          if (_isPayPalSelected)
+            PayPalPaymentSummary(
+              cartCurrency: cart.currency,
+              orderTotal: cart.estimatedTotal,
+              exchangeRates: _exchangeRates,
+              isLoading: _isLoadingExchangeRates &&
+                  cart.currency.toUpperCase() != 'USD',
+              errorMessage: cart.currency.toUpperCase() != 'USD'
+                  ? _exchangeRatesError
+                  : null,
+            )
+          else
+            PaymentAccountPhoneField(
+              controller: _paymentPhoneController,
+              initialCountryCode: _initialCountryCode,
+              onChanged: (value) {
+                setState(() {
+                  _paymentPhoneNumber = value;
+                });
+              },
+            ),
           // Place Order Button
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -741,72 +853,68 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               Spacing.md,
               Spacing.md,
             ),
-            child: Builder(
-              builder: (BuildContext context) {
-                final bool canPlace = !(_selectedPaymentMethodId == null ||
-                    _isPlacingOrder ||
-                    !phoneValid);
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient:
-                        canPlace ? AppDecorations.primaryCtaGradient : null,
-                    color: canPlace ? null : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: canPlace
-                        ? <BoxShadow>[
-                            BoxShadow(
-                              color: AppColors.pink.withOpacity(0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: canPlace ? AppDecorations.primaryCtaGradient : null,
+                color: canPlace ? null : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: canPlace
+                    ? <BoxShadow>[
+                        BoxShadow(
+                          color: AppColors.pink.withOpacity(0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: canPlace
+                      ? () {
+                          if (_isPayPalSelected) {
+                            _placeOrder(cart, addressId, null);
+                          } else {
+                            final phone = normalizePaymentAccount(
+                              _paymentPhoneNumber!,
+                            );
+                            _placeOrder(cart, addressId, phone);
+                          }
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(28),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Spacing.md + 2,
+                    ),
+                    child: Center(
+                      child: _isPlacingOrder
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              LocalizationService.t(
+                                context,
+                                'checkout.placeOrder',
+                              ),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: canPlace
+                                    ? Colors.white
+                                    : Colors.grey.shade600,
+                              ),
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: canPlace
-                          ? () {
-                              final phone = normalizePaymentAccount(
-                                _paymentPhoneNumber!,
-                              );
-                              _placeOrder(cart, addressId, phone);
-                            }
-                          : null,
-                      borderRadius: BorderRadius.circular(28),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: Spacing.md + 2,
-                        ),
-                        child: Center(
-                          child: _isPlacingOrder
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  LocalizationService.t(
-                                    context,
-                                    'checkout.placeOrder',
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: canPlace
-                                        ? Colors.white
-                                        : Colors.grey.shade600,
-                                  ),
-                                ),
-                        ),
-                      ),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],

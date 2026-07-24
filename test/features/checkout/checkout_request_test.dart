@@ -58,5 +58,27 @@ void main() {
         },
       ]);
     });
+
+    test('PayPal checkout omits paymentAccount', () {
+      final request = CheckoutRequest(
+        channel: 'WEB',
+        currency: 'ETB',
+        deliveryAddressId: 36107,
+        items: [
+          CheckoutItem(
+            itemId: 'alb-1600353358796',
+            quantity: 2,
+            unitPrice: 260,
+          ),
+        ],
+        paymentProviderCode: 'PAYPAL',
+        paymentAccount: null,
+      );
+
+      final json = request.toJson();
+      expect(json['paymentProviderCode'], 'PAYPAL');
+      expect(json['currency'], 'ETB');
+      expect(json.containsKey('paymentAccount'), isFalse);
+    });
   });
 }

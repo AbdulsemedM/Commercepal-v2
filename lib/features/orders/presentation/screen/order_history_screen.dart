@@ -143,6 +143,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         'paymentReference': paymentRef,
         'currency': order.currency,
         'orderNumber': order.orderNumber,
+        'orderTotal': order.totalAmount,
       },
     );
   }

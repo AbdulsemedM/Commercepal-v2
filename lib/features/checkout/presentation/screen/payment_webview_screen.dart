@@ -13,6 +13,7 @@ const Set<String> _allowedPaymentHostSuffixes = {
   'telebirr.com',
   'ebirr.com',
   'pesapal.com',
+  'paypal.com',
   'cbe.com.et',
   'commercepal.com',
 };

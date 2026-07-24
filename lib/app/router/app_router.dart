@@ -354,10 +354,12 @@ final GoRouter appRouter = GoRouter(
             extra?['paymentReference'] as String? ?? '';
         final currency = extra?['currency'] as String? ?? '';
         final orderNumber = extra?['orderNumber'] as String?;
+        final orderTotal = (extra?['orderTotal'] as num?)?.toDouble();
         return RetryPaymentMethodScreen(
           paymentReference: paymentReference,
           currency: currency,
           orderNumber: orderNumber,
+          orderTotal: orderTotal,
         );
       },
     ),

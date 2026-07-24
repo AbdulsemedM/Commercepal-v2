@@ -49,6 +49,7 @@ class _SalePromotionScreenState extends State<SalePromotionScreen> {
           query: 'sale promotion',
           page: 0,
           size: 120,
+          accountType: 'RETAIL',
         ),
       );
       if (!mounted) return;
