@@ -287,7 +287,7 @@
   "checkout.addAddress": "Ku dar cinwaan",
   "checkout.defaultLabel": "DEFAULT",
   "checkout.selectPaymentMethod": "Dooro habka lacag bixinta",
-  "checkout.choosePreferredPaymentMethod": "Dooro habka lacag bixinta aad ugu preferenceysato",
+  "checkout.choosePreferredPaymentMethod": "Dooro sida aad rabto inaad lacag u bixiso ka hor intaadan dalabka gelin. QPay waxay taageertaa Telebirr, Awash, CBE, Abyssinia iyo bangiyo kale.",
   "checkout.noPaymentMethodsAvailable": "Habka lacag bixinta ma heli karo",
   "checkout.placeOrder": "Gudbi dalabka",
   "checkout.phoneNumberForPayment": "Lambarka taleefanka lacag bixinta",

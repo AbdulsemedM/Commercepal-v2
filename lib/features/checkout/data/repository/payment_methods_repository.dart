@@ -16,7 +16,12 @@ class PaymentMethodsRepository {
       status: response.status,
       message: response.message,
       data: response.data
-          .where((m) => !PaymentConstants.isHiddenPaymentProvider(m.code))
+          .where(
+            (m) => !PaymentConstants.isHiddenPaymentProvider(
+              m.code,
+              displayName: m.displayName,
+            ),
+          )
           .map(_withoutHiddenItems)
           .toList(),
     );
@@ -28,8 +33,12 @@ class PaymentMethodsRepository {
       code: method.code,
       iconUrl: method.iconUrl,
       paymentMethodItemResponses: method.paymentMethodItemResponses
-          .where((item) =>
-              !PaymentConstants.isHiddenPaymentProvider(item.itemCode))
+          .where(
+            (item) => !PaymentConstants.isHiddenPaymentProvider(
+              item.itemCode,
+              displayName: item.displayName,
+            ),
+          )
           .map(_withoutHiddenVariants)
           .toList(),
     );
@@ -46,8 +55,12 @@ class PaymentMethodsRepository {
       paymentInstruction: item.paymentInstruction,
       requireAccountNumberOnInitiation: item.requireAccountNumberOnInitiation,
       paymentMethodItemResponses: item.paymentMethodItemResponses
-          .where((v) =>
-              !PaymentConstants.isHiddenPaymentProvider(v.variantCode))
+          .where(
+            (v) => !PaymentConstants.isHiddenPaymentProvider(
+              v.variantCode,
+              displayName: v.displayName,
+            ),
+          )
           .toList(),
     );
   }

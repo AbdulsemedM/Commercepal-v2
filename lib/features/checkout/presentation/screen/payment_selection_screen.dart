@@ -25,6 +25,7 @@ import '../utils/checkout_payment_navigation.dart';
 import '../widgets/payment_account_phone_field.dart';
 import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
+import '../widgets/payment_hint_banner.dart';
 import 'checkout_initiation_failed_screen.dart';
 
 /// Helper class to represent a selectable payment method
@@ -76,7 +77,8 @@ class PaymentSelectionScreen extends StatefulWidget {
   State<PaymentSelectionScreen> createState() => _PaymentSelectionScreenState();
 }
 
-class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
+class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
+    with SingleTickerProviderStateMixin {
   String? _selectedPaymentMethodId;
   String? _selectedVariantCode; // Store selected variant code separately
   bool _isPlacingOrder = false;
@@ -97,10 +99,13 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   String? _paymentPhoneNumber;
   String _initialCountryCode = 'ET';
   bool _paymentPhonePrefilled = false;
+  late final PaymentHintController _paymentHint;
 
   @override
   void initState() {
     super.initState();
+    _paymentHint = PaymentHintController(vsync: this);
+    _paymentHint.startIntro();
     WidgetsBinding.instance.addPostFrameCallback((_) => _prefillPaymentPhone());
   }
 
@@ -126,6 +131,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
   @override
   void dispose() {
+    _paymentHint.dispose();
     _paymentPhoneController.dispose();
     super.dispose();
   }
@@ -254,10 +260,16 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> categoryMethods = [];
 
-        // Some methods (Telebirr, CBE Birr, QPay, Amole, …) come with no inner
+        // Some methods (CBE Birr, QPay, Amole, …) come with no inner
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          if (PaymentConstants.isHiddenPaymentProvider(
+            paymentMethod.code,
+            displayName: paymentMethod.displayName,
+          )) {
+            continue;
+          }
           if (!_methodVisibleForCart(
             paymentMethod.code,
             _cartCurrency,
@@ -286,10 +298,23 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         }
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
+          if (PaymentConstants.isHiddenPaymentProvider(
+            item.itemCode,
+            displayName: item.displayName,
+          )) {
+            continue;
+          }
           if (item.hasVariants) {
             // Filter variants by cart currency; only show method if at least one variant matches
             final matchingVariants = item.paymentMethodItemResponses
-                .where((v) => _methodVisibleForCart(v.variantCode, v.currency))
+                .where(
+                  (v) =>
+                      !PaymentConstants.isHiddenPaymentProvider(
+                        v.variantCode,
+                        displayName: v.displayName,
+                      ) &&
+                      _methodVisibleForCart(v.variantCode, v.currency),
+                )
                 .toList();
             if (matchingVariants.isEmpty) continue;
             categoryMethods.add(
@@ -669,7 +694,6 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     // Get cart and addressId from route extra parameter
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final cart = extra?['cart'] as Cart?;
@@ -717,6 +741,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 context,
                 'checkout.selectPaymentMethod',
               ),
+              trailing: _paymentHint.buildIcon(),
             ),
             CheckoutStepIndicator(
               currentStep: 2,
@@ -731,21 +756,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Spacing.md,
-                      Spacing.md,
-                      Spacing.md,
-                      Spacing.sm,
-                    ),
-                    child: Text(
-                      LocalizationService.t(
-                        context,
-                        'checkout.choosePreferredPaymentMethod',
-                      ),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                  _paymentHint.buildBanner(
+                    message: LocalizationService.t(
+                      context,
+                      'checkout.choosePreferredPaymentMethod',
                     ),
                   ),
                   Expanded(
@@ -803,6 +817,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                                         isSelected:
                                             _selectedPaymentMethodId ==
                                                 method.id,
+                                        glow: PaymentConstants.isQPay(
+                                          method.id,
+                                          displayName: method.displayName,
+                                        ),
                                         onTap: () {
                                           if (method.hasVariants) {
                                             _showVariantSelectionDialog(

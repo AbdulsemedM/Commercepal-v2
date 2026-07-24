@@ -287,7 +287,7 @@
   "checkout.addAddress": "አድራሻ ጨምር",
   "checkout.defaultLabel": "ነባሪ",
   "checkout.selectPaymentMethod": "የክፍያ ዘዴ ይምረጡ",
-  "checkout.choosePreferredPaymentMethod": "የሚመርጡትን የክፍያ ዘዴ ይምረጡ",
+  "checkout.choosePreferredPaymentMethod": "ትዕዛዝዎን ከማስገባትዎ በፊት እንዴት መክፈል እንደሚፈልጉ ይምረጡ። QPay ቴሌብር፣ አዋሽ፣ CBE፣ አቢሲኒያ እና ሌሎች ባንኮችን ይደግፋል።",
   "checkout.noPaymentMethodsAvailable": "የክፍያ ዘዴ አልተገኘም",
   "checkout.placeOrder": "ትዕዛዝ አስገባ",
   "checkout.phoneNumberForPayment": "ለክፍያ ስልክ ቁጥር",

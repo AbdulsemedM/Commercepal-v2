@@ -287,7 +287,7 @@
   "checkout.addAddress": "إضافة عنوان",
   "checkout.defaultLabel": "افتراضي",
   "checkout.selectPaymentMethod": "اختر طريقة الدفع",
-  "checkout.choosePreferredPaymentMethod": "اختر طريقة الدفع المفضلة",
+  "checkout.choosePreferredPaymentMethod": "اختر طريقة الدفع قبل تقديم طلبك. يدعم QPay تليبِر وأواش وCBE وأبيسينيا وبنوكًا أخرى.",
   "checkout.noPaymentMethodsAvailable": "لا توجد طرق دفع متاحة",
   "checkout.placeOrder": "تأكيد الطلب",
   "checkout.phoneNumberForPayment": "رقم الهاتف للدفع",

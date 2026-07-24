@@ -184,10 +184,16 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> methods = [];
 
-        // Some methods (Telebirr, CBE Birr, QPay, Amole, â€¦) come with no inner
+        // Some methods (CBE Birr, QPay, Amole, …) come with no inner
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          if (PaymentConstants.isHiddenPaymentProvider(
+            paymentMethod.code,
+            displayName: paymentMethod.displayName,
+          )) {
+            continue;
+          }
           if (!_methodVisibleForCart(
             paymentMethod.code,
             widget.currency,
@@ -214,9 +220,22 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         }
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
+          if (PaymentConstants.isHiddenPaymentProvider(
+            item.itemCode,
+            displayName: item.displayName,
+          )) {
+            continue;
+          }
           if (item.hasVariants) {
             final matchingVariants = item.paymentMethodItemResponses
-                .where((v) => _methodVisibleForCart(v.variantCode, v.currency))
+                .where(
+                  (v) =>
+                      !PaymentConstants.isHiddenPaymentProvider(
+                        v.variantCode,
+                        displayName: v.displayName,
+                      ) &&
+                      _methodVisibleForCart(v.variantCode, v.currency),
+                )
                 .toList();
             if (matchingVariants.isEmpty) continue;
             methods.add(
@@ -595,6 +614,10 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                           isSelected:
                                               _selectedPaymentMethodId ==
                                                   method.id,
+                                          glow: PaymentConstants.isQPay(
+                                            method.id,
+                                            displayName: method.displayName,
+                                          ),
                                           onTap: () {
                                             if (method.hasVariants) {
                                               _showVariantDialog(method);

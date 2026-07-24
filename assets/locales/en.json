@@ -287,7 +287,7 @@
   "checkout.addAddress": "Add Address",
   "checkout.defaultLabel": "DEFAULT",
   "checkout.selectPaymentMethod": "Select Payment Method",
-  "checkout.choosePreferredPaymentMethod": "Choose your preferred payment method",
+  "checkout.choosePreferredPaymentMethod": "Select how you want to pay before placing your order. QPay supports Telebirr, Awash, CBE, Abyssinia and other banks.",
   "checkout.noPaymentMethodsAvailable": "No payment methods available",
   "checkout.placeOrder": "Place Order",
   "checkout.phoneNumberForPayment": "Phone number for payment",

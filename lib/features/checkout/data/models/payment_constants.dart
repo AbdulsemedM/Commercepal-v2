@@ -32,9 +32,26 @@ class PaymentConstants {
     'TELEBIRR',
   };
 
-  static bool isHiddenPaymentProvider(String? code) {
-    if (code == null || code.isEmpty) return false;
-    return hiddenPaymentProviderCodes.contains(code.toUpperCase());
+  static bool isHiddenPaymentProvider(String? code, {String? displayName}) {
+    final String haystack =
+        '${code ?? ''} ${displayName ?? ''}'.toUpperCase().replaceAll(
+              RegExp(r'[\s_\-]+'),
+              '',
+            );
+    if (haystack.isEmpty) return false;
+    if (haystack.contains('TELEBIRR')) return true;
+    return code != null &&
+        code.isNotEmpty &&
+        hiddenPaymentProviderCodes.contains(code.toUpperCase());
+  }
+
+  static bool isQPay(String? code, {String? displayName}) {
+    final String haystack =
+        '${code ?? ''} ${displayName ?? ''}'.toUpperCase().replaceAll(
+              RegExp(r'[\s_\-]+'),
+              '',
+            );
+    return haystack.contains('QPAY');
   }
 
   /// Provider codes that initiate USSD payment; show "USSD payment initiated" success popup after checkout.
