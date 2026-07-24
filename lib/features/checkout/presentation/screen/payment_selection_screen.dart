@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -14,14 +13,19 @@ import '../../../../app/router/app_router.dart';
 import '../../../cart/bloc/cart_bloc.dart';
 import '../../../cart/data/models/cart.dart';
 import '../../data/models/checkout_request.dart';
-import '../../data/models/checkout_response.dart';
-import '../../data/models/payment_method_type.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_method_assets.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../../data/repository/payment_methods_repository.dart';
+import '../../data/repository/exchange_rates_repository.dart';
+import '../../data/models/exchange_rates_response.dart';
+import '../utils/payment_phone_utils.dart';
+import '../utils/checkout_payment_navigation.dart';
+import '../widgets/payment_account_phone_field.dart';
+import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
+import '../widgets/payment_hint_banner.dart';
 import 'checkout_initiation_failed_screen.dart';
 
 /// Helper class to represent a selectable payment method
@@ -73,7 +77,8 @@ class PaymentSelectionScreen extends StatefulWidget {
   State<PaymentSelectionScreen> createState() => _PaymentSelectionScreenState();
 }
 
-class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
+class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
+    with SingleTickerProviderStateMixin {
   String? _selectedPaymentMethodId;
   String? _selectedVariantCode; // Store selected variant code separately
   bool _isPlacingOrder = false;
@@ -83,24 +88,51 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
   final CheckoutRepository _checkoutRepository = CheckoutRepository();
   final PaymentMethodsRepository _paymentMethodsRepository =
       PaymentMethodsRepository();
+  final ExchangeRatesRepository _exchangeRatesRepository =
+      ExchangeRatesRepository();
   List<_PaymentMethodCategory> _paymentMethodCategories = [];
   bool _paymentMethodsLoadStarted = false;
-  final TextEditingController _paymentPhoneController =
-      TextEditingController(text: '9');
+  ExchangeRatesData? _exchangeRates;
+  bool _isLoadingExchangeRates = false;
+  String? _exchangeRatesError;
+  final TextEditingController _paymentPhoneController = TextEditingController();
   String? _paymentPhoneNumber;
-  final TextEditingController _methodSpecificDigitsController =
-      TextEditingController();
-  String? _ipayPhoneNumber;
+  String _initialCountryCode = 'ET';
+  bool _paymentPhonePrefilled = false;
+  late final PaymentHintController _paymentHint;
 
   @override
   void initState() {
     super.initState();
+    _paymentHint = PaymentHintController(vsync: this);
+    _paymentHint.startIntro();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillPaymentPhone());
+  }
+
+  Future<void> _prefillPaymentPhone() async {
+    if (_paymentPhonePrefilled || !mounted) return;
+
+    final extra = GoRouterState.of(context).extra;
+    final fallbackPhone = extra is Map<String, dynamic>
+        ? extra['phoneNumber'] as String?
+        : null;
+
+    final raw = await loadDefaultPaymentPhone(fallbackPhone: fallbackPhone);
+    if (!mounted || raw == null || raw.isEmpty) return;
+
+    final parsed = parseProfilePhoneForField(raw);
+    setState(() {
+      _paymentPhonePrefilled = true;
+      _initialCountryCode = parsed.initialCountryCode;
+      _paymentPhoneController.text = parsed.localNumber;
+      _paymentPhoneNumber = parsed.completeNumber;
+    });
   }
 
   @override
   void dispose() {
+    _paymentHint.dispose();
     _paymentPhoneController.dispose();
-    _methodSpecificDigitsController.dispose();
     super.dispose();
   }
 
@@ -121,6 +153,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     if (!_paymentMethodsLoadStarted) {
       _paymentMethodsLoadStarted = true;
       _loadPaymentMethods();
+      _loadExchangeRatesIfNeeded();
     }
   }
 
@@ -129,16 +162,75 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     return _cartCurrency!.toUpperCase() == methodCurrency.toUpperCase();
   }
 
+  bool _methodVisibleForCart(String itemCode, String? methodCurrency) {
+    if (PaymentConstants.isPayPal(itemCode) &&
+        PaymentConstants.isPayPalSupportedCartCurrency(_cartCurrency)) {
+      return true;
+    }
+    return _currencyMatches(methodCurrency);
+  }
+
   _SelectablePaymentMethod? _getSelectedMethod() {
     if (_selectedPaymentMethodId == null) return null;
     for (final category in _paymentMethodCategories) {
-      try {
-        return category.methods.firstWhere(
-          (m) => m.id == _selectedPaymentMethodId,
-        );
-      } catch (_) {}
+      for (final method in category.methods) {
+        if (method.id == _selectedPaymentMethodId) {
+          return method;
+        }
+      }
     }
     return null;
+  }
+
+  String? get _selectedPaymentProviderCode {
+    final method = _getSelectedMethod();
+    if (method == null) return null;
+    return method.hasVariants && _selectedVariantCode != null
+        ? _selectedVariantCode
+        : method.id;
+  }
+
+  bool get _isPayPalSelected =>
+      PaymentConstants.isPayPal(_selectedPaymentProviderCode);
+
+  bool _paypalReadyForCheckout(String cartCurrency) {
+    if (!_isPayPalSelected) return true;
+    final String code = cartCurrency.toUpperCase();
+    if (code == 'USD') return true;
+    return !_isLoadingExchangeRates &&
+        _exchangeRatesError == null &&
+        _exchangeRates != null &&
+        _exchangeRates!.hasRateFor(code);
+  }
+
+  Future<void> _loadExchangeRatesIfNeeded() async {
+    if (!PaymentConstants.isPayPalSupportedCartCurrency(_cartCurrency)) {
+      return;
+    }
+    if (_cartCurrency!.toUpperCase() == 'USD') {
+      return;
+    }
+    setState(() {
+      _isLoadingExchangeRates = true;
+      _exchangeRatesError = null;
+    });
+    try {
+      final rates = await _exchangeRatesRepository.getExchangeRates();
+      if (!mounted) return;
+      setState(() {
+        _exchangeRates = rates;
+        _isLoadingExchangeRates = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingExchangeRates = false;
+        _exchangeRatesError = LocalizationService.t(
+          context,
+          'checkout.paypalRatesUnavailable',
+        );
+      });
+    }
   }
 
   /// Flat list of every selectable method across categories (for the grid).
@@ -168,10 +260,22 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       for (final paymentMethod in response.data) {
         final List<_SelectablePaymentMethod> categoryMethods = [];
 
-        // Some methods (Telebirr, CBE Birr, QPay, Amole, …) come with no inner
+        // Some methods (CBE Birr, QPay, Amole, …) come with no inner
         // items; the top-level method itself is the selectable option.
         if (paymentMethod.paymentMethodItemResponses.isEmpty) {
           if (nestedItemCodes.contains(paymentMethod.code)) continue;
+          if (PaymentConstants.isHiddenPaymentProvider(
+            paymentMethod.code,
+            displayName: paymentMethod.displayName,
+          )) {
+            continue;
+          }
+          if (!_methodVisibleForCart(
+            paymentMethod.code,
+            _cartCurrency,
+          )) {
+            continue;
+          }
           categories.add(
             _PaymentMethodCategory(
               categoryName: paymentMethod.displayName,
@@ -194,10 +298,23 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         }
 
         for (final item in paymentMethod.paymentMethodItemResponses) {
+          if (PaymentConstants.isHiddenPaymentProvider(
+            item.itemCode,
+            displayName: item.displayName,
+          )) {
+            continue;
+          }
           if (item.hasVariants) {
             // Filter variants by cart currency; only show method if at least one variant matches
             final matchingVariants = item.paymentMethodItemResponses
-                .where((v) => _currencyMatches(v.currency))
+                .where(
+                  (v) =>
+                      !PaymentConstants.isHiddenPaymentProvider(
+                        v.variantCode,
+                        displayName: v.displayName,
+                      ) &&
+                      _methodVisibleForCart(v.variantCode, v.currency),
+                )
                 .toList();
             if (matchingVariants.isEmpty) continue;
             categoryMethods.add(
@@ -217,7 +334,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
             );
           } else {
             // No variants: only show if method currency matches cart currency
-            if (!_currencyMatches(item.currency)) continue;
+            if (!_methodVisibleForCart(item.itemCode, item.currency)) continue;
             categoryMethods.add(
               _SelectablePaymentMethod(
                 id: item.itemCode,
@@ -318,40 +435,6 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     }
   }
 
-  String? _getCategoryNameForSelectedMethod() {
-    if (_selectedPaymentMethodId == null) return null;
-    for (final category in _paymentMethodCategories) {
-      final found = category.methods.any((m) => m.id == _selectedPaymentMethodId);
-      if (found) return category.categoryName;
-    }
-    return null;
-  }
-
-  String? _getSelectedVariantDisplayName() {
-    final method = _getSelectedMethod();
-    if (method == null || _selectedVariantCode == null) return null;
-    try {
-      final v = method.variants.firstWhere(
-        (e) => e.variantCode == _selectedVariantCode,
-      );
-      return v.displayName;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  PaymentMethodVariant? _getSelectedVariant() {
-    final method = _getSelectedMethod();
-    if (method == null || _selectedVariantCode == null) return null;
-    try {
-      return method.variants.firstWhere(
-        (e) => e.variantCode == _selectedVariantCode,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<void> _placeOrder(
     Cart cart,
     int addressId,
@@ -385,6 +468,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       final paymentProviderCode = selectedMethod.hasVariants && _selectedVariantCode != null
           ? _selectedVariantCode!
           : selectedMethod.id;
+
+      final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
 
       // Sahay: customer lookup, show customer name and confirm before placing order
       if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
@@ -443,45 +528,50 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
         }
       }
 
-      // Convert cart items to checkout items
+      // Convert cart items to checkout items (include unitPrice like web checkout)
       final checkoutItems = cart.items.map((item) {
+        final price = item.unitPrice > 0 ? item.unitPrice : item.currentPrice;
         return CheckoutItem(
           itemId: item.productId,
           configId: item.configId,
           quantity: item.quantity,
+          unitPrice: price,
         );
       }).toList();
 
-      final categoryName = _getCategoryNameForSelectedMethod();
-      final variantDisplayName = _getSelectedVariantDisplayName();
-      final methodType = getPaymentMethodType(
-        categoryName,
-        selectedMethod.displayName,
-        variantDisplayName,
-      );
+      final String? paymentAccount;
+      if (isPayPal) {
+        paymentAccount = null;
+      } else {
+        paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
+            ? normalizePaymentAccount(phoneNumber)
+            : null;
 
-      // Determine if this payment method requires a payment account (phone number).
-      // Only send paymentAccount when the method actually requires it; otherwise send null.
-      final effectiveRequireAccount = _getSelectedVariant()
-              ?.requireAccountNumberOnInitiation ??
-          selectedMethod.requireAccountNumberOnInitiation;
-      final requiresPhone = ['MOBILE_MONEY', 'LOAN']
-          .contains(selectedMethod.providerCode);
-      final isETB = cart.currency.toUpperCase() == 'ETB';
-      final methodRequiresPaymentAccount = effectiveRequireAccount == true ||
-          (effectiveRequireAccount != false &&
-              ((requiresPhone && isETB) || requiresMethodSpecificPhone(methodType)));
+        if (paymentAccount == null || !isValidPaymentAccount(phoneNumber)) {
+          if (mounted) {
+            setState(() => _isPlacingOrder = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  LocalizationService.t(context, 'checkout.pleaseEnterValidPhone'),
+                ),
+                backgroundColor: AppColors.warning,
+              ),
+            );
+          }
+          return;
+        }
+      }
 
-      // Create checkout request – only include paymentAccount when method requires it
       final checkoutRequest = CheckoutRequest(
         channel: PlatformUtils.getChannel(),
         currency: cart.currency,
         deliveryAddressId: addressId,
         items: checkoutItems,
         paymentProviderCode: paymentProviderCode,
-        paymentAccount: methodRequiresPaymentAccount && phoneNumber != null && phoneNumber.isNotEmpty
-            ? phoneNumber
-            : null,
+        paymentAccount: PaymentConstants.isCashOnDelivery(paymentProviderCode)
+            ? null
+            : paymentAccount,
       );
 
       // Call checkout API
@@ -495,66 +585,67 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
       if (!context.mounted) return;
 
-      if (!response.isCheckoutCompleteForCartClear) {
-        final ref = response.paymentReferenceOrNull;
-        final ord = response.resolvedOrderNumber;
-        if (ref != null &&
-            ref.isNotEmpty &&
-            ord != null &&
-            ord.isNotEmpty) {
-          await context.push<void>(
-            AppRoutes.retryPaymentMethod,
-            extra: <String, dynamic>{
-              'paymentReference': ref,
-              'currency': cart.currency,
-              'orderNumber': ord,
-            },
-          );
-        } else {
-          await Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
-                message: LocalizationService.t(
-                  ctx,
-                  'checkout.initiationFailedGeneric',
-                ),
+      if (PaymentConstants.isCashOnDelivery(paymentProviderCode) &&
+          (response.resolvedOrderNumber?.isNotEmpty ?? false)) {
+        navigateToCashOnDeliverySuccess(
+          context,
+          response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
+        return;
+      }
+
+      if (response.isCheckoutCompleteForCartClear) {
+        navigateAfterCheckoutSuccess(
+          context,
+          response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
+        return;
+      }
+
+      // Order created (HTTP 200) but payment still pending / initiation failed —
+      // show pending details and direct user to order history to pay later.
+      if (response.isOrderReservedPaymentPending) {
+        navigateToPaymentPending(
+          context,
+          response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
+        return;
+      }
+
+      final ref = response.paymentReferenceOrNull;
+      final ord = response.resolvedOrderNumber;
+      if (ref != null &&
+          ref.isNotEmpty &&
+          ord != null &&
+          ord.isNotEmpty) {
+        await context.push<void>(
+          AppRoutes.retryPaymentMethod,
+          extra: <String, dynamic>{
+            'paymentReference': ref,
+            'currency': cart.currency,
+            'orderNumber': ord,
+            'orderTotal': response.pricingSummary?.totalAmount?.toDouble() ??
+                cart.estimatedTotal,
+          },
+        );
+      } else {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
+              message: LocalizationService.t(
+                ctx,
+                'checkout.initiationFailedGeneric',
               ),
             ),
-          );
-        }
-        return;
-      }
-
-      context.read<CartBloc>().add(CartClearRequested());
-
-      final init = response.paymentInitiation!;
-      final nextAction = init.nextAction?.trim() ?? '';
-      final paymentUrl = init.paymentUrl?.trim() ?? '';
-      final orderNumber = response.resolvedOrderNumber;
-
-      if (nextAction == CheckoutResponse.nextActionRedirectToPaymentUrl &&
-          paymentUrl.isNotEmpty) {
-        context.go(
-          AppRoutes.paymentWebView,
-          extra: <String, dynamic>{
-            'paymentUrl': paymentUrl,
-            'orderNumber': orderNumber,
-          },
+          ),
         );
-        return;
       }
-
-      if (nextAction == CheckoutResponse.nextActionOpenAdditionalInput) {
-        context.go(
-          AppRoutes.orderConfirmedPaymentPending,
-          extra: <String, dynamic>{
-            'checkoutResponse': response,
-          },
-        );
-        return;
-      }
-
-      context.go(AppRoutes.dashboard);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -603,12 +694,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    // Get cart, addressId, and phoneNumber from route extra parameter
+    // Get cart and addressId from route extra parameter
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final cart = extra?['cart'] as Cart?;
     final addressId = extra?['addressId'] as int?;
-    final phoneNumber = extra?['phoneNumber'] as String?;
 
     if (cart == null || addressId == null) {
       return Scaffold(
@@ -635,81 +724,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
       );
     }
 
-    final selectedMethod = _getSelectedMethod();
-    final categoryName = _getCategoryNameForSelectedMethod();
-    final variantDisplayName = _getSelectedVariantDisplayName();
-    final methodType = getPaymentMethodType(
-      categoryName,
-      selectedMethod?.displayName,
-      variantDisplayName,
-    );
-    final waafiPrefix = getWaafiPrefix(
-      categoryName,
-      selectedMethod?.displayName,
-      variantDisplayName,
-    );
-
-    final effectiveRequireAccount = _getSelectedVariant()
-            ?.requireAccountNumberOnInitiation ??
-        selectedMethod?.requireAccountNumberOnInitiation;
-    final requiresPhone = selectedMethod != null &&
-        ['MOBILE_MONEY', 'LOAN'].contains(selectedMethod.providerCode);
-    final isETB = cart.currency.toUpperCase() == 'ETB';
-    final requiresMethodPhone = selectedMethod != null &&
-        requiresMethodSpecificPhone(methodType);
-    final showPhoneField = effectiveRequireAccount == true ||
-        (effectiveRequireAccount != false &&
-            ((requiresPhone && isETB) || requiresMethodPhone));
-
-    final digits = _methodSpecificDigitsController.text.trim();
-    final digitsValid = digits.length == 7 && RegExp(r'^\d{7}$').hasMatch(digits);
-
-    String? effectivePhone;
-    if (requiresMethodPhone) {
-      if (methodType == PaymentMethodType.waafi && waafiPrefix != null && digitsValid) {
-        effectivePhone = waafiPrefix + digits;
-      } else if (methodType == PaymentMethodType.edahab && digitsValid) {
-        effectivePhone = '65$digits';
-      } else if (methodType == PaymentMethodType.ipay &&
-          _ipayPhoneNumber != null &&
-          _ipayPhoneNumber!.isNotEmpty) {
-        effectivePhone = _ipayPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
-        if (effectivePhone.isEmpty) effectivePhone = null;
-      } else {
-        effectivePhone = null;
-      }
-    } else {
-      if (showPhoneField && effectiveRequireAccount == true) {
-        // requireAccountNumberOnInitiation: user must enter a valid phone number (no address fallback)
-        if (_paymentPhoneNumber != null && _paymentPhoneNumber!.isNotEmpty) {
-          effectivePhone = _paymentPhoneNumber!.replaceAll(RegExp(r'[^\d]'), '');
-          if (effectivePhone.isEmpty || effectivePhone.length < 9) {
-            effectivePhone = null;
-          }
-        } else {
-          effectivePhone = null;
-        }
-      } else {
-        effectivePhone = showPhoneField
-            ? (_paymentPhoneNumber ?? phoneNumber)
-            : null;
-      }
-    }
-
-    final methodPhoneValid = !showPhoneField ||
-        (requiresMethodPhone &&
-            ((methodType == PaymentMethodType.waafi && digitsValid) ||
-                (methodType == PaymentMethodType.edahab && digitsValid) ||
-                (methodType == PaymentMethodType.ipay &&
-                    (_ipayPhoneNumber?.isNotEmpty ?? false)))) ||
-        (!requiresMethodPhone &&
-            (effectivePhone != null && effectivePhone.isNotEmpty));
-
-    final paymentInstructionText = requiresMethodPhone
-        ? (_getSelectedVariant()?.paymentInstruction ??
-            selectedMethod.paymentInstruction ??
-            '')
-        : '';
+    final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
+    final bool canPlace = _selectedPaymentMethodId != null &&
+        !_isPlacingOrder &&
+        (_isPayPalSelected
+            ? _paypalReadyForCheckout(cart.currency)
+            : phoneValid);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -721,6 +741,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 context,
                 'checkout.selectPaymentMethod',
               ),
+              trailing: _paymentHint.buildIcon(),
             ),
             CheckoutStepIndicator(
               currentStep: 2,
@@ -735,21 +756,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Spacing.md,
-                      Spacing.md,
-                      Spacing.md,
-                      Spacing.sm,
-                    ),
-                    child: Text(
-                      LocalizationService.t(
-                        context,
-                        'checkout.choosePreferredPaymentMethod',
-                      ),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                  _paymentHint.buildBanner(
+                    message: LocalizationService.t(
+                      context,
+                      'checkout.choosePreferredPaymentMethod',
                     ),
                   ),
                   Expanded(
@@ -807,6 +817,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                                         isSelected:
                                             _selectedPaymentMethodId ==
                                                 method.id,
+                                        glow: PaymentConstants.isQPay(
+                                          method.id,
+                                          displayName: method.displayName,
+                                        ),
                                         onTap: () {
                                           if (method.hasVariants) {
                                             _showVariantSelectionDialog(
@@ -828,298 +842,26 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
                 ],
               ),
             ),
-          // Phone number for payment (ETB mobile money or Waafi/Edahab/iPay)
-          if (showPhoneField)
-            Container(
-              margin: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, 0),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: scheme.shadow.withOpacity(0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.md, Spacing.md, Spacing.xs),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.06),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.phone_android_rounded,
-                            size: 22,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: Spacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                requiresMethodPhone
-                                    ? LocalizationService.t(context, 'checkout.phoneNumberForPayment')
-                                    : LocalizationService.t(context, 'checkout.mobileNumberForPayment'),
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                      letterSpacing: 0.2,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                LocalizationService.t(context, 'checkout.enterNumberLinkedToAccount'),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                      height: 1.3,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, Spacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                  if (requiresMethodPhone) ...[
-                    Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (paymentInstructionText.isNotEmpty) ...[
-                            Text(
-                              LocalizationService.t(context, 'checkout.instructions'),
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: scheme.onSurface,
-                                  ),
-                            ),
-                            const SizedBox(height: Spacing.xs),
-                            Text(
-                              paymentInstructionText,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: scheme.onSurface,
-                                  ),
-                            ),
-                            const SizedBox(height: Spacing.md),
-                          ],
-                        ],
-                      ),
-                  ],
-                  if (methodType == PaymentMethodType.waafi && waafiPrefix != null)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(
-                            '+$waafiPrefix ',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _methodSpecificDigitsController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 7,
-                            decoration: InputDecoration(
-                              hintText: '1234567',
-                              counterText: '',
-                              filled: true,
-                              fillColor: scheme.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: scheme.outline),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: scheme.outline),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: AppColors.primary, width: 2),
-                              ),
-                              errorText: digits.isNotEmpty && !digitsValid
-                                  ? 'Enter exactly 7 digits'
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.md,
-                                vertical: Spacing.md,
-                              ),
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (methodType == PaymentMethodType.edahab)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(
-                            '+25265 ',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _methodSpecificDigitsController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 7,
-                            decoration: InputDecoration(
-                              hintText: '1234567',
-                              counterText: '',
-                              filled: true,
-                              fillColor: scheme.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: scheme.outline),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: scheme.outline),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: AppColors.primary, width: 2),
-                              ),
-                              errorText: digits.isNotEmpty && !digitsValid
-                                  ? 'Enter exactly 7 digits'
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.md,
-                                vertical: Spacing.md,
-                              ),
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (methodType == PaymentMethodType.ipay)
-                    IntlPhoneField(
-                      onChanged: (phone) {
-                        setState(() {
-                          _ipayPhoneNumber = phone.completeNumber.isNotEmpty
-                              ? phone.completeNumber
-                              : null;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Phone number',
-                        filled: true,
-                        fillColor: scheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: scheme.outline),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: scheme.outline),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.primary, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.md,
-                          vertical: Spacing.md,
-                        ),
-                      ),
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    )
-                  else
-                    IntlPhoneField(
-                      controller: _paymentPhoneController,
-                      initialCountryCode: 'ET',
-                      flagsButtonPadding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.sm,
-                      ),
-                      dropdownIconPosition: IconPosition.trailing,
-                      decoration: InputDecoration(
-                        hintText: '912345678',
-                        hintStyle: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: scheme.onSurfaceVariant),
-                        filled: true,
-                        fillColor: scheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: scheme.outline),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: scheme.outline),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.primary, width: 2),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Colors.red, width: 1),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Colors.red, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.md,
-                          vertical: Spacing.md,
-                        ),
-                      ),
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      onChanged: (phone) {
-                        setState(() {
-                          _paymentPhoneNumber = phone.completeNumber.isNotEmpty
-                              ? phone.completeNumber
-                              : null;
-                        });
-                      },
-                    ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          if (_isPayPalSelected)
+            PayPalPaymentSummary(
+              cartCurrency: cart.currency,
+              orderTotal: cart.estimatedTotal,
+              exchangeRates: _exchangeRates,
+              isLoading: _isLoadingExchangeRates &&
+                  cart.currency.toUpperCase() != 'USD',
+              errorMessage: cart.currency.toUpperCase() != 'USD'
+                  ? _exchangeRatesError
+                  : null,
+            )
+          else
+            PaymentAccountPhoneField(
+              controller: _paymentPhoneController,
+              initialCountryCode: _initialCountryCode,
+              onChanged: (value) {
+                setState(() {
+                  _paymentPhoneNumber = value;
+                });
+              },
             ),
           // Place Order Button
           Padding(
@@ -1129,72 +871,68 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
               Spacing.md,
               Spacing.md,
             ),
-            child: Builder(
-              builder: (BuildContext context) {
-                final bool canPlace = !(_selectedPaymentMethodId == null ||
-                    _isPlacingOrder ||
-                    (showPhoneField &&
-                        (!methodPhoneValid ||
-                            effectivePhone == null ||
-                            effectivePhone.isEmpty)));
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient:
-                        canPlace ? AppDecorations.primaryCtaGradient : null,
-                    color: canPlace ? null : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: canPlace
-                        ? <BoxShadow>[
-                            BoxShadow(
-                              color: AppColors.pink.withOpacity(0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: canPlace ? AppDecorations.primaryCtaGradient : null,
+                color: canPlace ? null : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: canPlace
+                    ? <BoxShadow>[
+                        BoxShadow(
+                          color: AppColors.pink.withOpacity(0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: canPlace
+                      ? () {
+                          if (_isPayPalSelected) {
+                            _placeOrder(cart, addressId, null);
+                          } else {
+                            final phone = normalizePaymentAccount(
+                              _paymentPhoneNumber!,
+                            );
+                            _placeOrder(cart, addressId, phone);
+                          }
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(28),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Spacing.md + 2,
+                    ),
+                    child: Center(
+                      child: _isPlacingOrder
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              LocalizationService.t(
+                                context,
+                                'checkout.placeOrder',
+                              ),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: canPlace
+                                    ? Colors.white
+                                    : Colors.grey.shade600,
+                              ),
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: canPlace
-                          ? () {
-                              _placeOrder(cart, addressId, effectivePhone);
-                            }
-                          : null,
-                      borderRadius: BorderRadius.circular(28),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: Spacing.md + 2,
-                        ),
-                        child: Center(
-                          child: _isPlacingOrder
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  LocalizationService.t(
-                                    context,
-                                    'checkout.placeOrder',
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: canPlace
-                                        ? Colors.white
-                                        : Colors.grey.shade600,
-                                  ),
-                                ),
-                        ),
-                      ),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],

@@ -2,11 +2,13 @@ class CheckoutItem {
   final String itemId;
   final String? configId;
   final int quantity;
+  final num? unitPrice;
 
   CheckoutItem({
     required this.itemId,
     this.configId,
     required this.quantity,
+    this.unitPrice,
   });
 
   Map<String, dynamic> toJson() => {
@@ -15,6 +17,7 @@ class CheckoutItem {
             configId!.isNotEmpty &&
             configId != '0') 'configId': configId,
         'quantity': quantity,
+        if (unitPrice != null && unitPrice! > 0) 'unitPrice': unitPrice,
       };
 }
 

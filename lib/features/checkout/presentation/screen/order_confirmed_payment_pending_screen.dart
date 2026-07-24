@@ -18,8 +18,8 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
 
   final CheckoutResponse response;
 
-  static const Color _successTint = Color(0xFFE8F5E9);
-  static const Color _successBorder = Color(0xFFA5D6A7);
+  static const Color _pendingTint = Color(0xFFFFF8E1);
+  static const Color _pendingBorder = Color(0xFFFFE082);
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +36,8 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
     final instructions =
         response.paymentInitiation?.paymentInstructions?.trim() ?? '';
     final pending = (response.paymentStatus ?? '').toUpperCase() == 'PENDING';
+    final paymentRef =
+        response.paymentInitiation?.paymentReference?.trim() ?? '';
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -52,32 +54,19 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: _successTint,
+                  color: _pendingTint,
                   shape: BoxShape.circle,
-                  border: Border.all(color: _successBorder, width: 2),
+                  border: Border.all(color: _pendingBorder, width: 2),
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: <Widget>[
-                    Icon(
-                      Icons.shield_outlined,
-                      size: 44,
-                      color: AppColors.success.withOpacity(0.9),
-                    ),
-                    Positioned(
-                      bottom: 18,
-                      child: Icon(
-                        Icons.check_rounded,
-                        size: 22,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
+                child: Icon(
+                  Icons.hourglass_top_rounded,
+                  size: 40,
+                  color: AppColors.warning.withValues(alpha: 0.95),
                 ),
               ),
               const SizedBox(height: Spacing.lg),
               Text(
-                LocalizationService.t(context, 'checkout.orderConfirmedTitle'),
+                LocalizationService.t(context, 'checkout.paymentPendingTitle'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -86,7 +75,10 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
               ),
               const SizedBox(height: Spacing.sm),
               Text(
-                LocalizationService.t(context, 'checkout.orderConfirmedSubtitle'),
+                LocalizationService.t(
+                  context,
+                  'checkout.paymentPendingSubtitle',
+                ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurface,
                   height: 1.35,
@@ -94,7 +86,7 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: Spacing.xl),
-              if (pending) _PaymentInitiatedBanner(theme: theme, scheme: scheme),
+              if (pending) _PaymentPendingBanner(theme: theme, scheme: scheme),
               if (pending) const SizedBox(height: Spacing.lg),
               _OrderSummaryCard(
                 theme: theme,
@@ -104,54 +96,58 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                 total: total,
                 currency: currency,
                 showInitiatedBadge: pending,
+                paymentReference: paymentRef,
               ),
-              const SizedBox(height: Spacing.lg),
-              _InstructionsCard(
-                theme: theme,
-                scheme: scheme,
-                instructions: instructions,
-              ),
+              if (instructions.isNotEmpty) ...[
+                const SizedBox(height: Spacing.lg),
+                _InstructionsCard(
+                  theme: theme,
+                  scheme: scheme,
+                  instructions: instructions,
+                ),
+              ],
               const SizedBox(height: Spacing.xxl),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.go(AppRoutes.orderHistory),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFB45309),
-                        side: const BorderSide(color: AppColors.secondary),
-                        padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        LocalizationService.t(context, 'checkout.myOrders'),
-                      ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => context.go(AppRoutes.orderHistory),
+                  icon: const Icon(Icons.receipt_long_outlined, size: 20),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: scheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  const SizedBox(width: Spacing.md),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => context.go(AppRoutes.dashboard),
-                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: scheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      label: Text(
-                        LocalizationService.t(
-                          context,
-                          'checkout.continueShopping',
-                        ),
-                      ),
+                  label: Text(
+                    LocalizationService.t(
+                      context,
+                      'checkout.viewOrderHistory',
                     ),
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: Spacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => context.go(AppRoutes.dashboard),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.secondary,
+                    side: const BorderSide(color: AppColors.secondary),
+                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    LocalizationService.t(
+                      context,
+                      'checkout.continueShopping',
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: Spacing.lg),
               Text.rich(
@@ -168,7 +164,7 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                     ),
                     TextSpan(
                       text: orderNum,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -186,8 +182,8 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
   }
 }
 
-class _PaymentInitiatedBanner extends StatelessWidget {
-  const _PaymentInitiatedBanner({required this.theme, required this.scheme});
+class _PaymentPendingBanner extends StatelessWidget {
+  const _PaymentPendingBanner({required this.theme, required this.scheme});
 
   final ThemeData theme;
   final ColorScheme scheme;
@@ -195,27 +191,27 @@ class _PaymentInitiatedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color bannerBg = scheme.brightness == Brightness.dark
-        ? AppColors.success.withOpacity(0.18)
-        : OrderConfirmedPaymentPendingScreen._successTint;
+        ? AppColors.warning.withValues(alpha: 0.18)
+        : OrderConfirmedPaymentPendingScreen._pendingTint;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
         color: bannerBg,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: OrderConfirmedPaymentPendingScreen._pendingBorder,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.only(top: 4, right: Spacing.sm),
-            decoration: const BoxDecoration(
-              color: AppColors.success,
-              shape: BoxShape.circle,
-            ),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.warning,
+            size: 22,
           ),
+          const SizedBox(width: Spacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +219,7 @@ class _PaymentInitiatedBanner extends StatelessWidget {
                 Text(
                   LocalizationService.t(
                     context,
-                    'checkout.paymentInitiatedTitle',
+                    'checkout.paymentPendingBannerTitle',
                   ),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -234,7 +230,7 @@ class _PaymentInitiatedBanner extends StatelessWidget {
                 Text(
                   LocalizationService.t(
                     context,
-                    'checkout.paymentInitiatedBody',
+                    'checkout.paymentPendingBannerBody',
                   ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: scheme.onSurface,
@@ -259,6 +255,7 @@ class _OrderSummaryCard extends StatelessWidget {
     required this.total,
     required this.currency,
     required this.showInitiatedBadge,
+    this.paymentReference = '',
   });
 
   final ThemeData theme;
@@ -268,6 +265,7 @@ class _OrderSummaryCard extends StatelessWidget {
   final num? total;
   final String currency;
   final bool showInitiatedBadge;
+  final String paymentReference;
 
   @override
   Widget build(BuildContext context) {
@@ -316,26 +314,26 @@ class _OrderSummaryCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: scheme.brightness == Brightness.dark
-                        ? AppColors.success.withOpacity(0.2)
-                        : OrderConfirmedPaymentPendingScreen._successTint,
+                        ? AppColors.warning.withValues(alpha: 0.2)
+                        : OrderConfirmedPaymentPendingScreen._pendingTint,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Icon(
-                        Icons.check_rounded,
+                        Icons.schedule_rounded,
                         size: 16,
-                        color: AppColors.success,
+                        color: AppColors.warning,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         LocalizationService.t(
                           context,
-                          'checkout.statusInitiated',
+                          'checkout.statusPending',
                         ),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.success,
+                          color: AppColors.warning,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -344,6 +342,23 @@ class _OrderSummaryCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (paymentReference.isNotEmpty) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              LocalizationService.t(context, 'checkout.reference'),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
+            Text(
+              paymentReference,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
           Divider(height: Spacing.xl, color: scheme.outlineVariant),
           if (subtotal != null)
             Row(

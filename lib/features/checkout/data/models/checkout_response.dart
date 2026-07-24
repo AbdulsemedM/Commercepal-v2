@@ -103,6 +103,7 @@ class CheckoutResponse {
   /// Backend [nextAction] values we treat as a completed checkout for cart clearing.
   static const String nextActionOpenAdditionalInput = 'OPEN_ADDITIONAL_INPUT';
   static const String nextActionRedirectToPaymentUrl = 'REDIRECT_TO_PAYMENT_URL';
+  static const String nextActionScanQr = 'SCAN_QR';
 
   /// When true, the order is reserved and payment started; safe to clear the cart.
   /// Based on [paymentInitiation] (not HTTP status alone).
@@ -129,11 +130,24 @@ class CheckoutResponse {
       final url = init.paymentUrl?.trim() ?? '';
       return url.isNotEmpty;
     }
+    if (action == nextActionScanQr) {
+      final payload = init.paymentUrl?.trim() ?? '';
+      return payload.isNotEmpty;
+    }
     if (action == nextActionOpenAdditionalInput) {
       final instructions = init.paymentInstructions?.trim() ?? '';
       return instructions.isNotEmpty;
     }
     return false;
+  }
+
+  /// Order was reserved with payment still pending (HTTP checkout may be 200
+  /// even when [PaymentInitiation.success] is false).
+  bool get isOrderReservedPaymentPending {
+    final status = (paymentStatus ?? '').trim().toUpperCase();
+    if (status != 'PENDING') return false;
+    final order = resolvedOrderNumber;
+    return order != null && order.isNotEmpty;
   }
 
   /// Non-empty [paymentInitiation.paymentReference] when present (for retry flow).

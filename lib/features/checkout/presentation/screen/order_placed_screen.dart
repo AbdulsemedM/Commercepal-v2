@@ -17,6 +17,7 @@ import '../../../orders/data/repository/orders_repository.dart';
 import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
 import '../../data/repository/checkout_repository.dart';
+import '../utils/payment_phone_utils.dart';
 
 /// Displays the checkout response from the backend after placing an order:
 /// order number, pricing summary, payment status, payment initiation details.
@@ -69,9 +70,18 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
 
     setState(() => _isRetrying = true);
     try {
+      String? paymentAccount;
+      final profilePhone = await loadDefaultPaymentPhone();
+      if (profilePhone != null &&
+          profilePhone.isNotEmpty &&
+          isValidPaymentAccount(profilePhone)) {
+        paymentAccount = normalizePaymentAccount(profilePhone);
+      }
+
       final request = PaymentRetryRequest(
         paymentReference: ref,
         paymentProviderCode: widget.paymentProviderCode,
+        paymentAccount: paymentAccount,
       );
       final updated = await _checkoutRepository.retryPayment(request);
       if (!mounted) return;
@@ -459,6 +469,8 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
                         'paymentReference': paymentReference,
                         'currency': response.currency ?? '',
                         'orderNumber': response.orderNumber,
+                        'orderTotal':
+                            response.pricingSummary?.totalAmount?.toDouble(),
                       },
                     );
                     if (result != null && mounted) {

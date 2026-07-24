@@ -8,7 +8,6 @@ import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/cart/data/models/clear_cart_response.dart';
 import 'package:commercepal/features/cart/data/models/update_cart_item_request.dart';
 import 'package:commercepal/features/cart/data/repository/cart_repository.dart';
-import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
@@ -255,17 +254,20 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     emit(CartLoading());
-    try {
-      await _repository.syncLocalCartToRemote();
-      try {
-        await WishlistRepository().syncLocalToBackend();
-      } catch (_) {
-        // Wishlist sync is best-effort; do not fail cart sync
-      }
-      add(CartLoadRequested());
-    } catch (e) {
-      emit(CartError("Failed to sync cart"));
-    }
+    add(CartLoadRequested());
+
+    // TODO: re-enable remote cart sync
+    // try {
+    //   await _repository.syncLocalCartToRemote();
+    //   try {
+    //     await WishlistRepository().syncLocalToBackend();
+    //   } catch (_) {
+    //     // Wishlist sync is best-effort; do not fail cart sync
+    //   }
+    //   add(CartLoadRequested());
+    // } catch (e) {
+    //   emit(CartError("Failed to sync cart"));
+    // }
   }
 
   void _onCartReset(CartReset event, Emitter<CartState> emit) {

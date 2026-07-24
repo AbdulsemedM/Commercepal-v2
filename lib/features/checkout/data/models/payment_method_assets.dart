@@ -14,6 +14,8 @@ class PaymentMethodAssets {
   static const String pesapalWallet = 'assets/images/pesapal-wallet.png';
   static const String qpay = 'assets/images/qpay.png';
   static const String telebirr = 'assets/images/telebirr.png';
+  static const String paypal = 'assets/images/paypal.png';
+  static const String sahayPay = 'assets/images/sahaypay.png';
 
   /// Resolves a local asset path from payment method id and/or display name.
   /// Returns null for M-Pesa so the API [iconUrl] is used instead.
@@ -33,6 +35,12 @@ class PaymentMethodAssets {
 
     if (key.contains('telebirr') || key.contains('tele birr')) {
       return telebirr;
+    }
+    if (key.contains('paypal') || key.contains('pay pal')) {
+      return paypal;
+    }
+    if (key.contains('sahay')) {
+      return sahayPay;
     }
     if (key.contains('airtel')) {
       return airtel;

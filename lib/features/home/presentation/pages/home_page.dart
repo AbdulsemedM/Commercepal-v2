@@ -7,14 +7,17 @@ import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
+import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
+import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
 import '../widgets/categories_section.dart';
-// import '../widgets/deal_of_day_section.dart';
+import '../widgets/home_catalog_mode_toggle.dart';
 import '../widgets/home_discover_section.dart';
+import '../widgets/home_wholesale_section.dart';
 import '../widgets/recently_viewed_section.dart';
 import '../widgets/trust_badges_strip.dart';
 
@@ -36,7 +39,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _onPullToRefresh(BuildContext context) async {
     context.read<CategoriesBloc>().add(FetchCategories());
-    context.read<HomeDiscoverBloc>().add(FetchHomeDiscover());
+    final mode = context.read<HomeCatalogModeCubit>().state;
+    if (mode == HomeCatalogMode.wholesale) {
+      context.read<HomeWholesaleBloc>().add(FetchHomeWholesale());
+    } else {
+      context.read<HomeDiscoverBloc>().add(FetchHomeDiscover());
+    }
     context.read<RecentlyViewedBloc>().add(FetchRecentlyViewed());
     try {
       context.read<CartBloc>().add(CartLoadRequested());
@@ -56,51 +64,66 @@ class _HomePageState extends State<HomePage> {
     }
 
     Widget homeScaffold(BuildContext context, int cartCount) {
-      return Scaffold(
-        appBar: AppBarWidget(
-          cartCount: cartCount,
-          userInitials: AuthService().userInitials ?? 'U',
-          onSearchTap: () {
-            context.push(AppRoutes.productSearch);
-          },
-          onSearchSubmitted: (String query) {
-            context.push(
-              '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-            );
-            return null;
-          },
-          onLogoTap: () {
-            // Handle logo tap
-          },
-          onCartTap: () {
-            _navigateToTab(context, 2);
-          },
-          onProfileTap: () {
-            _navigateToTab(context, 3);
-          },
-          hasNotification: false,
-        ),
-        body: RefreshIndicator(
-          onRefresh: () => _onPullToRefresh(context),
-          child: SingleChildScrollView(
-            key: const PageStorageKey<String>('home_scroll_v1'),
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const SizedBox(height: Spacing.md),
-                const BannerSection(),
-                const SizedBox(height: Spacing.lg),
-                const CategoriesSection(),
-                const SizedBox(height: Spacing.lg),
-                // const DealOfDaySection(),
-                // const SizedBox(height: Spacing.lg),
-                const HomeDiscoverSection(),
-                const SizedBox(height: Spacing.lg),
-                const RecentlyViewedSection(),
-                const TrustBadgesStrip(),
-                const SizedBox(height: Spacing.xl),
-              ],
+      return BlocListener<HomeCatalogModeCubit, HomeCatalogMode>(
+        listenWhen: (previous, current) =>
+            current == HomeCatalogMode.wholesale &&
+            previous != HomeCatalogMode.wholesale,
+        listener: (context, mode) {
+          context.read<HomeWholesaleBloc>().add(FetchHomeWholesale());
+        },
+        child: Scaffold(
+          appBar: AppBarWidget(
+            cartCount: cartCount,
+            userInitials: AuthService().userInitials ?? 'U',
+            onSearchTap: () {
+              context.push(AppRoutes.productSearch);
+            },
+            onSearchSubmitted: (String query) {
+              context.push(
+                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+              );
+              return null;
+            },
+            onLogoTap: () {
+              // Handle logo tap
+            },
+            onCartTap: () {
+              _navigateToTab(context, 2);
+            },
+            onProfileTap: () {
+              _navigateToTab(context, 3);
+            },
+            hasNotification: false,
+          ),
+          body: RefreshIndicator(
+            onRefresh: () => _onPullToRefresh(context),
+            child: SingleChildScrollView(
+              key: const PageStorageKey<String>('home_scroll_v1'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: Spacing.md),
+                  const BannerSection(),
+                  const SizedBox(height: Spacing.md),
+                  const HomeCatalogModeToggle(),
+                  const SizedBox(height: Spacing.lg),
+                  const CategoriesSection(),
+                  const SizedBox(height: Spacing.lg),
+                  BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
+                    builder: (context, mode) {
+                      if (mode == HomeCatalogMode.wholesale) {
+                        return const HomeWholesaleSection();
+                      }
+                      return const HomeDiscoverSection();
+                    },
+                  ),
+                  const SizedBox(height: Spacing.lg),
+                  const RecentlyViewedSection(),
+                  const TrustBadgesStrip(),
+                  const SizedBox(height: Spacing.xl),
+                ],
+              ),
             ),
           ),
         ),
@@ -129,8 +152,14 @@ class _HomePageState extends State<HomePage> {
         BlocProvider<CategoriesBloc>(
           create: (_) => CategoriesBloc()..add(FetchCategories()),
         ),
+        BlocProvider<HomeCatalogModeCubit>(
+          create: (_) => HomeCatalogModeCubit(),
+        ),
         BlocProvider<HomeDiscoverBloc>(
           create: (_) => HomeDiscoverBloc()..add(FetchHomeDiscover()),
+        ),
+        BlocProvider<HomeWholesaleBloc>(
+          create: (_) => HomeWholesaleBloc(),
         ),
         BlocProvider<RecentlyViewedBloc>(
           create: (_) => RecentlyViewedBloc()..add(FetchRecentlyViewed()),
@@ -144,8 +173,7 @@ class _HomePageState extends State<HomePage> {
               },
             )
           : Builder(
-              builder: (BuildContext context) =>
-                  homeScaffold(context, 0),
+              builder: (BuildContext context) => homeScaffold(context, 0),
             ),
     );
   }

@@ -6,8 +6,21 @@ import '../models/clear_cart_response.dart';
 import '../models/update_cart_item_request.dart';
 import 'cart_database_helper.dart';
 
+/// Normalizes variant ids so base products match across '', '0', and null.
+String? normalizeCartConfigId(String? configId) {
+  final trimmed = configId?.trim() ?? '';
+  if (trimmed.isEmpty || trimmed == '0') return null;
+  return trimmed;
+}
+
+bool cartItemsMatchVariant(CartItem item, String productId, String? configId) {
+  return item.productId == productId &&
+      normalizeCartConfigId(item.configId) == normalizeCartConfigId(configId);
+}
+
 class LocalCartDataProvider {
-  LocalCartDataProvider({CartDatabaseHelper? dbHelper}) : _dbHelper = dbHelper ?? CartDatabaseHelper();
+  LocalCartDataProvider({CartDatabaseHelper? dbHelper})
+      : _dbHelper = dbHelper ?? CartDatabaseHelper();
 
   final CartDatabaseHelper _dbHelper;
 
@@ -17,19 +30,23 @@ class LocalCartDataProvider {
   }
 
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
-    if (request.items.isEmpty) return await getCart();
+    if (request.items.isEmpty) return getCart();
 
     final newItemRequest = request.items.first;
-    // Check if item already exists
+    final normalizedConfigId = normalizeCartConfigId(newItemRequest.configId);
     final items = await _dbHelper.getItems();
-    final existingItemIndex = items.indexWhere((item) => 
-        item.productId == newItemRequest.productId.toString());
+    final existingItemIndex = items.indexWhere(
+      (item) => cartItemsMatchVariant(
+        item,
+        newItemRequest.productId.toString(),
+        newItemRequest.configId,
+      ),
+    );
 
     if (existingItemIndex != -1) {
-      // Update quantity
       final existingItem = items[existingItemIndex];
       final newQuantity = existingItem.quantity + newItemRequest.quantity;
-      
+
       final updatedItem = CartItem(
         id: existingItem.id,
         productId: existingItem.productId,
@@ -46,67 +63,45 @@ class LocalCartDataProvider {
         currentPrice: existingItem.currentPrice,
         priceDropped: existingItem.priceDropped,
         savingsAmount: existingItem.savingsAmount,
-        configId: existingItem.configId ?? newItemRequest.configId,
+        configId: existingItem.configId ?? normalizedConfigId,
       );
       await _dbHelper.updateItem(updatedItem);
     } else {
-      // Add new item
-      if (product != null) {
-        final newItem = CartItem(
-          id: 0, // Auto-increment will handle this
-          productId: product.id,
-          productName: product.name,
-          productImageUrl: product.imageUrl ?? '',
-          quantity: newItemRequest.quantity,
-          unitPrice: product.price,
-          subtotal: product.price * newItemRequest.quantity,
-          currency: product.currency,
-          provider: product.provider ?? '',
-          stockStatus: product.stockStatus ?? "In Stock",
-          isAvailable: product.isAvailable ?? true,
-          priceWhenAdded: product.price,
-          currentPrice: product.price,
-          priceDropped: false, // Default
-          savingsAmount: 0.0, // Default
-          configId: newItemRequest.configId,
+      if (product == null) {
+        throw Exception(
+          'Product details are required to add items to the local cart.',
         );
-        await _dbHelper.insertItem(newItem);
-      } else {
-         // Fallback if product not provided, though we expect it to be provided now.
-         // We create a minimal item to avoid crashing, but it will lack details.
-         final newItem = CartItem(
-          id: 0,
-          productId: newItemRequest.productId.toString(),
-          productName: "Unknown Product",
-          productImageUrl: "",
-          quantity: newItemRequest.quantity,
-          unitPrice: 0.0,
-          subtotal: 0.0,
-          currency: newItemRequest.currency,
-          provider: "",
-          stockStatus: "Unknown",
-          isAvailable: true,
-          priceWhenAdded: 0.0,
-          currentPrice: 0.0,
-          priceDropped: false,
-          savingsAmount: 0.0,
-          configId: newItemRequest.configId,
-        );
-        await _dbHelper.insertItem(newItem);
       }
+
+      final unitPrice = product.price;
+      final newItem = CartItem(
+        id: 0,
+        productId: product.id,
+        productName: product.name,
+        productImageUrl: product.imageUrl ?? '',
+        quantity: newItemRequest.quantity,
+        unitPrice: unitPrice,
+        subtotal: unitPrice * newItemRequest.quantity,
+        currency: product.currency.isNotEmpty
+            ? product.currency
+            : newItemRequest.currency,
+        provider: product.provider ?? '',
+        stockStatus: product.stockStatus ?? 'IN_STOCK',
+        isAvailable: product.isAvailable ?? true,
+        priceWhenAdded: unitPrice,
+        currentPrice: unitPrice,
+        priceDropped: false,
+        savingsAmount: 0.0,
+        configId: normalizedConfigId,
+      );
+      await _dbHelper.insertItem(newItem);
     }
 
-    return await getCart();
+    return getCart();
   }
 
   Future<Cart> updateCartItem(int itemId, UpdateCartItemRequest request) async {
-    // Determine if itemId refers to DB id or productId?
-    // In CartItem, `id` is the DB key.
-    // The request usually passes the ID from the Cart object.
-    
-    // We fetch the item by ID.
     final items = await _dbHelper.getItems();
-    // Assuming itemId corresponds to CartItem.id
     final index = items.indexWhere((item) => item.id == itemId);
 
     if (index != -1) {
@@ -130,32 +125,31 @@ class LocalCartDataProvider {
           currentPrice: existingItem.currentPrice,
           priceDropped: existingItem.priceDropped,
           savingsAmount: existingItem.savingsAmount,
-          configId: existingItem.configId ?? request.replaceConfigId,
+          configId: existingItem.configId ??
+              normalizeCartConfigId(request.replaceConfigId),
         );
         await _dbHelper.updateItem(updatedItem);
       }
     }
-    
-    return await getCart();
+
+    return getCart();
   }
 
   Future<Cart> deleteCartItem(int itemId) async {
     await _dbHelper.deleteItem(itemId);
-    return await getCart();
+    return getCart();
   }
 
   Future<ClearCartResponse> clearCart() async {
     await _dbHelper.clearCart();
-    return ClearCartResponse(status: 200, message: "Cart cleared locally");
+    return ClearCartResponse(status: 200, message: 'Cart cleared locally');
   }
 
   /// Saves a complete cart from the backend to local storage
   /// Replaces all existing local cart items with items from the provided cart
   Future<void> saveCart(Cart cart) async {
-    // Clear existing local cart
     await _dbHelper.clearCart();
-    
-    // Insert all items from the backend cart
+
     for (final item in cart.items) {
       await _dbHelper.insertItem(item);
     }
@@ -164,18 +158,18 @@ class LocalCartDataProvider {
   Cart _createCartFromItems(List<CartItem> items) {
     double subtotal = 0;
     int totalItems = 0;
-    
-    for (var item in items) {
+
+    for (final item in items) {
       subtotal += item.subtotal;
       totalItems += item.quantity;
     }
 
     return Cart(
-      cartId: 0, // Local cart ID
+      cartId: 0,
       totalItems: totalItems,
       subtotal: subtotal,
-      estimatedTotal: subtotal, 
-      currency: items.isNotEmpty ? items.first.currency : "ETB",
+      estimatedTotal: subtotal,
+      currency: items.isNotEmpty ? items.first.currency : 'ETB',
       lastActivityAt: DateTime.now(),
       items: items,
       priceDropItems: [],

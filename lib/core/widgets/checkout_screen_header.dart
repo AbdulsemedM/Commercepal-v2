@@ -8,10 +8,12 @@ class CheckoutScreenHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.onBack,
+    this.trailing,
   });
 
   final String title;
   final VoidCallback? onBack;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,10 @@ class CheckoutScreenHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (trailing != null) ...<Widget>[
+            const SizedBox(width: Spacing.sm),
+            trailing!,
+          ],
         ],
       ),
     );
