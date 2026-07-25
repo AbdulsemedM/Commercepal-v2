@@ -4,8 +4,15 @@ import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/auth/token_refresh_biometric_gate.dart';
 import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/core/utils/single_flight.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
+
+/// Thrown when the backend authoritatively rejected the stored credentials, as
+/// opposed to a refresh that failed for a transient reason.
+class SessionRejected implements Exception {
+  const SessionRejected();
+}
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
@@ -19,14 +26,18 @@ class AuthInterceptor extends Interceptor {
   final Storage _storage;
   RefreshTokenRepository? _refreshTokenRepository;
   final Dio? _dio;
-  
-  RefreshTokenRepository get refreshTokenRepository {
-    _refreshTokenRepository ??= RefreshTokenRepository();
-    return _refreshTokenRepository!;
-  }
-  bool _isRefreshing = false;
-  Future<void>? _refreshFuture;
-  final List<_PendingRequest> _pendingRequests = [];
+
+  /// Refresh slightly before the real expiry so a token cannot lapse while a
+  /// request is in flight, and to absorb small device clock skew.
+  static const Duration _expiryLeeway = Duration(seconds: 30);
+
+  /// Marks a request that has already been retried once after a refresh, so a
+  /// persistently rejecting endpoint cannot loop.
+  static const String _retriedFlag = 'authInterceptorRetried';
+
+  /// Every concurrent caller awaits the same refresh, so the rotating refresh
+  /// token is only ever spent once.
+  final SingleFlight _refresh = SingleFlight();
 
   /// Do not redirect to login for these paths when session expires (show inline error instead).
   static const List<String> _noRedirectPaths = <String>[
@@ -78,34 +89,21 @@ class AuthInterceptor extends Interceptor {
     options.headers['X-Session-Id'] = await _storage.getOrCreateDeviceId();
 
     var accessToken = await _storage.getAccessToken();
-    final tokenType = await _storage.getTokenType() ?? 'Bearer';
 
     // Proactively refresh expired access token when refresh token exists.
     if (_isTokenExpired(accessToken)) {
       try {
-        await _refreshTokenIfNeeded();
-        accessToken = await _storage.getAccessToken();
-      } on RefreshBiometricDenied {
-        await _storage.clearAuthSession();
-        if (await _canNotifyOnAuthFailure(options)) {
-          AuthService().notifySessionExpired();
-        }
-        accessToken = null;
-      } on DioException catch (e) {
-        // Expired/invalid refresh token: clear stale credentials and continue.
-        if (e.response?.statusCode == 401) {
-          await _storage.clearAuthSession();
-          if (await _canNotifyOnAuthFailure(options)) {
-            AuthService().notifySessionExpired();
-          }
-          accessToken = null;
-        } else {
-          rethrow;
-        }
+        await _refreshTokenIfNeeded(options);
+      } catch (_) {
+        // A genuine rejection already cleared the session and notified. Any
+        // other failure (offline, timeout, dismissed biometric prompt) leaves
+        // the stored credentials alone so the next request can try again.
       }
+      accessToken = await _storage.getAccessToken();
     }
 
     if (accessToken != null && accessToken.isNotEmpty) {
+      final tokenType = await _storage.getTokenType() ?? 'Bearer';
       options.headers['Authorization'] = '$tokenType $accessToken';
     }
 
@@ -114,152 +112,114 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Handle 401 Unauthorized errors
-    if (err.response?.statusCode == 401) {
-      final requestOptions = err.requestOptions;
+    if (err.response?.statusCode != 401) {
+      return super.onError(err, handler);
+    }
 
-      // Skip refresh for auth endpoints to avoid infinite loops
-      if (requestOptions.path.contains('/auth/login') ||
-          requestOptions.path.contains('/auth/logout') ||
-          requestOptions.path.contains('/auth/refresh')) {
-        return super.onError(err, handler);
-      }
+    final requestOptions = err.requestOptions;
 
-      // If already refreshing, queue this request
-      if (_isRefreshing) {
-        return _queueRequest(requestOptions, handler);
-      }
+    // Skip refresh for auth endpoints to avoid infinite loops
+    if (requestOptions.path.contains('/auth/login') ||
+        requestOptions.path.contains('/auth/logout') ||
+        requestOptions.path.contains('/auth/refresh')) {
+      return super.onError(err, handler);
+    }
 
-      _isRefreshing = true;
+    if (_dio == null || requestOptions.extra[_retriedFlag] == true) {
+      return super.onError(err, handler);
+    }
 
-      try {
-        final refreshToken = await _storage.getRefreshToken();
-        if (refreshToken == null || refreshToken.isEmpty) {
-          _isRefreshing = false;
-          _rejectPendingRequests(err);
-          await _storage.clearAuthSession();
-          if (await _canNotifyOnAuthFailure(requestOptions)) {
-            AuthService().notifySessionExpired();
-          }
-          return super.onError(err, handler);
-        }
+    try {
+      await _refreshTokenIfNeeded(requestOptions);
+    } catch (_) {
+      return super.onError(err, handler);
+    }
 
-        final bool bioOk =
-            await TokenRefreshBiometricGate.instance.ensureUnlockedForRefresh();
-        if (!bioOk) {
-          _isRefreshing = false;
-          _rejectPendingRequests(err);
-          await _storage.clearAuthSession();
-          if (await _canNotifyOnAuthFailure(requestOptions)) {
-            AuthService().notifySessionExpired();
-          }
-          return super.onError(err, handler);
-        }
+    final accessToken = await _storage.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
+      return super.onError(err, handler);
+    }
 
-        // Refresh the token
-        await _refreshTokenRepo.refreshToken(refreshToken);
+    final tokenType = await _storage.getTokenType() ?? 'Bearer';
+    requestOptions.headers['Authorization'] = '$tokenType $accessToken';
+    requestOptions.extra[_retriedFlag] = true;
 
-        // Retry the original request with new token
-        final opts = requestOptions;
-        final accessToken = await _storage.getAccessToken();
-        final tokenType = await _storage.getTokenType() ?? 'Bearer';
-
-        opts.headers['Authorization'] = '$tokenType $accessToken';
-
-        // Retry the original request with new token using Dio
-        if (_dio != null) {
-          final response = await _dio.request(
-            opts.path,
-            data: opts.data,
-            queryParameters: opts.queryParameters,
-            options: Options(method: opts.method, headers: opts.headers),
-          );
-
-          _isRefreshing = false;
-          _resolvePendingRequests();
-          handler.resolve(response);
-        } else {
-          _isRefreshing = false;
-          _rejectPendingRequests(err);
-          return super.onError(err, handler);
-        }
-      } catch (e) {
-        _isRefreshing = false;
-        _rejectPendingRequests(err);
-
-        // If refresh fails, clear tokens and notify UI softly.
-        await _storage.clearAuthSession();
-        if (await _canNotifyOnAuthFailure(requestOptions)) {
-          AuthService().notifySessionExpired();
-        }
-        return super.onError(err, handler);
-      }
-    } else {
+    try {
+      final response = await _dio.request<dynamic>(
+        requestOptions.path,
+        data: requestOptions.data,
+        queryParameters: requestOptions.queryParameters,
+        options: Options(
+          method: requestOptions.method,
+          headers: requestOptions.headers,
+          extra: requestOptions.extra,
+        ),
+      );
+      handler.resolve(response);
+    } on DioException catch (retryError) {
+      super.onError(retryError, handler);
+    } catch (_) {
       super.onError(err, handler);
     }
   }
 
-  void _queueRequest(RequestOptions options, ErrorInterceptorHandler handler) {
-    _pendingRequests.add(_PendingRequest(options, handler));
+  /// Collapses concurrent refresh attempts into one network call. Without this
+  /// every parallel request would spend the same rotating refresh token, and
+  /// the losers would be told their session expired.
+  Future<void> _refreshTokenIfNeeded(RequestOptions options) {
+    return _refresh.run(() => _performRefresh(options));
   }
 
-  void _resolvePendingRequests() async {
-    if (_dio == null) return;
-
-    final accessToken = await _storage.getAccessToken();
-    final tokenType = await _storage.getTokenType() ?? 'Bearer';
-
-    for (final pending in _pendingRequests) {
-      final opts = pending.options;
-      opts.headers['Authorization'] = '$tokenType $accessToken';
-
-      try {
-        final response = await _dio.request(
-          opts.path,
-          data: opts.data,
-          queryParameters: opts.queryParameters,
-          options: Options(method: opts.method, headers: opts.headers),
-        );
-        pending.handler.resolve(response);
-      } catch (e) {
-        pending.handler.reject(e as DioException);
-      }
-    }
-    _pendingRequests.clear();
-  }
-
-  void _rejectPendingRequests(DioException err) {
-    for (final pending in _pendingRequests) {
-      pending.handler.reject(err);
-    }
-    _pendingRequests.clear();
-  }
-
-  Future<void> _refreshTokenIfNeeded() async {
-    if (_isRefreshing && _refreshFuture != null) {
-      return _refreshFuture;
-    }
-
+  Future<void> _performRefresh(RequestOptions options) async {
     final refreshToken = await _storage.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
-      return;
+      // Only surface an expiry while an access token is still stored. Once the
+      // session has been cleared the user is simply signed out, and every
+      // later request would otherwise raise the same notice again.
+      final accessToken = await _storage.getAccessToken();
+      if (accessToken != null && accessToken.isNotEmpty) {
+        await _rejectSession(options, usedRefreshToken: null);
+      }
+      throw const SessionRejected();
     }
 
     final bool bioOk =
         await TokenRefreshBiometricGate.instance.ensureUnlockedForRefresh();
     if (!bioOk) {
+      // The credentials are still valid server-side, so they are kept and the
+      // next request prompts again rather than forcing a full re-login.
       throw const RefreshBiometricDenied();
     }
 
-    _isRefreshing = true;
-    final refreshFuture = _refreshTokenRepo.refreshToken(refreshToken).then((_) {});
-    _refreshFuture = refreshFuture;
-
     try {
-      await refreshFuture;
-    } finally {
-      _isRefreshing = false;
-      _refreshFuture = null;
+      await _refreshTokenRepo.refreshToken(refreshToken);
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        await _rejectSession(options, usedRefreshToken: refreshToken);
+        throw const SessionRejected();
+      }
+      rethrow;
+    }
+  }
+
+  /// Clears credentials and tells the UI the session is gone. Skipped when the
+  /// stored refresh token is no longer the rejected one, because that means a
+  /// concurrent refresh already stored a newer valid pair.
+  Future<void> _rejectSession(
+    RequestOptions options, {
+    required String? usedRefreshToken,
+  }) async {
+    if (usedRefreshToken != null) {
+      final current = await _storage.getRefreshToken();
+      if (current != null && current.isNotEmpty && current != usedRefreshToken) {
+        return;
+      }
+    }
+
+    await _storage.clearAuthSession();
+    if (await _canNotifyOnAuthFailure(options)) {
+      AuthService().notifySessionExpired();
     }
   }
 
@@ -280,7 +240,7 @@ class AuthInterceptor extends Interceptor {
     }
 
     final expiryTime = DateTime.fromMillisecondsSinceEpoch(expSeconds * 1000);
-    return DateTime.now().isAfter(expiryTime);
+    return DateTime.now().add(_expiryLeeway).isAfter(expiryTime);
   }
 
   Map<String, dynamic>? _parseJwtPayload(String token) {
@@ -298,11 +258,4 @@ class AuthInterceptor extends Interceptor {
       return null;
     }
   }
-}
-
-class _PendingRequest {
-  _PendingRequest(this.options, this.handler);
-
-  final RequestOptions options;
-  final ErrorInterceptorHandler handler;
 }

@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/change_password/data/models/change_password_request.dart';
 import 'package:commercepal/features/auth/change_password/data/repository/change_password_repository.dart';
@@ -49,8 +50,7 @@ class ChangePasswordBloc
         errorMessage =
             e.toString().contains('400') || e.toString().contains('Bad Request')
             ? 'Current password is incorrect or passwords do not match'
-            : e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
+            : isUnauthorizedError(e)
             ? 'Current password is incorrect'
             : errorMessage;
       }

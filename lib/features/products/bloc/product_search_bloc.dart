@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/session_error.dart';
 import '../data/models/product.dart';
 import '../data/models/product_search_request.dart';
 import '../data/repository/product_search_repository.dart';
@@ -27,10 +28,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
   bool _hasMore = true;
   bool _loadMoreInProgress = false;
 
-  static bool _isUnauthorized(Object e) {
-    final s = e.toString();
-    return s.contains('401') || s.contains('Unauthorized');
-  }
+  static bool _isUnauthorized(Object e) => isUnauthorizedError(e);
 
   static bool _isNoResultsHttp(Object e) {
     if (e is! DioException) return false;

@@ -6,6 +6,7 @@ import '../data/models/add_address_request.dart';
 import '../data/models/update_address_request.dart';
 import '../data/models/delete_address_response.dart';
 import '../data/repository/address_repository.dart';
+import '../../../core/auth/session_error.dart';
 import '../../../services/navigation_service.dart';
 
 part 'address_event.dart';
@@ -25,6 +26,14 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
 
   final AddressRepository _repository;
 
+  String _mapError(Object e, {required String fallback}) {
+    if (NavigationService.instance.handleSessionExpired(e) ||
+        isUnauthorizedError(e)) {
+      return 'Session expired. Please login again.';
+    }
+    return fallback;
+  }
+
   Future<void> _onAddressLoadRequested(
     AddressLoadRequested event,
     Emitter<AddressState> emit,
@@ -35,21 +44,9 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to load addresses. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(e, fallback: 'Failed to load addresses. Please try again.'),
+      ));
     }
   }
 
@@ -67,21 +64,9 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to add address. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(e, fallback: 'Failed to add address. Please try again.'),
+      ));
     }
   }
 
@@ -102,21 +87,9 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to update address. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(e, fallback: 'Failed to update address. Please try again.'),
+      ));
     }
   }
 
@@ -134,21 +107,12 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to set default address. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(
+          e,
+          fallback: 'Failed to set default address. Please try again.',
+        ),
+      ));
     }
   }
 
@@ -166,21 +130,9 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to delete address. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(e, fallback: 'Failed to delete address. Please try again.'),
+      ));
     }
   }
 
@@ -192,21 +144,12 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
       final addresses = await _repository.getAllAddresses();
       emit(AddressLoaded(addresses));
     } catch (e) {
-      String errorMessage = 'Failed to refresh addresses. Please try again.';
-
-      if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
-        }
-      }
-
-      emit(AddressError(errorMessage));
+      emit(AddressError(
+        _mapError(
+          e,
+          fallback: 'Failed to refresh addresses. Please try again.',
+        ),
+      ));
     }
   }
 }

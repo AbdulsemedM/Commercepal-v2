@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
 import 'package:commercepal/core/auth/remember_me_crypto.dart';
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/login/data/models/login_request.dart';
@@ -76,10 +77,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       var isInvalidCredentials = false;
 
       if (e is Exception) {
-        final bool unauthorized =
-            e.toString().contains('401') ||
-            e.toString().contains('Unauthorized');
-        if (unauthorized) {
+        if (isUnauthorizedError(e)) {
           isInvalidCredentials = true;
           errorMessage = event.usedPhoneLogin
               ? 'Invalid phone number or password'
@@ -136,8 +134,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         if (errorString.contains('cancelled') || 
             errorString.contains('canceled')) {
           errorMessage = 'Google Sign In was cancelled';
-        } else if (errorString.contains('401') ||
-            errorString.contains('Unauthorized')) {
+        } else if (isUnauthorizedError(e)) {
           errorMessage = 'Google authentication failed';
         } else if (errorString.contains('network') ||
             errorString.contains('connection')) {

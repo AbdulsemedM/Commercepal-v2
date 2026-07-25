@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/features/affiliate/data/models/affiliate_profile_data.dart';
 import 'package:commercepal/features/profile/data/models/profile_cache_payload.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
@@ -97,14 +98,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   String _mapError(Object e, {required String fallback}) {
     if (e is! Exception) return fallback;
 
-    if (NavigationService.instance.handleSessionExpired(e)) {
+    if (NavigationService.instance.handleSessionExpired(e) ||
+        isUnauthorizedError(e)) {
       return 'Session expired. Please login again.';
     }
 
     final String text = e.toString();
-    if (text.contains('401') || text.contains('Unauthorized')) {
-      return 'Session expired. Please login again.';
-    }
     if (text.contains('400') || text.contains('Bad Request')) {
       return 'Invalid information provided';
     }
