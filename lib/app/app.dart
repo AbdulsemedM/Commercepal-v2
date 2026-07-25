@@ -43,8 +43,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // On iOS, [inactive] fires for transient UI (notification shade, Control
+    // Center, Face ID sheet). Only clear the biometric grace window when the app
+    // is actually backgrounded.
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached) {
       TokenRefreshBiometricGate.instance.onAppBackgrounded();
     }

@@ -14,6 +14,8 @@ class AddToCartSection extends StatelessWidget {
     required this.onToggleFavorite,
     this.isInWishlist = false,
     this.isAddingToCart = false,
+    this.canAddToCart = true,
+    this.total,
   });
 
   final bool isInCart;
@@ -25,10 +27,12 @@ class AddToCartSection extends StatelessWidget {
   final bool isInWishlist;
   final bool isAddingToCart;
 
-  String _calculateTotal() {
-    // For testing, just return a simple number
-    return '\$2,900';
-  }
+  /// False when the catalog record is unsellable or has no usable price.
+  final bool canAddToCart;
+
+  /// Preformatted line total. Falls back to [unitPrice] when the caller cannot
+  /// resolve a numeric price.
+  final String? total;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +103,7 @@ class AddToCartSection extends StatelessWidget {
             // Total price
             Expanded(
               child: Text(
-                '${LocalizationService.t(context, 'productDetail.total')} ${_calculateTotal()}',
+                '${LocalizationService.t(context, 'productDetail.total')} ${total ?? unitPrice}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -129,10 +133,12 @@ class AddToCartSection extends StatelessWidget {
             // Add to Cart button
             Expanded(
               child: FilledButton(
-                onPressed: isAddingToCart ? null : onAddToCart,
+                onPressed: (isAddingToCart || !canAddToCart) ? null : onAddToCart,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.secondary,
                   foregroundColor: scheme.onSecondary,
+                  disabledBackgroundColor: scheme.surfaceContainerHighest,
+                  disabledForegroundColor: scheme.onSurfaceVariant,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -148,11 +154,21 @@ class AddToCartSection extends StatelessWidget {
                         ),
                       )
                     : Text(
-                        LocalizationService.t(context, 'productDetail.addToCart'),
+                        canAddToCart
+                            ? LocalizationService.t(
+                                context,
+                                'productDetail.addToCart',
+                              )
+                            : LocalizationService.t(
+                                context,
+                                'productDetail.unavailable',
+                              ),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: scheme.onSecondary,
+                          color: canAddToCart
+                              ? scheme.onSecondary
+                              : scheme.onSurfaceVariant,
                         ),
                       ),
               ),

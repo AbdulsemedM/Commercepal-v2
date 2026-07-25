@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/features/orders/data/models/orders_response.dart';
 import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
 import 'package:commercepal/services/navigation_service.dart';
@@ -51,15 +52,13 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       String errorMessage = 'Failed to load orders. Please try again.';
 
       if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
+        if (NavigationService.instance.handleSessionExpired(e) ||
+            isUnauthorizedError(e)) {
           errorMessage = 'Session expired. Please login again.';
         } else {
           errorMessage = e.toString().contains('Customer ID is required')
               ? 'Please ensure you are logged in.'
-              : e.toString().contains('401') ||
-                      e.toString().contains('Unauthorized')
-                  ? 'Session expired. Please login again.'
-                  : errorMessage;
+              : errorMessage;
         }
       }
 

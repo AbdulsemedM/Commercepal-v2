@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+
 import '../app/router/app_router.dart';
+import '../core/auth/session_error.dart';
 
 /// Global navigation service for accessing router from anywhere
 class NavigationService {
@@ -21,19 +23,18 @@ class NavigationService {
     }
   }
 
-  /// Check if error is session expired and redirect if needed
-  /// Returns true if session expired, false otherwise
+  /// Returns true when [error] is an auth rejection and the user was redirected.
   bool handleSessionExpired(dynamic error) {
-    final errorString = error.toString();
-    final isSessionExpired = errorString.contains('401') ||
-        errorString.contains('Unauthorized') ||
-        errorString.contains('Session expired');
-
-    if (isSessionExpired && !isOnLoginPage) {
-      redirectToLogin();
-      return true;
+    if (!isUnauthorizedError(error)) {
+      return false;
     }
-    return false;
+
+    if (isOnLoginPage) {
+      return false;
+    }
+
+    redirectToLogin();
+    return true;
   }
 
   /// Navigate to dashboard with a specific tab using context

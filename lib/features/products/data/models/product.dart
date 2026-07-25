@@ -45,18 +45,32 @@ class Product {
     this.discountPercentage,
   });
 
-  factory Product.fromProductDetails(ProductDetails details, {int? variantIndex}) {
+  /// [fallbackId], [fallbackName] and [fallbackImageUrl] cover degraded catalog
+  /// records, where the API returns the product with a null title/image.
+  factory Product.fromProductDetails(
+    ProductDetails details, {
+    int? variantIndex,
+    String? fallbackId,
+    String? fallbackName,
+    String? fallbackImageUrl,
+  }) {
     final pricing = variantIndex != null && details.variants.length > variantIndex
         ? details.variants[variantIndex].pricing ?? details.pricing
         : details.pricing;
 
+    final String imageUrl = details.mainImage.main.isNotEmpty
+        ? details.mainImage.main
+        : (details.mainImage.thumbnail.isNotEmpty
+            ? details.mainImage.thumbnail
+            : (fallbackImageUrl ?? ''));
+
     return Product(
-      id: details.id,
-      name: details.title,
+      id: details.id.isNotEmpty ? details.id : (fallbackId ?? ''),
+      name: details.title.isNotEmpty ? details.title : (fallbackName ?? ''),
       description: details.description.isNotEmpty ? details.description.join('\n') : null,
       price: pricing.currentPrice,
       originalPrice: pricing.originalPrice,
-      imageUrl: details.mainImage.main,
+      imageUrl: imageUrl,
       provider: details.provider,
       brandName: details.brandName,
       categoryId: details.categoryId,

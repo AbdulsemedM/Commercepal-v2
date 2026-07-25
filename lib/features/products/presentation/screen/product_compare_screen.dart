@@ -25,6 +25,7 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
   final List<ProductDetails?> _details = <ProductDetails?>[];
   bool _loading = true;
   String? _error;
+  String _selectedCurrency = '';
 
   @override
   void initState() {
@@ -38,12 +39,14 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
       _error = null;
       _details.clear();
     });
+    final Storage storage = Storage();
+    _selectedCurrency = await storage.getSelectedCurrency();
     var ids = widget.productIds
         .map((String e) => e.trim())
         .where((String e) => e.isNotEmpty)
         .toList();
     if (ids.isEmpty) {
-      ids = await Storage().getProductCompareIds();
+      ids = await storage.getProductCompareIds();
     }
     if (ids.isEmpty) {
       if (mounted) {
@@ -77,7 +80,9 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
       case _CompareRow.price:
         return MoneyFormatter.format(
           d.pricing.currentPrice,
-          d.pricing.currency,
+          d.pricing.currency.isNotEmpty
+              ? d.pricing.currency
+              : _selectedCurrency,
         );
       case _CompareRow.stock:
         return '${d.stockLevel}';

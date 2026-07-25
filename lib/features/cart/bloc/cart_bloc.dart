@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/features/cart/data/models/add_to_cart_request.dart';
 import 'package:commercepal/features/cart/data/models/cart.dart';
@@ -68,14 +69,9 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to load cart. Please try again.';
 
       if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
+        if (NavigationService.instance.handleSessionExpired(e) ||
+            isUnauthorizedError(e)) {
           errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
         }
       }
 
@@ -90,8 +86,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(CartLoading());
 
     try {
-      // Use product.id when available so we send the same canonical id the API uses (sync path uses this too).
-      final productId = event.product?.id ?? event.productId;
+      // Use product.id when available so we send the same canonical id the API
+      // uses (sync path uses this too). A degraded catalog record can carry an
+      // empty id, so fall back to the id the caller navigated with.
+      final String? catalogId = event.product?.id;
+      final productId = (catalogId != null && catalogId.isNotEmpty)
+          ? catalogId
+          : event.productId;
       final request = AddToCartRequest(
         items: [
           AddToCartItem(
@@ -110,10 +111,8 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to add item to cart. Please try again.';
 
       if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
-          errorMessage = 'Session expired. Please login again.';
-        } else if (e.toString().contains('401') ||
-            e.toString().contains('Unauthorized')) {
+        if (NavigationService.instance.handleSessionExpired(e) ||
+            isUnauthorizedError(e)) {
           errorMessage = 'Session expired. Please login again.';
         } else if (e is DioException && e.response?.statusCode == 400) {
           errorMessage = _extractApiErrorMessage(e) ?? 'Invalid item information';
@@ -217,14 +216,9 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       String errorMessage = 'Failed to clear cart. Please try again.';
 
       if (e is Exception) {
-        if (NavigationService.instance.handleSessionExpired(e)) {
+        if (NavigationService.instance.handleSessionExpired(e) ||
+            isUnauthorizedError(e)) {
           errorMessage = 'Session expired. Please login again.';
-        } else {
-          errorMessage =
-              e.toString().contains('401') ||
-                  e.toString().contains('Unauthorized')
-              ? 'Session expired. Please login again.'
-              : errorMessage;
         }
       }
 

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -662,8 +663,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
           }
         }
         if (errorMessage == LocalizationService.t(context, 'checkout.failedToPlaceOrder')) {
-          if (e.toString().contains('401') ||
-              e.toString().contains('Unauthorized')) {
+          if (isUnauthorizedError(e)) {
             errorMessage = LocalizationService.t(context, 'checkout.sessionExpired');
           } else if (e.toString().contains('400') ||
               e.toString().contains('Bad Request')) {

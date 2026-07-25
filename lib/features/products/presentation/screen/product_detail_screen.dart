@@ -128,12 +128,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final String imageUrl = product.mainImage.main.isNotEmpty
         ? product.mainImage.main
         : product.mainImage.thumbnail;
+    final String currency = product.pricing.currency.isNotEmpty
+        ? product.pricing.currency
+        : _getCurrency(context);
     await Storage().recordLocalProductView(<String, dynamic>{
       'productId': product.id,
       'title': product.title,
       'imageUrl': imageUrl,
       'price': product.pricing.currentPrice,
-      'currency': product.pricing.currency,
+      'currency': currency,
       'rating': product.meta.rating,
       'reviewCount': product.meta.reviewCount,
     });
@@ -142,7 +145,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       await AppAnalytics.logViewItem(
         itemId: product.id,
         itemName: product.title,
-        currency: product.pricing.currency,
+        currency: currency,
         value: product.pricing.currentPrice,
       );
     }
@@ -195,10 +198,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
+  /// A degraded catalog record (null pricing) or an explicitly unsellable item
+  /// cannot be checked out, so it must never reach the cart.
+  static bool _canPurchase(ProductDetails productDetails) {
+    if (!productDetails.isSellAllowed) return false;
+    return productDetails.pricing.currentPrice > 0 ||
+        productDetails.variants
+            .any((variant) => (variant.pricing?.currentPrice ?? 0) > 0);
+  }
+
   void _handleAddToCart(
     BuildContext context,
-    ProductDetails productDetails,
-  ) {
+    ProductDetails productDetails, {
+    required String fallbackName,
+    required String fallbackImageUrl,
+  }) {
     if (_isAddingToCart) return;
 
     if (widget.productId == null || widget.productId!.isEmpty) {
@@ -206,6 +220,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         const SnackBar(
           content: Text('Product ID is required'),
           backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_canPurchase(productDetails)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This item is currently unavailable and cannot be added to your cart.',
+          ),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
@@ -233,7 +259,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     if (!hasVariants) {
       // No variants: add product with default config (no variant selection needed)
-      final cartProduct = Product.fromProductDetails(productDetails);
+      final cartProduct = Product.fromProductDetails(
+        productDetails,
+        fallbackId: widget.productId,
+        fallbackName: fallbackName,
+        fallbackImageUrl: fallbackImageUrl,
+      );
       context.read<CartBloc>().add(
         CartAddItemRequested(
           productId: widget.productId!,
@@ -248,6 +279,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     // Has variants: add all selected variants to cart
+    bool addedAnyVariant = false;
     for (final entry in _selectedVariants.entries) {
       final variantIndex = entry.key;
       final quantity = entry.value;
@@ -257,8 +289,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         final cartProduct = Product.fromProductDetails(
           productDetails,
           variantIndex: variantIndex,
+          fallbackId: widget.productId,
+          fallbackName: fallbackName,
+          fallbackImageUrl: fallbackImageUrl,
         );
 
+        // A zero-price variant would be dropped again on the next cart read.
+        if (cartProduct.price <= 0) continue;
+
+        addedAnyVariant = true;
         context.read<CartBloc>().add(
           CartAddItemRequested(
             productId: widget.productId!,
@@ -270,6 +309,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         );
       }
+    }
+
+    if (!addedAnyVariant) {
+      // Nothing was dispatched, so no CartItemAdded will clear the spinner.
+      setState(() {
+        _isAddingToCart = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The selected options are currently unavailable. Please choose another option.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
 
     setState(() {
@@ -507,6 +562,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         ),
                                       ]
                                     : []));
+                    final String fallbackImageUrl = galleryImages.isEmpty
+                        ? ''
+                        : (galleryImages.first.main.isNotEmpty
+                            ? galleryImages.first.main
+                            : galleryImages.first.thumbnail);
 
                     return Column(
                       children: [
@@ -728,17 +788,49 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             }
                             
                             final hasSelectedVariants = _selectedVariants.isNotEmpty;
+                            final int displayQuantity =
+                                totalQuantity > 0 ? totalQuantity : _quantity;
+                            final String resolvedCurrency =
+                                selectedVariant?.pricing?.currency.isNotEmpty ==
+                                        true
+                                    ? selectedVariant!.pricing!.currency
+                                    : (product.pricing.currency.isNotEmpty
+                                        ? product.pricing.currency
+                                        : _getCurrency(context));
+                            final double resolvedUnitPrice =
+                                selectedVariant?.pricing?.currentPrice ??
+                                    product.pricing.currentPrice;
 
                             return AddToCartSection(
                               isInCart: itemInCart && !hasSelectedVariants,
                               isInWishlist: _isInWishlist,
                               isAddingToCart: _isAddingToCart,
-                              quantity: totalQuantity > 0 ? totalQuantity : _quantity,
+                              canAddToCart: _canPurchase(product),
+                              quantity: displayQuantity,
                               unitPrice: hasSelectedVariants
-                                  ? '${product.pricing.currency} ${MoneyFormatter.formatAmount(totalPrice)}'
+                                  ? MoneyFormatter.format(
+                                      totalPrice,
+                                      resolvedCurrency,
+                                    )
                                   : currentPrice,
+                              total: hasSelectedVariants
+                                  ? MoneyFormatter.format(
+                                      totalPrice,
+                                      resolvedCurrency,
+                                    )
+                                  : (resolvedUnitPrice > 0
+                                      ? MoneyFormatter.format(
+                                          resolvedUnitPrice * displayQuantity,
+                                          resolvedCurrency,
+                                        )
+                                      : null),
                               onAddToCart: () {
-                                _handleAddToCart(context, product);
+                                _handleAddToCart(
+                                  context,
+                                  product,
+                                  fallbackName: displayTitle,
+                                  fallbackImageUrl: fallbackImageUrl,
+                                );
                               },
                               onQuantityChanged: (int newQuantity) {
                                 // This is handled by the multi-variant selector
