@@ -210,6 +210,10 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartSummary(BuildContext context, Cart cart) {
+    final bool canCheckout =
+        !cart.items.any((CartItem item) => !item.isAvailable) &&
+            cart.estimatedTotal > 0;
+
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
@@ -317,20 +321,39 @@ class _CartPageState extends State<CartPage> {
                 flex: 2,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: AppDecorations.primaryCtaGradient,
+                    gradient: canCheckout
+                        ? AppDecorations.primaryCtaGradient
+                        : null,
+                    color: canCheckout ? null : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: AppColors.pink.withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: canCheckout
+                        ? <BoxShadow>[
+                            BoxShadow(
+                              color: AppColors.pink.withOpacity(0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
+                        if (!canCheckout) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                LocalizationService.t(
+                                  context,
+                                  'cart.checkoutBlockedUnavailable',
+                                ),
+                              ),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                          return;
+                        }
                         context.push(
                           AppRoutes.checkoutSummary,
                           extra: cart,
@@ -344,10 +367,12 @@ class _CartPageState extends State<CartPage> {
                         child: Text(
                           LocalizationService.t(context, 'cart.checkout'),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: canCheckout
+                                ? Colors.white
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ),

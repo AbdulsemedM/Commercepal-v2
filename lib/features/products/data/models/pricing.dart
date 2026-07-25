@@ -29,7 +29,9 @@ class Pricing {
 
   factory Pricing.fromJson(Map<String, dynamic> json) {
     return Pricing(
-      currency: json['currency'] as String? ?? 'USD',
+      // Left empty on purpose: a missing pricing block must not mislabel prices
+      // as USD. Consumers fall back to the shopper's selected currency.
+      currency: json['currency'] as String? ?? '',
       currentPrice: (json['currentPrice'] as num?)?.toDouble() ?? 0.0,
       originalPrice: (json['originalPrice'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,

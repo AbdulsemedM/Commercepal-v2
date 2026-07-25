@@ -18,6 +18,12 @@ bool cartItemsMatchVariant(CartItem item, String productId, String? configId) {
       normalizeCartConfigId(item.configId) == normalizeCartConfigId(configId);
 }
 
+/// Older builds could persist rows from a degraded catalog record (empty id,
+/// zero price). They can never be checked out, so they are dropped on read.
+bool isPurchasableCartItem(CartItem item) {
+  return item.productId.trim().isNotEmpty && item.unitPrice > 0;
+}
+
 class LocalCartDataProvider {
   LocalCartDataProvider({CartDatabaseHelper? dbHelper})
       : _dbHelper = dbHelper ?? CartDatabaseHelper();
@@ -26,7 +32,22 @@ class LocalCartDataProvider {
 
   Future<Cart> getCart() async {
     final items = await _dbHelper.getItems();
-    return _createCartFromItems(items);
+    final purchasable = <CartItem>[];
+    final invalidIds = <int>[];
+
+    for (final item in items) {
+      if (isPurchasableCartItem(item)) {
+        purchasable.add(item);
+      } else {
+        invalidIds.add(item.id);
+      }
+    }
+
+    for (final id in invalidIds) {
+      await _dbHelper.deleteItem(id);
+    }
+
+    return _createCartFromItems(purchasable);
   }
 
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
@@ -74,9 +95,14 @@ class LocalCartDataProvider {
       }
 
       final unitPrice = product.price;
+      // Store the same id the lookup above matched on, otherwise a degraded
+      // record with an empty product id would never dedupe against itself.
+      final resolvedProductId = newItemRequest.productId.isNotEmpty
+          ? newItemRequest.productId
+          : product.id;
       final newItem = CartItem(
         id: 0,
-        productId: product.id,
+        productId: resolvedProductId,
         productName: product.name,
         productImageUrl: product.imageUrl ?? '',
         quantity: newItemRequest.quantity,

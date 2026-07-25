@@ -90,8 +90,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(CartLoading());
 
     try {
-      // Use product.id when available so we send the same canonical id the API uses (sync path uses this too).
-      final productId = event.product?.id ?? event.productId;
+      // Use product.id when available so we send the same canonical id the API
+      // uses (sync path uses this too). A degraded catalog record can carry an
+      // empty id, so fall back to the id the caller navigated with.
+      final String? catalogId = event.product?.id;
+      final productId = (catalogId != null && catalogId.isNotEmpty)
+          ? catalogId
+          : event.productId;
       final request = AddToCartRequest(
         items: [
           AddToCartItem(

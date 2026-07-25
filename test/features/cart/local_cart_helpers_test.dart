@@ -17,28 +17,44 @@ void main() {
     });
   });
 
-  group('cartItemsMatchVariant', () {
-    CartItem item({String? configId}) {
-      return CartItem(
-        id: 1,
-        productId: 'prod-1',
-        productName: 'Test',
-        productImageUrl: '',
-        quantity: 1,
-        unitPrice: 100,
-        subtotal: 100,
-        currency: 'ETB',
-        provider: 'aliexpress',
-        stockStatus: 'IN_STOCK',
-        isAvailable: true,
-        priceWhenAdded: 100,
-        currentPrice: 100,
-        priceDropped: false,
-        savingsAmount: 0,
-        configId: configId,
-      );
-    }
+  CartItem item({
+    String? configId,
+    String productId = 'prod-1',
+    double unitPrice = 100,
+  }) {
+    return CartItem(
+      id: 1,
+      productId: productId,
+      productName: 'Test',
+      productImageUrl: '',
+      quantity: 1,
+      unitPrice: unitPrice,
+      subtotal: unitPrice,
+      currency: 'ETB',
+      provider: 'aliexpress',
+      stockStatus: 'IN_STOCK',
+      isAvailable: true,
+      priceWhenAdded: unitPrice,
+      currentPrice: unitPrice,
+      priceDropped: false,
+      savingsAmount: 0,
+      configId: configId,
+    );
+  }
 
+  group('isPurchasableCartItem', () {
+    test('keeps rows with an id and a price', () {
+      expect(isPurchasableCartItem(item()), isTrue);
+    });
+
+    test('drops rows saved from a degraded catalog record', () {
+      expect(isPurchasableCartItem(item(productId: '')), isFalse);
+      expect(isPurchasableCartItem(item(productId: '   ')), isFalse);
+      expect(isPurchasableCartItem(item(unitPrice: 0)), isFalse);
+    });
+  });
+
+  group('cartItemsMatchVariant', () {
     test('matches same product and base config', () {
       expect(
         cartItemsMatchVariant(item(configId: null), 'prod-1', ''),
