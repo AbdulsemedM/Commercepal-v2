@@ -17,6 +17,18 @@ class PlatformUtils {
     }
   }
 
+  /// Channel for Google OAuth2 login POST.
+  ///
+  /// The backend currently returns 500 for [MOBILE_APP_ANDROID] on
+  /// `/api/v1/auth/oauth2/login` while `WEB` succeeds. Android uses `WEB`
+  /// until the backend mobile-channel OAuth bug is fixed.
+  static String getGoogleSignInChannel() {
+    if (kIsWeb || Platform.isAndroid) {
+      return 'WEB';
+    }
+    return getChannel();
+  }
+
   /// Check if running on Android
   static bool get isAndroid => !kIsWeb && Platform.isAndroid;
 

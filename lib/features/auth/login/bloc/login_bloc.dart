@@ -1,4 +1,6 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 
 import 'package:commercepal/core/auth/remember_me_crypto.dart';
@@ -106,7 +108,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final deviceId = await _storage.getOrCreateDeviceId();
       
       final result = await _repository.signInWithGoogle(
-        channel: event.channel ?? PlatformUtils.getChannel(),
+        channel: event.channel ?? PlatformUtils.getGoogleSignInChannel(),
         deviceId: deviceId,
       );
 
@@ -126,24 +128,63 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Google Sign In failed. Please try again.';
+      emit(LoginFailure(_googleSignInErrorMessage(e)));
+    }
+  }
 
-      if (e is Exception) {
-        final errorString = e.toString();
-        
-        if (errorString.contains('cancelled') || 
-            errorString.contains('canceled')) {
-          errorMessage = 'Google Sign In was cancelled';
-        } else if (isUnauthorizedError(e)) {
-          errorMessage = 'Google authentication failed';
-        } else if (errorString.contains('network') ||
-            errorString.contains('connection')) {
-          errorMessage = 'Network error. Please check your connection.';
-        }
+  String _googleSignInErrorMessage(Object error) {
+    if (error is PlatformException) {
+      if (error.code == 'sign_in_failed' &&
+          (error.message?.contains('ApiException: 10') ?? false)) {
+        return 'Google Sign-In is not configured for this build. '
+            'Please contact support.';
+      }
+    }
+
+    if (error is DioException) {
+      final statusCode = error.response?.statusCode;
+      final serverMessage = _extractServerMessage(error.response?.data);
+      if (statusCode != null && statusCode >= 500) {
+        return serverMessage ??
+            'Google Sign In is temporarily unavailable. Please try again.';
+      }
+      if (serverMessage != null && serverMessage.isNotEmpty) {
+        return serverMessage;
+      }
+    }
+
+    if (error is Exception) {
+      final errorString = error.toString();
+
+      if (errorString.contains('cancelled') ||
+          errorString.contains('canceled')) {
+        return 'Google Sign In was cancelled';
+      }
+      if (isUnauthorizedError(error)) {
+        return 'Google authentication failed';
+      }
+      if (errorString.contains('network') ||
+          errorString.contains('connection')) {
+        return 'Network error. Please check your connection.';
       }
 
-      emit(LoginFailure(errorMessage));
+      const prefix = 'Exception: ';
+      if (errorString.startsWith(prefix)) {
+        return errorString.substring(prefix.length);
+      }
     }
+
+    return 'Google Sign In failed. Please try again.';
+  }
+
+  String? _extractServerMessage(Object? data) {
+    if (data is Map<String, dynamic>) {
+      final message = data['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    }
+    return null;
   }
 
   void _onLoginReset(LoginReset event, Emitter<LoginState> emit) {

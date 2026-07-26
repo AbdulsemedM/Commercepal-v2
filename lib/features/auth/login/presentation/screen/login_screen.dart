@@ -732,7 +732,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () {
                                     context.read<LoginBloc>().add(
                                       GoogleSignInRequested(
-                                        channel: PlatformUtils.getChannel(),
+                                        channel:
+                                            PlatformUtils.getGoogleSignInChannel(),
                                       ),
                                     );
                                   },

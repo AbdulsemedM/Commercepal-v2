@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:commercepal/core/logging/app_logger.dart';
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/api_service.dart';
 import '../models/login_response.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class GoogleSignInDataProvider {
   GoogleSignInDataProvider({
@@ -52,18 +51,31 @@ class GoogleSignInDataProvider {
         }
       }
 
+      final resolvedChannel =
+          channel ?? PlatformUtils.getGoogleSignInChannel();
+      final payload = {
+        'provider': 'GOOGLE',
+        'providerUserId': providerUserId,
+        'email': email,
+        if (firstName.isNotEmpty) 'firstName': firstName,
+        if (lastName.isNotEmpty) 'lastName': lastName,
+        if (deviceId != null) 'deviceId': deviceId,
+        'channel': resolvedChannel,
+      };
+
+      AppLogger.d(
+        'Google OAuth2 login request',
+        data: {
+          'channel': resolvedChannel,
+          'email': email,
+          'providerUserId': providerUserId,
+        },
+      );
+
       // Send user data to backend OAuth2 endpoint
       final response = await _apiService.post<Map<String, dynamic>>(
         _oauth2Endpoint,
-        data: {
-          'provider': 'GOOGLE',
-          'providerUserId': providerUserId,
-          'email': email,
-          if (firstName.isNotEmpty) 'firstName': firstName,
-          if (lastName.isNotEmpty) 'lastName': lastName,
-          if (deviceId != null) 'deviceId': deviceId,
-          'channel': channel ?? _getDefaultChannel(),
-        },
+        data: payload,
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json',
@@ -95,13 +107,25 @@ class GoogleSignInDataProvider {
       return LoginResponse.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Google Sign In failed', error: e, stack: e.stackTrace);
-      
-      if (e.response?.statusCode == 401) {
+
+      final statusCode = e.response?.statusCode;
+      final serverMessage = _extractServerMessage(e.response?.data);
+
+      if (statusCode == 401) {
         throw Exception('Google authentication failed. Please try again.');
-      } else if (e.response?.statusCode == 404) {
-        throw Exception('Google Sign In is not available. Please contact support.');
+      } else if (statusCode == 404) {
+        throw Exception(
+          'Google Sign In is not available. Please contact support.',
+        );
+      } else if (statusCode != null && statusCode >= 500) {
+        throw Exception(
+          serverMessage ??
+              'Google Sign In is temporarily unavailable. Please try again.',
+        );
+      } else if (serverMessage != null && serverMessage.isNotEmpty) {
+        throw Exception(serverMessage);
       }
-      
+
       rethrow;
     } catch (e, stack) {
       AppLogger.e(
@@ -113,17 +137,14 @@ class GoogleSignInDataProvider {
     }
   }
 
-  /// Get default channel based on platform
-  String _getDefaultChannel() {
-    if (kIsWeb) {
-      return 'WEB';
-    } else if (Platform.isAndroid) {
-      return 'ANDROID';
-    } else if (Platform.isIOS) {
-      return 'IOS';
-    } else {
-      return 'WEB';
+  String? _extractServerMessage(Object? data) {
+    if (data is Map<String, dynamic>) {
+      final message = data['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
     }
+    return null;
   }
 
   /// Sign out from Google
