@@ -114,54 +114,58 @@ class _CartPageState extends State<CartPage> {
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: BlocBuilder<CartBloc, CartState>(
-          builder: (BuildContext context, CartState state) {
-            if (state is CartLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            if (state is CartError) {
-              return Center(
-                child: AppEmptyState(
-                  icon: Icons.error_outline,
-                  title: LocalizationService.t(context, 'cart.errorTitle'),
-                  subtitle: state.message,
-                  primaryLabel: LocalizationService.t(context, 'cart.retry'),
-                  onPrimary: () {
-                    context.read<CartBloc>().add(CartLoadRequested());
-                  },
-                  secondaryLabel:
-                      LocalizationService.t(context, 'cart.clearCart'),
-                  onSecondary: () {
-                    _showClearCartDialog(context);
-                  },
-                ),
-              );
-            }
-
-            if (state is CartLoaded ||
-                state is CartItemAdded ||
-                state is CartItemUpdated ||
-                state is CartItemDeleted) {
-              final Cart cart = state is CartLoaded
-                  ? state.cart
-                  : state is CartItemAdded
-                      ? state.cart
-                      : state is CartItemUpdated
-                          ? state.cart
-                          : (state as CartItemDeleted).cart;
-
-              if (cart.items.isEmpty) {
-                return _buildEmptyCart(context);
+        body: SafeArea(
+          // Bottom inset is handled by the dashboard bottom nav.
+          bottom: false,
+          child: BlocBuilder<CartBloc, CartState>(
+            builder: (BuildContext context, CartState state) {
+              if (state is CartLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
               }
 
-              return _buildCartContent(context, cart);
-            }
+              if (state is CartError) {
+                return Center(
+                  child: AppEmptyState(
+                    icon: Icons.error_outline,
+                    title: LocalizationService.t(context, 'cart.errorTitle'),
+                    subtitle: state.message,
+                    primaryLabel: LocalizationService.t(context, 'cart.retry'),
+                    onPrimary: () {
+                      context.read<CartBloc>().add(CartLoadRequested());
+                    },
+                    secondaryLabel:
+                        LocalizationService.t(context, 'cart.clearCart'),
+                    onSecondary: () {
+                      _showClearCartDialog(context);
+                    },
+                  ),
+                );
+              }
 
-            return _buildEmptyCart(context);
-          },
+              if (state is CartLoaded ||
+                  state is CartItemAdded ||
+                  state is CartItemUpdated ||
+                  state is CartItemDeleted) {
+                final Cart cart = state is CartLoaded
+                    ? state.cart
+                    : state is CartItemAdded
+                        ? state.cart
+                        : state is CartItemUpdated
+                            ? state.cart
+                            : (state as CartItemDeleted).cart;
+
+                if (cart.items.isEmpty) {
+                  return _buildEmptyCart(context);
+                }
+
+                return _buildCartContent(context, cart);
+              }
+
+              return _buildEmptyCart(context);
+            },
+          ),
         ),
       ),
     );
