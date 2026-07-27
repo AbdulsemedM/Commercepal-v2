@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- No ads / AdMob — strip Play Services AD_ID merged from Firebase Analytics. -->
     <uses-permission
         android:name="com.google.android.gms.permission.AD_ID"
@@ -15,6 +16,10 @@
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />
+        <!-- Default FCM notification channel (also created at runtime). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="commercepal_high_importance" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

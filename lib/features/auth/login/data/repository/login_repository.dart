@@ -1,4 +1,5 @@
 import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/services/notification_service.dart';
 import '../data_provider/login_data_provider.dart';
 import '../data_provider/google_sign_in_data_provider.dart';
 import '../models/login_request.dart';
@@ -29,6 +30,8 @@ class LoginRepository {
       userEmail: request.loginIdentifier,
     );
 
+    await NotificationService().registerTokenWithBackend();
+
     return response;
   }
 
@@ -49,6 +52,8 @@ class LoginRepository {
       expiresIn: response.expiresIn,
       userEmail: googleUser?.email,
     );
+
+    await NotificationService().registerTokenWithBackend();
 
     // Return response with user info
     return {

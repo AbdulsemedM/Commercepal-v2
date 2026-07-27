@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/storage/storage.dart';
 import '../features/auth/logout/data/repository/logout_repository.dart';
+import 'notification_service.dart';
 
 class AuthService extends ChangeNotifier {
   AuthService._({Storage? storage, LogoutRepository? logoutRepository})
@@ -84,6 +85,9 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Unregister FCM while Bearer token is still available.
+    await NotificationService().unregisterTokenFromBackend();
+
     try {
       // Call logout API endpoint
       await _logoutRepository.logout();

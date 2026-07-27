@@ -9,6 +9,7 @@ import 'package:commercepal/core/update/app_update_check_result.dart';
 import 'package:commercepal/core/update/app_update_check_service.dart';
 import 'package:commercepal/core/update/app_update_modal.dart';
 import 'package:commercepal/features/profile/data/repository/profile_repository.dart';
+import 'package:commercepal/services/notification_service.dart';
 
 /// Splash matching the Commercepal maroon/gold intro mockup.
 class SplashScreen extends StatefulWidget {
@@ -142,7 +143,10 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       final bool hasTokens = await _storage.hasTokens();
       if (!hasTokens) return;
-      await ProfileRepository().refreshProfileCache();
+      await Future.wait(<Future<void>>[
+        ProfileRepository().refreshProfileCache(),
+        NotificationService().registerTokenWithBackend(),
+      ]);
     } catch (_) {
       // Best-effort: keep any existing cache and continue to the app.
     }

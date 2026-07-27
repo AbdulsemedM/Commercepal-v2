@@ -7,6 +7,7 @@ import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/single_flight.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
 import 'package:commercepal/services/auth_service.dart';
+import 'package:commercepal/services/notification_service.dart';
 
 /// Thrown when the backend authoritatively rejected the stored credentials, as
 /// opposed to a refresh that failed for a transient reason.
@@ -26,6 +27,9 @@ class AuthInterceptor extends Interceptor {
   final Storage _storage;
   RefreshTokenRepository? _refreshTokenRepository;
   final Dio? _dio;
+
+  /// Prevents re-entrant session rejection while best-effort FCM unregister runs.
+  bool _rejectingSession = false;
 
   /// Refresh slightly before the real expiry so a token cannot lapse while a
   /// request is in flight, and to absorb small device clock skew.
@@ -210,6 +214,8 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options, {
     required String? usedRefreshToken,
   }) async {
+    if (_rejectingSession) return;
+
     if (usedRefreshToken != null) {
       final current = await _storage.getRefreshToken();
       if (current != null && current.isNotEmpty && current != usedRefreshToken) {
@@ -217,9 +223,16 @@ class AuthInterceptor extends Interceptor {
       }
     }
 
-    await _storage.clearAuthSession();
-    if (await _canNotifyOnAuthFailure(options)) {
-      AuthService().notifySessionExpired();
+    _rejectingSession = true;
+    try {
+      // Best-effort: auth may already be invalid; local FCM cache is cleared either way.
+      await NotificationService().unregisterTokenFromBackend();
+      await _storage.clearAuthSession();
+      if (await _canNotifyOnAuthFailure(options)) {
+        AuthService().notifySessionExpired();
+      }
+    } finally {
+      _rejectingSession = false;
     }
   }
 
