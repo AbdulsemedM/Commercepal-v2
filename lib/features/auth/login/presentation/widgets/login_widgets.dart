@@ -5,60 +5,10 @@ import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/phone_utils.dart';
+import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 enum LoginMethod { email, phone }
-
-InputDecoration _authFieldDecoration(
-  BuildContext context, {
-  required String hintText,
-  Widget? suffixIcon,
-}) {
-  return InputDecoration(
-    hintText: hintText,
-    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.grey[500],
-        ),
-    filled: true,
-    fillColor: AppDecorations.softCream,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Colors.red, width: 1),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Colors.red, width: 2),
-    ),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: Spacing.md,
-      vertical: Spacing.md,
-    ),
-    suffixIcon: suffixIcon,
-  );
-}
-
-TextStyle _fieldLabelStyle(BuildContext context) {
-  return Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: AppColors.navy,
-        fontWeight: FontWeight.w700,
-      ) ??
-      const TextStyle(
-        color: AppColors.navy,
-        fontWeight: FontWeight.w700,
-      );
-}
 
 /// Email / Phone segmented tabs for login.
 class LoginMethodTabs extends StatelessWidget {
@@ -170,7 +120,7 @@ class PhoneLoginInputField extends StatelessWidget {
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.phone'),
-          style: _fieldLabelStyle(context),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         IntlPhoneField(
@@ -180,7 +130,7 @@ class PhoneLoginInputField extends StatelessWidget {
             horizontal: Spacing.sm,
           ),
           dropdownIconPosition: IconPosition.trailing,
-          decoration: _authFieldDecoration(
+          decoration: authFieldDecoration(
             context,
             hintText: LocalizationService.t(
               context,
@@ -243,7 +193,7 @@ class EmailInputField extends StatelessWidget {
       children: <Widget>[
         Text(
           LocalizationService.t(context, 'auth.login.email'),
-          style: _fieldLabelStyle(context),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextFormField(
@@ -263,7 +213,7 @@ class EmailInputField extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.navy,
               ),
-          decoration: _authFieldDecoration(
+          decoration: authFieldDecoration(
             context,
             hintText: LocalizationService.t(
               context,
@@ -283,11 +233,15 @@ class PasswordInputField extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.validator,
+    this.label,
+    this.hintText,
   });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
+  final String? label;
+  final String? hintText;
 
   @override
   State<PasswordInputField> createState() => _PasswordInputFieldState();
@@ -302,8 +256,9 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          LocalizationService.t(context, 'auth.login.password'),
-          style: _fieldLabelStyle(context),
+          widget.label ??
+              LocalizationService.t(context, 'auth.login.password'),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextFormField(
@@ -323,12 +278,13 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.navy,
               ),
-          decoration: _authFieldDecoration(
+          decoration: authFieldDecoration(
             context,
-            hintText: LocalizationService.t(
-              context,
-              'auth.login.passwordPlaceholder',
-            ),
+            hintText: widget.hintText ??
+                LocalizationService.t(
+                  context,
+                  'auth.login.passwordPlaceholder',
+                ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,

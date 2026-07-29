@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
-// import 'package:commercepal/services/localization_service.dart';
-// import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/utils/phone_utils.dart';
+import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/features/auth/login/presentation/widgets/login_widgets.dart';
+import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/forgot_password_bloc.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -16,13 +19,68 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final TextEditingController _emailOrPhoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  LoginMethod _method = LoginMethod.email;
+  String _completePhoneNumber = '';
+  String? _pendingTarget;
 
   @override
   void dispose() {
-    _emailOrPhoneController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  String _resolveTarget() {
+    if (_method == LoginMethod.email) {
+      return _emailController.text.trim();
+    }
+    final String raw = _completePhoneNumber.isNotEmpty
+        ? _completePhoneNumber
+        : _phoneController.text.trim();
+    // Prefer E.164 with '+' to match forgot-password API examples.
+    if (raw.startsWith('+')) return raw;
+    final String normalized = PhoneUtils.normalizeLoginIdentifier(raw);
+    return normalized.isEmpty ? raw : '+$normalized';
+  }
+
+  void _submit(BuildContext context) {
+    if (_formKey.currentState?.validate() != true) return;
+
+    final String target = _resolveTarget();
+    if (_method == LoginMethod.phone) {
+      final String normalized = PhoneUtils.normalizeLoginIdentifier(target);
+      if (!PhoneUtils.isValidLoginIdentifier(normalized)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              LocalizationService.t(context, 'auth.login.phoneInvalid'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    _pendingTarget = target;
+    context.read<ForgotPasswordBloc>().add(
+      ForgotPasswordSubmitted(
+        emailOrPhone: target,
+        channel: PlatformUtils.getChannel(),
+      ),
+    );
+  }
+
+  void _goToReset(String target) {
+    context.push(
+      Uri(
+        path: AppRoutes.resetPassword,
+        queryParameters: <String, String>{'target': target},
+      ).toString(),
+    );
   }
 
   @override
@@ -30,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return BlocProvider(
       create: (context) => ForgotPasswordBloc(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
             listener: (context, state) {
@@ -41,11 +99,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
-                // Navigate back after showing success message
-                Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) {
-                    context.pop();
-                  }
+                final String target = _pendingTarget ?? _resolveTarget();
+                Future.delayed(const Duration(milliseconds: 600), () {
+                  if (!context.mounted) return;
+                  _goToReset(target);
                 });
               } else if (state is ForgotPasswordFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             },
             child: BlocBuilder<ForgotPasswordBloc, ForgotPasswordState>(
               builder: (context, state) {
-                final isLoading = state is ForgotPasswordLoading;
+                final bool isLoading = state is ForgotPasswordLoading;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
                   child: Form(
@@ -67,162 +124,78 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const SizedBox(height: Spacing.md),
-                        // Back button
-                        IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(Spacing.xs),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 18,
-                              color: Colors.black,
-                            ),
-                          ),
-                          onPressed: () => context.pop(),
-                        ),
+                        AuthBackButton(onPressed: () => context.pop()),
                         const SizedBox(height: Spacing.sm),
-                        // Title
                         Text(
-                          'Reset Password',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          LocalizationService.t(
+                            context,
+                            'auth.forgot.title',
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
                               ?.copyWith(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 26,
                               ),
                         ),
                         const SizedBox(height: Spacing.xs),
-                        // Subtitle
                         Text(
-                          'Enter your email or phone number to receive password reset instructions.',
-                          style: Theme.of(context).textTheme.bodyMedium
+                          LocalizationService.t(
+                            context,
+                            'auth.forgot.subtitle',
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // Email or Phone field
-                        TextFormField(
-                          controller: _emailOrPhoneController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email or phone number';
-                            }
-                            // Basic validation for email or phone
-                            final isEmail =
-                                value.contains('@') && value.contains('.');
-                            final isPhone =
-                                value.startsWith('+') ||
-                                RegExp(r'^\d+$').hasMatch(value);
-                            if (!isEmail && !isPhone) {
-                              return 'Please enter a valid email or phone number';
-                            }
-                            return null;
+                        LoginMethodTabs(
+                          selected: _method,
+                          onChanged: (LoginMethod method) {
+                            setState(() {
+                              _method = method;
+                            });
                           },
-                          keyboardType: TextInputType.emailAddress,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            labelText: 'Email or Phone Number',
-                            hintText: 'user@example.com or +1234567890',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
-                          ),
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // Submit button
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    if (_formKey.currentState?.validate() ??
-                                        false) {
-                                      context.read<ForgotPasswordBloc>().add(
-                                        ForgotPasswordSubmitted(
-                                          emailOrPhone: _emailOrPhoneController
-                                              .text
-                                              .trim(),
-                                          channel: PlatformUtils.getChannel(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Spacing.md,
-                              ),
-                              disabledBackgroundColor: Colors.grey[300],
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    'Send Reset Instructions',
-                                    style: Theme.of(context).textTheme.bodyLarge
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
+                        if (_method == LoginMethod.email)
+                          EmailInputField(controller: _emailController)
+                        else
+                          PhoneLoginInputField(
+                            controller: _phoneController,
+                            onCompleteNumberChanged: (String complete) {
+                              setState(() {
+                                _completePhoneNumber = complete;
+                              });
+                            },
                           ),
+                        const SizedBox(height: Spacing.lg),
+                        AuthPrimaryButton(
+                          label: LocalizationService.t(
+                            context,
+                            'auth.forgot.sendCode',
+                          ),
+                          isLoading: isLoading,
+                          onPressed: () => _submit(context),
                         ),
                         const SizedBox(height: Spacing.md),
-                        // Back to login link
                         Center(
-                          child: TextButton(
-                            onPressed: () => context.pop(),
+                          child: GestureDetector(
+                            onTap: () => context.pop(),
                             child: Text(
-                              'Back to Login',
-                              style: Theme.of(context).textTheme.bodyMedium
+                              LocalizationService.t(
+                                context,
+                                'auth.forgot.backToLogin',
+                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
                                   ?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.pink,
+                                    fontWeight: FontWeight.w700,
                                   ),
                             ),
                           ),

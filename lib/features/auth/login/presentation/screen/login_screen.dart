@@ -13,6 +13,7 @@ import 'package:commercepal/services/biometric_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
 import '../../bloc/login_bloc.dart';
 import '../widgets/login_widgets.dart';
 
@@ -619,76 +620,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // Login button with arrow icon
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: isLoading
-                                ? null
-                                : AppDecorations.primaryCtaGradient,
-                            color: isLoading ? Colors.grey.shade300 : null,
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: isLoading
-                                ? null
-                                : <BoxShadow>[
-                                    BoxShadow(
-                                      color: AppColors.pink.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                        AuthPrimaryButton(
+                          label: LocalizationService.t(
+                            context,
+                            'auth.login.loginButton',
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: isLoading
-                                  ? null
-                                  : () => _submitLogin(context),
-                              borderRadius: BorderRadius.circular(28),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: Spacing.md + 2,
-                                ),
-                                child: isLoading
-                                    ? const Center(
-                                        child: SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Text(
-                                            LocalizationService.t(
-                                              context,
-                                              'auth.login.loginButton',
-                                            ),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.copyWith(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                          const SizedBox(width: Spacing.xs),
-                                          const Icon(
-                                            Icons.arrow_forward,
-                                            size: 20,
-                                            color: Colors.white,
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                            ),
-                          ),
+                          isLoading: isLoading,
+                          onPressed: () => _submitLogin(context),
                         ),
                         if (PlatformUtils.shouldShowGoogleSignInButton) ...[
                           const SizedBox(height: Spacing.md),
