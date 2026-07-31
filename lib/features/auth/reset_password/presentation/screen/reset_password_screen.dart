@@ -5,6 +5,9 @@ import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/features/auth/login/presentation/widgets/login_widgets.dart';
+import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/reset_password_bloc.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -25,8 +28,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
+
+  bool get _hasPrefillTarget =>
+      widget.target != null && widget.target!.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -48,12 +52,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
+  void _submit(BuildContext context) {
+    if (_formKey.currentState?.validate() != true) return;
+    context.read<ResetPasswordBloc>().add(
+      ResetPasswordSubmitted(
+        target: _targetController.text.trim(),
+        verificationToken: _verificationTokenController.text.trim(),
+        newPassword: _newPasswordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        channel: PlatformUtils.getChannel(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => ResetPasswordBloc(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocListener<ResetPasswordBloc, ResetPasswordState>(
             listener: (context, state) {
@@ -64,11 +81,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
-                // Navigate to login after showing success message
                 Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) {
-                    context.go(AppRoutes.login);
-                  }
+                  if (!context.mounted) return;
+                  context.go(AppRoutes.login);
                 });
               } else if (state is ResetPasswordFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +96,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             },
             child: BlocBuilder<ResetPasswordBloc, ResetPasswordState>(
               builder: (context, state) {
-                final isLoading = state is ResetPasswordLoading;
+                final bool isLoading = state is ResetPasswordLoading;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
                   child: Form(
@@ -90,358 +105,189 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const SizedBox(height: Spacing.md),
-                        // Back button
-                        IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(Spacing.xs),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 18,
-                              color: Colors.black,
-                            ),
-                          ),
-                          onPressed: () => context.pop(),
+                        AuthBackButton(
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go(AppRoutes.login);
+                            }
+                          },
                         ),
                         const SizedBox(height: Spacing.sm),
-                        // Title
                         Text(
-                          'Reset Password',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          LocalizationService.t(
+                            context,
+                            'auth.reset.title',
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
                               ?.copyWith(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 26,
                               ),
                         ),
                         const SizedBox(height: Spacing.xs),
-                        // Subtitle
                         Text(
-                          'Enter your verification token and new password.',
-                          style: Theme.of(context).textTheme.bodyMedium
+                          LocalizationService.t(
+                            context,
+                            'auth.reset.subtitle',
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(color: Colors.grey[600]),
                         ),
-                        const SizedBox(height: Spacing.lg),
-                        // Target (Email/Phone) field
-                        TextFormField(
-                          controller: _targetController,
-                          enabled: widget.target == null,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email or phone number';
-                            }
-                            return null;
-                          },
-                          keyboardType: TextInputType.emailAddress,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            labelText: 'Email or Phone Number',
-                            hintText: 'user@example.com or +1234567890',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
+                        if (_hasPrefillTarget) ...[
+                          const SizedBox(height: Spacing.md),
+                          Text(
+                            LocalizationService.t(
+                              context,
+                              'auth.reset.codeSentTo',
+                            ).replaceAll('{target}', _targetController.text),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        // Verification Token field
-                        TextFormField(
+                        ],
+                        const SizedBox(height: Spacing.lg),
+                        if (!_hasPrefillTarget) ...[
+                          AuthTextField(
+                            label: LocalizationService.t(
+                              context,
+                              'auth.reset.target',
+                            ),
+                            hintText: LocalizationService.t(
+                              context,
+                              'auth.reset.targetHint',
+                            ),
+                            controller: _targetController,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return LocalizationService.t(
+                                  context,
+                                  'auth.reset.targetRequired',
+                                );
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: Spacing.md),
+                        ],
+                        AuthTextField(
+                          label: LocalizationService.t(
+                            context,
+                            'auth.reset.verificationCode',
+                          ),
+                          hintText: LocalizationService.t(
+                            context,
+                            'auth.reset.verificationCodeHint',
+                          ),
                           controller: _verificationTokenController,
+                          keyboardType: TextInputType.number,
                           enabled: widget.verificationToken == null,
+                          maxLength: 8,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter verification token';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.verificationCodeRequired',
+                              );
                             }
                             if (value.length < 4) {
-                              return 'Verification token must be at least 4 characters';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.verificationCodeInvalid',
+                              );
                             }
                             return null;
                           },
-                          keyboardType: TextInputType.number,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            labelText: 'Verification Token',
-                            hintText: 'Enter 6-digit code',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
-                          ),
                         ),
                         const SizedBox(height: Spacing.md),
-                        // New Password field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _newPasswordController,
+                          label: LocalizationService.t(
+                            context,
+                            'auth.reset.newPassword',
+                          ),
+                          hintText: LocalizationService.t(
+                            context,
+                            'auth.reset.newPasswordHint',
+                          ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter new password';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.newPasswordRequired',
+                              );
                             }
                             if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.passwordTooShort',
+                              );
                             }
                             return null;
                           },
-                          obscureText: _obscureNewPassword,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            labelText: 'New Password',
-                            hintText: 'Enter your new password',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureNewPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey[600],
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureNewPassword = !_obscureNewPassword;
-                                });
-                              },
-                            ),
-                          ),
                         ),
                         const SizedBox(height: Spacing.md),
-                        // Confirm Password field
-                        TextFormField(
+                        PasswordInputField(
                           controller: _confirmPasswordController,
+                          label: LocalizationService.t(
+                            context,
+                            'auth.reset.confirmPassword',
+                          ),
+                          hintText: LocalizationService.t(
+                            context,
+                            'auth.reset.confirmPasswordHint',
+                          ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.confirmPasswordRequired',
+                              );
                             }
                             if (value != _newPasswordController.text) {
-                              return 'Passwords do not match';
+                              return LocalizationService.t(
+                                context,
+                                'auth.reset.passwordsDoNotMatch',
+                              );
                             }
                             return null;
                           },
-                          obscureText: _obscureConfirmPassword,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm Password',
-                            hintText: 'Confirm your new password',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 1,
-                              ),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Colors.red,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.md,
-                              vertical: Spacing.md,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey[600],
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                            ),
-                          ),
                         ),
                         const SizedBox(height: Spacing.lg),
-                        // Submit button
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    if (_formKey.currentState?.validate() ??
-                                        false) {
-                                      context.read<ResetPasswordBloc>().add(
-                                        ResetPasswordSubmitted(
-                                          target: _targetController.text.trim(),
-                                          verificationToken:
-                                              _verificationTokenController.text
-                                                  .trim(),
-                                          newPassword:
-                                              _newPasswordController.text,
-                                          confirmPassword:
-                                              _confirmPasswordController.text,
-                                          channel: PlatformUtils.getChannel(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Spacing.md,
-                              ),
-                              disabledBackgroundColor: Colors.grey[300],
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    'Reset Password',
-                                    style: Theme.of(context).textTheme.bodyLarge
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
+                        AuthPrimaryButton(
+                          label: LocalizationService.t(
+                            context,
+                            'auth.reset.submit',
                           ),
+                          isLoading: isLoading,
+                          onPressed: () => _submit(context),
                         ),
                         const SizedBox(height: Spacing.md),
-                        // Back to login link
                         Center(
-                          child: TextButton(
-                            onPressed: () => context.go(AppRoutes.login),
+                          child: GestureDetector(
+                            onTap: () => context.go(AppRoutes.login),
                             child: Text(
-                              'Back to Login',
-                              style: Theme.of(context).textTheme.bodyMedium
+                              LocalizationService.t(
+                                context,
+                                'auth.reset.backToLogin',
+                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
                                   ?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.pink,
+                                    fontWeight: FontWeight.w700,
                                   ),
                             ),
                           ),
