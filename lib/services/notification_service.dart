@@ -1,5 +1,9 @@
 // Notification service using Firebase Cloud Messaging
+<<<<<<< HEAD
 import 'dart:convert';
+=======
+import 'dart:async';
+>>>>>>> 169e46de48786a367760855f171251da5d2b4ed8
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -52,6 +56,8 @@ class NotificationService {
 
   bool _localNotificationsReady = false;
 
+  static const Duration _fcmTokenTimeout = Duration(seconds: 8);
+
   static Future<void> initialize() async {
     try {
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -87,7 +93,7 @@ class NotificationService {
       await _instance._setupLocalNotifications();
       await _instance._requestAndroidNotificationsPermission();
 
-      final token = await messaging.getToken();
+      final token = await _getTokenWithTimeout(messaging);
       if (kDebugMode && token != null) {
         AppLogger.i('FCM token captured', data: {'token': token});
       }
@@ -227,8 +233,15 @@ class NotificationService {
   }
 
   Future<String?> getToken() async {
+    return _getTokenWithTimeout(FirebaseMessaging.instance);
+  }
+
+  static Future<String?> _getTokenWithTimeout(FirebaseMessaging messaging) async {
     try {
-      return await FirebaseMessaging.instance.getToken();
+      return await messaging.getToken().timeout(_fcmTokenTimeout);
+    } on TimeoutException {
+      AppLogger.w('FCM getToken timed out');
+      return null;
     } catch (e) {
       AppLogger.e('getToken failed', error: e);
       return null;

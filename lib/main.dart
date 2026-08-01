@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,13 +22,13 @@ void main() async {
     await Firebase.initializeApp();
     AppLogger.i('Firebase initialized successfully');
 
-    // Initialize push notifications (requestPermission on iOS, FCM handlers)
-    await NotificationService.initialize();
-
     await AppUpdateRemoteConfig.initialize(
       defaultLatestVersionAndroid: '4.1.3',
       defaultLatestVersionIos: '4.1.3',
     );
+
+    // Do not block first frame: iOS FCM getToken can wait indefinitely for APNS.
+    unawaited(NotificationService.initialize());
 
     // Initialize Crashlytics
     // FlutterError.onError = (errorDetails) {

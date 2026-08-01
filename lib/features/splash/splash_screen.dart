@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class _SplashScreenState extends State<SplashScreen>
   static const Color _textMuted = Color(0x9EFFF6E9); // ~62%
 
   final Storage _storage = Storage();
+  bool _hasNavigated = false;
 
   late final AnimationController _introController;
   late final AnimationController _haloController;
@@ -131,12 +133,19 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigateAfterAuth() async {
     if (!mounted) return;
-    await _storage.markAppOpened();
+    try {
+      await _storage.markAppOpened().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Best-effort: proceed even if Keychain write is slow or unavailable.
+    }
     if (mounted) context.go(AppRoutes.dashboard);
   }
 
-  Future<void> _proceedToApp() async {
+  Future<void> _proceedToAppOnce() async {
+    if (_hasNavigated || !mounted) return;
+    _hasNavigated = true;
     await _navigateAfterAuth();
+    unawaited(_preloadProfileIfAuthenticated());
   }
 
   Future<void> _preloadProfileIfAuthenticated() async {
@@ -152,13 +161,24 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  Future<AppUpdateCheckResult> _checkForUpdateWithTimeout() {
+    return AppUpdateCheckService.check().timeout(
+      const Duration(seconds: 8),
+      onTimeout: () => const AppUpdateCheckResult(
+        updateType: AppUpdateType.none,
+        currentVersion: '',
+        latestVersion: '',
+        storeUrl: '',
+      ),
+    );
+  }
+
   Future<void> _runSplashAndVersionCheck() async {
     const Duration minSplashDuration = Duration(seconds: 3);
 
-    final results = await Future.wait(<Future<dynamic>>[
+    final List<dynamic> results = await Future.wait(<Future<dynamic>>[
       Future<void>.delayed(minSplashDuration),
-      AppUpdateCheckService.check(),
-      _preloadProfileIfAuthenticated(),
+      _checkForUpdateWithTimeout(),
     ]);
 
     final AppUpdateCheckResult result = results[1] as AppUpdateCheckResult;
@@ -170,15 +190,17 @@ class _SplashScreenState extends State<SplashScreen>
         context,
         result: result,
         onLater: () {
-          if (mounted) {
-            _proceedToApp();
-          }
+          unawaited(_proceedToAppOnce());
         },
       );
+      if (!mounted) return;
+      if (!result.isMandatory) {
+        await _proceedToAppOnce();
+      }
       return;
     }
 
-    await _proceedToApp();
+    await _proceedToAppOnce();
   }
 
   @override
