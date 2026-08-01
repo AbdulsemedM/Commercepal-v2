@@ -1,4 +1,5 @@
 // Notification service using Firebase Cloud Messaging
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../core/logging/app_logger.dart';
 import '../core/storage/storage.dart';
 import '../features/notifications/data/repository/fcm_repository.dart';
+import 'deeplink_service.dart';
 
 const String _fcmLastRegisteredTokenKey = 'fcm_last_registered_token';
 
@@ -83,6 +85,7 @@ class NotificationService {
       }
 
       await _instance._setupLocalNotifications();
+      await _instance._requestAndroidNotificationsPermission();
 
       final token = await messaging.getToken();
       if (kDebugMode && token != null) {
@@ -104,7 +107,10 @@ class NotificationService {
 
       final initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
-        _handleMessageOpened(initialMessage);
+        // Delay until GoRouter / MaterialApp are ready.
+        Future<void>.delayed(const Duration(milliseconds: 800), () {
+          _handleMessageOpened(initialMessage);
+        });
       }
     } catch (e, st) {
       AppLogger.e(
@@ -125,7 +131,10 @@ class NotificationService {
       iOS: iosInit,
     );
 
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _onLocalNotificationTapped,
+    );
 
     final androidPlugin =
         _localNotifications.resolvePlatformSpecificImplementation<
@@ -133,6 +142,34 @@ class NotificationService {
     await androidPlugin?.createNotificationChannel(_androidChannel);
 
     _localNotificationsReady = true;
+  }
+
+  /// Android 13+ (API 33) requires a runtime POST_NOTIFICATIONS grant.
+  Future<void> _requestAndroidNotificationsPermission() async {
+    if (kIsWeb || !Platform.isAndroid) return;
+
+    try {
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      final granted = await androidPlugin?.requestNotificationsPermission();
+      if (kDebugMode) {
+        AppLogger.i(
+          'Android notification permission',
+          data: {'granted': granted},
+        );
+      }
+    } catch (e, st) {
+      AppLogger.e(
+        'Android notification permission request failed',
+        error: e,
+        stack: st,
+      );
+    }
+  }
+
+  static void _onLocalNotificationTapped(NotificationResponse response) {
+    DeeplinkService.instance.handleNotificationPayload(response.payload);
   }
 
   static void _onMessage(RemoteMessage message) {
@@ -154,6 +191,9 @@ class NotificationService {
     // iOS already shows via setForegroundNotificationPresentationOptions
     if (!kIsWeb && Platform.isIOS) return;
 
+    final payload =
+        message.data.isEmpty ? null : jsonEncode(message.data);
+
     await _localNotifications.show(
       notification.hashCode,
       notification.title,
@@ -169,7 +209,7 @@ class NotificationService {
         ),
         iOS: const DarwinNotificationDetails(),
       ),
-      payload: message.data.isEmpty ? null : message.data.toString(),
+      payload: payload,
     );
   }
 
@@ -181,6 +221,9 @@ class NotificationService {
     if (kDebugMode) {
       AppLogger.i('Opened from notification', data: message.data);
     }
+    DeeplinkService.instance.handleNotificationData(
+      Map<String, dynamic>.from(message.data),
+    );
   }
 
   Future<String?> getToken() async {

@@ -10,10 +10,8 @@ class FcmDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _registerEndpoint =
-      '/api/v1/notifications/fcm/register';
-  static const String _unregisterEndpoint =
-      '/api/v1/notifications/fcm/unregister';
+  static const String _registerEndpoint = '/api/v1/fcm/token/register';
+  static const String _unregisterEndpoint = '/api/v1/fcm/token/unregister';
 
   Future<void> register(FcmRegisterRequest request) async {
     try {

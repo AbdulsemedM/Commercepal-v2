@@ -74,10 +74,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  void _goToReset(String target) {
+  void _goToVerifyOtp(String target) {
     context.push(
       Uri(
-        path: AppRoutes.resetPassword,
+        path: AppRoutes.verifyOtp,
         queryParameters: <String, String>{'target': target},
       ).toString(),
     );
@@ -102,7 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 final String target = _pendingTarget ?? _resolveTarget();
                 Future.delayed(const Duration(milliseconds: 600), () {
                   if (!context.mounted) return;
-                  _goToReset(target);
+                  _goToVerifyOtp(target);
                 });
               } else if (state is ForgotPasswordFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(

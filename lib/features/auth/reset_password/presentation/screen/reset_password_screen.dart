@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/auth/login/presentation/widgets/login_widgets.dart';
 import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
@@ -11,7 +10,11 @@ import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/reset_password_bloc.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key, this.target, this.verificationToken});
+  const ResetPasswordScreen({
+    super.key,
+    this.target,
+    this.verificationToken,
+  });
 
   final String? target;
   final String? verificationToken;
@@ -21,48 +24,67 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final TextEditingController _targetController = TextEditingController();
-  final TextEditingController _verificationTokenController =
-      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _canSubmit = false;
 
-  bool get _hasPrefillTarget =>
-      widget.target != null && widget.target!.trim().isNotEmpty;
+  String get _emailOrPhone => widget.target?.trim() ?? '';
+  String get _verificationCode => widget.verificationToken?.trim() ?? '';
 
   @override
   void initState() {
     super.initState();
-    if (widget.target != null) {
-      _targetController.text = widget.target!;
-    }
-    if (widget.verificationToken != null) {
-      _verificationTokenController.text = widget.verificationToken!;
-    }
+    _newPasswordController.addListener(_updateCanSubmit);
+    _confirmPasswordController.addListener(_updateCanSubmit);
   }
 
   @override
   void dispose() {
-    _targetController.dispose();
-    _verificationTokenController.dispose();
+    _newPasswordController.removeListener(_updateCanSubmit);
+    _confirmPasswordController.removeListener(_updateCanSubmit);
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  void _updateCanSubmit() {
+    final newPassword = _newPasswordController.text;
+    final confirm = _confirmPasswordController.text;
+    final canSubmit = newPassword.length >= 8 &&
+        confirm == newPassword &&
+        _emailOrPhone.isNotEmpty &&
+        RegExp(r'^\d{6}$').hasMatch(_verificationCode);
+    if (canSubmit != _canSubmit) {
+      setState(() => _canSubmit = canSubmit);
+    }
+  }
+
   void _submit(BuildContext context) {
     if (_formKey.currentState?.validate() != true) return;
+    if (_emailOrPhone.isEmpty ||
+        !RegExp(r'^\d{6}$').hasMatch(_verificationCode)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'auth.otp.sessionExpired'),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      context.go(AppRoutes.forgotPassword);
+      return;
+    }
+
     context.read<ResetPasswordBloc>().add(
-      ResetPasswordSubmitted(
-        target: _targetController.text.trim(),
-        verificationToken: _verificationTokenController.text.trim(),
-        newPassword: _newPasswordController.text,
-        confirmPassword: _confirmPasswordController.text,
-        channel: PlatformUtils.getChannel(),
-      ),
-    );
+          ResetPasswordSubmitted(
+            emailOrPhone: _emailOrPhone,
+            verificationCode: _verificationCode,
+            newPassword: _newPasswordController.text,
+            confirmPassword: _confirmPasswordController.text,
+          ),
+        );
   }
 
   @override
@@ -75,16 +97,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           child: BlocListener<ResetPasswordBloc, ResetPasswordState>(
             listener: (context, state) {
               if (state is ResetPasswordSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
+                context.go(
+                  Uri(
+                    path: AppRoutes.passwordResetSuccess,
+                    queryParameters: <String, String>{
+                      'message': state.message,
+                    },
+                  ).toString(),
                 );
-                Future.delayed(const Duration(seconds: 2), () {
-                  if (!context.mounted) return;
-                  context.go(AppRoutes.login);
-                });
               } else if (state is ResetPasswordFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -140,13 +160,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               .bodyMedium
                               ?.copyWith(color: Colors.grey[600]),
                         ),
-                        if (_hasPrefillTarget) ...[
+                        if (_emailOrPhone.isNotEmpty) ...[
                           const SizedBox(height: Spacing.md),
                           Text(
                             LocalizationService.t(
                               context,
                               'auth.reset.codeSentTo',
-                            ).replaceAll('{target}', _targetController.text),
+                            ).replaceAll('{target}', _emailOrPhone),
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -157,60 +177,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                         ],
                         const SizedBox(height: Spacing.lg),
-                        if (!_hasPrefillTarget) ...[
-                          AuthTextField(
-                            label: LocalizationService.t(
-                              context,
-                              'auth.reset.target',
-                            ),
-                            hintText: LocalizationService.t(
-                              context,
-                              'auth.reset.targetHint',
-                            ),
-                            controller: _targetController,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return LocalizationService.t(
-                                  context,
-                                  'auth.reset.targetRequired',
-                                );
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: Spacing.md),
-                        ],
-                        AuthTextField(
-                          label: LocalizationService.t(
-                            context,
-                            'auth.reset.verificationCode',
-                          ),
-                          hintText: LocalizationService.t(
-                            context,
-                            'auth.reset.verificationCodeHint',
-                          ),
-                          controller: _verificationTokenController,
-                          keyboardType: TextInputType.number,
-                          enabled: widget.verificationToken == null,
-                          maxLength: 8,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.verificationCodeRequired',
-                              );
-                            }
-                            if (value.length < 4) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.verificationCodeInvalid',
-                              );
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
                         PasswordInputField(
                           controller: _newPasswordController,
                           label: LocalizationService.t(
@@ -228,7 +194,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 'auth.reset.newPasswordRequired',
                               );
                             }
-                            if (value.length < 6) {
+                            if (value.length < 8) {
                               return LocalizationService.t(
                                 context,
                                 'auth.reset.passwordTooShort',
@@ -271,7 +237,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             'auth.reset.submit',
                           ),
                           isLoading: isLoading,
-                          onPressed: () => _submit(context),
+                          onPressed: _canSubmit && !isLoading
+                              ? () => _submit(context)
+                              : null,
                         ),
                         const SizedBox(height: Spacing.md),
                         Center(

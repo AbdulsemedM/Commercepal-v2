@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/login/presentation/screen/login_screen.dart';
 import '../../features/auth/signup/presentation/screen/signup_screen.dart';
 import '../../features/auth/forgot_password/presentation/screen/forgot_password_screen.dart';
+import '../../features/auth/verify_otp/presentation/screen/verify_otp_screen.dart';
 import '../../features/auth/reset_password/presentation/screen/reset_password_screen.dart';
+import '../../features/auth/reset_password/presentation/screen/password_reset_success_screen.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/splash/splash_screen.dart';
@@ -49,7 +51,9 @@ class AppRoutes {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
+  static const String verifyOtp = '/verify-otp';
   static const String resetPassword = '/reset-password';
+  static const String passwordResetSuccess = '/password-reset-success';
   static const String splash = '/splash';
   static const String dashboard = '/dashboard';
   static const String productDetail = '/product-detail';
@@ -120,6 +124,15 @@ final GoRouter appRouter = GoRouter(
           const ForgotPasswordScreen(),
     ),
     GoRoute(
+      path: AppRoutes.verifyOtp,
+      name: 'verifyOtp',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        final String target = params['target'] ?? '';
+        return VerifyOtpScreen(target: target);
+      },
+    ),
+    GoRoute(
       path: AppRoutes.resetPassword,
       name: 'resetPassword',
       builder: (BuildContext context, GoRouterState state) {
@@ -128,6 +141,14 @@ final GoRouter appRouter = GoRouter(
           target: params['target'],
           verificationToken: params['token'],
         );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.passwordResetSuccess,
+      name: 'passwordResetSuccess',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        return PasswordResetSuccessScreen(message: params['message']);
       },
     ),
     GoRoute(

@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
-import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/reset_password/data/models/reset_password_request.dart';
 import 'package:commercepal/features/auth/reset_password/data/repository/reset_password_repository.dart';
 
@@ -10,8 +10,8 @@ part 'reset_password_state.dart';
 
 class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
   ResetPasswordBloc({ResetPasswordRepository? repository})
-    : _repository = repository ?? ResetPasswordRepository(),
-      super(ResetPasswordInitial()) {
+      : _repository = repository ?? ResetPasswordRepository(),
+        super(ResetPasswordInitial()) {
     on<ResetPasswordSubmitted>(_onResetPasswordSubmitted);
     on<ResetPasswordReset>(_onResetPasswordReset);
   }
@@ -26,11 +26,9 @@ class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
 
     try {
       final request = ResetPasswordRequest(
-        target: event.target,
-        verificationToken: event.verificationToken,
+        emailOrPhone: event.emailOrPhone,
+        verificationCode: event.verificationCode,
         newPassword: event.newPassword,
-        confirmPassword: event.confirmPassword,
-        channel: event.channel ?? PlatformUtils.getChannel(),
       );
 
       final response = await _repository.resetPassword(request);
@@ -39,23 +37,40 @@ class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
         ResetPasswordSuccess(
           response.message.isNotEmpty
               ? response.message
-              : 'Password has been reset successfully.',
+              : 'Password reset successfully! You can now login with your new password.',
         ),
       );
-    } catch (e) {
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final serverMessage = _extractMessage(e.response?.data);
       String errorMessage = 'Failed to reset password. Please try again.';
 
-      if (e is Exception) {
+      if (status == 429) {
         errorMessage =
-            e.toString().contains('400') || e.toString().contains('Bad Request')
-            ? 'Invalid verification token or passwords do not match'
-            : e.toString().contains('404') || e.toString().contains('Not Found')
-            ? 'Invalid verification token'
-            : errorMessage;
+            serverMessage ?? 'Too many attempts. Please try again later.';
+      } else if (status == 404) {
+        errorMessage = serverMessage ?? 'User not found.';
+      } else if (status == 400) {
+        errorMessage = serverMessage ??
+            'Invalid or expired verification code.';
       }
 
       emit(ResetPasswordFailure(errorMessage));
+    } catch (_) {
+      emit(
+        ResetPasswordFailure(
+          'Failed to reset password. Please try again.',
+        ),
+      );
     }
+  }
+
+  String? _extractMessage(dynamic data) {
+    if (data is Map) {
+      final message = data['message'];
+      if (message is String && message.isNotEmpty) return message;
+    }
+    return null;
   }
 
   void _onResetPasswordReset(

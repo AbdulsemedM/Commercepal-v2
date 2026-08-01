@@ -4,18 +4,16 @@ part of 'reset_password_bloc.dart';
 sealed class ResetPasswordEvent {}
 
 final class ResetPasswordSubmitted extends ResetPasswordEvent {
-  final String target;
-  final String verificationToken;
+  final String emailOrPhone;
+  final String verificationCode;
   final String newPassword;
   final String confirmPassword;
-  final String? channel;
 
   ResetPasswordSubmitted({
-    required this.target,
-    required this.verificationToken,
+    required this.emailOrPhone,
+    required this.verificationCode,
     required this.newPassword,
     required this.confirmPassword,
-    this.channel,
   });
 }
 
