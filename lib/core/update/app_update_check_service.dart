@@ -25,9 +25,34 @@ class AppUpdateCheckService {
       final current = packageInfo.version;
       final latest = AppUpdateRemoteConfig.latestAppVersionForCurrentPlatform;
       final storeUrl = AppUpdateRemoteConfig.storeUrlForCurrentPlatform;
+      final minimum = AppUpdateRemoteConfig.minimumSupportedVersion;
 
-      if (current.isEmpty || latest.isEmpty) {
-        AppLogger.w('App update check: missing version string');
+      if (current.isEmpty) {
+        AppLogger.w('App update check: missing current version string');
+        return AppUpdateCheckResult(
+          updateType: AppUpdateType.none,
+          currentVersion: current,
+          latestVersion: latest,
+          storeUrl: storeUrl,
+        );
+      }
+
+      // Hard floor: always blocking when below minimum_supported_version.
+      if (minimum.isNotEmpty && VersionParser.isCurrentLower(current, minimum)) {
+        AppLogger.i(
+          'App update check: below minimum_supported_version '
+          'current=$current minimum=$minimum',
+        );
+        return AppUpdateCheckResult(
+          updateType: AppUpdateType.mandatory,
+          currentVersion: current,
+          latestVersion: minimum,
+          storeUrl: storeUrl,
+        );
+      }
+
+      if (latest.isEmpty) {
+        AppLogger.w('App update check: missing latest version string');
         return AppUpdateCheckResult(
           updateType: AppUpdateType.none,
           currentVersion: current,
@@ -37,9 +62,6 @@ class AppUpdateCheckService {
       }
 
       final updateType = VersionParser.getUpdateType(current, latest);
-      // debugPrint(
-      //   'App update check -> current: $current, remote: $latest, type: $updateType',
-      // );
       AppLogger.i(
         'App update check: current=$current latest=$latest type=$updateType',
       );

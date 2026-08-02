@@ -84,12 +84,13 @@ class _ContactUsPageState extends State<ContactUsPage> {
   }
 
   Widget _buildContactCard({
-    required IconData icon,
+    required Widget icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
     Color? iconColor,
   }) {
+    final Color resolvedIconColor = iconColor ?? AppColors.primary;
     return Container(
       margin: const EdgeInsets.only(bottom: Spacing.md),
       decoration: BoxDecoration(
@@ -110,13 +111,15 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+                    color: resolvedIconColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor ?? AppColors.primary,
-                    size: 28,
+                  child: IconTheme(
+                    data: IconThemeData(
+                      color: resolvedIconColor,
+                      size: 28,
+                    ),
+                    child: icon,
                   ),
                 ),
                 const SizedBox(width: Spacing.md),
@@ -271,7 +274,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
 
                   // Short Code
                   _buildContactCard(
-                    icon: Icons.phone_in_talk,
+                    icon: const Icon(Icons.phone_in_talk),
                     title: LocalizationService.t(context, "contactUs.shortCode"),
                     subtitle: phoneNumber3,
                     iconColor: AppColors.success,
@@ -280,7 +283,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
 
                   // Phone Number
                   _buildContactCard(
-                    icon: Icons.phone,
+                    icon: const Icon(Icons.phone),
                     title: LocalizationService.t(context, "contactUs.phoneNumber"),
                     subtitle: phoneNumber,
                     iconColor: AppColors.success,
@@ -289,7 +292,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
 
                   // Website
                   _buildContactCard(
-                    icon: FontAwesomeIcons.globe,
+                    icon: const FaIcon(FontAwesomeIcons.globe),
                     title: LocalizationService.t(context, "contactUs.website"),
                     subtitle: "https://commercepal.com",
                     iconColor: AppColors.info,
@@ -339,29 +342,29 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   ),
                   const SizedBox(height: Spacing.md),
                   SocialMediaLink(
-                    icon: Icons.facebook,
+                    icon: const Icon(Icons.facebook),
                     text: LocalizationService.t(context, 'contactUs.socialFacebook'),
                     url: 'https://www.facebook.com/Commercepal/',
                   ),
                   SocialMediaLink(
-                    icon: FontAwesomeIcons.instagram,
+                    icon: const FaIcon(FontAwesomeIcons.instagram),
                     text: LocalizationService.t(context, 'contactUs.socialInstagram'),
                     url:
                         'https://www.instagram.com/commercepal1/?igshid=YmMyMTA2M2Y%3D',
                   ),
                   SocialMediaLink(
-                    icon: FontAwesomeIcons.tiktok,
+                    icon: const FaIcon(FontAwesomeIcons.tiktok),
                     text: LocalizationService.t(context, 'contactUs.socialTiktok'),
                     url: 'https://www.tiktok.com/@commercepal',
                   ),
                   SocialMediaLink(
-                    icon: FontAwesomeIcons.twitter,
+                    icon: const FaIcon(FontAwesomeIcons.xTwitter),
                     text: LocalizationService.t(context, 'contactUs.socialTwitter'),
                     url:
                         'https://x.com/CommercePal?t=3gF1oMXGc2GJmiawxvYvvA&s=09',
                   ),
                   SocialMediaLink(
-                    icon: FontAwesomeIcons.telegram,
+                    icon: const FaIcon(FontAwesomeIcons.telegram),
                     text: LocalizationService.t(context, 'contactUs.socialTelegram'),
                     url: 'https://t.me/CP9491',
                   ),

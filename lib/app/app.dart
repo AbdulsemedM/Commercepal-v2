@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/network/connectivity_banner_host.dart';
 import '../core/update/app_update_remote_config.dart';
+import '../core/update/shorebird_patch_host.dart';
 import '../core/theme/theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/locale/locale_controller.dart';
@@ -95,43 +96,45 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   try {
                     maintenance = AppUpdateRemoteConfig.maintenanceMessage;
                   } catch (_) {}
-                  return Directionality(
-                    textDirection:
-                        isRtl ? TextDirection.rtl : TextDirection.ltr,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: <Widget>[
-                        ConnectivityBannerHost(child: child!),
-                        if (maintenance.isNotEmpty)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            child: SafeArea(
-                              bottom: false,
-                              child: Material(
-                                elevation: 3,
-                                color: Colors.deepOrange.shade50,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  child: Text(
-                                    maintenance,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.deepOrange.shade900,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      height: 1.3,
+                  return ShorebirdPatchHost(
+                    child: Directionality(
+                      textDirection:
+                          isRtl ? TextDirection.rtl : TextDirection.ltr,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          ConnectivityBannerHost(child: child!),
+                          if (maintenance.isNotEmpty)
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              child: SafeArea(
+                                bottom: false,
+                                child: Material(
+                                  elevation: 3,
+                                  color: Colors.deepOrange.shade50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    child: Text(
+                                      maintenance,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.deepOrange.shade900,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        height: 1.3,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

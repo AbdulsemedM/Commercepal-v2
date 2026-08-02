@@ -23,8 +23,8 @@ void main() async {
     AppLogger.i('Firebase initialized successfully');
 
     await AppUpdateRemoteConfig.initialize(
-      defaultLatestVersionAndroid: '4.1.3',
-      defaultLatestVersionIos: '4.1.3',
+      defaultLatestVersionAndroid: '6.0.3',
+      defaultLatestVersionIos: '6.0.3',
     );
 
     // Do not block first frame: iOS FCM getToken can wait indefinitely for APNS.

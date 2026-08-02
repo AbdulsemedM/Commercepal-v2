@@ -1,9 +1,6 @@
 // Notification service using Firebase Cloud Messaging
-<<<<<<< HEAD
-import 'dart:convert';
-=======
 import 'dart:async';
->>>>>>> 169e46de48786a367760855f171251da5d2b4ed8
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';

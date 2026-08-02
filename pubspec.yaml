@@ -16,7 +16,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 6.0.3+153
+version: 6.0.4+154
 
 environment:
   sdk: ^3.5.4
@@ -48,7 +48,7 @@ dependencies:
   url_launcher: ^6.2.5
   webview_flutter: ^4.4.2
   video_player: ^2.9.2
-  font_awesome_flutter: 10.4.0
+  font_awesome_flutter: ^11.0.0
 
   # Firebase
   firebase_core: ^3.6.0
@@ -81,6 +81,7 @@ dependencies:
   local_auth: ^2.2.0
   quick_actions: ^1.0.8
   youtube_player_flutter: ^9.1.3
+  shorebird_code_push: ^2.0.7
 
 dev_dependencies:
   flutter_test:
@@ -108,6 +109,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - shorebird.yaml
     - assets/locales/
     - assets/images/background.svg
     - assets/images/logo.png

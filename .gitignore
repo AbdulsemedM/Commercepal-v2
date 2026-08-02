@@ -55,4 +55,6 @@ app.*.map.json
 ios/GoogleService-Info.plist
 android/app/google-services.json
 
-/docs/
+# Ignore docs by default, but keep the OTA runbook tracked.
+/docs/*
+!/docs/ota-updates.md

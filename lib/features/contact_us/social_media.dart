@@ -13,7 +13,8 @@ class SocialMediaLink extends StatelessWidget {
     required this.url,
   });
 
-  final IconData icon;
+  /// Prefer [Icon] for Material icons and [FaIcon] for Font Awesome.
+  final Widget icon;
   final String text;
   final String url;
 
@@ -87,7 +88,13 @@ class SocialMediaLink extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: AppColors.primary, size: 24),
+                  child: IconTheme(
+                    data: const IconThemeData(
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    child: icon,
+                  ),
                 ),
                 const SizedBox(width: Spacing.md),
                 Expanded(

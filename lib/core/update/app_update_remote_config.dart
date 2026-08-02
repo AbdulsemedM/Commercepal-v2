@@ -15,6 +15,14 @@ abstract final class RemoteConfigKeys {
   static const String homePromoBanner = 'home_promo_banner';
   /// When non-empty, show a non-blocking maintenance/info strip (e.g. scheduled downtime).
   static const String maintenanceMessage = 'maintenance_message';
+  /// Hard floor: if current app version is below this, show a blocking store update.
+  /// Empty string disables the floor.
+  static const String minimumSupportedVersion = 'minimum_supported_version';
+  /// When true, the app skips Shorebird patch check/download (emergency lever).
+  static const String killSwitchPatchDisabled = 'kill_switch_patch_disabled';
+  /// Client-side staged rollout percentage (0–100) for the Shorebird beta track.
+  static const String shorebirdPatchRolloutPercent =
+      'shorebird_patch_rollout_percent';
 }
 
 /// Client for app version and store URLs from Firebase Remote Config.
@@ -35,8 +43,8 @@ class AppUpdateRemoteConfig {
 
   /// Call after [Firebase.initializeApp()]. Sets defaults and config settings.
   static Future<void> initialize({
-    String defaultLatestVersionAndroid = '4.1.3',
-    String defaultLatestVersionIos = '4.1.3',
+    String defaultLatestVersionAndroid = '6.0.3',
+    String defaultLatestVersionIos = '6.0.3',
     String? defaultStoreUrlAndroid,
     String? defaultStoreUrlIos,
   }) async {
@@ -60,6 +68,9 @@ class AppUpdateRemoteConfig {
             defaultStoreUrlIos ?? AppUpdateConstants.storeUrlIos,
         RemoteConfigKeys.homePromoBanner: '',
         RemoteConfigKeys.maintenanceMessage: '',
+        RemoteConfigKeys.minimumSupportedVersion: '',
+        RemoteConfigKeys.killSwitchPatchDisabled: false,
+        RemoteConfigKeys.shorebirdPatchRolloutPercent: 100,
       });
       _instance = remoteConfig;
       AppLogger.i('AppUpdateRemoteConfig initialized');
@@ -117,4 +128,30 @@ class AppUpdateRemoteConfig {
   /// Optional global notice (may be empty).
   static String get maintenanceMessage =>
       instance.getString(RemoteConfigKeys.maintenanceMessage).trim();
+
+  /// Hard minimum store version. Empty means no floor is enforced.
+  static String get minimumSupportedVersion =>
+      instance.getString(RemoteConfigKeys.minimumSupportedVersion).trim();
+
+  /// When true, Shorebird patch checks/downloads are skipped.
+  static bool get killSwitchPatchDisabled {
+    try {
+      return instance.getBool(RemoteConfigKeys.killSwitchPatchDisabled);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Percentage (0–100) of devices that should check the Shorebird beta track.
+  static int get shorebirdPatchRolloutPercent {
+    try {
+      final int value =
+          instance.getInt(RemoteConfigKeys.shorebirdPatchRolloutPercent);
+      if (value < 0) return 0;
+      if (value > 100) return 100;
+      return value;
+    } catch (_) {
+      return 100;
+    }
+  }
 }

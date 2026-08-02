@@ -49,6 +49,7 @@ class Storage {
   static const String _keyRememberMeDeviceId = 'remember_me_device_id';
   static const String _keyJustLoggedOut = 'just_logged_out';
   static const String _keyProfileCache = 'profile_cache_v1';
+  static const String _keyShorebirdRolloutGroup = 'shorebird_rollout_group';
 
   static const int _maxRecentProductSearches = 12;
   static const int _maxLocalRecentProductViews = 24;
@@ -146,6 +147,23 @@ class Storage {
 
   Future<String?> getDeviceId() async {
     return await _storage.read(key: _keyDeviceId);
+  }
+
+  /// Stable 1–100 cohort used for Shorebird percentage-based patch rollouts.
+  Future<int> getOrCreateShorebirdRolloutGroup() async {
+    final String? raw = await _storage.read(key: _keyShorebirdRolloutGroup);
+    final int? existing = int.tryParse(raw ?? '');
+    if (existing != null && existing >= 1 && existing <= 100) {
+      return existing;
+    }
+
+    final int group =
+        1 + DateTime.now().microsecondsSinceEpoch.remainder(100);
+    await _storage.write(
+      key: _keyShorebirdRolloutGroup,
+      value: group.toString(),
+    );
+    return group;
   }
 
   // Country and Currency management
