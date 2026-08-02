@@ -173,12 +173,18 @@ class _BannerSectionState extends State<BannerSection> {
               onPageChanged: _onPageChanged,
               itemCount: _bannerAssets.length,
               itemBuilder: (BuildContext context, int index) {
+                final double screenWidth = MediaQuery.sizeOf(context).width;
+                final double dpr = MediaQuery.devicePixelRatioOf(context);
+                // Decode near display width, not full 1536px source.
+                final int cacheWidth =
+                    ((screenWidth - (Spacing.md * 2)) * dpr).round();
                 return GestureDetector(
                   onTap: () => _onBannerTap(index),
                   child: Image.asset(
                     _bannerAssets[index],
                     fit: BoxFit.cover,
                     width: double.infinity,
+                    cacheWidth: cacheWidth > 0 ? cacheWidth : null,
                   ),
                 );
               },

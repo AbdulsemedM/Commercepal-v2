@@ -7,6 +7,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
 import 'package:commercepal/features/home/data/home_wholesale_config.dart';
+import 'package:commercepal/features/home/presentation/widgets/home_image_prefetch.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_product_rows.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
@@ -17,7 +18,21 @@ class HomeWholesaleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeWholesaleBloc, HomeWholesaleState>(
+    return BlocConsumer<HomeWholesaleBloc, HomeWholesaleState>(
+      listenWhen: (HomeWholesaleState previous, HomeWholesaleState current) =>
+          current is HomeWholesaleLoaded && previous is! HomeWholesaleLoaded,
+      listener: (BuildContext context, HomeWholesaleState state) {
+        if (state is HomeWholesaleLoaded) {
+          // Use a stable stride so section order matches discover-style priorities.
+          prefetchHomeCatalogImages(
+            sectionIdsInOrder: kHomeWholesaleSections
+                .map((HomeWholesaleSectionConfig c) => c.id)
+                .toList(),
+            sections: state.sections,
+            maxProductsPerSection: kHomeDiscoverMaxProductsPerSection,
+          );
+        }
+      },
       builder: (context, state) {
         if (state is HomeWholesaleLoading || state is HomeWholesaleInitial) {
           return const _WholesaleLoading();
@@ -40,12 +55,20 @@ class HomeWholesaleSection extends StatelessWidget {
           );
         }
         if (state is HomeWholesaleLoaded) {
+          prefetchHomeCatalogImages(
+            sectionIdsInOrder: kHomeWholesaleSections
+                .map((HomeWholesaleSectionConfig c) => c.id)
+                .toList(),
+            sections: state.sections,
+            maxProductsPerSection: kHomeDiscoverMaxProductsPerSection,
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               for (var i = 0; i < kHomeWholesaleSections.length; i++) ...[
                 if (i > 0) const SizedBox(height: Spacing.lg),
                 _WholesaleCategoryBlock(
+                  sectionIndex: i,
                   config: kHomeWholesaleSections[i],
                   products: state.sections[kHomeWholesaleSections[i].id] ??
                       <Product>[],
@@ -63,10 +86,12 @@ class HomeWholesaleSection extends StatelessWidget {
 
 class _WholesaleCategoryBlock extends StatelessWidget {
   const _WholesaleCategoryBlock({
+    required this.sectionIndex,
     required this.config,
     required this.products,
   });
 
+  final int sectionIndex;
   final HomeWholesaleSectionConfig config;
   final List<Product> products;
 
@@ -104,7 +129,12 @@ class _WholesaleCategoryBlock extends StatelessWidget {
             ),
           )
         else
-          for (final row in rows) HomeProductRow(products: row),
+          for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
+            HomeProductRow(
+              products: rows[rowIndex],
+              imagePriorityBase: sectionIndex * kHomeDiscoverMaxProductsPerSection +
+                  rowIndex * kHomeProductsPerRow,
+            ),
       ],
     );
   }

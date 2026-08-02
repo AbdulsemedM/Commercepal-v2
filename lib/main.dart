@@ -15,6 +15,11 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Home shows many product tiles; keep more decoded images in memory while scrolling.
+  final ImageCache imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSize = 200;
+  imageCache.maximumSizeBytes = 120 << 20; // 120 MB
+
   await LocalizationService.ensureInitialized();
 
   // Initialize Firebase
