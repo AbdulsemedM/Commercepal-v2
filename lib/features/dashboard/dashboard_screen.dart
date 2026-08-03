@@ -10,6 +10,7 @@ import 'package:commercepal/features/cart/presentation/screen/cart_page.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/presentation/screen/profile_page.dart';
 import 'package:commercepal/features/onboarding/dashboard_coach_overlay.dart';
+import 'package:commercepal/features/support_chat/presentation/widgets/draggable_support_chat_fab.dart';
 import 'package:commercepal/services/auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -139,7 +140,12 @@ class DashboardScreenState extends State<DashboardScreen> {
           final ColorScheme scheme = Theme.of(context).colorScheme;
           return Scaffold(
             backgroundColor: scheme.surface,
-            body: IndexedStack(index: _currentIndex, children: _pages),
+            body: Stack(
+              children: <Widget>[
+                IndexedStack(index: _currentIndex, children: _pages),
+                const DraggableSupportChatFab(),
+              ],
+            ),
             bottomNavigationBar: PillBottomNavBar(
               // activeColor: Theme.of(context).colorScheme.primary,
               currentIndex: _currentIndex,

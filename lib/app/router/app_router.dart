@@ -45,6 +45,8 @@ import '../../features/affiliate_register/presentation/screen/affiliate_register
 import '../../features/faqs/presentation/screen/faqs_screen.dart';
 import '../../features/wishlist/presentation/screen/wishlist_screen.dart';
 import '../../features/products/presentation/screen/product_compare_screen.dart';
+import '../../features/support_chat/bloc/support_chat_cubit.dart';
+import '../../features/support_chat/presentation/screen/support_chat_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -83,6 +85,7 @@ class AppRoutes {
   static const String wishlist = '/wishlist';
   static const String productCompare = '/product-compare';
   static const String accountDeletionRequest = '/account-deletion-request';
+  static const String supportChat = '/support-chat';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -424,6 +427,19 @@ final GoRouter appRouter = GoRouter(
       name: 'accountDeletionRequest',
       builder: (BuildContext context, GoRouterState state) =>
           const AccountDeletionRequestScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.supportChat,
+      name: 'supportChat',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? initialMessage =
+            state.uri.queryParameters['initialMessage'];
+        return BlocProvider(
+          create: (_) => SupportChatCubit(initialMessage: initialMessage)
+            ..openChat(),
+          child: const SupportChatScreen(),
+        );
+      },
     ),
   ],
 );

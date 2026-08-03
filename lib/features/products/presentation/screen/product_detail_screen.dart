@@ -27,6 +27,7 @@ import '../../data/models/product_image.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
+import '../widgets/product_detail_action_pills.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 import 'package:commercepal/features/products/presentation/widgets/product_actions_sheet.dart';
@@ -67,6 +68,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // Map to track multiple variants with their quantities
   // Key: variant index, Value: quantity
   final Map<int, int> _selectedVariants = <int, int>{};
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _reviewsKey = GlobalKey();
 
   String? _lastRecordedViewProductId;
   String? _lastAnalyticsProductId;
@@ -75,6 +78,91 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     super.initState();
     _loadCountry();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleWishlist(ProductDetails product) async {
+    HapticFeedback.selectionClick();
+    final WishlistRepository repository = WishlistRepository();
+    if (_isInWishlist) {
+      await repository.removeItem(product.id);
+    } else {
+      final String imageUrl = product.mainImage.main.isNotEmpty
+          ? product.mainImage.main
+          : product.mainImage.thumbnail;
+      await repository.addItem(
+        WishlistItem(
+          productId: product.id,
+          productName: product.title,
+          imageUrl: imageUrl,
+        ),
+      );
+    }
+    if (mounted) {
+      setState(() => _isInWishlist = !_isInWishlist);
+    }
+  }
+
+  void _scrollToReviews() {
+    final BuildContext? target = _reviewsKey.currentContext;
+    if (target == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No customer feedback yet')),
+      );
+      return;
+    }
+    Scrollable.ensureVisible(
+      target,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.1,
+    );
+  }
+
+  Map<String, String> _buildSpecifications(ProductDetails product) {
+    final Map<String, String> specs = <String, String>{
+      if (product.physicalParameters.length > 0)
+        'Length': '${product.physicalParameters.length}cm',
+      if (product.physicalParameters.width > 0)
+        'Width': '${product.physicalParameters.width}cm',
+      if (product.physicalParameters.height > 0)
+        'Height': '${product.physicalParameters.height}cm',
+      if (product.physicalParameters.weight > 0)
+        'Weight': '${product.physicalParameters.weight}g',
+      if (product.minOrderQuantity > 1)
+        'Min. order quantity': '${product.minOrderQuantity}',
+      if (product.quantityStep > 1)
+        'Quantity step': '${product.quantityStep}',
+      if (product.hasHierarchicalConfigurators) 'Configurable options': 'Yes',
+    };
+
+    for (final String line in product.description) {
+      final int colon = line.indexOf(':');
+      if (colon <= 0 || colon >= line.length - 1) continue;
+      final String key = line.substring(0, colon).trim();
+      final String value = line.substring(colon + 1).trim();
+      if (key.isEmpty || value.isEmpty || key.length > 40) continue;
+      if (value.length > 120) continue;
+      specs.putIfAbsent(key, () => value);
+    }
+    return specs;
+  }
+
+  List<String> _descriptionParagraphs(ProductDetails product) {
+    return product.description.where((String line) {
+      final int colon = line.indexOf(':');
+      if (colon <= 0 || colon >= line.length - 1) return true;
+      final String key = line.substring(0, colon).trim();
+      final String value = line.substring(colon + 1).trim();
+      if (key.isEmpty || value.isEmpty || key.length > 40) return true;
+      if (value.length > 120) return true;
+      return false;
+    }).toList();
   }
 
   void _navigateToTab(BuildContext context, int tabIndex) {
@@ -418,7 +506,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             }
 
             return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(kToolbarHeight + 20),
                 child: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
@@ -582,101 +670,161 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               );
                             },
                             child: SingleChildScrollView(
+                              controller: _scrollController,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: Spacing.sm),
-                                  // Product images (falls back to the image
-                                  // from the opening card when API has none)
                                   ProductImageGallery(
                                     images: galleryImages,
+                                    isInWishlist: _isInWishlist,
+                                    onToggleWishlist: () =>
+                                        _toggleWishlist(product),
                                   ),
                                   const SizedBox(height: Spacing.md),
-                                  // Product info
                                   ProductInfoSection(
                                     title: displayTitle,
                                     price: currentPrice,
+                                    originalPrice: product
+                                            .pricing
+                                            .formattedOriginalPrice
+                                            .isNotEmpty
+                                        ? product.pricing.formattedOriginalPrice
+                                        : null,
+                                    isOnDiscount: product.pricing.isOnDiscount,
                                     rating: displayRating,
                                     reviewCount: displayReviewCount,
                                     code: product.id,
                                     category: product.categoryId,
                                     keywords: product.brandName,
-                                    vendorName: product.vendorName.isNotEmpty ? product.vendorName : null,
-                                    stockLevel: product.stockLevel,
-                                    status: product.status.isNotEmpty ? product.status : null,
-                                    stuffStatus: product.stuffStatus.isNotEmpty ? product.stuffStatus : null,
-                                    createdTime: product.createdTime.isNotEmpty ? product.createdTime : null,
-                                    updatedTime: product.updatedTime.isNotEmpty ? product.updatedTime : null,
-                                    isSellAllowed: product.isSellAllowed,
-                                    variantSelector: product.variants.isNotEmpty
-                                        ? MultiVariantSelectorWidget(
-                                            variants: product.variants,
-                                            selectedVariants: _selectedVariants,
-                                            onVariantToggled: _handleVariantToggled,
-                                            onQuantityChanged: _handleQuantityChanged,
-                                          )
+                                    vendorName: product.vendorName.isNotEmpty
+                                        ? product.vendorName
                                         : null,
+                                    stockLevel: product.stockLevel,
+                                    status: product.status.isNotEmpty
+                                        ? product.status
+                                        : null,
+                                    stuffStatus:
+                                        product.stuffStatus.isNotEmpty
+                                            ? product.stuffStatus
+                                            : null,
+                                    createdTime:
+                                        product.createdTime.isNotEmpty
+                                            ? product.createdTime
+                                            : null,
+                                    updatedTime:
+                                        product.updatedTime.isNotEmpty
+                                            ? product.updatedTime
+                                            : null,
+                                    isSellAllowed: product.isSellAllowed,
+                                    variantSelector:
+                                        product.variants.isNotEmpty
+                                            ? MultiVariantSelectorWidget(
+                                                variants: product.variants,
+                                                selectedVariants:
+                                                    _selectedVariants,
+                                                onVariantToggled:
+                                                    _handleVariantToggled,
+                                                onQuantityChanged:
+                                                    _handleQuantityChanged,
+                                              )
+                                            : null,
                                   ),
-                                  const SizedBox(height: Spacing.lg),
-                                  // Description
-                                  if (product.description.isNotEmpty) ...[
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Description',
-                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                  Builder(
+                                    builder: (BuildContext context) {
+                                      final Map<String, String> specs =
+                                          _buildSpecifications(product);
+                                      if (specs.isEmpty) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Column(
+                                        children: <Widget>[
+                                          const SizedBox(height: Spacing.md),
+                                          ProductSpecifications(
+                                            specifications: specs,
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                  ProductDetailActionPills(
+                                    onCompanyProfile: () {
+                                      showCompanyProfileSheet(
+                                        context,
+                                        vendorName: product.vendorName,
+                                        brandName: product.brandName,
+                                        provider: product.provider,
+                                      );
+                                    },
+                                    onCustomerFeedback: () {
+                                      if (product.customerReviews.isEmpty) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No customer feedback yet',
                                             ),
                                           ),
-                                          const SizedBox(height: Spacing.sm),
-                                          ...product.description.map(
-                                            (paragraph) => Padding(
-                                              padding: const EdgeInsets.only(bottom: Spacing.xs),
-                                              child: Text(
-                                                paragraph,
-                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                  color: Colors.grey[800],
-                                                  height: 1.4,
+                                        );
+                                        return;
+                                      }
+                                      _scrollToReviews();
+                                    },
+                                  ),
+                                  Builder(
+                                    builder: (BuildContext context) {
+                                      final List<String> paragraphs =
+                                          _descriptionParagraphs(product);
+                                      if (paragraphs.isEmpty) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          Spacing.md,
+                                          Spacing.lg,
+                                          Spacing.md,
+                                          0,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Text(
+                                              'Description',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: Spacing.sm),
+                                            ...paragraphs.map(
+                                              (String paragraph) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: Spacing.xs,
+                                                ),
+                                                child: Text(
+                                                  paragraph,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        color:
+                                                            Colors.grey[800],
+                                                        height: 1.4,
+                                                      ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: Spacing.lg),
-                                  ],
-                                  const SizedBox(height: Spacing.lg),
-                                  // Specifications (if available)
-                                  if (product.physicalParameters.weight > 0 ||
-                                      product.physicalParameters.length > 0 ||
-                                      product.physicalParameters.width > 0 ||
-                                      product.physicalParameters.height > 0 ||
-                                      product.minOrderQuantity > 1 ||
-                                      product.quantityStep > 1 ||
-                                      product.hasHierarchicalConfigurators)
-                                    ProductSpecifications(
-                                      specifications: {
-                                        if (product.physicalParameters.length > 0)
-                                          'Length': '${product.physicalParameters.length}cm',
-                                        if (product.physicalParameters.width > 0)
-                                          'Width': '${product.physicalParameters.width}cm',
-                                        if (product.physicalParameters.height > 0)
-                                          'Height': '${product.physicalParameters.height}cm',
-                                        if (product.physicalParameters.weight > 0)
-                                          'Weight': '${product.physicalParameters.weight}g',
-                                        if (product.minOrderQuantity > 1)
-                                          'Min. order quantity': '${product.minOrderQuantity}',
-                                        if (product.quantityStep > 1)
-                                          'Quantity step': '${product.quantityStep}',
-                                        if (product.hasHierarchicalConfigurators)
-                                          'Configurable options': 'Yes',
-                                      },
-                                    ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
                                   if (product.videos.isNotEmpty) ...[
+                                    const SizedBox(height: Spacing.lg),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: Spacing.md,
@@ -685,18 +833,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: <Widget>[
-                                          Text(
-                                            product.videos.length > 1
-                                                ? 'Videos'
-                                                : 'Video',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                          ),
-                                          const SizedBox(height: Spacing.sm),
                                           for (var i = 0;
                                               i < product.videos.length;
                                               i++)
@@ -716,27 +852,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(height: Spacing.md),
                                   ],
                                   const SizedBox(height: Spacing.lg),
-                                  // Reviews section
-                                  if (product.customerReviews.isNotEmpty)
-                                    ReviewsSectionWidget(
-                                      reviews: product.customerReviews,
-                                      averageRating: product.meta.rating,
-                                      totalReviews: product.meta.reviewCount,
-                                      onViewAllTap: () {
-                                        context.push(
-                                          '${AppRoutes.productDetailsReviews}?productId=${widget.productId}',
-                                        );
-                                      },
-                                    ),
-                                  const SizedBox(height: Spacing.lg),
-                                  // Recommended products
-                                  if (product.recommendedProducts.isNotEmpty)
+                                  KeyedSubtree(
+                                    key: _reviewsKey,
+                                    child: product.customerReviews.isNotEmpty
+                                        ? ReviewsSectionWidget(
+                                            reviews: product.customerReviews,
+                                            averageRating: product.meta.rating,
+                                            totalReviews:
+                                                product.meta.reviewCount,
+                                            onViewAllTap: () {
+                                              context.push(
+                                                '${AppRoutes.productDetailsReviews}?productId=${widget.productId}',
+                                              );
+                                            },
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                  if (product.recommendedProducts.isNotEmpty) ...[
+                                    const SizedBox(height: Spacing.lg),
                                     RecommendedProductsSection(
                                       products: product.recommendedProducts,
                                     ),
+                                  ],
                                   const SizedBox(height: Spacing.xl),
                                 ],
                               ),
@@ -841,25 +980,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   });
                                 }
                               },
-                              onToggleFavorite: () async {
-                                HapticFeedback.selectionClick();
-                                final repository = WishlistRepository();
-                                if (_isInWishlist) {
-                                  await repository.removeItem(product.id);
-                                } else {
-                                  final imageUrl = product.mainImage.main.isNotEmpty
-                                      ? product.mainImage.main
-                                      : product.mainImage.thumbnail;
-                                  await repository.addItem(WishlistItem(
-                                    productId: product.id,
-                                    productName: product.title,
-                                    imageUrl: imageUrl,
-                                  ));
-                                }
-                                if (mounted) {
-                                  setState(() => _isInWishlist = !_isInWishlist);
-                                }
-                              },
+                              onToggleFavorite: () => _toggleWishlist(product),
                             );
                           },
                         ),

@@ -12,7 +12,6 @@ import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/biometric_service.dart';
 import 'package:commercepal/core/widgets/app_dialog.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/features/profile/presentation/widgets/help_desk_modal.dart';
 import 'package:commercepal/features/profile/presentation/widgets/country_selection_bottom_sheet.dart';
 import 'package:commercepal/features/profile/presentation/widgets/currency_selection_bottom_sheet.dart';
 import 'package:commercepal/features/profile/presentation/widgets/language_selection_bottom_sheet.dart';
@@ -602,7 +601,7 @@ class ProfileContent extends StatelessWidget {
         icon: Icons.info_outline,
         title: LocalizationService.t(context, 'profile.helpDesk'),
         onTap: () {
-          HelpDeskModal.show(context);
+          context.push(AppRoutes.supportChat);
         },
       ),
     ];

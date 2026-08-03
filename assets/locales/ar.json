@@ -524,5 +524,20 @@
   "productSearch.sortRelevance": "الأكثر صلة",
   "productSearch.sortPriceLow": "السعر: من الأقل للأعلى",
   "productSearch.sortPriceHigh": "السعر: من الأعلى للأقل",
-  "productSearch.sortName": "الاسم أ–ي"
+  "productSearch.sortName": "الاسم أ–ي",
+  "supportChat.title": "كيف يمكنني مساعدتك؟",
+  "supportChat.aiOnly": "الذكاء الاصطناعي فقط",
+  "supportChat.waitingForAgent": "جارٍ الاتصال بالوكيل…",
+  "supportChat.typeMessage": "اكتب رسالتك…",
+  "supportChat.poweredBy": "✨ مدعوم من CommercePal AI",
+  "supportChat.aiLabel": "COMMERCEPAL AI",
+  "supportChat.agentLabel": "وكيل الدعم",
+  "supportChat.retry": "إعادة المحاولة",
+  "supportChat.welcomeHint": "اسأل عن المنتجات أو الشحن أو المدفوعات أو طلباتك. اضغط على اقتراح أدناه للبدء.",
+  "supportChat.openChat": "فتح محادثة الدعم",
+  "supportChat.quickAction.whyCommercePal": "لماذا CommercePal؟",
+  "supportChat.quickAction.freeShipping": "شحن مجاني؟",
+  "supportChat.quickAction.trackOrder": "تتبع طلبي",
+  "supportChat.quickAction.shareProduct": "مشاركة رابط منتج",
+  "supportChat.quickAction.talkToAgent": "تحدث مع وكيل"
 }

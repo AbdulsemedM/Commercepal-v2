@@ -518,5 +518,20 @@
   "productSearch.sortRelevance": "Relevance",
   "productSearch.sortPriceLow": "Price: low to high",
   "productSearch.sortPriceHigh": "Price: high to low",
-  "productSearch.sortName": "Name A–Z"
+  "productSearch.sortName": "Name A–Z",
+  "supportChat.title": "እንዴት ልረዳዎ?",
+  "supportChat.aiOnly": "AI ብቻ",
+  "supportChat.waitingForAgent": "ከወኪል ጋር በመገናኘት ላይ…",
+  "supportChat.typeMessage": "መልዕክትዎን ይጻፉ…",
+  "supportChat.poweredBy": "✨ በ CommercePal AI የተጎላበተ",
+  "supportChat.aiLabel": "COMMERCEPAL AI",
+  "supportChat.agentLabel": "የድጋፍ ወኪል",
+  "supportChat.retry": "እንደገና ሞክር",
+  "supportChat.welcomeHint": "ስለ ምርቶች፣ መላኪያ፣ ክፍያ ወይም ትዕዛዞችዎ ይጠይቁ። ለመጀመር ከታች ያለውን ጥቆማ ይንኩ።",
+  "supportChat.openChat": "የድጋፍ ውይይት ክፈት",
+  "supportChat.quickAction.whyCommercePal": "ለምን CommercePal?",
+  "supportChat.quickAction.freeShipping": "ነጻ መላኪያ?",
+  "supportChat.quickAction.trackOrder": "ትዕዛዜን ክተል",
+  "supportChat.quickAction.shareProduct": "የምርት አገናኝ አጋራ",
+  "supportChat.quickAction.talkToAgent": "ከወኪል ጋር ተነጋገር"
 }

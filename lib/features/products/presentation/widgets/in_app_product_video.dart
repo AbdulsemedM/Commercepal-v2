@@ -375,7 +375,7 @@ video{width:100%;height:100%;object-fit:contain;}
 
     if (_youtubeController != null) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: YoutubePlayer(
           controller: _youtubeController!,
           aspectRatio: 16 / 9,
@@ -387,7 +387,7 @@ video{width:100%;height:100%;object-fit:contain;}
 
     if (_webFallbackController != null) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: AspectRatio(
           aspectRatio: 16 / 9,
           child: WebViewWidget(controller: _webFallbackController!),
@@ -420,7 +420,7 @@ video{width:100%;height:100%;object-fit:contain;}
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: AspectRatio(
         aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
         child: GestureDetector(

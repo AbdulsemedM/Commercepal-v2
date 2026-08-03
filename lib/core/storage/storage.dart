@@ -50,6 +50,10 @@ class Storage {
   static const String _keyJustLoggedOut = 'just_logged_out';
   static const String _keyProfileCache = 'profile_cache_v1';
   static const String _keyShorebirdRolloutGroup = 'shorebird_rollout_group';
+  static const String _keySupportChatToken = 'support_chat_token';
+  static const String _keySupportChatStatus = 'support_chat_status';
+  static const String _keySupportChatFabDx = 'support_chat_fab_dx';
+  static const String _keySupportChatFabDy = 'support_chat_fab_dy';
 
   static const int _maxRecentProductSearches = 12;
   static const int _maxLocalRecentProductViews = 24;
@@ -535,5 +539,48 @@ class Storage {
 
   Future<void> setDashboardCoachmarksDone() async {
     await _storage.write(key: _keyDashboardCoachmarksDone, value: 'true');
+  }
+
+  // Support chat session
+  Future<void> saveSupportChatSession({
+    required String token,
+    required String status,
+  }) async {
+    await Future.wait([
+      _storage.write(key: _keySupportChatToken, value: token),
+      _storage.write(key: _keySupportChatStatus, value: status),
+    ]);
+  }
+
+  Future<String?> getSupportChatToken() async {
+    return await _storage.read(key: _keySupportChatToken);
+  }
+
+  Future<String?> getSupportChatStatus() async {
+    return await _storage.read(key: _keySupportChatStatus);
+  }
+
+  Future<void> clearSupportChatSession() async {
+    await Future.wait([
+      _storage.delete(key: _keySupportChatToken),
+      _storage.delete(key: _keySupportChatStatus),
+    ]);
+  }
+
+  // Support chat FAB position
+  Future<void> saveSupportChatFabOffset(double dx, double dy) async {
+    await Future.wait([
+      _storage.write(key: _keySupportChatFabDx, value: dx.toString()),
+      _storage.write(key: _keySupportChatFabDy, value: dy.toString()),
+    ]);
+  }
+
+  Future<(double, double)?> getSupportChatFabOffset() async {
+    final dxRaw = await _storage.read(key: _keySupportChatFabDx);
+    final dyRaw = await _storage.read(key: _keySupportChatFabDy);
+    final dx = double.tryParse(dxRaw ?? '');
+    final dy = double.tryParse(dyRaw ?? '');
+    if (dx == null || dy == null) return null;
+    return (dx, dy);
   }
 }

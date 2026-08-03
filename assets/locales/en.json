@@ -524,5 +524,20 @@
   "productSearch.sortRelevance": "Relevance",
   "productSearch.sortPriceLow": "Price: low to high",
   "productSearch.sortPriceHigh": "Price: high to low",
-  "productSearch.sortName": "Name A–Z"
+  "productSearch.sortName": "Name A–Z",
+  "supportChat.title": "How can I help you?",
+  "supportChat.aiOnly": "AI only",
+  "supportChat.waitingForAgent": "Connecting to agent…",
+  "supportChat.typeMessage": "Type your message…",
+  "supportChat.poweredBy": "✨ Powered by CommercePal AI",
+  "supportChat.aiLabel": "COMMERCEPAL AI",
+  "supportChat.agentLabel": "SUPPORT AGENT",
+  "supportChat.retry": "Retry",
+  "supportChat.welcomeHint": "Ask about products, shipping, payments, or your orders. Tap a suggestion below to get started.",
+  "supportChat.openChat": "Open support chat",
+  "supportChat.quickAction.whyCommercePal": "Why CommercePal?",
+  "supportChat.quickAction.freeShipping": "Free shipping?",
+  "supportChat.quickAction.trackOrder": "Track my order",
+  "supportChat.quickAction.shareProduct": "Share a product link",
+  "supportChat.quickAction.talkToAgent": "Talk to an agent"
 }

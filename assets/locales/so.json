@@ -524,5 +524,20 @@
   "productSearch.sortRelevance": "Relevance",
   "productSearch.sortPriceLow": "Price: low to high",
   "productSearch.sortPriceHigh": "Price: high to low",
-  "productSearch.sortName": "Name A–Z"
+  "productSearch.sortName": "Name A–Z",
+  "supportChat.title": "Sidee kuu caawin karaa?",
+  "supportChat.aiOnly": "AI kaliya",
+  "supportChat.waitingForAgent": "Wakiilka waa la xiriirayaa…",
+  "supportChat.typeMessage": "Qor fariintaada…",
+  "supportChat.poweredBy": "✨ Waxaa ku shaqeeya CommercePal AI",
+  "supportChat.aiLabel": "COMMERCEPAL AI",
+  "supportChat.agentLabel": "WAKIILKA TAAGEERADA",
+  "supportChat.retry": "Isku day mar kale",
+  "supportChat.welcomeHint": "Weydii alaabta, rarista, lacag-bixinta, ama dalabkaaga. Taabo soo jeedin hoose si aad u bilowdo.",
+  "supportChat.openChat": "Fur wadahadalka taageerada",
+  "supportChat.quickAction.whyCommercePal": "Maxaa CommercePal?",
+  "supportChat.quickAction.freeShipping": "Rarid bilaash ah?",
+  "supportChat.quickAction.trackOrder": "Raadi dalabkayga",
+  "supportChat.quickAction.shareProduct": "La wadaag xiriirka alaabta",
+  "supportChat.quickAction.talkToAgent": "La hadal wakiil"
 }

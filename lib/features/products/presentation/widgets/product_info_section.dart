@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/theme/app_decorations.dart';
+import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 class ProductInfoSection extends StatefulWidget {
@@ -12,6 +15,8 @@ class ProductInfoSection extends StatefulWidget {
     required this.code,
     required this.category,
     required this.keywords,
+    this.originalPrice,
+    this.isOnDiscount = false,
     this.vendorName,
     this.stockLevel,
     this.status,
@@ -24,6 +29,8 @@ class ProductInfoSection extends StatefulWidget {
 
   final String title;
   final String price;
+  final String? originalPrice;
+  final bool isOnDiscount;
   final double rating;
   final int reviewCount;
   final String code;
@@ -45,6 +52,18 @@ class ProductInfoSection extends StatefulWidget {
 class _ProductInfoSectionState extends State<ProductInfoSection> {
   bool _titleExpanded = false;
 
+  bool get _inStock =>
+      widget.isSellAllowed &&
+      (widget.stockLevel == null || widget.stockLevel! > 0);
+
+  bool get _isNew {
+    final String status = (widget.stuffStatus ?? '').toLowerCase();
+    if (status.contains('new')) return true;
+    final DateTime? created = DateTime.tryParse(widget.createdTime ?? '');
+    if (created == null) return false;
+    return DateTime.now().difference(created).inDays <= 30;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -52,42 +71,24 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Product title: 2 lines by default, tap to expand/collapse
           GestureDetector(
             onTap: () {
-              setState(() {
-                _titleExpanded = !_titleExpanded;
-              });
+              setState(() => _titleExpanded = !_titleExpanded);
             },
             child: Text(
               widget.title,
               maxLines: _titleExpanded ? null : 2,
               overflow: _titleExpanded ? null : TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-              ),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: AppColors.navy,
+                    height: 1.3,
+                  ),
             ),
           ),
-          // Price (large red) — hidden when the API had no pricing at all
-          if (widget.price.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            Text(
-              widget.price,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
-          ],
-          if (widget.variantSelector != null) ...[
-            const SizedBox(height: Spacing.sm),
-            widget.variantSelector!,
-          ],
-          // Rating and reviews — only when there is actual rating data
           if (widget.rating > 0 || widget.reviewCount > 0) ...[
-            const SizedBox(height: Spacing.sm),
+            const SizedBox(height: Spacing.xs),
             Row(
               children: <Widget>[
                 _buildStarRating(widget.rating),
@@ -95,81 +96,102 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
                 Text(
                   '(${widget.reviewCount} ${widget.reviewCount == 1 ? LocalizationService.t(context, 'productDetail.review') : LocalizationService.t(context, 'productDetail.reviews')})',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
                 ),
               ],
             ),
           ],
+          if (widget.price.isNotEmpty) ...[
+            const SizedBox(height: Spacing.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    widget.price,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: AppColors.pink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 26,
+                        ),
+                  ),
+                ),
+                if (widget.isOnDiscount &&
+                    widget.originalPrice != null &&
+                    widget.originalPrice!.isNotEmpty) ...[
+                  const SizedBox(width: Spacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      widget.originalPrice!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[500],
+                            decoration: TextDecoration.lineThrough,
+                            fontSize: 14,
+                          ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+          if (widget.variantSelector != null) ...[
+            const SizedBox(height: Spacing.md),
+            widget.variantSelector!,
+          ],
           const SizedBox(height: Spacing.md),
-          // Code
-          if (widget.code.isNotEmpty)
-            _buildDetailRow(
-              context,
-              LocalizationService.t(context, 'productDetail.code'),
-              widget.code,
-            ),
-          // Category
-          if (widget.category.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(
-              context,
-              LocalizationService.t(context, 'productDetail.category'),
-              widget.category,
-              isHighlighted: true,
-            ),
-          ],
-          // Keywords
-          if (widget.keywords.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(
-              context,
-              LocalizationService.t(context, 'productDetail.keyword'),
-              widget.keywords,
-              isHighlighted: true,
+          Wrap(
+            spacing: Spacing.xs,
+            runSpacing: Spacing.xs,
+            children: <Widget>[
+              if (_inStock) _StatusBadge.inStock(),
+              if (!_inStock) _StatusBadge.outOfStock(),
+              if (_isNew) _StatusBadge.isNew(),
+            ],
+          ),
+          if (_hasDates) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              _datesLine,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[500],
+                    fontSize: 12,
+                  ),
             ),
           ],
-          if (widget.vendorName != null && widget.vendorName!.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(
-              context,
-              'Vendor',
-              widget.vendorName!,
+          if (widget.code.isNotEmpty || widget.category.isNotEmpty) ...[
+            const SizedBox(height: Spacing.md),
+            _GeneralInfoCard(
+              code: widget.code,
+              category: widget.category,
             ),
-          ],
-          if (widget.stockLevel != null || widget.status != null || (widget.stuffStatus != null && widget.stuffStatus!.isNotEmpty) || !widget.isSellAllowed) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(
-              context,
-              'Availability',
-              [
-                if (!widget.isSellAllowed) 'Sales not allowed',
-                if (widget.stockLevel != null && widget.stockLevel! >= 0) '${widget.stockLevel} in stock',
-                if (widget.status != null && widget.status!.isNotEmpty) widget.status!,
-                if (widget.stuffStatus != null && widget.stuffStatus!.isNotEmpty) widget.stuffStatus!,
-              ].where((e) => e.isNotEmpty).join(' • '),
-            ),
-          ],
-          if (widget.createdTime != null && widget.createdTime!.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(context, 'Listed', _formatDate(widget.createdTime!)),
-          ],
-          if (widget.updatedTime != null && widget.updatedTime!.isNotEmpty) ...[
-            const SizedBox(height: Spacing.xs),
-            _buildDetailRow(context, 'Updated', _formatDate(widget.updatedTime!)),
           ],
         ],
       ),
     );
   }
 
+  bool get _hasDates =>
+      (widget.createdTime != null && widget.createdTime!.isNotEmpty) ||
+      (widget.updatedTime != null && widget.updatedTime!.isNotEmpty);
+
+  String get _datesLine {
+    final List<String> parts = <String>[];
+    if (widget.createdTime != null && widget.createdTime!.isNotEmpty) {
+      parts.add('Listed ${_formatDate(widget.createdTime!)}');
+    }
+    if (widget.updatedTime != null && widget.updatedTime!.isNotEmpty) {
+      parts.add('Updated ${_formatDate(widget.updatedTime!)}');
+    }
+    return parts.join(' · ');
+  }
+
   String _formatDate(String isoDate) {
-    try {
-      final d = DateTime.tryParse(isoDate);
-      if (d != null) return '${d.day}/${d.month}/${d.year}';
-    } catch (_) {}
-    return isoDate;
+    final DateTime? d = DateTime.tryParse(isoDate);
+    if (d == null) return isoDate;
+    return DateFormat('d MMM yyyy').format(d.toLocal());
   }
 
   Widget _buildStarRating(double rating) {
@@ -177,39 +199,169 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
       mainAxisSize: MainAxisSize.min,
       children: List<Widget>.generate(5, (int index) {
         if (index < rating.floor()) {
-          return const Icon(Icons.star, color: Colors.amber, size: 18);
+          return const Icon(Icons.star, color: AppColors.secondary, size: 16);
         } else if (index < rating) {
-          return const Icon(Icons.star_half, color: Colors.amber, size: 18);
+          return const Icon(
+            Icons.star_half,
+            color: AppColors.secondary,
+            size: 16,
+          );
         } else {
-          return const Icon(Icons.star_border, color: Colors.amber, size: 18);
+          return Icon(Icons.star_border, color: Colors.grey[400], size: 16);
         }
       }),
     );
   }
+}
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isHighlighted = false,
-  }) {
-    return RichText(
-      text: TextSpan(
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
-        children: <TextSpan>[
-          TextSpan(
-            text: '$label: ',
-            style: TextStyle(color: Colors.grey[700]),
-          ),
-          TextSpan(
-            text: value,
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge._({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    this.showDot = false,
+  });
+
+  factory _StatusBadge.inStock() => const _StatusBadge._(
+        label: 'In stock',
+        background: Color(0xFFE8F8EF),
+        foreground: AppColors.success,
+        showDot: true,
+      );
+
+  factory _StatusBadge.outOfStock() => const _StatusBadge._(
+        label: 'Out of stock',
+        background: Color(0xFFFEE2E2),
+        foreground: AppColors.error,
+      );
+
+  factory _StatusBadge.isNew() => const _StatusBadge._(
+        label: 'New',
+        background: Color(0xFFFFF3D6),
+        foreground: Color(0xFFB45309),
+      );
+
+  final String label;
+  final Color background;
+  final Color foreground;
+  final bool showDot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (showDot) ...[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: foreground,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
             style: TextStyle(
-              color: isHighlighted ? Colors.green : Colors.black,
-              fontWeight: isHighlighted ? FontWeight.w500 : FontWeight.normal,
+              color: foreground,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GeneralInfoCard extends StatelessWidget {
+  const _GeneralInfoCard({
+    required this.code,
+    required this.category,
+  });
+
+  final String code;
+  final String category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: AppDecorations.elevatedCard(background: Colors.white),
+      child: Column(
+        children: <Widget>[
+          if (code.isNotEmpty)
+            _InfoRow(
+              label: LocalizationService.t(context, 'productDetail.code'),
+              child: Text(
+                code,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+              ),
+            ),
+          if (code.isNotEmpty && category.isNotEmpty)
+            Divider(height: Spacing.lg, color: Colors.grey[200]),
+          if (category.isNotEmpty)
+            _InfoRow(
+              label: LocalizationService.t(context, 'productDetail.category'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppDecorations.softCream,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  category,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.navy,
+                      ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.child,
+  });
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+          ),
+        ),
+        Flexible(child: Align(alignment: Alignment.centerRight, child: child)),
+      ],
     );
   }
 }
