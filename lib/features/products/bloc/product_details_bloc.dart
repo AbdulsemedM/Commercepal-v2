@@ -50,19 +50,28 @@ class ProductDetailsBloc extends Bloc<ProductDetailsEvent, ProductDetailsState> 
         stack: e.stackTrace,
       );
 
-      String errorMessage = 'Failed to load product details';
-      if (e.response?.statusCode == 404) {
-        errorMessage = 'Product not found';
-      } else if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        errorMessage = 'Connection timeout. Please try again.';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'No internet connection';
+      final String? apiMessage = _extractApiMessage(e.response?.data);
+      final String? apiErrorCode = _extractApiErrorCode(e.response?.data);
+      final int? statusCode = e.response?.statusCode;
+
+      String errorMessage = apiMessage ?? 'Failed to load product details';
+      if (apiMessage == null) {
+        if (statusCode == 404) {
+          errorMessage = 'Product not found';
+        } else if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          errorMessage = 'Connection timeout. Please try again.';
+        } else if (e.type == DioExceptionType.connectionError) {
+          errorMessage = 'No internet connection';
+        } else if (statusCode == 503) {
+          errorMessage =
+              'This product is temporarily unavailable. Please try again shortly.';
+        }
       }
 
       emit(ProductDetailsError(
         message: errorMessage,
-        errorCode: e.response?.statusCode?.toString(),
+        errorCode: apiErrorCode ?? statusCode?.toString(),
       ));
     } catch (e, stack) {
       AppLogger.e(
@@ -142,5 +151,25 @@ class ProductDetailsBloc extends Bloc<ProductDetailsEvent, ProductDetailsState> 
         message: 'Failed to refresh product details',
       ));
     }
+  }
+
+  String? _extractApiMessage(dynamic data) {
+    if (data is Map) {
+      final Object? message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+    }
+    return null;
+  }
+
+  String? _extractApiErrorCode(dynamic data) {
+    if (data is Map) {
+      final Object? code = data['errorCode'];
+      if (code is String && code.trim().isNotEmpty) {
+        return code.trim();
+      }
+    }
+    return null;
   }
 }

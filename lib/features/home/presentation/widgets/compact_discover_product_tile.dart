@@ -5,6 +5,7 @@ import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/widgets/app_network_image.dart';
 
 /// Dense tile for 5-column home discover grids; taps navigate to product detail.
 /// Layout is strictly bounded so titles/prices cannot overflow the grid cell.
@@ -63,33 +64,17 @@ class CompactDiscoverProductTile extends StatelessWidget {
                           top: Radius.circular(AppDecorations.radiusSm - 1),
                         ),
                         child: imageUrl.isNotEmpty
-                            ? Image.network(
-                                imageUrl,
+                            ? AppNetworkImage(
+                                url: imageUrl,
                                 fit: BoxFit.cover,
-                                gaplessPlayback: true,
-                                errorBuilder: (_, __, ___) =>
-                                    _placeholder(context),
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return ColoredBox(
-                                    color: scheme.surfaceContainerHighest
-                                        .withOpacity(0.6),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          value: progress.expectedTotalBytes !=
-                                                  null
-                                              ? progress.cumulativeBytesLoaded /
-                                                  progress.expectedTotalBytes!
-                                              : null,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                memCacheWidth: (80 *
+                                        MediaQuery.devicePixelRatioOf(context))
+                                    .round(),
+                                placeholder: ColoredBox(
+                                  color: scheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.6),
+                                ),
+                                errorWidget: _placeholder(context),
                               )
                             : _placeholder(context),
                       ),

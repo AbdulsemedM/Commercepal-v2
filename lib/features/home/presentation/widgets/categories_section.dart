@@ -9,6 +9,7 @@ import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
 import 'package:commercepal/features/categories/data/models/sub_category.dart';
 import 'package:commercepal/core/utils/category_image_assets.dart';
+import 'package:commercepal/core/widgets/app_network_image.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_section_header.dart';
@@ -416,10 +417,18 @@ class _CategoryBubbleTile extends StatelessWidget {
             ),
             child: ClipOval(
               child: hasNetworkImage
-                  ? Image.network(
-                      category.imageUrl!,
+                  ? AppNetworkImage(
+                      url: category.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => assetPath != null
+                      width: AppDecorations.categoryChipSize,
+                      height: AppDecorations.categoryChipSize,
+                      memCacheWidth: (AppDecorations.categoryChipSize *
+                              MediaQuery.devicePixelRatioOf(context))
+                          .round(),
+                      memCacheHeight: (AppDecorations.categoryChipSize *
+                              MediaQuery.devicePixelRatioOf(context))
+                          .round(),
+                      errorWidget: assetPath != null
                           ? Image.asset(assetPath, fit: BoxFit.cover)
                           : iconFallback,
                     )
@@ -481,7 +490,7 @@ class _SubCategoryBubbleTile extends StatelessWidget {
               shape: BoxShape.circle,
               color: color.withOpacity(0.08),
             ),
-            child: ClipOval(child: _buildImage()),
+            child: ClipOval(child: _buildImage(context)),
           ),
           const SizedBox(height: Spacing.xs),
           Text(
@@ -499,11 +508,27 @@ class _SubCategoryBubbleTile extends StatelessWidget {
     );
   }
 
-  Widget _buildImage() {
+  Widget _buildImage(BuildContext context) {
     final bool hasNetworkImage =
         subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
     final String? path =
         CategoryImageAssets.assetPathForName(subCategory.name);
+    final int memCache = (AppDecorations.categoryChipSize *
+            MediaQuery.devicePixelRatioOf(context))
+        .round();
+
+    Widget networkImage() {
+      return AppNetworkImage(
+        url: subCategory.imageUrl!,
+        fit: BoxFit.cover,
+        width: AppDecorations.categoryChipSize,
+        height: AppDecorations.categoryChipSize,
+        memCacheWidth: memCache,
+        memCacheHeight: memCache,
+        errorWidget: _buildPlaceholder(),
+      );
+    }
+
     // Nested folder assets: assets/images/subcategories/{parent}/{slug}.jpg
     if (path != null &&
         path.contains('/subcategories/') &&
@@ -511,21 +536,12 @@ class _SubCategoryBubbleTile extends StatelessWidget {
       return Image.asset(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => hasNetworkImage
-            ? Image.network(
-                subCategory.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholder(),
-              )
-            : _buildPlaceholder(),
+        errorBuilder: (_, __, ___) =>
+            hasNetworkImage ? networkImage() : _buildPlaceholder(),
       );
     }
     if (hasNetworkImage) {
-      return Image.network(
-        subCategory.imageUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-      );
+      return networkImage();
     }
     return _buildPlaceholder();
   }

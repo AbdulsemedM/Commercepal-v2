@@ -46,9 +46,15 @@ String? formatHomeProductOriginalPrice(Product product) {
 }
 
 class HomeProductRow extends StatelessWidget {
-  const HomeProductRow({super.key, required this.products});
+  const HomeProductRow({
+    super.key,
+    required this.products,
+    this.imagePriorityBase = 0,
+  });
 
   final List<Product> products;
+  /// First product in this row gets [imagePriorityBase]; subsequent +1.
+  final int imagePriorityBase;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +83,7 @@ class HomeProductRow extends StatelessWidget {
               reviewCount: p.reviewCount,
               discountPercentage: p.discountPercentage,
               currency: p.currency,
+              imageLoadPriority: imagePriorityBase + index,
             ),
           );
         },

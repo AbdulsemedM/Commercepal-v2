@@ -27,7 +27,11 @@ import '../../data/models/product_image.dart';
 import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
+<<<<<<< HEAD
 import '../widgets/product_detail_action_pills.dart';
+=======
+import '../widgets/product_details_error_view.dart';
+>>>>>>> 6036198489ec4f3a17fc5a66f3e193571729561d
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 import 'package:commercepal/features/products/presentation/widgets/product_actions_sheet.dart';
@@ -562,40 +566,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   }
 
                   if (state is ProductDetailsError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(Spacing.lg),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red[300],
-                            ),
-                            const SizedBox(height: Spacing.md),
-                            Text(
-                              state.message,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: Spacing.lg),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                context.read<ProductDetailsBloc>().add(
-                                  ProductDetailsFetchRequested(
-                                    productId: widget.productId ?? '',
-                                    country: _getCountry(context),
-                                    currency: _getCurrency(context),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return ProductDetailsErrorView(
+                      message: state.message,
+                      errorCode: state.errorCode,
+                      onRetry: () {
+                        context.read<ProductDetailsBloc>().add(
+                          ProductDetailsFetchRequested(
+                            productId: widget.productId ?? '',
+                            country: _getCountry(context),
+                            currency: _getCurrency(context),
+                          ),
+                        );
+                      },
+                      onGoBack: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
                     );
                   }
 

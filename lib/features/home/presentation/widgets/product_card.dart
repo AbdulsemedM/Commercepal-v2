@@ -8,6 +8,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/widgets/app_network_image.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 
@@ -29,6 +30,7 @@ class ProductCard extends StatefulWidget {
     this.discountPercentage,
     this.showAddToCart,
     this.fillCell = false,
+    this.imageLoadPriority,
   });
 
   final String? productId;
@@ -47,6 +49,8 @@ class ProductCard extends StatefulWidget {
   final bool? showAddToCart;
   /// When true, image and content expand to fill the parent (grid cells).
   final bool fillCell;
+  /// Lower values load sooner on home (ordered image queue).
+  final int? imageLoadPriority;
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -447,38 +451,20 @@ class _ProductCardState extends State<ProductCard> {
                     ),
             ),
             child: widget.imageUrl.isNotEmpty
-                ? Image.network(
-                    widget.imageUrl,
+                ? AppNetworkImage(
+                    url: widget.imageUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: expand ? double.infinity : fixedHeight,
-                    cacheWidth: (MediaQuery.sizeOf(context).width *
-                            MediaQuery.devicePixelRatioOf(context) /
-                            2)
+                    memCacheWidth: (150 *
+                            MediaQuery.devicePixelRatioOf(context))
                         .round(),
-                    errorBuilder: (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return _buildPlaceholder(context);
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        ),
-                      );
-                    },
+                    memCacheHeight: (fixedHeight *
+                            MediaQuery.devicePixelRatioOf(context))
+                        .round(),
+                    loadPriority: widget.imageLoadPriority,
+                    placeholder: _buildPlaceholder(context),
+                    errorWidget: _buildPlaceholder(context),
                   )
                 : _buildPlaceholder(context),
           ),
