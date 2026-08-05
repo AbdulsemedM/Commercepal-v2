@@ -1,23 +1,24 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 import 'product_details.dart';
 
 class ProductDetailsResponse {
   final int status;
   final String message;
-  final ProductDetails data;
+  final ProductDetails? data;
 
   ProductDetailsResponse({
     required this.status,
     required this.message,
-    required this.data,
+    this.data,
   });
 
   factory ProductDetailsResponse.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic>? dataMap = JsonUtils.asMap(json['data']);
     return ProductDetailsResponse(
-      status: json['status'] as int? ?? 0,
-      message: json['message'] as String? ?? '',
-      data: ProductDetails.fromJson(
-        json['data'] as Map<String, dynamic>,
-      ),
+      status: JsonUtils.asIntOr(json['status'], 0),
+      message: JsonUtils.asString(json['message']),
+      data: dataMap != null ? ProductDetails.fromJson(dataMap) : null,
     );
   }
 
@@ -25,7 +26,7 @@ class ProductDetailsResponse {
     return {
       'status': status,
       'message': message,
-      'data': data.toJson(),
+      if (data != null) 'data': data!.toJson(),
     };
   }
 }

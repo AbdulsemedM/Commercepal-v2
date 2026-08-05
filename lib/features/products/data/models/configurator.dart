@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class Configurator {
   final String propertyId;
   final String valueId;
@@ -18,14 +20,16 @@ class Configurator {
   });
 
   factory Configurator.fromJson(Map<String, dynamic> json) {
+    final String imageUrl = JsonUtils.asString(json['imageUrl']);
+    final String miniImageUrl = JsonUtils.asString(json['miniImageUrl']);
     return Configurator(
-      propertyId: json['propertyId'] as String? ?? '',
-      valueId: json['valueId'] as String? ?? '',
-      propertyName: json['propertyName'] as String? ?? '',
-      value: json['value'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String?,
-      miniImageUrl: json['miniImageUrl'] as String?,
-      isConfigurator: json['isConfigurator'] as bool? ?? false,
+      propertyId: JsonUtils.asString(json['propertyId']),
+      valueId: JsonUtils.asString(json['valueId']),
+      propertyName: JsonUtils.asString(json['propertyName']),
+      value: JsonUtils.asString(json['value']),
+      imageUrl: imageUrl.isEmpty ? null : imageUrl,
+      miniImageUrl: miniImageUrl.isEmpty ? null : miniImageUrl,
+      isConfigurator: JsonUtils.asBool(json['isConfigurator']),
     );
   }
 

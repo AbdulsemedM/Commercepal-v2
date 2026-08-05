@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class PricingViewProvider {
   final String providerCurrency;
   final double providerUnitPrice;
@@ -11,9 +13,9 @@ class PricingViewProvider {
 
   factory PricingViewProvider.fromJson(Map<String, dynamic> json) {
     return PricingViewProvider(
-      providerCurrency: json['providerCurrency'] as String? ?? 'USD',
-      providerUnitPrice: (json['providerUnitPrice'] as num?)?.toDouble() ?? 0.0,
-      unitMarkup: (json['unitMarkup'] as num?)?.toDouble() ?? 0.0,
+      providerCurrency: JsonUtils.asString(json['providerCurrency'], 'USD'),
+      providerUnitPrice: JsonUtils.asDoubleOr(json['providerUnitPrice'], 0.0),
+      unitMarkup: JsonUtils.asDoubleOr(json['unitMarkup'], 0.0),
     );
   }
 

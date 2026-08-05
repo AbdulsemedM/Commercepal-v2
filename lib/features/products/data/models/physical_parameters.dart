@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class PhysicalParameters {
   final double length;
   final double width;
@@ -13,10 +15,10 @@ class PhysicalParameters {
 
   factory PhysicalParameters.fromJson(Map<String, dynamic> json) {
     return PhysicalParameters(
-      length: (json['length'] as num?)?.toDouble() ?? 0.0,
-      width: (json['width'] as num?)?.toDouble() ?? 0.0,
-      height: (json['height'] as num?)?.toDouble() ?? 0.0,
-      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
+      length: JsonUtils.asDoubleOr(json['length'], 0.0),
+      width: JsonUtils.asDoubleOr(json['width'], 0.0),
+      height: JsonUtils.asDoubleOr(json['height'], 0.0),
+      weight: JsonUtils.asDoubleOr(json['weight'], 0.0),
     );
   }
 

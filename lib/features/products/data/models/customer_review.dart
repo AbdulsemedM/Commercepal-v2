@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 import 'featured_value.dart';
 
 class CustomerReview {
@@ -18,19 +20,24 @@ class CustomerReview {
   });
 
   factory CustomerReview.fromJson(Map<String, dynamic> json) {
+    final List<dynamic>? featuredList =
+        JsonUtils.asList(json['featuredValues']);
     return CustomerReview(
-      content: json['content'] as String? ?? '',
-      rating: json['rating'] as int? ?? 0,
-      configId: json['configId'] as String? ?? '',
-      reviewedAt: json['reviewedAt'] as String? ?? '',
-      images: (json['images'] as List<dynamic>?)
-              ?.map((item) => item as String)
+      content: JsonUtils.asString(json['content']),
+      // API may send rating as 4.5 (double); truncate to int stars.
+      rating: JsonUtils.asIntOr(json['rating'], 0),
+      configId: JsonUtils.asString(json['configId']),
+      reviewedAt: JsonUtils.asString(json['reviewedAt']),
+      images: JsonUtils.asStringList(json['images']),
+      featuredValues: featuredList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => FeaturedValue.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
-      featuredValues: (json['featuredValues'] as List<dynamic>?)
-              ?.map((item) => FeaturedValue.fromJson(item as Map<String, dynamic>))
-              .toList() ??
-          [],
+          const <FeaturedValue>[],
     );
   }
 

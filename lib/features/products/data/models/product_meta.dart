@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class ProductMeta {
   final double rating;
   final int reviewCount;
@@ -9,8 +11,8 @@ class ProductMeta {
 
   factory ProductMeta.fromJson(Map<String, dynamic> json) {
     return ProductMeta(
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: json['reviewCount'] as int? ?? 0,
+      rating: JsonUtils.asDoubleOr(json['rating'], 0.0),
+      reviewCount: JsonUtils.asIntOr(json['reviewCount'], 0),
     );
   }
 

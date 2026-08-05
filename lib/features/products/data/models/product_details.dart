@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 import 'physical_parameters.dart';
 import 'pricing.dart';
 import 'product_image.dart';
@@ -65,62 +67,92 @@ class ProductDetails {
   });
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) {
+    final List<dynamic>? imagesList = JsonUtils.asList(json['images']);
+    final List<dynamic>? videosList = JsonUtils.asList(json['videos']);
+    final List<dynamic>? variantsList = JsonUtils.asList(json['variants']);
+    final List<dynamic>? reviewsList = JsonUtils.asList(json['customerReviews']);
+    final List<dynamic>? recommendedList =
+        JsonUtils.asList(json['recommendedProducts']);
+
     return ProductDetails(
-      id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      provider: json['provider'] as String? ?? '',
-      brandName: json['brandName'] as String? ?? '',
-      vendorName: json['vendorName'] as String? ?? '',
-      categoryId: json['categoryId'] as String? ?? '',
-      description: (json['description'] as List<dynamic>?)
-              ?.map((item) => item as String)
-              .toList() ??
-          [],
+      id: JsonUtils.asString(json['id']),
+      title: JsonUtils.asString(json['title']),
+      provider: JsonUtils.asString(json['provider']),
+      brandName: JsonUtils.asString(json['brandName']),
+      vendorName: JsonUtils.asString(json['vendorName']),
+      categoryId: JsonUtils.asString(json['categoryId']),
+      description: JsonUtils.asStringList(json['description']),
       physicalParameters: PhysicalParameters.fromJson(
-        json['physicalParameters'] as Map<String, dynamic>? ??
+        JsonUtils.asMap(json['physicalParameters']) ??
             const <String, dynamic>{},
       ),
-      status: json['status'] as String? ?? '',
-      stockLevel: json['stockLevel'] as int? ?? 0,
-      isSellAllowed: json['isSellAllowed'] as bool? ?? false,
-      stuffStatus: json['stuffStatus'] as String? ?? '',
+      status: JsonUtils.asString(json['status']),
+      stockLevel: JsonUtils.asIntOr(json['stockLevel'], 0),
+      isSellAllowed: JsonUtils.asBool(json['isSellAllowed']),
+      stuffStatus: JsonUtils.asString(json['stuffStatus']),
       pricing: Pricing.fromJson(
-        json['pricing'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+        JsonUtils.asMap(json['pricing']) ?? const <String, dynamic>{},
       ),
-      images: (json['images'] as List<dynamic>?)
-              ?.map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
+      images: imagesList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => ProductImage.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
+          const <ProductImage>[],
       mainImage: ProductImage.fromJson(
-        json['mainImage'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+        JsonUtils.asMap(json['mainImage']) ?? const <String, dynamic>{},
       ),
-      videos: (json['videos'] as List<dynamic>?)
-              ?.map((item) => ProductVideo.fromJson(item as Map<String, dynamic>))
+      videos: videosList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => ProductVideo.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
-      variants: (json['variants'] as List<dynamic>?)
-              ?.map((item) => Variant.fromJson(item as Map<String, dynamic>))
+          const <ProductVideo>[],
+      variants: variantsList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => Variant.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
+          const <Variant>[],
       hasHierarchicalConfigurators:
-          json['hasHierarchicalConfigurators'] as bool? ?? false,
-      externalUrl: json['externalUrl'] as String? ?? '',
-      minOrderQuantity: json['minOrderQuantity'] as int? ?? 1,
-      quantityStep: json['quantityStep'] as int? ?? 1,
-      createdTime: json['createdTime'] as String? ?? '',
-      updatedTime: json['updatedTime'] as String? ?? '',
+          JsonUtils.asBool(json['hasHierarchicalConfigurators']),
+      externalUrl: JsonUtils.asString(json['externalUrl']),
+      minOrderQuantity: JsonUtils.asIntOr(json['minOrderQuantity'], 1),
+      quantityStep: JsonUtils.asIntOr(json['quantityStep'], 1),
+      createdTime: JsonUtils.asString(json['createdTime']),
+      updatedTime: JsonUtils.asString(json['updatedTime']),
       meta: ProductMeta.fromJson(
-        json['meta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+        JsonUtils.asMap(json['meta']) ?? const <String, dynamic>{},
       ),
-      customerReviews: (json['customerReviews'] as List<dynamic>?)
-              ?.map((item) => CustomerReview.fromJson(item as Map<String, dynamic>))
+      customerReviews: reviewsList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => CustomerReview.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
-      recommendedProducts: (json['recommendedProducts'] as List<dynamic>?)
-              ?.map((item) =>
-                  RecommendedProduct.fromJson(item as Map<String, dynamic>))
+          const <CustomerReview>[],
+      // Skip invalid recommended items so one bad entry cannot fail the PDP.
+      recommendedProducts: recommendedList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => RecommendedProduct.tryFromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
+              .whereType<RecommendedProduct>()
               .toList() ??
-          [],
+          const <RecommendedProduct>[],
     );
   }
 

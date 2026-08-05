@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class ProductVideo {
   final String url;
   final String previewUrl;
@@ -9,8 +11,8 @@ class ProductVideo {
 
   factory ProductVideo.fromJson(Map<String, dynamic> json) {
     return ProductVideo(
-      url: json['url'] as String? ?? '',
-      previewUrl: json['previewUrl'] as String? ?? '',
+      url: JsonUtils.asString(json['url']),
+      previewUrl: JsonUtils.asString(json['previewUrl']),
     );
   }
 

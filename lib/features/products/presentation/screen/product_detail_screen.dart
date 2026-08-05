@@ -828,7 +828,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                     ? Spacing.md
                                                     : 0,
                                               ),
-                                              child: InAppProductVideo(
+                                              child: SoftFailProductVideo(
                                                 url: product.videos[i].url,
                                                 autoPlay: i == 0,
                                               ),

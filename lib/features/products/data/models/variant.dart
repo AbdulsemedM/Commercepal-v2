@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 import 'pricing.dart';
 import 'configurator.dart';
 
@@ -17,17 +19,23 @@ class Variant {
   });
 
   factory Variant.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic>? pricingMap = JsonUtils.asMap(json['pricing']);
+    final List<dynamic>? configuratorsList =
+        JsonUtils.asList(json['configurators']);
     return Variant(
-      configId: json['configId'] as String? ?? '',
-      quantity: json['quantity'] as int? ?? 0,
-      salesCount: json['salesCount'] as int? ?? 0,
-      pricing: json['pricing'] != null
-          ? Pricing.fromJson(json['pricing'] as Map<String, dynamic>)
-          : null,
-      configurators: (json['configurators'] as List<dynamic>?)
-              ?.map((item) => Configurator.fromJson(item as Map<String, dynamic>))
+      configId: JsonUtils.asString(json['configId']),
+      quantity: JsonUtils.asIntOr(json['quantity'], 0),
+      salesCount: JsonUtils.asIntOr(json['salesCount'], 0),
+      pricing: pricingMap != null ? Pricing.fromJson(pricingMap) : null,
+      configurators: configuratorsList
+              ?.whereType<Map>()
+              .map(
+                (Map item) => Configurator.fromJson(
+                  JsonUtils.asMap(item) ?? const <String, dynamic>{},
+                ),
+              )
               .toList() ??
-          [],
+          const <Configurator>[],
     );
   }
 

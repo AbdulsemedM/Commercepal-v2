@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class FeaturedValue {
   final String name;
   final String value;
@@ -9,8 +11,8 @@ class FeaturedValue {
 
   factory FeaturedValue.fromJson(Map<String, dynamic> json) {
     return FeaturedValue(
-      name: json['name'] as String? ?? '',
-      value: json['value'] as String? ?? '',
+      name: JsonUtils.asString(json['name']),
+      value: JsonUtils.asString(json['value']),
     );
   }
 

@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 class ProductImage {
   final String thumbnail;
   final String main;
@@ -9,8 +11,8 @@ class ProductImage {
 
   factory ProductImage.fromJson(Map<String, dynamic> json) {
     return ProductImage(
-      thumbnail: json['thumbnail'] as String? ?? '',
-      main: json['main'] as String? ?? '',
+      thumbnail: JsonUtils.asString(json['thumbnail']),
+      main: JsonUtils.asString(json['main']),
     );
   }
 

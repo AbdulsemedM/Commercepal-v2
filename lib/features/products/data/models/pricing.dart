@@ -1,3 +1,5 @@
+import 'package:commercepal/core/utils/json_utils.dart';
+
 import 'pricing_view_provider.dart';
 
 class Pricing {
@@ -28,23 +30,24 @@ class Pricing {
   });
 
   factory Pricing.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic>? providerMap =
+        JsonUtils.asMap(json['pricingViewProvider']);
     return Pricing(
       // Left empty on purpose: a missing pricing block must not mislabel prices
       // as USD. Consumers fall back to the shopper's selected currency.
-      currency: json['currency'] as String? ?? '',
-      currentPrice: (json['currentPrice'] as num?)?.toDouble() ?? 0.0,
-      originalPrice: (json['originalPrice'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      isOnDiscount: json['isOnDiscount'] as bool? ?? false,
-      discountPercentage: (json['discountPercentage'] as num?)?.toDouble() ?? 0.0,
-      formattedDiscountPercentage: json['formattedDiscountPercentage'] as String? ?? '',
-      formattedCurrentPrice: json['formattedCurrentPrice'] as String? ?? '',
-      formattedOriginalPrice: json['formattedOriginalPrice'] as String? ?? '',
-      formattedDiscountAmount: json['formattedDiscountAmount'] as String? ?? '',
-      pricingViewProvider: json['pricingViewProvider'] != null
-          ? PricingViewProvider.fromJson(
-              json['pricingViewProvider'] as Map<String, dynamic>,
-            )
+      currency: JsonUtils.asString(json['currency']),
+      currentPrice: JsonUtils.asDoubleOr(json['currentPrice'], 0.0),
+      originalPrice: JsonUtils.asDoubleOr(json['originalPrice'], 0.0),
+      discountAmount: JsonUtils.asDoubleOr(json['discountAmount'], 0.0),
+      isOnDiscount: JsonUtils.asBool(json['isOnDiscount']),
+      discountPercentage: JsonUtils.asDoubleOr(json['discountPercentage'], 0.0),
+      formattedDiscountPercentage:
+          JsonUtils.asString(json['formattedDiscountPercentage']),
+      formattedCurrentPrice: JsonUtils.asString(json['formattedCurrentPrice']),
+      formattedOriginalPrice: JsonUtils.asString(json['formattedOriginalPrice']),
+      formattedDiscountAmount: JsonUtils.asString(json['formattedDiscountAmount']),
+      pricingViewProvider: providerMap != null
+          ? PricingViewProvider.fromJson(providerMap)
           : null,
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -95,8 +96,116 @@ bool _useNativeFileVideoPlayer() {
   return defaultTargetPlatform != TargetPlatform.android;
 }
 
+/// iOS WKWebView / AVPlayer autoplay has caused hangs and crashes on some devices.
+bool _isIosPlatform() {
+  return !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+}
+
 String _htmlEscapeAttrUrl(String url) {
-  return url.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+  return url
+      .replaceAll('&', '&amp;')
+      .replaceAll('"', '&quot;')
+      .replaceAll('<', '&lt;');
+}
+
+Widget _videoUnavailablePlaceholder(BuildContext context, [String? message]) {
+  return AspectRatio(
+    aspectRatio: 16 / 9,
+    child: ColoredBox(
+      color: Colors.grey.shade200,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Icons.videocam_off_outlined, color: Colors.grey.shade600),
+              const SizedBox(height: 8),
+              Text(
+                message ?? 'Video unavailable',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _tapToPlayPlaceholder(BuildContext context, {required VoidCallback onPlay}) {
+  return AspectRatio(
+    aspectRatio: 16 / 9,
+    child: Material(
+      color: Colors.black87,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPlay,
+        child: const Center(
+          child: Icon(
+            Icons.play_circle_fill,
+            size: 64,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Isolates player failures so a broken video tile cannot take down the PDP.
+class SoftFailProductVideo extends StatefulWidget {
+  const SoftFailProductVideo({
+    super.key,
+    required this.url,
+    this.autoPlay = false,
+  });
+
+  final String url;
+  final bool autoPlay;
+
+  @override
+  State<SoftFailProductVideo> createState() => _SoftFailProductVideoState();
+}
+
+class _SoftFailProductVideoState extends State<SoftFailProductVideo> {
+  bool _failed = false;
+
+  void _reportFatal(Object error, StackTrace stack) {
+    // Non-fatal: keep PDP usable; tag for Crashlytics iOS triage.
+    unawaited(() async {
+      try {
+        await FirebaseCrashlytics.instance.recordError(
+          error,
+          stack,
+          fatal: false,
+          reason: 'pdp_video_soft_fail',
+        );
+      } catch (_) {}
+    }());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return _videoUnavailablePlaceholder(context);
+    }
+    try {
+      return InAppProductVideo(
+        url: widget.url,
+        // Never autoplay on iOS — tap-to-start avoids WKWebView / AVPlayer hangs.
+        autoPlay: _isIosPlatform() ? false : widget.autoPlay,
+        onFatalError: () {
+          if (mounted) setState(() => _failed = true);
+        },
+      );
+    } catch (e, st) {
+      _reportFatal(e, st);
+      return _videoUnavailablePlaceholder(context);
+    }
+  }
 }
 
 /// In-app playback: [YoutubePlayer] for YouTube; [VideoPlayer] for direct files
@@ -108,10 +217,12 @@ class InAppProductVideo extends StatefulWidget {
     super.key,
     required this.url,
     this.autoPlay = false,
+    this.onFatalError,
   });
 
   final String url;
   final bool autoPlay;
+  final VoidCallback? onFatalError;
 
   @override
   State<InAppProductVideo> createState() => _InAppProductVideoState();
@@ -124,120 +235,155 @@ class _InAppProductVideoState extends State<InAppProductVideo> {
   VideoPlayerController? _fileController;
   WebViewController? _webFallbackController;
   bool _loading = true;
+  bool _awaitingUserTap = false;
   String? _error;
+
+  /// Effective autoplay: always off on iOS.
+  bool get _effectiveAutoPlay =>
+      !_isIosPlatform() && widget.autoPlay;
 
   @override
   void initState() {
     super.initState();
-    // Avoid Android Pigeon "Unable to establish connection" when init runs before
-    // the platform channel is ready, or when many players start at once.
+    // On iOS, defer player creation until the user taps play so opening the
+    // PDP never instantiates WKWebView/AVPlayer for every product with videos.
+    if (_isIosPlatform()) {
+      _loading = false;
+      _awaitingUserTap = true;
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(_init());
     });
   }
 
-  Future<void> _init() async {
-    final String normalized = normalizeVideoHttpUrl(widget.url);
-    if (normalized.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = 'Invalid video URL';
-        });
-      }
-      return;
-    }
+  void _onUserTapPlay() {
+    if (!_awaitingUserTap) return;
+    setState(() {
+      _awaitingUserTap = false;
+      _loading = true;
+      _error = null;
+    });
+    unawaited(_init());
+  }
 
-    final String? youtubeId = extractYoutubeVideoId(normalized);
-    if (youtubeId != null) {
-      _youtubeController = YoutubePlayerController(
-        initialVideoId: youtubeId,
-        flags: YoutubePlayerFlags(
-          autoPlay: widget.autoPlay,
-          // Muted autoplay matches YouTube / WebView policies so playback actually starts.
-          mute: widget.autoPlay,
-          loop: false,
-          isLive: false,
-          forceHD: false,
-          enableCaption: false,
-          controlsVisibleAtStart: true,
-          hideControls: false,
-          showLiveFullscreenButton: true,
-        ),
-      );
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-      return;
-    }
-
-    // Stagger concurrent inits on product pages with multiple video tiles.
-    if (!_useNativeFileVideoPlayer()) {
-      _openHtml5VideoInWebView(normalized);
-      return;
-    }
-
-    await Future<void>.delayed(
-      Duration(milliseconds: 60 + (normalized.hashCode.abs() % 340)),
-    );
+  void _markUnavailable([String message = 'Video unavailable']) {
     if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _awaitingUserTap = false;
+      _error = message;
+      _youtubeController = null;
+      _webFallbackController = null;
+    });
+  }
 
-    VideoPlayerController? fileTry;
+  Future<void> _init() async {
     try {
-      fileTry = VideoPlayerController.networkUrl(
-        Uri.parse(normalized),
-        httpHeaders: const <String, String>{
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        },
-      );
-      await fileTry.initialize().timeout(_initTimeout);
-      if (!mounted) {
-        await fileTry.dispose();
+      final String normalized = normalizeVideoHttpUrl(widget.url);
+      if (normalized.isEmpty) {
+        _markUnavailable('Invalid video URL');
         return;
       }
-      if (fileTry.value.hasError) {
-        throw Exception(fileTry.value.errorDescription ?? 'Playback error');
+
+      final String? youtubeId = extractYoutubeVideoId(normalized);
+      if (youtubeId != null) {
+        try {
+          _youtubeController = YoutubePlayerController(
+            initialVideoId: youtubeId,
+            flags: YoutubePlayerFlags(
+              autoPlay: _effectiveAutoPlay,
+              mute: _effectiveAutoPlay,
+              loop: false,
+              isLive: false,
+              forceHD: false,
+              enableCaption: false,
+              controlsVisibleAtStart: true,
+              hideControls: false,
+              showLiveFullscreenButton: true,
+            ),
+          );
+          if (mounted) {
+            setState(() {
+              _loading = false;
+              _error = null;
+            });
+          }
+        } catch (_) {
+          _markUnavailable();
+        }
+        return;
       }
-      await fileTry.setLooping(false);
-      fileTry.addListener(_fileListener);
-      if (widget.autoPlay) {
-        await fileTry.play();
+
+      if (!_useNativeFileVideoPlayer()) {
+        _openHtml5VideoInWebView(normalized);
+        return;
       }
-      _fileController = fileTry;
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    } on PlatformException catch (_) {
-      await fileTry?.dispose();
+
+      await Future<void>.delayed(
+        Duration(milliseconds: 60 + (normalized.hashCode.abs() % 340)),
+      );
       if (!mounted) return;
-      _openWebFallback(normalized);
-    } on TimeoutException {
-      await fileTry?.dispose();
-      if (!mounted) return;
-      _openWebFallback(normalized);
+
+      VideoPlayerController? fileTry;
+      try {
+        fileTry = VideoPlayerController.networkUrl(
+          Uri.parse(normalized),
+          httpHeaders: const <String, String>{
+            'User-Agent':
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          },
+        );
+        await fileTry.initialize().timeout(_initTimeout);
+        if (!mounted) {
+          await fileTry.dispose();
+          return;
+        }
+        if (fileTry.value.hasError) {
+          throw Exception(fileTry.value.errorDescription ?? 'Playback error');
+        }
+        await fileTry.setLooping(false);
+        fileTry.addListener(_fileListener);
+        if (_effectiveAutoPlay) {
+          await fileTry.play();
+        }
+        _fileController = fileTry;
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = null;
+          });
+        }
+      } on PlatformException catch (_) {
+        await fileTry?.dispose();
+        if (!mounted) return;
+        _openWebFallback(normalized);
+      } on TimeoutException {
+        await fileTry?.dispose();
+        if (!mounted) return;
+        _openWebFallback(normalized);
+      } catch (_) {
+        await fileTry?.dispose();
+        if (!mounted) return;
+        _openWebFallback(normalized);
+      }
     } catch (_) {
-      await fileTry?.dispose();
-      if (!mounted) return;
-      _openWebFallback(normalized);
+      _markUnavailable();
     }
   }
 
   void _openHtml5VideoInWebView(String videoUrl) {
-    final Uri parsed = Uri.parse(videoUrl);
-    final String origin = parsed.hasAuthority
-        ? '${parsed.scheme}://${parsed.authority}'
-        : 'https://localhost';
-    final String safeSrc = _htmlEscapeAttrUrl(videoUrl);
-    final String autoAttrs = widget.autoPlay
-        ? ' autoplay muted playsinline'
-        : ' playsinline';
-    final String html = '''
+    try {
+      final Uri parsed = Uri.parse(videoUrl);
+      final String origin = parsed.hasAuthority
+          ? '${parsed.scheme}://${parsed.authority}'
+          : 'https://localhost';
+      final String safeSrc = _htmlEscapeAttrUrl(videoUrl);
+      final String autoAttrs = _effectiveAutoPlay
+          ? ' autoplay muted playsinline'
+          : ' playsinline';
+      final String html = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -254,36 +400,45 @@ video{width:100%;height:100%;object-fit:contain;}
 </body>
 </html>''';
 
-    final WebViewController c = WebViewController()
-      // HTML5 <video> does not require JS; keep disabled to reduce XSS surface.
-      ..setJavaScriptMode(JavaScriptMode.disabled)
-      ..setBackgroundColor(Colors.black)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (NavigationRequest request) {
-            final Uri? uri = Uri.tryParse(request.url);
-            // Allow about:blank / data for the loaded HTML document.
-            if (uri == null) return NavigationDecision.prevent;
-            final String scheme = uri.scheme.toLowerCase();
-            if (scheme == 'about' || scheme == 'data') {
+      final WebViewController c = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.disabled)
+        ..setBackgroundColor(Colors.black)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onNavigationRequest: (NavigationRequest request) {
+              final Uri? uri = Uri.tryParse(request.url);
+              if (uri == null) return NavigationDecision.prevent;
+              final String scheme = uri.scheme.toLowerCase();
+              if (scheme == 'about' || scheme == 'data') {
+                return NavigationDecision.navigate;
+              }
+              if (!_isAllowedVideoNavigationUri(uri)) {
+                return NavigationDecision.prevent;
+              }
               return NavigationDecision.navigate;
-            }
-            if (!_isAllowedVideoNavigationUri(uri)) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() {});
-          },
-        ),
-      )
-      ..loadHtmlString(html, baseUrl: origin);
-    setState(() {
-      _webFallbackController = c;
-      _loading = false;
-      _error = null;
-    });
+            },
+            onPageFinished: (_) {
+              if (mounted) setState(() {});
+            },
+            onWebResourceError: (_) {
+              if (mounted) {
+                setState(() {
+                  _error = 'Video unavailable';
+                });
+              }
+            },
+          ),
+        )
+        ..loadHtmlString(html, baseUrl: origin);
+      if (!mounted) return;
+      setState(() {
+        _webFallbackController = c;
+        _loading = false;
+        _error = null;
+      });
+    } catch (_) {
+      _markUnavailable();
+    }
   }
 
   void _fileListener() {
@@ -299,49 +454,78 @@ video{width:100%;height:100%;object-fit:contain;}
   }
 
   void _openWebFallback(String normalized) {
-    final Uri? initial = Uri.tryParse(normalized);
-    if (initial == null || !_isAllowedVideoNavigationUri(initial)) {
+    try {
+      final Uri? initial = Uri.tryParse(normalized);
+      if (initial == null || !_isAllowedVideoNavigationUri(initial)) {
+        _markUnavailable('Disallowed or insecure video URL');
+        return;
+      }
+      final WebViewController c = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(Colors.black)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onNavigationRequest: (NavigationRequest request) {
+              final Uri? uri = Uri.tryParse(request.url);
+              if (uri == null || !_isAllowedVideoNavigationUri(uri)) {
+                return NavigationDecision.prevent;
+              }
+              return NavigationDecision.navigate;
+            },
+            onPageFinished: (_) {
+              if (mounted) setState(() {});
+            },
+            onWebResourceError: (_) {
+              if (mounted) {
+                setState(() {
+                  _error = 'Video unavailable';
+                });
+              }
+            },
+          ),
+        )
+        ..loadRequest(initial);
+      if (!mounted) return;
       setState(() {
+        _webFallbackController = c;
         _loading = false;
-        _error = 'Disallowed or insecure video URL';
+        _error = null;
       });
-      return;
+    } catch (_) {
+      _markUnavailable();
     }
-    final WebViewController c = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (NavigationRequest request) {
-            final Uri? uri = Uri.tryParse(request.url);
-            if (uri == null || !_isAllowedVideoNavigationUri(uri)) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() {});
-          },
-        ),
-      )
-      ..loadRequest(initial);
-    setState(() {
-      _webFallbackController = c;
-      _loading = false;
-      _error = null;
-    });
   }
 
   @override
   void dispose() {
     _fileController?.removeListener(_fileListener);
     _fileController?.dispose();
-    _youtubeController?.dispose();
+    try {
+      _youtubeController?.dispose();
+    } catch (_) {
+      // Ignore dispose races from the YouTube plugin on iOS.
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    try {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: _buildContent(context),
+      );
+    } catch (_) {
+      widget.onFatalError?.call();
+      return _videoUnavailablePlaceholder(context);
+    }
+  }
+
+  Widget _buildContent(BuildContext context) {
+    if (_awaitingUserTap) {
+      return _tapToPlayPlaceholder(context, onPlay: _onUserTapPlay);
+    }
+
     if (_loading) {
       return const AspectRatio(
         aspectRatio: 16 / 9,
@@ -354,100 +538,69 @@ video{width:100%;height:100%;object-fit:contain;}
       );
     }
 
-    if (_error != null && _youtubeController == null && _webFallbackController == null) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: ColoredBox(
-          color: Colors.grey.shade200,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-        ),
-      );
+    if (_error != null &&
+        _youtubeController == null &&
+        _webFallbackController == null) {
+      return _videoUnavailablePlaceholder(context, _error);
     }
 
     if (_youtubeController != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: YoutubePlayer(
-          controller: _youtubeController!,
-          aspectRatio: 16 / 9,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Theme.of(context).colorScheme.primary,
-        ),
+      return YoutubePlayer(
+        controller: _youtubeController!,
+        aspectRatio: 16 / 9,
+        showVideoProgressIndicator: true,
+        progressIndicatorColor: Theme.of(context).colorScheme.primary,
       );
     }
 
     if (_webFallbackController != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: WebViewWidget(controller: _webFallbackController!),
-        ),
+      if (_error != null) {
+        return _videoUnavailablePlaceholder(context, _error);
+      }
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: WebViewWidget(controller: _webFallbackController!),
       );
     }
 
     final VideoPlayerController? c = _fileController;
     if (c == null || !c.value.isInitialized) {
-      return const SizedBox.shrink();
+      return _videoUnavailablePlaceholder(context);
     }
 
     if (c.value.hasError) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: ColoredBox(
-          color: Colors.grey.shade200,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                c.value.errorDescription ?? 'Playback error',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-        ),
+      return _videoUnavailablePlaceholder(
+        context,
+        c.value.errorDescription ?? 'Playback error',
       );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
-        child: GestureDetector(
-          onTap: () {
-            if (c.value.isPlaying) {
-              c.pause();
-            } else {
-              c.play();
-            }
-            setState(() {});
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            fit: StackFit.expand,
-            children: <Widget>[
-              VideoPlayer(c),
-              if (!c.value.isPlaying)
-                Container(
-                  color: Colors.black26,
-                  child: const Icon(
-                    Icons.play_circle_fill,
-                    size: 56,
-                    color: Colors.white,
-                  ),
+    return AspectRatio(
+      aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
+      child: GestureDetector(
+        onTap: () {
+          if (c.value.isPlaying) {
+            c.pause();
+          } else {
+            c.play();
+          }
+          setState(() {});
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          fit: StackFit.expand,
+          children: <Widget>[
+            VideoPlayer(c),
+            if (!c.value.isPlaying)
+              Container(
+                color: Colors.black26,
+                child: const Icon(
+                  Icons.play_circle_fill,
+                  size: 56,
+                  color: Colors.white,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
