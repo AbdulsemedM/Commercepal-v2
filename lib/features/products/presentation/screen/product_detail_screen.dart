@@ -854,12 +854,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           )
                                         : const SizedBox.shrink(),
                                   ),
-                                  if (product.recommendedProducts.isNotEmpty) ...[
-                                    const SizedBox(height: Spacing.lg),
-                                    RecommendedProductsSection(
-                                      products: product.recommendedProducts,
-                                    ),
-                                  ],
+                                  const SizedBox(height: Spacing.lg),
+                                  YouMayAlsoLikeSection(
+                                    productId: product.id.isNotEmpty
+                                        ? product.id
+                                        : (widget.productId ?? ''),
+                                    productTitle: displayTitle,
+                                  ),
                                   const SizedBox(height: Spacing.xl),
                                 ],
                               ),

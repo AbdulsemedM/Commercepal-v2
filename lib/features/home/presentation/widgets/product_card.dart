@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/widgets/app_network_image.dart';
-import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 
-class ProductCard extends StatefulWidget {
+class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
     this.productId,
@@ -28,7 +24,7 @@ class ProductCard extends StatefulWidget {
     this.reviewCount,
     this.originalPrice,
     this.discountPercentage,
-    this.showAddToCart,
+    this.showViewProductButton,
     this.fillCell = false,
     this.imageLoadPriority,
   });
@@ -46,91 +42,39 @@ class ProductCard extends StatefulWidget {
   final int? reviewCount;
   final String? originalPrice;
   final int? discountPercentage;
-  final bool? showAddToCart;
+  final bool? showViewProductButton;
   /// When true, image and content expand to fill the parent (grid cells).
   final bool fillCell;
   /// Lower values load sooner on home (ordered image queue).
   final int? imageLoadPriority;
 
-  @override
-  State<ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<ProductCard> {
-  String _cachedCountry = CountryCurrencyConstants.defaultCountryCode;
-  bool _isAdding = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCountry();
-  }
-
-  Future<void> _loadCountry() async {
-    final country = await Storage().getSelectedCountry();
-    if (mounted) {
-      setState(() => _cachedCountry = country);
-    }
-  }
-
-  bool get _canAddToCart {
-    if (widget.showAddToCart == false) return false;
-    final id = widget.product?.id ?? widget.productId;
+  bool get _showViewProductButton {
+    if (showViewProductButton == false) return false;
+    final String? id = product?.id ?? productId;
     return id != null && id.isNotEmpty;
   }
 
-  String get _resolvedCurrency =>
-      widget.currency ??
-      widget.product?.currency ??
-      CountryCurrencyConstants.defaultCurrencyCode;
-
   void _openProductDetail(BuildContext context) {
-    final id = widget.product?.id ?? widget.productId;
+    final String? id = product?.id ?? productId;
     // Always forward what the card already knows so the detail page can fall
     // back on it when the API returns an empty product record.
     final Map<String, String> query = <String, String>{
       if (id != null && id.isNotEmpty) 'id': id,
-      if (widget.description.isNotEmpty) 'name': widget.description,
-      if (widget.price.isNotEmpty) 'price': widget.price,
-      if (widget.imageUrl.isNotEmpty) 'image': widget.imageUrl,
-      if ((widget.rating ?? 0) > 0) 'rating': widget.rating!.toString(),
-      if ((widget.reviewCount ?? 0) > 0)
-        'reviews': widget.reviewCount!.toString(),
+      if (description.isNotEmpty) 'name': description,
+      if (price.isNotEmpty) 'price': price,
+      if (imageUrl.isNotEmpty) 'image': imageUrl,
+      if ((rating ?? 0) > 0) 'rating': rating!.toString(),
+      if ((reviewCount ?? 0) > 0) 'reviews': reviewCount!.toString(),
     };
     context.push(
       Uri(path: AppRoutes.productDetail, queryParameters: query).toString(),
     );
   }
 
-  void _handleAddToCart() {
-    if (_isAdding || !_canAddToCart) return;
-
-    final id = widget.product?.id ?? widget.productId!;
-    HapticFeedback.lightImpact();
-    setState(() => _isAdding = true);
-
-    context.read<CartBloc>().add(
-          CartAddItemRequested(
-            productId: id,
-            configId: '',
-            quantity: 1,
-            currency: _resolvedCurrency,
-            country: _cachedCountry,
-            product: widget.product,
-          ),
-        );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Added to cart'),
-        backgroundColor: AppColors.success,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    Future<void>.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) setState(() => _isAdding = false);
-    });
+  void _handleViewProductTap(BuildContext context) {
+    if (!_showViewProductButton) return;
+    HapticFeedback.selectionClick();
+    _openProductDetail(context);
   }
 
   @override
@@ -140,8 +84,7 @@ class _ProductCardState extends State<ProductCard> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final bool bounded =
-            widget.fillCell || constraints.hasBoundedHeight;
+        final bool bounded = fillCell || constraints.hasBoundedHeight;
         return _buildCard(context, scheme, isDark, bounded);
       },
     );
@@ -172,7 +115,7 @@ class _ProductCardState extends State<ProductCard> {
       onTap: () => _openProductDetail(context),
       borderRadius: BorderRadius.circular(8),
       child: Text(
-        widget.description,
+        description,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: isDark ? scheme.onSurface : AppColors.navy,
               fontSize: titleSize,
@@ -194,10 +137,10 @@ class _ProductCardState extends State<ProductCard> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           _buildPriceText(context, isDark, priceSize),
-          if (widget.originalPrice != null) ...[
+          if (originalPrice != null) ...[
             const SizedBox(height: 1),
             Text(
-              widget.originalPrice!,
+              originalPrice!,
               style: TextStyle(
                 color: scheme.onSurfaceVariant,
                 fontSize: originalSize,
@@ -208,8 +151,8 @@ class _ProductCardState extends State<ProductCard> {
               maxLines: 1,
             ),
           ],
-          if ((widget.rating != null && widget.rating! > 0) ||
-              (widget.reviewCount != null && widget.reviewCount! > 0)) ...[
+          if ((rating != null && rating! > 0) ||
+              (reviewCount != null && reviewCount! > 0)) ...[
             const SizedBox(height: 2),
             Row(
               children: <Widget>[
@@ -220,8 +163,8 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  (widget.rating != null && widget.rating! > 0)
-                      ? widget.rating!.toStringAsFixed(1)
+                  (rating != null && rating! > 0)
+                      ? rating!.toStringAsFixed(1)
                       : '—',
                   style: TextStyle(
                     fontSize: compact ? 10 : 12,
@@ -229,11 +172,11 @@ class _ProductCardState extends State<ProductCard> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (widget.reviewCount != null) ...[
+                if (reviewCount != null) ...[
                   const SizedBox(width: 2),
                   Flexible(
                     child: Text(
-                      '(${widget.reviewCount})',
+                      '(${reviewCount})',
                       style: TextStyle(
                         fontSize: compact ? 9 : 11,
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
@@ -259,12 +202,12 @@ class _ProductCardState extends State<ProductCard> {
           titleAndRating,
           const SizedBox(height: 2),
           priceSection,
-          if (widget.showProgressBar &&
-              widget.sold != null &&
-              widget.inStock != null) ...[
+          if (showProgressBar &&
+              sold != null &&
+              inStock != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Sold: ${widget.sold} In Stock: ${widget.inStock}',
+              'Sold: ${sold} In Stock: ${inStock}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                     fontSize: 10,
@@ -274,7 +217,7 @@ class _ProductCardState extends State<ProductCard> {
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: widget.sold! / (widget.sold! + widget.inStock!),
+                value: sold! / (sold! + inStock!),
                 backgroundColor:
                     scheme.surfaceContainerHighest.withValues(alpha: 0.8),
                 valueColor: const AlwaysStoppedAnimation<Color>(
@@ -288,12 +231,12 @@ class _ProductCardState extends State<ProductCard> {
       ),
     );
 
-    final Widget? addButton = _canAddToCart
+    final Widget? viewProductButton = _showViewProductButton
         ? SizedBox(
             width: double.infinity,
             height: buttonHeight,
             child: FilledButton(
-              onPressed: _isAdding ? null : _handleAddToCart,
+              onPressed: () => _handleViewProductTap(context),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: AppColors.onSecondary,
@@ -305,24 +248,15 @@ class _ProductCardState extends State<ProductCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: _isAdding
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.onSecondary.withValues(alpha: 0.8),
-                      ),
-                    )
-                  : Text(
-                      'Add to Cart',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: buttonFont,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              child: Text(
+                'View Product',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: buttonFont,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )
         : null;
@@ -343,9 +277,9 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 const SizedBox(height: 4),
                 priceSection,
-                if (addButton != null) ...[
+                if (viewProductButton != null) ...[
                   const SizedBox(height: 6),
-                  addButton,
+                  viewProductButton,
                 ],
               ],
             )
@@ -354,9 +288,9 @@ class _ProductCardState extends State<ProductCard> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 textBlock,
-                if (addButton != null) ...[
+                if (viewProductButton != null) ...[
                   const SizedBox(height: Spacing.xs),
-                  addButton,
+                  viewProductButton,
                 ],
               ],
             ),
@@ -392,11 +326,12 @@ class _ProductCardState extends State<ProductCard> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color amountColor = isDark ? scheme.onSurface : AppColors.navy;
 
-    final String price = widget.price.trim();
-    final int splitIndex = price.indexOf(' ');
-    final String prefix = splitIndex > 0 ? price.substring(0, splitIndex) : '';
+    final String priceText = this.price.trim();
+    final int splitIndex = priceText.indexOf(' ');
+    final String prefix =
+        splitIndex > 0 ? priceText.substring(0, splitIndex) : '';
     final String amount =
-        splitIndex > 0 ? price.substring(splitIndex + 1) : price;
+        splitIndex > 0 ? priceText.substring(splitIndex + 1) : priceText;
 
     return Text.rich(
       TextSpan(
@@ -450,9 +385,9 @@ class _ProductCardState extends State<ProductCard> {
                       topRight: Radius.circular(AppDecorations.radiusMd),
                     ),
             ),
-            child: widget.imageUrl.isNotEmpty
+            child: imageUrl.isNotEmpty
                 ? AppNetworkImage(
-                    url: widget.imageUrl,
+                    url: imageUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: expand ? double.infinity : fixedHeight,
@@ -462,14 +397,14 @@ class _ProductCardState extends State<ProductCard> {
                     memCacheHeight: (fixedHeight *
                             MediaQuery.devicePixelRatioOf(context))
                         .round(),
-                    loadPriority: widget.imageLoadPriority,
+                    loadPriority: imageLoadPriority,
                     placeholder: _buildPlaceholder(context),
                     errorWidget: _buildPlaceholder(context),
                   )
                 : _buildPlaceholder(context),
           ),
-          if (widget.discountPercentage != null &&
-              widget.discountPercentage! > 0)
+          if (discountPercentage != null &&
+              discountPercentage! > 0)
             Positioned(
               top: 8,
               left: 8,
@@ -483,7 +418,7 @@ class _ProductCardState extends State<ProductCard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '-${widget.discountPercentage}%',
+                  '-${discountPercentage}%',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: expand ? 10 : 12,
