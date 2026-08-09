@@ -20,6 +20,7 @@ import '../widgets/home_discover_section.dart';
 import '../widgets/home_wholesale_section.dart';
 import '../widgets/recently_viewed_section.dart';
 import '../widgets/trust_badges_strip.dart';
+import 'package:commercepal/features/products/presentation/widgets/visual_search_entry_actions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,6 +95,9 @@ class _HomePageState extends State<HomePage> {
               _navigateToTab(context, 3);
             },
             hasNotification: false,
+            additionalActions: const <Widget>[
+              VisualSearchEntryActions(),
+            ],
           ),
           body: RefreshIndicator(
             onRefresh: () => _onPullToRefresh(context),

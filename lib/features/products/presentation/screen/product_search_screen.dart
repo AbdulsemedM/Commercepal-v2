@@ -21,6 +21,7 @@ import 'package:commercepal/features/products/data/models/product.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/app_analytics.dart';
+import 'package:commercepal/features/products/presentation/widgets/visual_search_entry_actions.dart';
 
 enum _ClientProductSort { relevance, priceAsc, priceDesc, nameAz }
 
@@ -644,6 +645,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                 onCartTap: () => _navigateToTab(context, 2),
                 onProfileTap: () => _navigateToTab(context, 3),
                 hasNotification: false,
+                additionalActions: const <Widget>[
+                  VisualSearchEntryActions(),
+                ],
               ),
               body: Column(
                 children: <Widget>[

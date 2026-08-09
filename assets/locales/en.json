@@ -539,5 +539,30 @@
   "supportChat.quickAction.freeShipping": "Free shipping?",
   "supportChat.quickAction.trackOrder": "Track my order",
   "supportChat.quickAction.shareProduct": "Share a product link",
-  "supportChat.quickAction.talkToAgent": "Talk to an agent"
+  "supportChat.quickAction.talkToAgent": "Talk to an agent",
+
+  "visualSearch.title": "Visual Search",
+  "visualSearch.takePhoto": "Take photo",
+  "visualSearch.fromGallery": "From gallery",
+  "visualSearch.or": "OR",
+  "visualSearch.urlHint": "Paste product URL (SHEIN, Amazon, etc.)",
+  "visualSearch.idleHint": "Take a photo, pick from gallery, or paste a product link to find similar items.",
+  "visualSearch.analyzing": "Analyzing image…",
+  "visualSearch.noResults": "No matching products found",
+  "visualSearch.noResultsHint": "Try another image or a different product link.",
+  "visualSearch.errorNetwork": "Couldn't connect. Check your connection and try again.",
+  "visualSearch.errorGeneric": "Visual search failed. Please try again.",
+  "visualSearch.retry": "Try again",
+
+  "priceAlert.set": "Alert me if price drops",
+  "priceAlert.active": "Price alert active",
+  "priceAlert.loginRequired": "Sign in required",
+  "priceAlert.loginRequiredBody": "Sign in to set price alerts on products you love.",
+  "priceAlert.targetTitle": "Set target price",
+  "priceAlert.targetLabel": "Notify me when price drops to",
+  "priceAlert.confirm": "Set alert",
+  "priceAlert.saved": "Price alert saved",
+  "priceAlert.removed": "Price alert removed",
+  "priceAlert.errorNetwork": "Couldn't connect. Try again.",
+  "priceAlert.errorGeneric": "Couldn't update price alert. Try again."
 }

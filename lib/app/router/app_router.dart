@@ -15,7 +15,9 @@ import '../../features/splash/splash_screen.dart';
 import '../../features/products/presentation/screen/product_detail_screen.dart';
 import '../../features/products/presentation/screen/product_details_reviews_screen.dart';
 import '../../features/products/presentation/screen/product_search_screen.dart';
+import '../../features/products/presentation/screen/visual_search_screen.dart';
 import '../../features/products/bloc/product_search_bloc.dart';
+import '../../features/products/bloc/visual_search_bloc.dart';
 import '../../features/home/presentation/screen/mega_sale_screen.dart';
 import '../../features/home/presentation/screen/sale_promotion_screen.dart';
 import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
@@ -61,6 +63,7 @@ class AppRoutes {
   static const String productDetail = '/product-detail';
   static const String productDetailsReviews = '/product-details-reviews';
   static const String productSearch = '/product-search';
+  static const String visualSearch = '/visual-search';
   static const String megaSale = '/mega-sale';
   static const String salePromotion = '/sale-promotion';
   static const String termsConditions = '/terms-conditions';
@@ -196,6 +199,17 @@ final GoRouter appRouter = GoRouter(
             initialQuery: params['query'],
             initialAccountType: params['accountType'],
           ),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.visualSearch,
+      name: 'visualSearch',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> params = state.uri.queryParameters;
+        return BlocProvider(
+          create: (_) => VisualSearchBloc(),
+          child: VisualSearchScreen(initialUrl: params['url']),
         );
       },
     ),

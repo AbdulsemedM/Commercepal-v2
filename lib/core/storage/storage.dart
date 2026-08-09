@@ -36,6 +36,7 @@ class Storage {
   static const String _keySelectedCurrency = 'selected_currency_code';
   static const String _keyCustomerId = 'customer_id';
   static const String _keyWishlist = 'wishlist';
+  static const String _keyPriceAlerts = 'price_alerts';
   static const String _keyLocale = 'app_locale';
   static const String _keyRememberedEmail = 'remembered_email';
   static const String _keyBiometricEnabled = 'biometric_enabled';
@@ -254,6 +255,42 @@ class Storage {
   /// Clear all wishlist items from local storage.
   Future<void> clearWishlist() async {
     await _storage.write(key: _keyWishlist, value: '[]');
+  }
+
+  Future<Map<String, double>> _getPriceAlertsMap() async {
+    final String? raw = await _storage.read(key: _keyPriceAlerts);
+    if (raw == null || raw.isEmpty) return <String, double>{};
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return <String, double>{};
+      return decoded.map(
+        (String key, dynamic value) =>
+            MapEntry(key, (value as num).toDouble()),
+      );
+    } catch (_) {
+      return <String, double>{};
+    }
+  }
+
+  Future<void> _savePriceAlertsMap(Map<String, double> map) async {
+    await _storage.write(key: _keyPriceAlerts, value: jsonEncode(map));
+  }
+
+  Future<double?> getPriceAlertTarget(String productId) async {
+    final Map<String, double> map = await _getPriceAlertsMap();
+    return map[productId];
+  }
+
+  Future<void> savePriceAlertTarget(String productId, double targetPrice) async {
+    final Map<String, double> map = await _getPriceAlertsMap();
+    map[productId] = targetPrice;
+    await _savePriceAlertsMap(map);
+  }
+
+  Future<void> removePriceAlertTarget(String productId) async {
+    final Map<String, double> map = await _getPriceAlertsMap();
+    map.remove(productId);
+    await _savePriceAlertsMap(map);
   }
 
   // Locale / language

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/features/support_chat/data/models/support_message.dart';
+import 'package:commercepal/features/support_chat/presentation/widgets/support_chat_product_card.dart';
+import 'package:commercepal/features/support_chat/utils/support_product_parser.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 class SupportMessageBubble extends StatelessWidget {
@@ -14,6 +16,8 @@ class SupportMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isCustomer = message.isCustomer;
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ParsedSupportMessage parsed =
+        parseSupportMessageProducts(message.messageText);
 
     return Align(
       alignment: isCustomer ? Alignment.centerRight : Alignment.centerLeft,
@@ -51,31 +55,49 @@ class SupportMessageBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isCustomer
-                      ? AppColors.primary
-                      : scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isCustomer ? 16 : 4),
-                    bottomRight: Radius.circular(isCustomer ? 4 : 16),
+              for (final String segment in parsed.textSegments)
+                if (segment.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: Spacing.xxs),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCustomer
+                          ? AppColors.primary
+                          : scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isCustomer ? 16 : 4),
+                        bottomRight: Radius.circular(isCustomer ? 4 : 16),
+                      ),
+                    ),
+                    child: Text(
+                      segment,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: isCustomer ? Colors.white : scheme.onSurface,
+                      ),
+                    ),
+                  ),
+              if (!isCustomer && parsed.products.isNotEmpty)
+                SizedBox(
+                  height: 190,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: parsed.products.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: Spacing.sm),
+                    itemBuilder: (BuildContext context, int index) {
+                      return SupportChatProductCard(
+                        product: parsed.products[index],
+                      );
+                    },
                   ),
                 ),
-                child: Text(
-                  message.messageText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.35,
-                    color: isCustomer ? Colors.white : scheme.onSurface,
-                  ),
-                ),
-              ),
             ],
           ),
         ),

@@ -28,6 +28,7 @@ import '../widgets/reviews_section_widget.dart';
 import '../widgets/recommended_products_section.dart';
 import '../widgets/product_detail_shimmer.dart';
 import '../widgets/product_detail_action_pills.dart';
+import '../widgets/price_alert_button.dart';
 import '../widgets/product_details_error_view.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
@@ -713,6 +714,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                     _handleQuantityChanged,
                                               )
                                             : null,
+                                  ),
+                                  const SizedBox(height: Spacing.sm),
+                                  PriceAlertButton(
+                                    productId: product.id.isNotEmpty
+                                        ? product.id
+                                        : (widget.productId ?? ''),
+                                    currentPrice:
+                                        selectedVariant?.pricing?.currentPrice ??
+                                            product.pricing.currentPrice,
+                                    currency:
+                                        selectedVariant?.pricing?.currency
+                                                .isNotEmpty ==
+                                            true
+                                        ? selectedVariant!.pricing!.currency
+                                        : (product.pricing.currency.isNotEmpty
+                                            ? product.pricing.currency
+                                            : _getCurrency(context)),
                                   ),
                                   Builder(
                                     builder: (BuildContext context) {

@@ -533,5 +533,30 @@
   "supportChat.quickAction.freeShipping": "ነጻ መላኪያ?",
   "supportChat.quickAction.trackOrder": "ትዕዛዜን ክተል",
   "supportChat.quickAction.shareProduct": "የምርት አገናኝ አጋራ",
-  "supportChat.quickAction.talkToAgent": "ከወኪል ጋር ተነጋገር"
+  "supportChat.quickAction.talkToAgent": "ከወኪል ጋር ተነጋገር",
+
+  "visualSearch.title": "የምስል ፍለጋ",
+  "visualSearch.takePhoto": "ፎቶ አንሳ",
+  "visualSearch.fromGallery": "ከጋለሪ",
+  "visualSearch.or": "ወይም",
+  "visualSearch.urlHint": "የምርት አገናኝ አጣቀም",
+  "visualSearch.idleHint": "ፎቶ አንሳ ወይም የምርት አገናኝ አጣቀም ተመሳሳይ እቃዎችን ለማግኘት።",
+  "visualSearch.analyzing": "ምስል በመተንተን ላይ…",
+  "visualSearch.noResults": "ምንም ምርቶች አልተገኙም",
+  "visualSearch.noResultsHint": "ሌላ ምስል ወይም አገናኝ ይሞክሩ።",
+  "visualSearch.errorNetwork": "መገናኘት አልተቻለም። እንደገና ይሞክሩ።",
+  "visualSearch.errorGeneric": "የምስል ፍለጋ አልተሳካም። እንደገና ይሞክሩ።",
+  "visualSearch.retry": "እንደገና ይሞክሩ",
+
+  "priceAlert.set": "ዋጋ ከወረደ አሳውቀኝ",
+  "priceAlert.active": "የዋጋ ማንቂያ ንቁ ነው",
+  "priceAlert.loginRequired": "መግባት ያስፈልጋል",
+  "priceAlert.loginRequiredBody": "የዋጋ ማንቂያዎችን ለማዘጋጀት ይግቡ።",
+  "priceAlert.targetTitle": "ዒላማ ዋጋ ያዘጋጁ",
+  "priceAlert.targetLabel": "ዋጋ ወደዚህ ሲወርድ አሳውቀኝ",
+  "priceAlert.confirm": "ማንቂያ አዘጋጅ",
+  "priceAlert.saved": "የዋጋ ማንቂያ ተቀምጧል",
+  "priceAlert.removed": "የዋጋ ማንቂያ ተወግዷል",
+  "priceAlert.errorNetwork": "መገናኘት አልተቻለም።",
+  "priceAlert.errorGeneric": "የዋጋ ማንቂያ ማዘመን አልተሳካም።"
 }

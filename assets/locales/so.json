@@ -539,5 +539,30 @@
   "supportChat.quickAction.freeShipping": "Rarid bilaash ah?",
   "supportChat.quickAction.trackOrder": "Raadi dalabkayga",
   "supportChat.quickAction.shareProduct": "La wadaag xiriirka alaabta",
-  "supportChat.quickAction.talkToAgent": "La hadal wakiil"
+  "supportChat.quickAction.talkToAgent": "La hadal wakiil",
+
+  "visualSearch.title": "Raadinta muuqaalka",
+  "visualSearch.takePhoto": "Sawir qaado",
+  "visualSearch.fromGallery": "Ka soo gallery",
+  "visualSearch.or": "AMA",
+  "visualSearch.urlHint": "Ku dheji linkiga badeecada",
+  "visualSearch.idleHint": "Sawir qaado ama ku dheji link si aad u hesho alaabo la mid ah.",
+  "visualSearch.analyzing": "Sawirka waa la falanqeynayaa…",
+  "visualSearch.noResults": "Wax alaabo ah lama helin",
+  "visualSearch.noResultsHint": "Isku day sawir kale ama link kale.",
+  "visualSearch.errorNetwork": "Isku xirka waa guuldareystay. Isku day mar kale.",
+  "visualSearch.errorGeneric": "Raadinta muuqaalka waa guuldareysatay.",
+  "visualSearch.retry": "Isku day mar kale",
+
+  "priceAlert.set": "I ogeysii marka qiimuhu hoos u dhaco",
+  "priceAlert.active": "Digniinta qiimaha waa firfircoon",
+  "priceAlert.loginRequired": "Galitaanka ayaa loo baahan yahay",
+  "priceAlert.loginRequiredBody": "Gal si aad u dejiso digniino qiime.",
+  "priceAlert.targetTitle": "Deji qiimaha bartilmaameedka",
+  "priceAlert.targetLabel": "I ogeysii marka qiimuhu gaaro",
+  "priceAlert.confirm": "Deji digniinta",
+  "priceAlert.saved": "Digniinta qiimaha waa la kaydiyay",
+  "priceAlert.removed": "Digniinta qiimaha waa la saaray",
+  "priceAlert.errorNetwork": "Isku xirka waa guuldareystay.",
+  "priceAlert.errorGeneric": "Cusboonaysiinta digniinta qiimaha waa guuldareysatay."
 }

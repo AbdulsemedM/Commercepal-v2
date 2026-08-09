@@ -539,5 +539,30 @@
   "supportChat.quickAction.freeShipping": "شحن مجاني؟",
   "supportChat.quickAction.trackOrder": "تتبع طلبي",
   "supportChat.quickAction.shareProduct": "مشاركة رابط منتج",
-  "supportChat.quickAction.talkToAgent": "تحدث مع وكيل"
+  "supportChat.quickAction.talkToAgent": "تحدث مع وكيل",
+
+  "visualSearch.title": "بحث بصري",
+  "visualSearch.takePhoto": "التقاط صورة",
+  "visualSearch.fromGallery": "من المعرض",
+  "visualSearch.or": "أو",
+  "visualSearch.urlHint": "الصق رابط المنتج",
+  "visualSearch.idleHint": "التقط صورة أو الصق رابط منتج للعثور على عناصر مشابهة.",
+  "visualSearch.analyzing": "جاري تحليل الصورة…",
+  "visualSearch.noResults": "لم يتم العثور على منتجات",
+  "visualSearch.noResultsHint": "جرّب صورة أو رابطًا آخر.",
+  "visualSearch.errorNetwork": "تعذر الاتصال. تحقق من الشبكة وحاول مرة أخرى.",
+  "visualSearch.errorGeneric": "فشل البحث البصري. حاول مرة أخرى.",
+  "visualSearch.retry": "حاول مرة أخرى",
+
+  "priceAlert.set": "نبّهني عند انخفاض السعر",
+  "priceAlert.active": "تنبيه السعر مفعّل",
+  "priceAlert.loginRequired": "تسجيل الدخول مطلوب",
+  "priceAlert.loginRequiredBody": "سجّل الدخول لتعيين تنبيهات الأسعار.",
+  "priceAlert.targetTitle": "تعيين السعر المستهدف",
+  "priceAlert.targetLabel": "أبلغني عندما ينخفض السعر إلى",
+  "priceAlert.confirm": "تعيين التنبيه",
+  "priceAlert.saved": "تم حفظ تنبيه السعر",
+  "priceAlert.removed": "تم إزالة تنبيه السعر",
+  "priceAlert.errorNetwork": "تعذر الاتصال. حاول مرة أخرى.",
+  "priceAlert.errorGeneric": "تعذر تحديث تنبيه السعر."
 }
