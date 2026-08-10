@@ -40,4 +40,9 @@ class OrdersRepository {
   Future<Order> getOrderByOrderNumber(String orderNumber) async {
     return await _dataProvider.getOrderByOrderNumber(orderNumber);
   }
+
+  /// Public tracking endpoint — no auth required.
+  Future<Order> trackOrderByOrderNumber(String orderNumber) async {
+    return await _dataProvider.trackOrderByOrderNumber(orderNumber);
+  }
 }

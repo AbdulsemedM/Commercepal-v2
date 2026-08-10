@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/logging/app_logger.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/api_service.dart';
 import '../models/add_to_cart_request.dart';
 import '../models/cart.dart';
@@ -9,43 +10,64 @@ import '../models/update_cart_item_request.dart';
 
 /// Remote cart API client for `/api/v1/cart*`.
 ///
-/// Temporarily unused: [CartRepository] routes all cart operations through
-/// [LocalCartDataProvider] only. Keep this class intact for future re-enable.
+/// Guests are identified via `X-Session-Id`; logged-in users via `Authorization`
+/// (both set by [AuthInterceptor]). Add-to-cart also sends `X-Country` and
+/// `X-Currency` per the docs contract.
 class CartDataProvider {
-  CartDataProvider({ApiService? apiService})
-    : _apiService = apiService ?? ApiService();
+  CartDataProvider({ApiService? apiService, Storage? storage})
+      : _apiService = apiService ?? ApiService(),
+        _storage = storage ?? Storage();
 
   final ApiService _apiService;
+  final Storage _storage;
   static const String _cartEndpoint = '/api/v1/cart';
   static const String _cartItemsEndpoint = '/api/v1/cart/items';
 
+  Future<Map<String, String>> _cartLocaleHeaders() async {
+    final String country = await _storage.getSelectedCountry();
+    final String currency = await _storage.getSelectedCurrency();
+    return <String, String>{
+      'X-Country': country,
+      'X-Currency': currency,
+    };
+  }
+
   Future<Cart> addToCart(AddToCartRequest request) async {
-    // The API expects camelCase fields; keep the snake_case body only as a
-    // fallback for older backend deployments.
     try {
-      return await _addToCartWithBody(request.toJson());
+      final response = await _apiService.post<Map<String, dynamic>>(
+        _cartItemsEndpoint,
+        data: request.toJson(),
+        headers: await _cartLocaleHeaders(),
+      );
+
+      if (response.data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response from server',
+        );
+      }
+
+      final Map<String, dynamic>? data =
+          response.data!['data'] as Map<String, dynamic>?;
+      if (data != null && data.containsKey('cartId')) {
+        return Cart.fromJson(data);
+      }
+
+      return getCart();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
-        try {
-          return await _addToCartWithBody(request.toJsonSnakeCase());
-        } on DioException catch (retryError) {
-          if (retryError.response?.statusCode == 500) {
-            return await _reconcileCartAfterAddFailure(retryError);
-          }
-          rethrow;
-        }
-      }
       if (e.response?.statusCode == 500) {
-        return await _reconcileCartAfterAddFailure(e);
+        return _reconcileCartAfterAddFailure(e);
       }
+      AppLogger.e('Add to cart failed', error: e, stack: e.stackTrace);
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.e('Unexpected error during add to cart', error: e, stack: stack);
       rethrow;
     }
   }
 
-  /// The backend sometimes persists the added item but fails while
-  /// serializing its own response (500 "Type definition error:
-  /// LocalDateTime"). Fetch the authoritative cart so the UI reflects
-  /// whatever actually happened server-side.
   Future<Cart> _reconcileCartAfterAddFailure(DioException original) async {
     try {
       final cart = await getCart();
@@ -59,47 +81,10 @@ class CartDataProvider {
     }
   }
 
-  Future<Cart> _addToCartWithBody(Map<String, dynamic> body) async {
-    try {
-      final response = await _apiService.post<Map<String, dynamic>>(
-        _cartItemsEndpoint,
-        data: body,
-      );
-
-      if (response.data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response from server',
-        );
-      }
-
-      final responseData = response.data!;
-      final data = responseData['data'] as Map<String, dynamic>?;
-
-      if (data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response structure: missing data field',
-        );
-      }
-
-      return Cart.fromJson(data);
-    } on DioException catch (e) {
-      AppLogger.e('Add to cart failed', error: e, stack: e.stackTrace);
-      rethrow;
-    } catch (e, stack) {
-      AppLogger.e('Unexpected error during add to cart', error: e, stack: stack);
-      rethrow;
-    }
-  }
-
   Future<Cart> getCart() async {
     try {
-      final response = await _apiService.get<Map<String, dynamic>>(_cartEndpoint);
+      final response =
+          await _apiService.get<Map<String, dynamic>>(_cartEndpoint);
 
       if (response.data == null) {
         throw DioException(
@@ -110,10 +95,10 @@ class CartDataProvider {
         );
       }
 
-      // Extract data from nested response structure
-      final responseData = response.data!;
-      final data = responseData['data'] as Map<String, dynamic>?;
-      
+      final Map<String, dynamic> responseData = response.data!;
+      final Map<String, dynamic>? data =
+          responseData['data'] as Map<String, dynamic>?;
+
       if (data == null) {
         throw DioException(
           requestOptions: response.requestOptions,
@@ -149,25 +134,22 @@ class CartDataProvider {
         );
       }
 
-      // Extract data from nested response structure
-      final responseData = response.data!;
-      final data = responseData['data'] as Map<String, dynamic>?;
-      
-      if (data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response structure: missing data field',
-        );
+      final Map<String, dynamic>? data =
+          response.data!['data'] as Map<String, dynamic>?;
+      if (data != null && data.containsKey('cartId')) {
+        return Cart.fromJson(data);
       }
 
-      return Cart.fromJson(data);
+      return getCart();
     } on DioException catch (e) {
       AppLogger.e('Update cart item failed', error: e, stack: e.stackTrace);
       rethrow;
     } catch (e, stack) {
-      AppLogger.e('Unexpected error during update cart item', error: e, stack: stack);
+      AppLogger.e(
+        'Unexpected error during update cart item',
+        error: e,
+        stack: stack,
+      );
       rethrow;
     }
   }
@@ -187,32 +169,30 @@ class CartDataProvider {
         );
       }
 
-      // Extract data from nested response structure
-      final responseData = response.data!;
-      final data = responseData['data'] as Map<String, dynamic>?;
-      
-      if (data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response structure: missing data field',
-        );
+      final Map<String, dynamic>? data =
+          response.data!['data'] as Map<String, dynamic>?;
+      if (data != null && data.containsKey('cartId')) {
+        return Cart.fromJson(data);
       }
 
-      return Cart.fromJson(data);
+      return getCart();
     } on DioException catch (e) {
       AppLogger.e('Delete cart item failed', error: e, stack: e.stackTrace);
       rethrow;
     } catch (e, stack) {
-      AppLogger.e('Unexpected error during delete cart item', error: e, stack: stack);
+      AppLogger.e(
+        'Unexpected error during delete cart item',
+        error: e,
+        stack: stack,
+      );
       rethrow;
     }
   }
 
   Future<ClearCartResponse> clearCart() async {
     try {
-      final response = await _apiService.delete<Map<String, dynamic>>(_cartEndpoint);
+      final response =
+          await _apiService.delete<Map<String, dynamic>>(_cartEndpoint);
 
       if (response.data == null) {
         throw DioException(
@@ -233,4 +213,3 @@ class CartDataProvider {
     }
   }
 }
-

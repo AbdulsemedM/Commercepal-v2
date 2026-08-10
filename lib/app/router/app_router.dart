@@ -43,6 +43,7 @@ import '../../features/checkout/presentation/screen/cash_on_delivery_success_scr
 import '../../features/checkout/presentation/screen/qpay_qr_payment_screen.dart';
 import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
 import '../../features/checkout/data/models/checkout_response.dart';
+import '../../features/checkout/data/models/payment_initiate_result.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
 import '../../features/faqs/presentation/screen/faqs_screen.dart';
 import '../../features/wishlist/presentation/screen/wishlist_screen.dart';
@@ -350,6 +351,7 @@ final GoRouter appRouter = GoRouter(
         }
         return OrderConfirmedPaymentPendingScreen(
           response: response,
+          initiateResult: extra?['initiateResult'] as PaymentInitiateResult?,
         );
       },
     ),

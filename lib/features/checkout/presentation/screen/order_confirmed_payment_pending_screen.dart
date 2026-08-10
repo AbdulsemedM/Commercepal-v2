@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
@@ -6,38 +8,72 @@ import '../../../../core/constants/spacing.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../services/localization_service.dart';
+import '../../bloc/payment_status_cubit.dart';
 import '../../data/models/checkout_response.dart';
+import '../../data/models/payment_initiate_result.dart';
+import '../widgets/payment_status_polling_banner.dart';
 
-/// Shown after checkout when payment is initiated but not yet completed
-/// (e.g. [CheckoutResponse.nextActionOpenAdditionalInput]).
+/// Shown after checkout when payment is initiated but not yet completed.
 class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
   const OrderConfirmedPaymentPendingScreen({
     super.key,
     required this.response,
+    this.initiateResult,
   });
 
   final CheckoutResponse response;
+  final PaymentInitiateResult? initiateResult;
 
   static const Color _pendingTint = Color(0xFFFFF8E1);
   static const Color _pendingBorder = Color(0xFFFFE082);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final String orderNum = response.resolvedOrderNumber ?? '';
+    return BlocProvider(
+      create: (_) => PaymentStatusCubit(),
+      child: _OrderConfirmedPaymentPendingBody(
+        response: response,
+        initiateResult: initiateResult,
+        orderNumber: orderNum,
+      ),
+    );
+  }
+}
+
+class _OrderConfirmedPaymentPendingBody extends StatelessWidget {
+  const _OrderConfirmedPaymentPendingBody({
+    required this.response,
+    required this.initiateResult,
+    required this.orderNumber,
+  });
+
+  final CheckoutResponse response;
+  final PaymentInitiateResult? initiateResult;
+  final String orderNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final orderNum = response.resolvedOrderNumber ?? '';
     final summary = response.pricingSummary;
     final currency =
         (summary?.currency ?? response.currency ?? '').trim().isNotEmpty
             ? (summary?.currency ?? response.currency)!.trim()
             : 'ETB';
     final subtotal = summary?.subtotal;
-    final total = summary?.totalAmount ?? subtotal;
-    final instructions =
+    final total = response.resolvedTotalAmount ?? summary?.totalAmount ?? subtotal;
+    final checkoutInstructions =
         response.paymentInitiation?.paymentInstructions?.trim() ?? '';
+    final initiateInstructions =
+        initiateResult?.paymentInstructions?.trim() ?? '';
+    final instructions = initiateInstructions.isNotEmpty
+        ? initiateInstructions
+        : checkoutInstructions;
     final pending = (response.paymentStatus ?? '').toUpperCase() == 'PENDING';
-    final paymentRef =
-        response.paymentInitiation?.paymentReference?.trim() ?? '';
+    final paymentRef = initiateResult?.resolvedReference ??
+        response.paymentInitiation?.paymentReference?.trim() ??
+        '';
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -54,9 +90,12 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: _pendingTint,
+                  color: OrderConfirmedPaymentPendingScreen._pendingTint,
                   shape: BoxShape.circle,
-                  border: Border.all(color: _pendingBorder, width: 2),
+                  border: Border.all(
+                    color: OrderConfirmedPaymentPendingScreen._pendingBorder,
+                    width: 2,
+                  ),
                 ),
                 child: Icon(
                   Icons.hourglass_top_rounded,
@@ -86,24 +125,56 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: Spacing.xl),
+              if (orderNumber.isNotEmpty) ...[
+                PaymentStatusPollingBanner(
+                  orderNumber: orderNumber,
+                  onSuccess: () => navigateOnPaymentStatusSuccess(context),
+                ),
+                const SizedBox(height: Spacing.lg),
+              ],
               if (pending) _PaymentPendingBanner(theme: theme, scheme: scheme),
               if (pending) const SizedBox(height: Spacing.lg),
+              if ((initiateResult?.ussdCode != null &&
+                      initiateResult!.ussdCode!.isNotEmpty) ||
+                  (response.ussdCode != null &&
+                      response.ussdCode!.trim().isNotEmpty)) ...[
+                _UssdCard(
+                  theme: theme,
+                  scheme: scheme,
+                  ussdCode: initiateResult?.ussdCode?.trim().isNotEmpty == true
+                      ? initiateResult!.ussdCode!
+                      : response.ussdCode!.trim(),
+                  reference: initiateResult?.resolvedReference,
+                ),
+                const SizedBox(height: Spacing.lg),
+              ],
               _OrderSummaryCard(
                 theme: theme,
                 scheme: scheme,
-                orderNumber: orderNum,
+                orderNumber: orderNumber,
                 subtotal: subtotal,
                 total: total,
                 currency: currency,
                 showInitiatedBadge: pending,
                 paymentReference: paymentRef,
               ),
+              if (initiateResult?.message != null &&
+                  initiateResult!.message!.isNotEmpty) ...[
+                const SizedBox(height: Spacing.lg),
+                _InstructionsCard(
+                  theme: theme,
+                  scheme: scheme,
+                  instructions: initiateResult!.message!,
+                  titleKey: 'checkout.edahabInitiateTitle',
+                ),
+              ],
               if (instructions.isNotEmpty) ...[
                 const SizedBox(height: Spacing.lg),
                 _InstructionsCard(
                   theme: theme,
                   scheme: scheme,
                   instructions: instructions,
+                  titleKey: 'checkout.howToCompletePayment',
                 ),
               ],
               const SizedBox(height: Spacing.xxl),
@@ -163,7 +234,7 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: orderNum,
+                      text: orderNumber,
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -177,6 +248,92 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _UssdCard extends StatelessWidget {
+  const _UssdCard({
+    required this.theme,
+    required this.scheme,
+    required this.ussdCode,
+    this.reference,
+  });
+
+  final ThemeData theme;
+  final ColorScheme scheme;
+  final String ussdCode;
+  final String? reference;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            LocalizationService.t(context, 'checkout.telebirrUssdTitle'),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              letterSpacing: 0.6,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: Spacing.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  ussdCode,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: LocalizationService.t(context, 'checkout.copyUssd'),
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: ussdCode));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        LocalizationService.t(context, 'checkout.ussdCopied'),
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_outlined),
+              ),
+            ],
+          ),
+          if (reference != null && reference!.isNotEmpty) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              LocalizationService.t(context, 'checkout.reference'),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
+            Text(
+              reference!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -412,11 +569,13 @@ class _InstructionsCard extends StatelessWidget {
     required this.theme,
     required this.scheme,
     required this.instructions,
+    required this.titleKey,
   });
 
   final ThemeData theme;
   final ColorScheme scheme;
   final String instructions;
+  final String titleKey;
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +591,7 @@ class _InstructionsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            LocalizationService.t(context, 'checkout.howToCompletePayment'),
+            LocalizationService.t(context, titleKey),
             style: theme.textTheme.labelSmall?.copyWith(
               color: scheme.onSurfaceVariant,
               letterSpacing: 0.6,
@@ -441,12 +600,7 @@ class _InstructionsCard extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.sm),
           Text(
-            instructions.isEmpty
-                ? LocalizationService.t(
-                    context,
-                    'checkout.followPaymentProviderInstructions',
-                  )
-                : instructions,
+            instructions,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurface,
               height: 1.4,

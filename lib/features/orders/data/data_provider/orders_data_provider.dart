@@ -152,4 +152,37 @@ class OrdersDataProvider {
       rethrow;
     }
   }
+
+  /// Public order tracking — no auth required.
+  Future<Order> trackOrderByOrderNumber(String orderNumber) async {
+    try {
+      final uri = '$_ordersEndpoint/track/$orderNumber';
+      AppLogger.i('Tracking order (public): $uri');
+      final response = await _apiService.get<Map<String, dynamic>>(uri);
+
+      if (response.data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response from server',
+        );
+      }
+
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      final orderJson = data ?? responseData;
+      return Order.fromJson(orderJson);
+    } on DioException catch (e) {
+      AppLogger.e('Track order failed', error: e, stack: e.stackTrace);
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.e(
+        'Unexpected error during track order',
+        error: e,
+        stack: stack,
+      );
+      rethrow;
+    }
+  }
 }

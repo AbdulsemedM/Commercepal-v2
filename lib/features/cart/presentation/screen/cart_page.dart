@@ -11,6 +11,7 @@ import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
+import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/cart_bloc.dart';
 import '../../data/models/cart.dart';
@@ -26,6 +27,8 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  final AuthService _authService = AuthService();
+
   static const Duration _removeUndoWindow = Duration(seconds: 4);
 
   Timer? _pendingRemoveTimer;
@@ -356,6 +359,10 @@ class _CartPageState extends State<CartPage> {
                               backgroundColor: Colors.orange,
                             ),
                           );
+                          return;
+                        }
+                        if (!_authService.isLoggedIn) {
+                          context.push(AppRoutes.login);
                           return;
                         }
                         context.push(

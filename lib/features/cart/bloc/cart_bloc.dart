@@ -248,20 +248,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     emit(CartLoading());
-    add(CartLoadRequested());
 
-    // TODO: re-enable remote cart sync
-    // try {
-    //   await _repository.syncLocalCartToRemote();
-    //   try {
-    //     await WishlistRepository().syncLocalToBackend();
-    //   } catch (_) {
-    //     // Wishlist sync is best-effort; do not fail cart sync
-    //   }
-    //   add(CartLoadRequested());
-    // } catch (e) {
-    //   emit(CartError("Failed to sync cart"));
-    // }
+    try {
+      await _repository.syncLocalCartToRemote();
+      add(CartLoadRequested());
+    } catch (e) {
+      emit(CartError('Failed to sync cart'));
+    }
   }
 
   void _onCartReset(CartReset event, Emitter<CartState> emit) {

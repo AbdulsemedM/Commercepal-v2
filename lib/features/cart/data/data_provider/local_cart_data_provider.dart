@@ -47,7 +47,7 @@ class LocalCartDataProvider {
       await _dbHelper.deleteItem(id);
     }
 
-    return _createCartFromItems(purchasable);
+    return await _createCartFromItems(purchasable);
   }
 
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
@@ -168,6 +168,7 @@ class LocalCartDataProvider {
 
   Future<ClearCartResponse> clearCart() async {
     await _dbHelper.clearCart();
+    await _dbHelper.clearCartMeta();
     return ClearCartResponse(status: 200, message: 'Cart cleared locally');
   }
 
@@ -175,13 +176,14 @@ class LocalCartDataProvider {
   /// Replaces all existing local cart items with items from the provided cart
   Future<void> saveCart(Cart cart) async {
     await _dbHelper.clearCart();
+    await _dbHelper.setCartId(cart.cartId);
 
     for (final item in cart.items) {
       await _dbHelper.insertItem(item);
     }
   }
 
-  Cart _createCartFromItems(List<CartItem> items) {
+  Future<Cart> _createCartFromItems(List<CartItem> items) async {
     double subtotal = 0;
     int totalItems = 0;
 
@@ -190,8 +192,10 @@ class LocalCartDataProvider {
       totalItems += item.quantity;
     }
 
+    final cartId = await _dbHelper.getCartId();
+
     return Cart(
-      cartId: 0,
+      cartId: cartId,
       totalItems: totalItems,
       subtotal: subtotal,
       estimatedTotal: subtotal,

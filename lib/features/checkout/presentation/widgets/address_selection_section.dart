@@ -13,7 +13,7 @@ class AddressSelectionSection extends StatefulWidget {
     required this.onAddressSelected,
   });
 
-  final Function(int addressId, String phoneNumber) onAddressSelected;
+  final void Function(Address address) onAddressSelected;
 
   @override
   State<AddressSelectionSection> createState() => _AddressSelectionSectionState();
@@ -114,7 +114,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               setState(() {
                 _selectedAddressId = defaultAddress.id;
-                widget.onAddressSelected(defaultAddress.id, defaultAddress.phoneNumber);
+                widget.onAddressSelected(defaultAddress);
               });
             });
           }
@@ -255,7 +255,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
         onTap: () {
           setState(() {
             _selectedAddressId = address.id;
-            widget.onAddressSelected(address.id, address.phoneNumber);
+            widget.onAddressSelected(address);
           });
         },
         borderRadius: BorderRadius.circular(16),
@@ -270,7 +270,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                   if (value != null) {
                     setState(() {
                       _selectedAddressId = value;
-                      widget.onAddressSelected(value, address.phoneNumber);
+                      widget.onAddressSelected(address);
                     });
                   }
                 },

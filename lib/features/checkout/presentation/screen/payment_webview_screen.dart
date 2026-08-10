@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
+import '../../bloc/payment_status_cubit.dart';
+import '../widgets/payment_status_polling_banner.dart';
 
 /// Allowed hosts for payment WebView (exact host or subdomain).
 /// Backend must only return URLs for these gateways.
@@ -19,9 +22,7 @@ const Set<String> _allowedPaymentHostSuffixes = {
 };
 
 /// In-app WebView screen for completing payment at [paymentUrl].
-/// [orderNumber] is optional and can be shown in the AppBar.
-/// Only HTTPS URLs on allowlisted hosts are loaded; navigations off-list are blocked.
-class PaymentWebViewScreen extends StatefulWidget {
+class PaymentWebViewScreen extends StatelessWidget {
   const PaymentWebViewScreen({
     super.key,
     required this.paymentUrl,
@@ -32,10 +33,35 @@ class PaymentWebViewScreen extends StatefulWidget {
   final String? orderNumber;
 
   @override
-  State<PaymentWebViewScreen> createState() => _PaymentWebViewScreenState();
+  Widget build(BuildContext context) {
+    final String? orderNum = orderNumber?.trim();
+    if (orderNum != null && orderNum.isNotEmpty) {
+      return BlocProvider(
+        create: (_) => PaymentStatusCubit(),
+        child: _PaymentWebViewBody(
+          paymentUrl: paymentUrl,
+          orderNumber: orderNum,
+        ),
+      );
+    }
+    return _PaymentWebViewBody(paymentUrl: paymentUrl);
+  }
 }
 
-class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
+class _PaymentWebViewBody extends StatefulWidget {
+  const _PaymentWebViewBody({
+    required this.paymentUrl,
+    this.orderNumber,
+  });
+
+  final String paymentUrl;
+  final String? orderNumber;
+
+  @override
+  State<_PaymentWebViewBody> createState() => _PaymentWebViewBodyState();
+}
+
+class _PaymentWebViewBodyState extends State<_PaymentWebViewBody> {
   late final WebViewController _controller;
   bool _isLoading = true;
   String? _loadError;
@@ -59,7 +85,6 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     return _isHostAllowed(uri.host);
   }
 
-  /// Browser-like User-Agent so payment gateways (e.g. CBE Birr) that block WebView accept the request.
   static const String _browserUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
@@ -128,8 +153,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.orange),
+              children: <Widget>[
+                const Icon(Icons.warning_amber_rounded,
+                    size: 48, color: Colors.orange),
                 const SizedBox(height: 16),
                 Text(
                   _loadError!,
@@ -139,7 +165,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: () => context.go(AppRoutes.dashboard),
-                  child: const Text('Go back'),
+                  child: Text(
+                    LocalizationService.t(context, 'checkout.continueShopping'),
+                  ),
                 ),
               ],
             ),
@@ -153,9 +181,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         title: Text(title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.go(AppRoutes.dashboard);
-          },
+          onPressed: () => context.go(AppRoutes.dashboard),
         ),
         actions: <Widget>[
           IconButton(
@@ -172,48 +198,23 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       ),
       body: Column(
         children: <Widget>[
-          if (_isLoading)
-            const LinearProgressIndicator(minHeight: 3),
+          if (widget.orderNumber != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: PaymentStatusPollingBanner(
+                orderNumber: widget.orderNumber!,
+                onSuccess: () => navigateOnPaymentStatusSuccess(context),
+              ),
+            ),
+          if (_isLoading) const LinearProgressIndicator(minHeight: 3),
           Expanded(
-            child: _loadError != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 48,
-                            color: Colors.orange,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _loadError!,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: () {
-                              setState(() => _loadError = null);
-                              _loadPaymentUrl();
-                            },
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : Stack(
-                    children: <Widget>[
-                      WebViewWidget(controller: _controller),
-                      if (_isLoading)
-                        const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                    ],
-                  ),
+            child: Stack(
+              children: <Widget>[
+                WebViewWidget(controller: _controller),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
+              ],
+            ),
           ),
         ],
       ),

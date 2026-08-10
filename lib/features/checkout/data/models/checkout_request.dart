@@ -1,3 +1,5 @@
+import 'shipping_address.dart';
+
 class CheckoutItem {
   final String itemId;
   final String? configId;
@@ -51,5 +53,37 @@ class CheckoutRequest {
         if (paymentAccount != null && paymentAccount!.isNotEmpty) 'paymentAccount': paymentAccount!,
         if (promoCode != null) 'promoCode': promoCode,
         if (referralCode != null) 'referralCode': referralCode,
+      };
+}
+
+enum DocsPaymentMethod {
+  telebirr('TELEBIRR'),
+  cbeBirr('CBE_BIRR'),
+  eBirr('E_BIRR'),
+  ziina('ZIINA');
+
+  const DocsPaymentMethod(this.apiValue);
+
+  final String apiValue;
+}
+
+class DocsCheckoutRequest {
+  final int cartId;
+  final ShippingAddress shippingAddress;
+  final DocsPaymentMethod paymentMethod;
+  final String notes;
+
+  DocsCheckoutRequest({
+    required this.cartId,
+    required this.shippingAddress,
+    required this.paymentMethod,
+    this.notes = '',
+  });
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'cartId': cartId,
+        'shippingAddress': shippingAddress.toJson(),
+        'paymentMethod': paymentMethod.apiValue,
+        'notes': notes,
       };
 }

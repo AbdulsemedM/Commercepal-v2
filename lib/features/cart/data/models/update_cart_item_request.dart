@@ -8,13 +8,10 @@ class UpdateCartItemRequest {
   });
 
   Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
+    return <String, dynamic>{
       'quantity': quantity,
+      'replaceConfigId': replaceConfigId,
     };
-    if (replaceConfigId != null) {
-      json['replaceConfigId'] = replaceConfigId;
-    }
-    return json;
   }
 }
 

@@ -35,25 +35,57 @@ class CartItem {
     this.configId,
   });
 
-  factory CartItem.fromJson(Map<String, dynamic> json) {
+  factory CartItem.fromJson(
+    Map<String, dynamic> json, {
+    String defaultCurrency = 'ETB',
+  }) {
+    final Map<String, dynamic>? pricing =
+        json['pricing'] as Map<String, dynamic>?;
+    final double unitPrice = _readDouble(
+      pricing?['unitPrice'] ?? json['unitPrice'],
+    );
+    final double totalPrice = _readDouble(
+      pricing?['totalPrice'] ?? json['subtotal'] ?? json['totalPrice'],
+      fallback: unitPrice,
+    );
+
+    final String productId =
+        (json['productId'] as String? ?? json['itemId'] as String? ?? '')
+            .trim();
+
     return CartItem(
-      id: json['id'] as int,
-      productId: json['productId'] as String,
-      productName: json['productName'] as String,
-      productImageUrl: json['productImageUrl'] as String,
-      quantity: json['quantity'] as int,
-      unitPrice: (json['unitPrice'] as num).toDouble(),
-      subtotal: (json['subtotal'] as num).toDouble(),
-      currency: json['currency'] as String,
-      provider: json['provider'] as String,
-      stockStatus: json['stockStatus'] as String,
-      isAvailable: json['isAvailable'] as bool,
-      priceWhenAdded: (json['priceWhenAdded'] as num).toDouble(),
-      currentPrice: (json['currentPrice'] as num).toDouble(),
-      priceDropped: json['priceDropped'] as bool,
-      savingsAmount: (json['savingsAmount'] as num).toDouble(),
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      productId: productId,
+      productName: (json['productName'] as String?)?.trim().isNotEmpty == true
+          ? json['productName'] as String
+          : productId,
+      productImageUrl: json['productImageUrl'] as String? ?? '',
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      unitPrice: unitPrice,
+      subtotal: totalPrice,
+      currency: (json['currency'] as String?)?.trim().isNotEmpty == true
+          ? json['currency'] as String
+          : defaultCurrency,
+      provider: json['provider'] as String? ?? '',
+      stockStatus: json['stockStatus'] as String? ?? 'IN_STOCK',
+      isAvailable: json['isAvailable'] as bool? ?? true,
+      priceWhenAdded: _readDouble(
+        json['priceWhenAdded'],
+        fallback: unitPrice,
+      ),
+      currentPrice: _readDouble(
+        json['currentPrice'],
+        fallback: unitPrice,
+      ),
+      priceDropped: json['priceDropped'] as bool? ?? false,
+      savingsAmount: _readDouble(json['savingsAmount']),
       configId: (json['configId'] ?? json['config_id']) as String?,
     );
+  }
+
+  static double _readDouble(Object? value, {double fallback = 0}) {
+    if (value is num) return value.toDouble();
+    return fallback;
   }
 
   Map<String, dynamic> toJson() {
@@ -77,4 +109,3 @@ class CartItem {
     };
   }
 }
-

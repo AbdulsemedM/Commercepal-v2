@@ -14,6 +14,10 @@ class CheckoutRepository {
     return await _dataProvider.checkout(request);
   }
 
+  Future<CheckoutResponse> checkoutDocs(DocsCheckoutRequest request) async {
+    return await _dataProvider.checkoutDocs(request);
+  }
+
   Future<CheckoutResponse> retryPayment(PaymentRetryRequest request) async {
     return await _dataProvider.retryPayment(request);
   }

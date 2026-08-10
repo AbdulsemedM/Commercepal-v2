@@ -417,6 +417,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   int _getCurrentStatusIndex(Order order) {
+    final stage = order.currentStage.toUpperCase();
+    switch (stage) {
+      case 'PENDING':
+      case 'PAYMENT_CONFIRMED':
+        return 1;
+      case 'PROCESSING':
+      case 'PACKED':
+        return 2;
+      case 'SHIPPED':
+      case 'OUT_FOR_DELIVERY':
+        return 3;
+      case 'DELIVERED':
+        return 4;
+    }
+
     final category = order.stageCategory.toUpperCase();
     switch (category) {
       case 'PENDING_CONFIRMATION':
@@ -438,8 +453,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   String _defaultStageLabel(int index) {
     const labels = <String>[
       'Order Placed',
-      'Pending Confirmation',
-      'Waiting to be shipped',
+      'Payment Pending',
+      'Processing',
       'Shipped',
       'Delivered',
     ];
@@ -464,15 +479,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final List<_TimelineItem> items = <_TimelineItem>[
       const _TimelineItem(title: 'Order Placed', tips: '', isCompleted: true),
       const _TimelineItem(
-        title: 'Pending Confirmation',
+        title: 'Payment / Confirmation',
         tips:
-            'Your order is awaiting a confirmation from the vendor in order to be shipped to your address',
+            'Your order is awaiting payment confirmation before processing begins',
         isCompleted: false,
       ),
       const _TimelineItem(
-        title: 'Waiting to be shipped',
+        title: 'Processing',
         tips:
-            'Once your order has been accepted it will be packaged and shipped to your address',
+            'Once confirmed, your order will be processed and packed for shipping',
         isCompleted: false,
       ),
       const _TimelineItem(

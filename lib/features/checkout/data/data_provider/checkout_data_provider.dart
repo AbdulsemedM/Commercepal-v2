@@ -17,10 +17,20 @@ class CheckoutDataProvider {
       '/api/v1/payments/sahaypay/customer-lookup';
 
   Future<CheckoutResponse> checkout(CheckoutRequest request) async {
+    return _postCheckout(request.toJson());
+  }
+
+  /// Not used until production accepts the docs checkout body
+  /// (`cartId`, `shippingAddress`, `paymentMethod`).
+  Future<CheckoutResponse> checkoutDocs(DocsCheckoutRequest request) async {
+    return _postCheckout(request.toJson());
+  }
+
+  Future<CheckoutResponse> _postCheckout(Map<String, dynamic> body) async {
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         _checkoutEndpoint,
-        data: request.toJson(),
+        data: body,
       );
 
       if (response.data == null) {
@@ -32,7 +42,6 @@ class CheckoutDataProvider {
         );
       }
 
-      // Extract data from nested response structure
       final responseData = response.data!;
       final data = responseData['data'] as Map<String, dynamic>?;
 
@@ -40,7 +49,6 @@ class CheckoutDataProvider {
         return CheckoutResponse.fromJson(data);
       }
 
-      // If no nested data, use response directly
       return CheckoutResponse.fromJson(responseData);
     } on DioException catch (e) {
       AppLogger.e('Checkout failed', error: e, stack: e.stackTrace);

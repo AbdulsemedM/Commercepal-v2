@@ -69,6 +69,9 @@ class CheckoutResponse {
   final String? paymentStatus;
   final String? orderedAt;
   final PaymentInitiation? paymentInitiation;
+  final String? paymentUrl;
+  final String? ussdCode;
+  final num? totalAmount;
 
   CheckoutResponse({
     this.orderNumber,
@@ -78,6 +81,9 @@ class CheckoutResponse {
     this.paymentStatus,
     this.orderedAt,
     this.paymentInitiation,
+    this.paymentUrl,
+    this.ussdCode,
+    this.totalAmount,
   });
 
   factory CheckoutResponse.fromJson(Map<String, dynamic> json) {
@@ -97,8 +103,29 @@ class CheckoutResponse {
               json['paymentInitiation'] as Map<String, dynamic>?,
             )
           : null,
+      paymentUrl: json['paymentUrl'] as String?,
+      ussdCode: json['ussdCode'] as String?,
+      totalAmount: json['totalAmount'] as num?,
     );
   }
+
+  bool get isDocsCheckoutResponse {
+    if (paymentInitiation != null) return false;
+    final String order = orderNumber?.trim() ?? '';
+    if (order.isEmpty) return false;
+    final bool hasDocsFields = (paymentUrl?.trim().isNotEmpty ?? false) ||
+        (ussdCode?.trim().isNotEmpty ?? false) ||
+        totalAmount != null;
+    return hasDocsFields;
+  }
+
+  bool get isDocsCheckoutCompleteForCartClear {
+    final String order = resolvedOrderNumber?.trim() ?? '';
+    return order.isNotEmpty;
+  }
+
+  num? get resolvedTotalAmount =>
+      totalAmount ?? pricingSummary?.totalAmount;
 
   /// Backend [nextAction] values we treat as a completed checkout for cart clearing.
   static const String nextActionOpenAdditionalInput = 'OPEN_ADDITIONAL_INPUT';

@@ -10,6 +10,7 @@ import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/app_analytics.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../cart/data/models/cart.dart';
+import '../../../addresses/data/models/address.dart';
 import '../../../addresses/bloc/address_bloc.dart';
 import '../widgets/order_summary_card.dart';
 import '../widgets/address_selection_section.dart';
@@ -22,8 +23,7 @@ class CheckoutSummaryScreen extends StatefulWidget {
 }
 
 class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
-  int? _selectedAddressId;
-  String? _selectedAddressPhoneNumber;
+  Address? _selectedAddress;
 
   @override
   Widget build(BuildContext context) {
@@ -85,10 +85,9 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                       OrderSummaryCard(cart: cart),
                       const SizedBox(height: Spacing.sm),
                       AddressSelectionSection(
-                        onAddressSelected: (addressId, phoneNumber) {
+                        onAddressSelected: (address) {
                           setState(() {
-                            _selectedAddressId = addressId;
-                            _selectedAddressPhoneNumber = phoneNumber;
+                            _selectedAddress = address;
                           });
                         },
                       ),
@@ -108,14 +107,14 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: _selectedAddressId == null
+                      gradient: _selectedAddress == null
                           ? null
                           : AppDecorations.primaryCtaGradient,
-                      color: _selectedAddressId == null
+                      color: _selectedAddress == null
                           ? Colors.grey.shade300
                           : null,
                       borderRadius: BorderRadius.circular(28),
-                      boxShadow: _selectedAddressId == null
+                      boxShadow: _selectedAddress == null
                           ? null
                           : <BoxShadow>[
                               BoxShadow(
@@ -128,7 +127,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: _selectedAddressId == null
+                        onTap: _selectedAddress == null
                             ? null
                             : () {
                                 AppAnalytics.logBeginCheckout(
@@ -137,11 +136,10 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                                 );
                                 context.push(
                                   AppRoutes.paymentSelection,
-                                  extra: {
+                                  extra: <String, dynamic>{
                                     'cart': cart,
-                                    'addressId': _selectedAddressId,
-                                    'phoneNumber':
-                                        _selectedAddressPhoneNumber,
+                                    'address': _selectedAddress,
+                                    'phoneNumber': _selectedAddress!.phoneNumber,
                                   },
                                 );
                               },
@@ -159,7 +157,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: _selectedAddressId == null
+                                color: _selectedAddress == null
                                     ? Colors.grey.shade600
                                     : Colors.white,
                               ),

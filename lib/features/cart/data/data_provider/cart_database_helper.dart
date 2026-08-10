@@ -28,13 +28,19 @@ class CartDatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE cart_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
     await db.execute('''
       CREATE TABLE cart_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,9 +65,47 @@ class CartDatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Add configId column to existing database
       await db.execute('ALTER TABLE cart_items ADD COLUMN configId TEXT');
     }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS cart_meta (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      ''');
+    }
+  }
+
+  static const String _cartIdKey = 'cartId';
+
+  Future<int> getCartId() async {
+    final db = await database;
+    final List<Map<String, dynamic>> rows = await db.query(
+      'cart_meta',
+      where: 'key = ?',
+      whereArgs: <Object>[_cartIdKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) return 0;
+    return int.tryParse(rows.first['value'] as String? ?? '') ?? 0;
+  }
+
+  Future<void> setCartId(int cartId) async {
+    final db = await database;
+    await db.insert(
+      'cart_meta',
+      <String, Object>{
+        'key': _cartIdKey,
+        'value': cartId.toString(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> clearCartMeta() async {
+    final db = await database;
+    await db.delete('cart_meta');
   }
 
   Future<int> insertItem(CartItem item) async {

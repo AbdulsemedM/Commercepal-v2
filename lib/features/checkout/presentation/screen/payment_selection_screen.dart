@@ -11,9 +11,12 @@ import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
+import '../../../addresses/data/models/address.dart';
 import '../../../cart/bloc/cart_bloc.dart';
 import '../../../cart/data/models/cart.dart';
+import '../../../cart/data/repository/cart_repository.dart';
 import '../../data/models/checkout_request.dart';
+import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_method_assets.dart';
@@ -193,6 +196,18 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
   bool get _isPayPalSelected =>
       PaymentConstants.isPayPal(_selectedPaymentProviderCode);
+
+  bool get _requiresPaymentPhone {
+    if (_isPayPalSelected) return false;
+    final String? providerCode = _selectedPaymentProviderCode;
+    if (providerCode == null || providerCode.isEmpty) return true;
+    final DocsPaymentMethod? docsMethod =
+        PaymentConstants.toDocsPaymentMethod(providerCode);
+    if (docsMethod != null) {
+      return PaymentConstants.requiresPhoneForDocsCheckout(docsMethod);
+    }
+    return true;
+  }
 
   bool _paypalReadyForCheckout(String cartCurrency) {
     if (!_isPayPalSelected) return true;
@@ -438,7 +453,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
   Future<void> _placeOrder(
     Cart cart,
-    int addressId,
+    Address address,
     String? phoneNumber,
   ) async {
     if (_selectedPaymentMethodId == null) return;
@@ -471,6 +486,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
           : selectedMethod.id;
 
       final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
+      final DocsPaymentMethod? docsMethod =
+          PaymentConstants.toDocsPaymentMethod(paymentProviderCode);
 
       // Sahay: customer lookup, show customer name and confirm before placing order
       if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
@@ -529,19 +546,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         }
       }
 
-      // Convert cart items to checkout items (include unitPrice like web checkout)
-      final checkoutItems = cart.items.map((item) {
-        final price = item.unitPrice > 0 ? item.unitPrice : item.currentPrice;
-        return CheckoutItem(
-          itemId: item.productId,
-          configId: item.configId,
-          quantity: item.quantity,
-          unitPrice: price,
-        );
-      }).toList();
-
       final String? paymentAccount;
-      if (isPayPal) {
+      if (isPayPal ||
+          (docsMethod != null &&
+              !PaymentConstants.requiresPhoneForDocsCheckout(docsMethod))) {
         paymentAccount = null;
       } else {
         paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
@@ -564,10 +572,23 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         }
       }
 
+      final Cart refreshedCart = await CartRepository().getCart();
+
+      // Convert cart items to checkout items (include unitPrice like web checkout)
+      final checkoutItems = refreshedCart.items.map((item) {
+        final price = item.unitPrice > 0 ? item.unitPrice : item.currentPrice;
+        return CheckoutItem(
+          itemId: item.productId,
+          configId: item.configId,
+          quantity: item.quantity,
+          unitPrice: price,
+        );
+      }).toList();
+
       final checkoutRequest = CheckoutRequest(
         channel: PlatformUtils.getChannel(),
-        currency: cart.currency,
-        deliveryAddressId: addressId,
+        currency: refreshedCart.currency,
+        deliveryAddressId: address.id,
         items: checkoutItems,
         paymentProviderCode: paymentProviderCode,
         paymentAccount: PaymentConstants.isCashOnDelivery(paymentProviderCode)
@@ -591,6 +612,29 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         navigateToCashOnDeliverySuccess(
           context,
           response,
+          onAfterNavigate: () =>
+              context.read<CartBloc>().add(CartClearRequested()),
+        );
+        return;
+      }
+
+      final bool handledDocsInitiate = await tryNavigateDocsInitiateCheckout(
+        context,
+        response: response,
+        paymentProviderCode: paymentProviderCode,
+        phone: paymentAccount,
+        onAfterNavigate: () =>
+            context.read<CartBloc>().add(CartClearRequested()),
+      );
+      if (handledDocsInitiate) return;
+
+      if (docsMethod != null &&
+          PaymentConstants.usesDocsWebViewFlow(docsMethod) &&
+          (response.resolvedOrderNumber?.isNotEmpty ?? false)) {
+        await navigateAfterDocsCheckout(
+          context,
+          response: response,
+          paymentMethod: docsMethod,
           onAfterNavigate: () =>
               context.read<CartBloc>().add(CartClearRequested()),
         );
@@ -629,10 +673,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
           AppRoutes.retryPaymentMethod,
           extra: <String, dynamic>{
             'paymentReference': ref,
-            'currency': cart.currency,
+            'currency': refreshedCart.currency,
             'orderNumber': ord,
             'orderTotal': response.pricingSummary?.totalAmount?.toDouble() ??
-                cart.estimatedTotal,
+                refreshedCart.estimatedTotal,
           },
         );
       } else {
@@ -694,12 +738,12 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Get cart and addressId from route extra parameter
+    // Get cart and address from route extra parameter
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final cart = extra?['cart'] as Cart?;
-    final addressId = extra?['addressId'] as int?;
+    final address = extra?['address'] as Address?;
 
-    if (cart == null || addressId == null) {
+    if (cart == null || address == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
@@ -724,12 +768,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
       );
     }
 
-    final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
     final bool canPlace = _selectedPaymentMethodId != null &&
         !_isPlacingOrder &&
         (_isPayPalSelected
             ? _paypalReadyForCheckout(cart.currency)
-            : phoneValid);
+            : !_requiresPaymentPhone || isValidPaymentAccount(_paymentPhoneNumber));
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -891,13 +934,14 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
                 child: InkWell(
                   onTap: canPlace
                       ? () {
-                          if (_isPayPalSelected) {
-                            _placeOrder(cart, addressId, null);
+                          if (_isPayPalSelected ||
+                              !_requiresPaymentPhone) {
+                            _placeOrder(cart, address, null);
                           } else {
                             final phone = normalizePaymentAccount(
                               _paymentPhoneNumber!,
                             );
-                            _placeOrder(cart, addressId, phone);
+                            _placeOrder(cart, address, phone);
                           }
                         }
                       : null,
