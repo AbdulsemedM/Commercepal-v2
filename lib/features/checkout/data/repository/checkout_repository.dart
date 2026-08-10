@@ -14,12 +14,14 @@ class CheckoutRepository {
     return await _dataProvider.checkout(request);
   }
 
-  Future<CheckoutResponse> checkoutDocs(DocsCheckoutRequest request) async {
-    return await _dataProvider.checkoutDocs(request);
-  }
-
-  Future<CheckoutResponse> retryPayment(PaymentRetryRequest request) async {
-    return await _dataProvider.retryPayment(request);
+  Future<CheckoutResponse> retryPayment({
+    required String orderNumber,
+    required PaymentRetryRequest request,
+  }) async {
+    return await _dataProvider.retryPayment(
+      orderNumber: orderNumber,
+      request: request,
+    );
   }
 
   /// Verify Sahay phone and account holder before checkout/retry.

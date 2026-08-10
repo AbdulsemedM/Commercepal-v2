@@ -2,41 +2,13 @@ import 'package:commercepal/features/addresses/data/models/address.dart';
 import 'package:commercepal/features/checkout/data/models/checkout_request.dart';
 import 'package:commercepal/features/checkout/data/models/checkout_response.dart';
 import 'package:commercepal/features/checkout/data/models/payment_constants.dart';
+import 'package:commercepal/features/checkout/data/models/payment_flow_constants.dart';
 import 'package:commercepal/features/checkout/data/models/payment_initiate_result.dart';
+import 'package:commercepal/features/checkout/data/models/public_payment_method.dart';
 import 'package:commercepal/features/checkout/data/models/shipping_address.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('DocsCheckoutRequest', () {
-    test('serializes cartId shippingAddress and paymentMethod', () {
-      final request = DocsCheckoutRequest(
-        cartId: 123,
-        shippingAddress: const ShippingAddress(
-          fullName: 'John Doe',
-          phone: '+251911234567',
-          address: 'Bole Road',
-          city: 'Addis Ababa',
-          country: 'ET',
-        ),
-        paymentMethod: DocsPaymentMethod.telebirr,
-        notes: '',
-      );
-
-      expect(request.toJson(), <String, dynamic>{
-        'cartId': 123,
-        'shippingAddress': <String, dynamic>{
-          'fullName': 'John Doe',
-          'phone': '+251911234567',
-          'address': 'Bole Road',
-          'city': 'Addis Ababa',
-          'country': 'ET',
-        },
-        'paymentMethod': 'TELEBIRR',
-        'notes': '',
-      });
-    });
-  });
-
   group('ShippingAddress.fromAddress', () {
     test('maps address model fields', () {
       final address = Address(
@@ -68,20 +40,60 @@ void main() {
     });
   });
 
-  group('CheckoutResponse docs fields', () {
-    test('parses docs checkout response', () {
+  group('CheckoutResponse guide fields', () {
+    test('parses paymentInitiation with ussd and instructions', () {
       final response = CheckoutResponse.fromJson(<String, dynamic>{
         'orderNumber': 'CPA0808XXXXX',
-        'paymentUrl': 'https://pay.example.com',
-        'ussdCode': '*127*1#',
-        'totalAmount': 2636.0,
+        'paymentStatus': 'PENDING',
+        'paymentInitiation': <String, dynamic>{
+          'nextAction': 'USSD_CODE',
+          'ussdCode': '*127*1#',
+          'instructions': 'Dial on your phone',
+          'paymentUrl': 'https://pay.example.com',
+        },
       });
 
-      expect(response.isDocsCheckoutResponse, isTrue);
-      expect(response.isDocsCheckoutCompleteForCartClear, isTrue);
-      expect(response.resolvedTotalAmount, 2636.0);
-      expect(response.paymentUrl, 'https://pay.example.com');
-      expect(response.ussdCode, '*127*1#');
+      expect(response.resolvedNextAction, 'USSD_CODE');
+      expect(response.resolvedUssdCode, '*127*1#');
+      expect(
+        response.paymentInitiation?.resolvedInstructions,
+        'Dial on your phone',
+      );
+      expect(response.isCheckoutCompleteForCartClear, isFalse);
+    });
+
+    test('cart clear only on SUCCESS nextAction', () {
+      final cod = CheckoutResponse.fromJson(<String, dynamic>{
+        'orderNumber': 'CPA-COD',
+        'paymentInitiation': <String, dynamic>{
+          'nextAction': NextAction.success,
+        },
+      });
+      expect(cod.isCheckoutCompleteForCartClear, isTrue);
+
+      final pending = CheckoutResponse.fromJson(<String, dynamic>{
+        'orderNumber': 'CPA-PEND',
+        'paymentInitiation': <String, dynamic>{
+          'nextAction': NextAction.redirectToPaymentUrl,
+          'paymentUrl': 'https://pay.example.com',
+        },
+      });
+      expect(pending.isCheckoutCompleteForCartClear, isFalse);
+    });
+  });
+
+  group('PublicPaymentMethod', () {
+    test('parses flat public API item', () {
+      final method = PublicPaymentMethod.fromJson(<String, dynamic>{
+        'providerCode': 'TELEBIRR',
+        'displayName': 'Telebirr',
+        'requiresAccount': true,
+        'isEnabled': true,
+        'sortOrder': 1,
+      });
+
+      expect(method.providerCode, 'TELEBIRR');
+      expect(method.requiresAccount, isTrue);
     });
   });
 
@@ -91,34 +103,8 @@ void main() {
         PaymentConstants.toDocsPaymentMethod('TELEBIRR'),
         DocsPaymentMethod.telebirr,
       );
-      expect(
-        PaymentConstants.toDocsPaymentMethod('CBE_BIRR'),
-        DocsPaymentMethod.cbeBirr,
-      );
-      expect(
-        PaymentConstants.toDocsPaymentMethod('EDAHAB'),
-        DocsPaymentMethod.eBirr,
-      );
-      expect(
-        PaymentConstants.toDocsPaymentMethod('ZIINA'),
-        DocsPaymentMethod.ziina,
-      );
-      expect(PaymentConstants.usesDocsPaymentFlow('PAYPAL'), isFalse);
-    });
-
-    test('phone required only for Telebirr and E_BIRR', () {
-      expect(
-        PaymentConstants.requiresPhoneForDocsCheckout(DocsPaymentMethod.telebirr),
-        isTrue,
-      );
-      expect(
-        PaymentConstants.requiresPhoneForDocsCheckout(DocsPaymentMethod.eBirr),
-        isTrue,
-      );
-      expect(
-        PaymentConstants.requiresPhoneForDocsCheckout(DocsPaymentMethod.cbeBirr),
-        isFalse,
-      );
+      expect(PaymentConstants.requiresExternalBrowser('PAYPAL'), isTrue);
+      expect(PaymentConstants.requiresExternalBrowser('TELEBIRR'), isFalse);
     });
   });
 

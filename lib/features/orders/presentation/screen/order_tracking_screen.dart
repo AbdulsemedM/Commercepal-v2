@@ -13,6 +13,7 @@ import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/models/order_item.dart';
+import 'package:commercepal/features/checkout/data/models/payment_flow_constants.dart';
 import 'package:commercepal/services/invoice_pdf_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
@@ -192,6 +193,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final statusLabel = order.stageLabel.isNotEmpty
         ? order.stageLabel
         : _defaultStageLabel(currentStatusIndex);
+    final Color stageColor = _stageColor(order);
     final orderDateFormatted = _formatOrderDate(order.orderDate);
     final firstItem = order.items.isNotEmpty ? order.items.first : null;
 
@@ -257,10 +259,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   children: <Widget>[
                     Text(
                       statusLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: stageColor,
                       ),
                     ),
                     const SizedBox(height: Spacing.xs),
@@ -419,16 +421,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   int _getCurrentStatusIndex(Order order) {
     final stage = order.currentStage.toUpperCase();
     switch (stage) {
+      case OrderStage.paymentPending:
       case 'PENDING':
-      case 'PAYMENT_CONFIRMED':
+      case OrderStage.paymentConfirmed:
         return 1;
-      case 'PROCESSING':
-      case 'PACKED':
+      case OrderStage.processing:
+      case OrderStage.packed:
         return 2;
-      case 'SHIPPED':
-      case 'OUT_FOR_DELIVERY':
+      case OrderStage.shipped:
+      case OrderStage.outForDelivery:
         return 3;
-      case 'DELIVERED':
+      case OrderStage.delivered:
         return 4;
     }
 
@@ -447,6 +450,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         return 4;
       default:
         return 1;
+    }
+  }
+
+  Color _stageColor(Order order) {
+    final String stage = order.currentStage.toUpperCase();
+    switch (stage) {
+      case OrderStage.delivered:
+        return AppColors.success;
+      case OrderStage.paymentConfirmed:
+      case OrderStage.processing:
+      case OrderStage.packed:
+      case OrderStage.shipped:
+      case OrderStage.outForDelivery:
+        return const Color(0xFFFFD520);
+      default:
+        return Colors.grey;
     }
   }
 

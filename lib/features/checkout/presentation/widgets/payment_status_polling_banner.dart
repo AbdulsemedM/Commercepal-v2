@@ -6,6 +6,7 @@ import '../../../../app/router/app_router.dart';
 import '../../../../core/constants/spacing.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../services/localization_service.dart';
+import '../../../cart/bloc/cart_bloc.dart';
 import '../../bloc/payment_status_cubit.dart';
 
 /// Starts payment status polling and shows waiting / success / failed UI.
@@ -15,22 +16,38 @@ class PaymentStatusPollingBanner extends StatefulWidget {
     required this.orderNumber,
     this.onSuccess,
     this.onFailed,
+    this.clearCartOnSuccess = false,
   });
 
   final String orderNumber;
   final VoidCallback? onSuccess;
   final VoidCallback? onFailed;
+  final bool clearCartOnSuccess;
 
   @override
   State<PaymentStatusPollingBanner> createState() =>
       _PaymentStatusPollingBannerState();
 }
 
-class _PaymentStatusPollingBannerState extends State<PaymentStatusPollingBanner> {
+class _PaymentStatusPollingBannerState extends State<PaymentStatusPollingBanner>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     context.read<PaymentStatusCubit>().startPolling(widget.orderNumber);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    context.read<PaymentStatusCubit>().checkNow();
   }
 
   @override
@@ -38,8 +55,12 @@ class _PaymentStatusPollingBannerState extends State<PaymentStatusPollingBanner>
     return BlocConsumer<PaymentStatusCubit, PaymentStatusState>(
       listener: (BuildContext context, PaymentStatusState state) {
         if (state is PaymentStatusSuccess) {
+          if (widget.clearCartOnSuccess) {
+            context.read<CartBloc>().add(CartClearRequested());
+          }
           widget.onSuccess?.call();
-        } else if (state is PaymentStatusFailed || state is PaymentStatusTimeout) {
+        } else if (state is PaymentStatusFailed ||
+            state is PaymentStatusTimeout) {
           widget.onFailed?.call();
         }
       },
@@ -94,9 +115,10 @@ class _PaymentStatusPollingBannerState extends State<PaymentStatusPollingBanner>
               context,
               'checkout.paymentStatusPollingTitle',
             ),
-            body: LocalizationService.t(context, 'checkout.paymentStatusPollingBody')
-                .replaceAll('{current}', '${state.attempt}')
-                .replaceAll('{max}', '${PaymentStatusCubit.maxAttempts}'),
+            body: LocalizationService.t(
+              context,
+              'checkout.paymentStatusPollingBody',
+            ),
             showProgress: true,
           );
         }
@@ -174,7 +196,17 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-void navigateOnPaymentStatusSuccess(BuildContext context) {
+void navigateOnPaymentStatusSuccess(
+  BuildContext context, {
+  bool clearCart = false,
+}) {
+  if (clearCart) {
+    try {
+      context.read<CartBloc>().add(CartClearRequested());
+    } catch (_) {
+      // CartBloc may not be in scope on some routes.
+    }
+  }
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(

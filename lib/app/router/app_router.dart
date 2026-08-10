@@ -311,9 +311,12 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
         final paymentUrl = extra?['paymentUrl'] as String? ?? '';
         final orderNumber = extra?['orderNumber'] as String?;
+        final paymentProviderCode =
+            extra?['paymentProviderCode'] as String?;
         return PaymentWebViewScreen(
           paymentUrl: paymentUrl,
           orderNumber: orderNumber,
+          paymentProviderCode: paymentProviderCode,
         );
       },
     ),
@@ -352,6 +355,7 @@ final GoRouter appRouter = GoRouter(
         return OrderConfirmedPaymentPendingScreen(
           response: response,
           initiateResult: extra?['initiateResult'] as PaymentInitiateResult?,
+          paymentProviderCode: extra?['paymentProviderCode'] as String?,
         );
       },
     ),
@@ -390,15 +394,14 @@ final GoRouter appRouter = GoRouter(
       name: 'retryPaymentMethod',
       builder: (BuildContext context, GoRouterState state) {
         final extra = state.extra as Map<String, dynamic>?;
-        final paymentReference =
-            extra?['paymentReference'] as String? ?? '';
+        final orderNumber = extra?['orderNumber'] as String? ?? '';
         final currency = extra?['currency'] as String? ?? '';
-        final orderNumber = extra?['orderNumber'] as String?;
+        final paymentReference = extra?['paymentReference'] as String?;
         final orderTotal = (extra?['orderTotal'] as num?)?.toDouble();
         return RetryPaymentMethodScreen(
-          paymentReference: paymentReference,
-          currency: currency,
           orderNumber: orderNumber,
+          currency: currency,
+          paymentReference: paymentReference,
           orderTotal: orderTotal,
         );
       },

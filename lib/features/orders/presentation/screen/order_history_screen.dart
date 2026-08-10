@@ -106,44 +106,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   /// Opens payment method selection to pay for an order (Waiting for Payment).
-  /// Fetches order detail if paymentReference is not in the list item.
   Future<void> _openPayForOrder(BuildContext context, Order order) async {
-    String? paymentRef = order.paymentReference;
-    if (paymentRef == null || paymentRef.isEmpty) {
-      try {
-        final detail = await _ordersRepository.getOrderByOrderNumber(order.orderNumber);
-        paymentRef = detail.paymentReference;
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(LocalizationService.t(context, 'orderHistory.unableToLoadPayment')),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-        return;
-      }
-    }
-    if (paymentRef == null || paymentRef.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'orderHistory.paymentNotAvailable')),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-      }
-      return;
-    }
     if (!context.mounted) return;
     context.push<void>(
       AppRoutes.retryPaymentMethod,
       extra: <String, dynamic>{
-        'paymentReference': paymentRef,
-        'currency': order.currency,
         'orderNumber': order.orderNumber,
+        'currency': order.currency,
         'orderTotal': order.totalAmount,
+        'paymentReference': order.paymentReference,
       },
     );
   }

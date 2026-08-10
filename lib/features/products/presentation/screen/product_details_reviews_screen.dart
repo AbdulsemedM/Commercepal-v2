@@ -5,7 +5,6 @@ import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/services/localization_service.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
@@ -70,13 +69,10 @@ class _ProductDetailsReviewsScreenState
           backgroundColor: scheme.surface,
           appBar: AppBarWidget(
             cartCount: cartCount,
-            userInitials: AuthService().userInitials ?? 'U',
             onSearchTap: () {
-              // Navigate to search screen when search bar is tapped
               context.push(AppRoutes.productSearch);
             },
             onSearchSubmitted: (String query) {
-              // Navigate to search screen with query
               context.push(
                 '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
               );
@@ -84,14 +80,8 @@ class _ProductDetailsReviewsScreenState
             },
             onLogoTap: () => Navigator.of(context).pop(),
             onCartTap: () {
-              // Navigate to cart tab
               _navigateToTab(context, 2);
             },
-            onProfileTap: () {
-              // Navigate to profile tab
-              _navigateToTab(context, 3);
-            },
-            hasNotification: false,
           ),
           body: Column(
         children: <Widget>[

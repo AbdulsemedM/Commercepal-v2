@@ -1,17 +1,14 @@
-/// Request body for POST /api/v1/payments/retry
+/// Request body for POST /api/v1/orders/{orderNumber}/retry-payment
 class PaymentRetryRequest {
-  final String paymentReference;
   final String paymentProviderCode;
   final String? paymentAccount;
 
   PaymentRetryRequest({
-    required this.paymentReference,
     required this.paymentProviderCode,
     this.paymentAccount,
   });
 
-  Map<String, dynamic> toJson() => {
-        'paymentReference': paymentReference,
+  Map<String, dynamic> toJson() => <String, dynamic>{
         'paymentProviderCode': paymentProviderCode,
         if (paymentAccount?.isNotEmpty == true) 'paymentAccount': paymentAccount!,
       };

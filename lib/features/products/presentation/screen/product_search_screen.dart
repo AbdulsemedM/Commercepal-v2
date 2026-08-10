@@ -11,7 +11,6 @@ import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
 import 'package:commercepal/features/products/bloc/product_search_bloc.dart';
 import 'package:commercepal/features/products/data/models/product_search_request.dart';
@@ -21,7 +20,6 @@ import 'package:commercepal/features/products/data/models/product.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/app_analytics.dart';
-import 'package:commercepal/features/products/presentation/widgets/visual_search_entry_actions.dart';
 
 enum _ClientProductSort { relevance, priceAsc, priceDesc, nameAz }
 
@@ -633,7 +631,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               backgroundColor: AppColors.cream,
               appBar: AppBarWidget(
                 cartCount: cartCount,
-                userInitials: AuthService().userInitials ?? 'U',
                 onSearchTap: () => _searchFocusNode.requestFocus(),
                 onSearchSubmitted: (String query) {
                   _searchController.text = query;
@@ -643,11 +640,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                 },
                 onLogoTap: () => context.pop(),
                 onCartTap: () => _navigateToTab(context, 2),
-                onProfileTap: () => _navigateToTab(context, 3),
-                hasNotification: false,
-                additionalActions: const <Widget>[
-                  VisualSearchEntryActions(),
-                ],
               ),
               body: Column(
                 children: <Widget>[

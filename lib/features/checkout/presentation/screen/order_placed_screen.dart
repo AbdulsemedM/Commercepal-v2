@@ -18,6 +18,7 @@ import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
 import '../../data/repository/checkout_repository.dart';
 import '../utils/payment_phone_utils.dart';
+import '../utils/checkout_payment_navigation.dart';
 
 /// Displays the checkout response from the backend after placing an order:
 /// order number, pricing summary, payment status, payment initiation details.
@@ -62,11 +63,12 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
   }
 
   Future<void> _retryPayment() async {
-    final initiation = _response.paymentInitiation;
-    final ref = initiation?.paymentReference;
-    if (ref == null ||
-        ref.isEmpty ||
-        widget.paymentProviderCode.isEmpty) return;
+    final String? orderNumber = _response.resolvedOrderNumber;
+    if (orderNumber == null ||
+        orderNumber.isEmpty ||
+        widget.paymentProviderCode.isEmpty) {
+      return;
+    }
 
     setState(() => _isRetrying = true);
     try {
@@ -79,33 +81,24 @@ class _OrderPlacedScreenState extends State<OrderPlacedScreen> {
       }
 
       final request = PaymentRetryRequest(
-        paymentReference: ref,
         paymentProviderCode: widget.paymentProviderCode,
         paymentAccount: paymentAccount,
       );
-      final updated = await _checkoutRepository.retryPayment(request);
+      final updated = await _checkoutRepository.retryPayment(
+        orderNumber: orderNumber,
+        request: request,
+      );
       if (!mounted) return;
       setState(() {
         _response = updated;
         _isRetrying = false;
       });
-      final newUrl = updated.paymentInitiation?.paymentUrl;
-      if (newUrl != null && newUrl.isNotEmpty) {
-        context.push(
-          AppRoutes.paymentWebView,
-          extra: <String, dynamic>{
-            'paymentUrl': newUrl,
-            'orderNumber': updated.orderNumber,
-          },
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'checkout.retryRequested')),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      await navigateAfterRetryPaymentSuccess(
+        context,
+        updated,
+        paymentProviderCode: widget.paymentProviderCode,
+        paymentAccount: paymentAccount,
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _isRetrying = false);

@@ -35,13 +35,23 @@ class PaymentStatusCubit extends Cubit<PaymentStatusState> {
       : _repository = repository ?? PaymentStatusRepository(),
         super(PaymentStatusInitial());
 
-  static const int maxAttempts = 60;
-  static const Duration pollInterval = Duration(seconds: 30);
+  static const int maxAttempts = 360;
+  static const Duration pollInterval = Duration(seconds: 5);
 
   final PaymentStatusRepository _repository;
   Timer? _timer;
   String? _orderNumber;
   int _attempt = 0;
+
+  void stopPolling() {
+    _timer?.cancel();
+  }
+
+  /// Immediate status check (e.g. on app resume).
+  Future<void> checkNow() async {
+    if (_orderNumber == null || _orderNumber!.isEmpty) return;
+    await _pollOnce();
+  }
 
   void startPolling(String orderNumber) {
     if (orderNumber.trim().isEmpty) return;

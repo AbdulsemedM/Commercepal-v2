@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/constants/spacing.dart';
@@ -19,10 +20,12 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
     super.key,
     required this.response,
     this.initiateResult,
+    this.paymentProviderCode,
   });
 
   final CheckoutResponse response;
   final PaymentInitiateResult? initiateResult;
+  final String? paymentProviderCode;
 
   static const Color _pendingTint = Color(0xFFFFF8E1);
   static const Color _pendingBorder = Color(0xFFFFE082);
@@ -36,73 +39,112 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
         response: response,
         initiateResult: initiateResult,
         orderNumber: orderNum,
+        paymentProviderCode: paymentProviderCode,
       ),
     );
   }
 }
 
-class _OrderConfirmedPaymentPendingBody extends StatelessWidget {
+class _OrderConfirmedPaymentPendingBody extends StatefulWidget {
   const _OrderConfirmedPaymentPendingBody({
     required this.response,
     required this.initiateResult,
     required this.orderNumber,
+    this.paymentProviderCode,
   });
 
   final CheckoutResponse response;
   final PaymentInitiateResult? initiateResult;
   final String orderNumber;
+  final String? paymentProviderCode;
+
+  @override
+  State<_OrderConfirmedPaymentPendingBody> createState() =>
+      _OrderConfirmedPaymentPendingBodyState();
+}
+
+class _OrderConfirmedPaymentPendingBodyState
+    extends State<_OrderConfirmedPaymentPendingBody>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (widget.orderNumber.isEmpty || !mounted) return;
+    context.read<PaymentStatusCubit>().checkNow();
+  }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final summary = response.pricingSummary;
+    final summary = widget.response.pricingSummary;
     final currency =
-        (summary?.currency ?? response.currency ?? '').trim().isNotEmpty
-            ? (summary?.currency ?? response.currency)!.trim()
+        (summary?.currency ?? widget.response.currency ?? '').trim().isNotEmpty
+            ? (summary?.currency ?? widget.response.currency)!.trim()
             : 'ETB';
     final subtotal = summary?.subtotal;
-    final total = response.resolvedTotalAmount ?? summary?.totalAmount ?? subtotal;
+    final total = widget.response.resolvedTotalAmount ??
+        summary?.totalAmount ??
+        subtotal;
     final checkoutInstructions =
-        response.paymentInitiation?.paymentInstructions?.trim() ?? '';
+        widget.response.paymentInitiation?.resolvedInstructions ?? '';
     final initiateInstructions =
-        initiateResult?.paymentInstructions?.trim() ?? '';
+        widget.initiateResult?.paymentInstructions?.trim() ?? '';
     final instructions = initiateInstructions.isNotEmpty
         ? initiateInstructions
         : checkoutInstructions;
-    final pending = (response.paymentStatus ?? '').toUpperCase() == 'PENDING';
-    final paymentRef = initiateResult?.resolvedReference ??
-        response.paymentInitiation?.paymentReference?.trim() ??
+    final pending =
+        (widget.response.paymentStatus ?? '').toUpperCase() == 'PENDING';
+    final paymentRef = widget.initiateResult?.resolvedReference ??
+        widget.response.paymentInitiation?.paymentReference?.trim() ??
         '';
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.xl,
-            vertical: Spacing.lg,
-          ),
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: Spacing.md),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: OrderConfirmedPaymentPendingScreen._pendingTint,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: OrderConfirmedPaymentPendingScreen._pendingBorder,
-                    width: 2,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        context.go(AppRoutes.dashboard);
+      },
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.xl,
+              vertical: Spacing.lg,
+            ),
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: Spacing.md),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: OrderConfirmedPaymentPendingScreen._pendingTint,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: OrderConfirmedPaymentPendingScreen._pendingBorder,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 40,
+                    color: AppColors.warning.withValues(alpha: 0.95),
                   ),
                 ),
-                child: Icon(
-                  Icons.hourglass_top_rounded,
-                  size: 40,
-                  color: AppColors.warning.withValues(alpha: 0.95),
-                ),
-              ),
               const SizedBox(height: Spacing.lg),
               Text(
                 LocalizationService.t(context, 'checkout.paymentPendingTitle'),
@@ -125,46 +167,48 @@ class _OrderConfirmedPaymentPendingBody extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: Spacing.xl),
-              if (orderNumber.isNotEmpty) ...[
+              if (widget.orderNumber.isNotEmpty) ...[
                 PaymentStatusPollingBanner(
-                  orderNumber: orderNumber,
+                  orderNumber: widget.orderNumber,
+                  clearCartOnSuccess: true,
                   onSuccess: () => navigateOnPaymentStatusSuccess(context),
                 ),
                 const SizedBox(height: Spacing.lg),
               ],
               if (pending) _PaymentPendingBanner(theme: theme, scheme: scheme),
               if (pending) const SizedBox(height: Spacing.lg),
-              if ((initiateResult?.ussdCode != null &&
-                      initiateResult!.ussdCode!.isNotEmpty) ||
-                  (response.ussdCode != null &&
-                      response.ussdCode!.trim().isNotEmpty)) ...[
+              if ((widget.initiateResult?.ussdCode != null &&
+                      widget.initiateResult!.ussdCode!.isNotEmpty) ||
+                  (widget.response.ussdCode != null &&
+                      widget.response.ussdCode!.trim().isNotEmpty)) ...[
                 _UssdCard(
                   theme: theme,
                   scheme: scheme,
-                  ussdCode: initiateResult?.ussdCode?.trim().isNotEmpty == true
-                      ? initiateResult!.ussdCode!
-                      : response.ussdCode!.trim(),
-                  reference: initiateResult?.resolvedReference,
+                  ussdCode: widget.initiateResult?.ussdCode?.trim().isNotEmpty ==
+                          true
+                      ? widget.initiateResult!.ussdCode!
+                      : widget.response.ussdCode!.trim(),
+                  reference: widget.initiateResult?.resolvedReference,
                 ),
                 const SizedBox(height: Spacing.lg),
               ],
               _OrderSummaryCard(
                 theme: theme,
                 scheme: scheme,
-                orderNumber: orderNumber,
+                orderNumber: widget.orderNumber,
                 subtotal: subtotal,
                 total: total,
                 currency: currency,
                 showInitiatedBadge: pending,
                 paymentReference: paymentRef,
               ),
-              if (initiateResult?.message != null &&
-                  initiateResult!.message!.isNotEmpty) ...[
+              if (widget.initiateResult?.message != null &&
+                  widget.initiateResult!.message!.isNotEmpty) ...[
                 const SizedBox(height: Spacing.lg),
                 _InstructionsCard(
                   theme: theme,
                   scheme: scheme,
-                  instructions: initiateResult!.message!,
+                  instructions: widget.initiateResult!.message!,
                   titleKey: 'checkout.edahabInitiateTitle',
                 ),
               ],
@@ -234,7 +278,7 @@ class _OrderConfirmedPaymentPendingBody extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: orderNumber,
+                      text: widget.orderNumber,
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -248,6 +292,7 @@ class _OrderConfirmedPaymentPendingBody extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -313,6 +358,17 @@ class _UssdCard extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.copy_outlined),
+              ),
+              IconButton(
+                tooltip: 'Open dialer',
+                onPressed: () async {
+                  final Uri uri =
+                      Uri.parse('tel:${Uri.encodeComponent(ussdCode)}');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+                icon: const Icon(Icons.phone_outlined),
               ),
             ],
           ),
@@ -453,12 +509,43 @@ class _OrderSummaryCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: Spacing.xs),
-                    Text(
-                      orderNumber.isEmpty ? '—' : orderNumber,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: scheme.onSurface,
-                      ),
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            orderNumber.isEmpty ? '—' : orderNumber,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (orderNumber.isNotEmpty)
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: LocalizationService.t(
+                              context,
+                              'checkout.copyOrderNumber',
+                            ),
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: orderNumber),
+                              );
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    LocalizationService.t(
+                                      context,
+                                      'checkout.orderNumberCopied',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.copy_outlined, size: 20),
+                          ),
+                      ],
                     ),
                   ],
                 ),

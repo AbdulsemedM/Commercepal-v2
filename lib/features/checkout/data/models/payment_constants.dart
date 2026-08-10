@@ -1,16 +1,27 @@
 import 'checkout_request.dart';
+import 'payment_flow_constants.dart';
 
 /// Payment provider item codes (from payment methods API).
 class PaymentConstants {
   PaymentConstants._();
 
-  /// Docs checkout payment methods.
+  /// Docs / web checkout payment methods.
   static const Set<String> docsPaymentProviderCodes = <String>{
     'TELEBIRR',
+    'TELE_BIRR',
     'CBE_BIRR',
     'E_BIRR',
     'ZIINA',
   };
+
+  /// Maps UI/API provider codes to the codes production web checkout sends.
+  static String toCheckoutProviderCode(String code) {
+    final String normalized = code.trim().toUpperCase();
+    if (normalized == 'TELEBIRR' || normalized == 'TELE_BIRR') {
+      return 'TELE_BIRR';
+    }
+    return normalized;
+  }
 
   static bool usesDocsPaymentFlow(String? code, {String? displayName}) {
     return toDocsPaymentMethod(code, displayName: displayName) != null;
@@ -44,9 +55,11 @@ class PaymentConstants {
     }
 
     final String? normalizedCode = code?.trim().toUpperCase();
-    if (normalizedCode != null && docsPaymentProviderCodes.contains(normalizedCode)) {
+    if (normalizedCode != null &&
+        docsPaymentProviderCodes.contains(normalizedCode)) {
       switch (normalizedCode) {
         case 'TELEBIRR':
+        case 'TELE_BIRR':
           return DocsPaymentMethod.telebirr;
         case 'CBE_BIRR':
           return DocsPaymentMethod.cbeBirr;
@@ -152,6 +165,7 @@ class PaymentConstants {
   /// CBE_BIRR is excluded: we redirect straight to payment URL without USSD confirmation.
   static const Set<String> ussdPaymentProviderCodes = <String>{
     'TELEBIRR',
+    'TELE_BIRR',
     'EBIRR_COOPAY',
     'EBIRR_KAFFI',
     'SAHAY',
@@ -173,5 +187,70 @@ class PaymentConstants {
   static bool isCashOnDelivery(String? code) {
     if (code == null || code.isEmpty) return false;
     return cashOnDeliveryProviderCodes.contains(code.toUpperCase());
+  }
+
+  /// Providers that never collect a phone/account at checkout.
+  static bool requiresNoPaymentAccount(String? code, {String? displayName}) {
+    return isPayPal(code) ||
+        isCbeBirr(code, displayName: displayName) ||
+        isZiina(code, displayName: displayName) ||
+        isCashOnDelivery(code);
+  }
+
+  /// Explicit allowlist: providers that need phone/account regardless of API flag.
+  static bool requiresPaymentAccount(String? code, {String? displayName}) {
+    if (code == null || code.isEmpty) return false;
+    if (requiresNoPaymentAccount(code, displayName: displayName)) {
+      return false;
+    }
+
+    final String haystack = _normalizedHaystack(code, displayName);
+    if (haystack.isEmpty) return false;
+
+    if (haystack.contains('TELEBIRR')) return true;
+    if (haystack.contains('EDAHAB')) return true;
+    if (haystack.contains('SAHAY')) return true;
+    if (haystack.contains('AMOLE')) return true;
+    if (haystack.contains('WAAFI')) return true;
+
+    // eBirr variants (E_BIRR, EBIRR_COOPAY, EBIRR_KAFFI); CBE_BIRR excluded above.
+    if (haystack.contains('EBIRR') || haystack.contains('EBIR')) return true;
+
+    return false;
+  }
+
+  /// Whether checkout UI should show and validate the payment phone/account field.
+  static bool shouldCollectPaymentAccount(
+    String? code, {
+    String? displayName,
+    bool apiRequiresAccount = false,
+    bool? legacyRequireAccountOnInitiation,
+  }) {
+    if (requiresNoPaymentAccount(code, displayName: displayName)) {
+      return false;
+    }
+    return requiresPaymentAccount(code, displayName: displayName) ||
+        apiRequiresAccount ||
+        legacyRequireAccountOnInitiation == true;
+  }
+
+  static bool isSahay(String? code, {String? displayName}) {
+    final String haystack = _normalizedHaystack(code, displayName);
+    return haystack.contains('SAHAY');
+  }
+
+  static bool isAmole(String? code, {String? displayName}) {
+    final String haystack = _normalizedHaystack(code, displayName);
+    return haystack.contains('AMOLE');
+  }
+
+  static bool isWaafi(String? code, {String? displayName}) {
+    final String haystack = _normalizedHaystack(code, displayName);
+    return haystack.contains('WAAFI');
+  }
+
+  static bool requiresExternalBrowser(String? code) {
+    if (code == null || code.isEmpty) return false;
+    return PaymentProvider.requiresExternalBrowser.contains(code.toUpperCase());
   }
 }

@@ -8,7 +8,6 @@ import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/navigation_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../../bloc/product_details_bloc.dart';
@@ -510,12 +509,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(kToolbarHeight + 20),
+                preferredSize: const Size.fromHeight(kToolbarHeight + 36),
                 child: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
                   builder: (BuildContext context, ProductDetailsState pdState) {
                     return AppBarWidget(
                     cartCount: cartCount,
-                    userInitials: AuthService().userInitials ?? 'U',
                     onSearchTap: () {
                       context.push(AppRoutes.productSearch);
                     },
@@ -531,10 +529,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     onCartTap: () {
                       _navigateToTab(context, 2);
                     },
-                    onProfileTap: () {
-                      _navigateToTab(context, 3);
-                    },
-                    hasNotification: false,
                     additionalActions: pdState is ProductDetailsLoaded
                         ? <Widget>[
                             Semantics(

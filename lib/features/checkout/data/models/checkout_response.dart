@@ -1,3 +1,5 @@
+import 'payment_flow_constants.dart';
+
 class PricingSummary {
   final num? subtotal;
   final num? discountAmount;
@@ -36,6 +38,11 @@ class PaymentInitiation {
   final String? paymentUrl;
   final String? paymentInstructions;
   final String? nextAction;
+  final String? ussdCode;
+  final String? instructions;
+  final String? expiresAt;
+  final String? qrCode;
+  final String? qrData;
 
   PaymentInitiation({
     this.success,
@@ -45,6 +52,11 @@ class PaymentInitiation {
     this.paymentUrl,
     this.paymentInstructions,
     this.nextAction,
+    this.ussdCode,
+    this.instructions,
+    this.expiresAt,
+    this.qrCode,
+    this.qrData,
   });
 
   factory PaymentInitiation.fromJson(Map<String, dynamic>? json) {
@@ -57,7 +69,32 @@ class PaymentInitiation {
       paymentUrl: json['paymentUrl'] as String?,
       paymentInstructions: json['paymentInstructions'] as String?,
       nextAction: json['nextAction'] as String?,
+      ussdCode: json['ussdCode'] as String?,
+      instructions: json['instructions'] as String?,
+      expiresAt: json['expiresAt'] as String?,
+      qrCode: json['qrCode'] as String?,
+      qrData: json['qrData'] as String?,
     );
+  }
+
+  String? get resolvedInstructions {
+    final String fromInstructions = instructions?.trim() ?? '';
+    if (fromInstructions.isNotEmpty) return fromInstructions;
+    return paymentInstructions?.trim();
+  }
+
+  String? get resolvedUssdCode {
+    final String code = ussdCode?.trim() ?? '';
+    return code.isEmpty ? null : code;
+  }
+
+  /// Prefers qrData, then qrCode, then paymentUrl (EMV QR payload).
+  String? get resolvedQrPayload {
+    for (final String? candidate in <String?>[qrData, qrCode, paymentUrl]) {
+      final String value = candidate?.trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return null;
   }
 }
 
@@ -119,65 +156,69 @@ class CheckoutResponse {
     return hasDocsFields;
   }
 
-  bool get isDocsCheckoutCompleteForCartClear {
-    final String order = resolvedOrderNumber?.trim() ?? '';
-    return order.isNotEmpty;
+  /// Resolved [nextAction] from paymentInitiation.
+  String? get resolvedNextAction {
+    final String fromInit = paymentInitiation?.nextAction?.trim() ?? '';
+    return fromInit.isEmpty ? null : fromInit;
+  }
+
+  /// Resolved payment URL from initiation or top-level field.
+  String? get resolvedPaymentUrl {
+    final String fromInit = paymentInitiation?.paymentUrl?.trim() ?? '';
+    if (fromInit.isNotEmpty) return fromInit;
+    final String top = paymentUrl?.trim() ?? '';
+    return top.isEmpty ? null : top;
+  }
+
+  /// Resolved USSD code from initiation or top-level field.
+  String? get resolvedUssdCode {
+    final String fromInit = paymentInitiation?.resolvedUssdCode ?? '';
+    if (fromInit.isNotEmpty) return fromInit;
+    final String top = ussdCode?.trim() ?? '';
+    return top.isEmpty ? null : top;
+  }
+
+  /// QR payload for bank-app scan (QPay `SHOW_QR_CODE` / `SCAN_QR`).
+  String? get resolvedQrPayload {
+    final String? fromInit = paymentInitiation?.resolvedQrPayload;
+    if (fromInit != null && fromInit.isNotEmpty) return fromInit;
+    final String top = paymentUrl?.trim() ?? '';
+    return top.isEmpty ? null : top;
   }
 
   num? get resolvedTotalAmount =>
       totalAmount ?? pricingSummary?.totalAmount;
 
-  /// Backend [nextAction] values we treat as a completed checkout for cart clearing.
-  static const String nextActionOpenAdditionalInput = 'OPEN_ADDITIONAL_INPUT';
-  static const String nextActionRedirectToPaymentUrl = 'REDIRECT_TO_PAYMENT_URL';
-  static const String nextActionScanQr = 'SCAN_QR';
+  static const String nextActionOpenAdditionalInput =
+      NextAction.openAdditionalInput;
+  static const String nextActionRedirectToPaymentUrl =
+      NextAction.redirectToPaymentUrl;
+  static const String nextActionScanQr = NextAction.scanQr;
+  static const String nextActionShowQrCode = NextAction.showQrCode;
+  static const String nextActionUssdCode = NextAction.ussdCode;
+  static const String nextActionSuccess = NextAction.success;
+  static const String nextActionPending = NextAction.pending;
 
-  /// When true, the order is reserved and payment started; safe to clear the cart.
-  /// Based on [paymentInitiation] (not HTTP status alone).
+  /// Cart may be cleared only when payment is immediately complete (e.g. COD).
   bool get isCheckoutCompleteForCartClear {
-    final init = paymentInitiation;
-    if (init == null) return false;
-    if (init.success != true) return false;
-
-    final top = orderNumber?.trim() ?? '';
-    final initOrder = init.orderNumber?.trim() ?? '';
-    if (top.isNotEmpty && initOrder.isNotEmpty && top != initOrder) {
-      return false;
+    final String action = resolvedNextAction ?? '';
+    if (action == nextActionSuccess) {
+      return resolvedOrderNumber?.isNotEmpty ?? false;
     }
-    final resolvedOrder = top.isNotEmpty ? top : initOrder;
-    if (resolvedOrder.isEmpty) return false;
-
-    final ref = init.paymentReference?.trim() ?? '';
-    if (ref.isEmpty) return false;
-
-    final action = init.nextAction?.trim() ?? '';
-    if (action.isEmpty) return false;
-
-    if (action == nextActionRedirectToPaymentUrl) {
-      final url = init.paymentUrl?.trim() ?? '';
-      return url.isNotEmpty;
-    }
-    if (action == nextActionScanQr) {
-      final payload = init.paymentUrl?.trim() ?? '';
-      return payload.isNotEmpty;
-    }
-    if (action == nextActionOpenAdditionalInput) {
-      final instructions = init.paymentInstructions?.trim() ?? '';
-      return instructions.isNotEmpty;
-    }
-    return false;
+    final String status = (paymentStatus ?? '').trim().toUpperCase();
+    return status == PaymentStatus.success;
   }
 
   /// Order was reserved with payment still pending (HTTP checkout may be 200
   /// even when [PaymentInitiation.success] is false).
   bool get isOrderReservedPaymentPending {
     final status = (paymentStatus ?? '').trim().toUpperCase();
-    if (status != 'PENDING') return false;
+    if (status != PaymentStatus.pending) return false;
     final order = resolvedOrderNumber;
     return order != null && order.isNotEmpty;
   }
 
-  /// Non-empty [paymentInitiation.paymentReference] when present (for retry flow).
+  /// Non-empty [paymentInitiation.paymentReference] when present (for display).
   String? get paymentReferenceOrNull {
     final r = paymentInitiation?.paymentReference?.trim() ?? '';
     return r.isEmpty ? null : r;

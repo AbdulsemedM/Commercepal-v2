@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -7,34 +9,39 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   const AppBarWidget({
     super.key,
     required this.cartCount,
-    required this.userInitials,
     required this.onSearchSubmitted,
     this.onLogoTap,
     this.onCartTap,
-    this.onProfileTap,
-    this.hasNotification = false,
     this.searchPlaceholder,
     this.onSearchTap,
+    this.showVisualSearch = true,
+    this.onVisualSearchTap,
     this.additionalActions,
   });
 
   final int cartCount;
-  final String userInitials;
   final String? Function(String) onSearchSubmitted;
   final VoidCallback? onLogoTap;
   final VoidCallback? onCartTap;
-  final VoidCallback? onProfileTap;
-  final bool hasNotification;
   final String? searchPlaceholder;
   final VoidCallback? onSearchTap;
+  /// Camera shortcut inside the search field (defaults to visual search route).
+  final bool showVisualSearch;
+  final VoidCallback? onVisualSearchTap;
   /// Shown after the search field and before the cart icon (e.g. overflow menu).
   final List<Widget>? additionalActions;
 
   @override
   Size get preferredSize {
-    // Floating bar: toolbar + padding + outer margins.
-    // Extra room avoids content colliding with the status bar on dense devices.
-    return const Size.fromHeight(kToolbarHeight + 48);
+    return const Size.fromHeight(kToolbarHeight + 36);
+  }
+
+  void _openVisualSearch(BuildContext context) {
+    if (onVisualSearchTap != null) {
+      onVisualSearchTap!();
+      return;
+    }
+    context.push(AppRoutes.visualSearch);
   }
 
   @override
@@ -54,42 +61,42 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
           child: Container(
             decoration: BoxDecoration(
               color: barColor,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.sm + 2,
+              horizontal: Spacing.sm + 2,
+              vertical: Spacing.sm,
             ),
             child: Row(
               children: <Widget>[
                 InkWell(
                   onTap: onLogoTap,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 46,
-                    height: 46,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: Image.asset(
                         'assets/images/app_icon.png',
-                        width: 38,
-                        height: 38,
+                        width: 32,
+                        height: 32,
                         fit: BoxFit.cover,
                         errorBuilder: (
                           BuildContext context,
@@ -99,7 +106,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                           return const Icon(
                             Icons.bolt_rounded,
                             color: AppColors.navy,
-                            size: 26,
+                            size: 22,
                           );
                         },
                       ),
@@ -108,57 +115,81 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 const SizedBox(width: Spacing.sm),
                 Expanded(
-                  child: InkWell(
-                    onTap: onSearchTap,
-                    borderRadius: BorderRadius.circular(23),
-                    child: Container(
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: searchFill,
-                        borderRadius: BorderRadius.circular(23),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: searchFill,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: InkWell(
+                            onTap: onSearchTap,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Row(
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 12,
+                                    right: 4,
+                                  ),
+                                  child: Icon(
+                                    Icons.search,
+                                    color: searchSecondary,
+                                    size: 20,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: TextField(
+                                    enabled: onSearchTap == null,
+                                    decoration: InputDecoration(
+                                      hintText: placeholder,
+                                      hintStyle: TextStyle(
+                                        color: searchSecondary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      color: scheme.onSurface,
+                                    ),
+                                    onSubmitted: (String value) {
+                                      onSearchSubmitted(value);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                      child: TextField(
-                        enabled: onSearchTap == null,
-                        decoration: InputDecoration(
-                          hintText: placeholder,
-                          hintStyle: TextStyle(
-                            color: searchSecondary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Icon(
-                              Icons.search,
+                        ),
+                        if (showVisualSearch)
+                          IconButton(
+                            tooltip: 'Visual search',
+                            onPressed: () => _openVisualSearch(context),
+                            icon: Icon(
+                              Icons.camera_alt_outlined,
                               color: searchSecondary,
                               size: 20,
                             ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            visualDensity: VisualDensity.compact,
                           ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.xs,
-                            vertical: Spacing.sm,
-                          ),
-                          isDense: true,
-                        ),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          color: scheme.onSurface,
-                        ),
-                        onSubmitted: (String value) {
-                          onSearchSubmitted(value);
-                        },
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -170,35 +201,23 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 const SizedBox(width: Spacing.sm),
                 InkWell(
                   onTap: onCartTap,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: searchFill,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
                     child: Stack(
                       clipBehavior: Clip.none,
                       alignment: Alignment.center,
                       children: <Widget>[
                         Icon(
                           Icons.shopping_cart_outlined,
-                          color: isDark ? scheme.onSurface : AppColors.navy,
+                          color: isDark ? scheme.onSurface : Colors.white,
                           size: 24,
                         ),
                         if (cartCount > 0)
                           Positioned(
-                            right: -12,
-                            top: -14,
+                            right: -2,
+                            top: -2,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 5,
@@ -216,62 +235,11 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                                 cartCount > 99 ? '99+' : '$cartCount',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   height: 1.2,
                                 ),
                                 textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Spacing.sm),
-                InkWell(
-                  onTap: onProfileTap,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    alignment: Alignment.center,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: <Widget>[
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Center(
-                            child: Text(
-                              userInitials.toUpperCase(),
-                              style: const TextStyle(
-                                color: AppColors.navy,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (hasNotification)
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: AppColors.pink,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: barColor,
-                                  width: 2,
-                                ),
                               ),
                             ),
                           ),

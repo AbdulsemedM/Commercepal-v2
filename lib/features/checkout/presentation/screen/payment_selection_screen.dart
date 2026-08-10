@@ -10,6 +10,7 @@ import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
 import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../addresses/data/models/address.dart';
 import '../../../cart/bloc/cart_bloc.dart';
@@ -26,11 +27,11 @@ import '../../data/repository/exchange_rates_repository.dart';
 import '../../data/models/exchange_rates_response.dart';
 import '../utils/payment_phone_utils.dart';
 import '../utils/checkout_payment_navigation.dart';
+import '../utils/checkout_error_utils.dart';
 import '../widgets/payment_account_phone_field.dart';
 import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
 import '../widgets/payment_hint_banner.dart';
-import 'checkout_initiation_failed_screen.dart';
 
 /// Helper class to represent a selectable payment method
 class _SelectablePaymentMethod {
@@ -44,6 +45,7 @@ class _SelectablePaymentMethod {
   final List<PaymentMethodVariant> variants;
   final String? paymentInstruction;
   final bool? requireAccountNumberOnInitiation;
+  final bool requiresAccount;
 
   _SelectablePaymentMethod({
     required this.id,
@@ -56,6 +58,7 @@ class _SelectablePaymentMethod {
     this.variants = const [],
     this.paymentInstruction,
     this.requireAccountNumberOnInitiation,
+    this.requiresAccount = true,
   });
 }
 
@@ -198,15 +201,17 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
       PaymentConstants.isPayPal(_selectedPaymentProviderCode);
 
   bool get _requiresPaymentPhone {
-    if (_isPayPalSelected) return false;
     final String? providerCode = _selectedPaymentProviderCode;
-    if (providerCode == null || providerCode.isEmpty) return true;
-    final DocsPaymentMethod? docsMethod =
-        PaymentConstants.toDocsPaymentMethod(providerCode);
-    if (docsMethod != null) {
-      return PaymentConstants.requiresPhoneForDocsCheckout(docsMethod);
-    }
-    return true;
+    if (providerCode == null || providerCode.isEmpty) return false;
+
+    final _SelectablePaymentMethod? method = _getSelectedMethod();
+    return PaymentConstants.shouldCollectPaymentAccount(
+      providerCode,
+      displayName: method?.displayName,
+      apiRequiresAccount: method?.requiresAccount ?? false,
+      legacyRequireAccountOnInitiation:
+          method?.requireAccountNumberOnInitiation,
+    );
   }
 
   bool _paypalReadyForCheckout(String cartCurrency) {
@@ -261,124 +266,39 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
     });
 
     try {
-      final response = await _paymentMethodsRepository.getPaymentMethods();
+      final providers = await _paymentMethodsRepository.getSelectableProviders(
+        cartCurrency: _cartCurrency,
+      );
 
-      // Build payment methods structure grouped by categories, filtered by cart currency
-      final List<_PaymentMethodCategory> categories = [];
+      final List<_SelectablePaymentMethod> selectable = providers
+          .where((p) => _methodVisibleForCart(p.providerCode, _cartCurrency))
+          .map(
+            (p) => _SelectablePaymentMethod(
+              id: p.providerCode,
+              displayName: p.displayName,
+              iconUrl: p.iconUrl,
+              providerCode: p.providerCode,
+              variantCode: p.providerCode,
+              currency: _cartCurrency ?? '',
+              hasVariants: false,
+              requiresAccount: p.requiresAccount,
+            ),
+          )
+          .toList();
 
-      // Item codes already exposed through nested items (e.g. PesaPal's
-      // PESAPAL_CARD / PESAPAL_MPESA) so duplicate top-level entries are skipped.
-      final Set<String> nestedItemCodes = {
-        for (final method in response.data)
-          for (final item in method.paymentMethodItemResponses) item.itemCode,
-      };
-
-      for (final paymentMethod in response.data) {
-        final List<_SelectablePaymentMethod> categoryMethods = [];
-
-        // Some methods (CBE Birr, QPay, Amole, …) come with no inner
-        // items; the top-level method itself is the selectable option.
-        if (paymentMethod.paymentMethodItemResponses.isEmpty) {
-          if (nestedItemCodes.contains(paymentMethod.code)) continue;
-          if (PaymentConstants.isHiddenPaymentProvider(
-            paymentMethod.code,
-            displayName: paymentMethod.displayName,
-          )) {
-            continue;
-          }
-          if (!_methodVisibleForCart(
-            paymentMethod.code,
-            _cartCurrency,
-          )) {
-            continue;
-          }
-          categories.add(
-            _PaymentMethodCategory(
-              categoryName: paymentMethod.displayName,
-              categoryCode: paymentMethod.code,
-              categoryIconUrl: paymentMethod.iconUrl,
-              methods: [
-                _SelectablePaymentMethod(
-                  id: paymentMethod.code,
-                  displayName: paymentMethod.displayName,
-                  iconUrl: paymentMethod.iconUrl,
-                  providerCode: paymentMethod.code,
-                  variantCode: paymentMethod.code,
-                  currency: _cartCurrency ?? '',
-                  hasVariants: false,
+      final List<_PaymentMethodCategory> categories = selectable.isEmpty
+          ? <_PaymentMethodCategory>[]
+          : <_PaymentMethodCategory>[
+              _PaymentMethodCategory(
+                categoryName: LocalizationService.t(
+                  context,
+                  'checkout.selectPaymentMethod',
                 ),
-              ],
-            ),
-          );
-          continue;
-        }
-
-        for (final item in paymentMethod.paymentMethodItemResponses) {
-          if (PaymentConstants.isHiddenPaymentProvider(
-            item.itemCode,
-            displayName: item.displayName,
-          )) {
-            continue;
-          }
-          if (item.hasVariants) {
-            // Filter variants by cart currency; only show method if at least one variant matches
-            final matchingVariants = item.paymentMethodItemResponses
-                .where(
-                  (v) =>
-                      !PaymentConstants.isHiddenPaymentProvider(
-                        v.variantCode,
-                        displayName: v.displayName,
-                      ) &&
-                      _methodVisibleForCart(v.variantCode, v.currency),
-                )
-                .toList();
-            if (matchingVariants.isEmpty) continue;
-            categoryMethods.add(
-              _SelectablePaymentMethod(
-                id: item.itemCode,
-                displayName: item.displayName,
-                iconUrl: item.iconUrl,
-                providerCode: paymentMethod.code,
-                variantCode: item.itemCode,
-                currency: item.currency,
-                hasVariants: true,
-                variants: matchingVariants,
-                paymentInstruction: item.paymentInstruction,
-                requireAccountNumberOnInitiation:
-                    item.requireAccountNumberOnInitiation,
+                categoryCode: 'ALL',
+                categoryIconUrl: '',
+                methods: selectable,
               ),
-            );
-          } else {
-            // No variants: only show if method currency matches cart currency
-            if (!_methodVisibleForCart(item.itemCode, item.currency)) continue;
-            categoryMethods.add(
-              _SelectablePaymentMethod(
-                id: item.itemCode,
-                displayName: item.displayName,
-                iconUrl: item.iconUrl,
-                providerCode: paymentMethod.code,
-                variantCode: item.itemCode,
-                currency: item.currency,
-                hasVariants: false,
-                paymentInstruction: item.paymentInstruction,
-                requireAccountNumberOnInitiation:
-                    item.requireAccountNumberOnInitiation,
-              ),
-            );
-          }
-        }
-
-        if (categoryMethods.isNotEmpty) {
-          categories.add(
-            _PaymentMethodCategory(
-              categoryName: paymentMethod.displayName,
-              categoryCode: paymentMethod.code,
-              categoryIconUrl: paymentMethod.iconUrl,
-              methods: categoryMethods,
-            ),
-          );
-        }
-      }
+            ];
 
       if (mounted) {
         setState(() {
@@ -485,12 +405,17 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
           ? _selectedVariantCode!
           : selectedMethod.id;
 
-      final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
-      final DocsPaymentMethod? docsMethod =
-          PaymentConstants.toDocsPaymentMethod(paymentProviderCode);
+      final bool needsPaymentAccount =
+          PaymentConstants.shouldCollectPaymentAccount(
+        paymentProviderCode,
+        displayName: selectedMethod.displayName,
+        apiRequiresAccount: selectedMethod.requiresAccount,
+        legacyRequireAccountOnInitiation:
+            selectedMethod.requireAccountNumberOnInitiation,
+      );
 
       // Sahay: customer lookup, show customer name and confirm before placing order
-      if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
+      if (PaymentConstants.isSahay(paymentProviderCode)) {
         if (phoneNumber == null || phoneNumber.isEmpty) {
           if (mounted) {
             setState(() => _isPlacingOrder = false);
@@ -547,9 +472,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
       }
 
       final String? paymentAccount;
-      if (isPayPal ||
-          (docsMethod != null &&
-              !PaymentConstants.requiresPhoneForDocsCheckout(docsMethod))) {
+      if (!needsPaymentAccount) {
         paymentAccount = null;
       } else {
         paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
@@ -574,29 +497,45 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
       final Cart refreshedCart = await CartRepository().getCart();
 
-      // Convert cart items to checkout items (include unitPrice like web checkout)
-      final checkoutItems = refreshedCart.items.map((item) {
-        final price = item.unitPrice > 0 ? item.unitPrice : item.currentPrice;
-        return CheckoutItem(
-          itemId: item.productId,
-          configId: item.configId,
-          quantity: item.quantity,
-          unitPrice: price,
-        );
-      }).toList();
+      if (refreshedCart.items.isEmpty) {
+        if (mounted) {
+          setState(() => _isPlacingOrder = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                LocalizationService.t(context, 'checkout.invalidOrderData'),
+              ),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+        return;
+      }
+
+      final List<CheckoutItem> checkoutItems = refreshedCart.items
+          .map(
+            (item) => CheckoutItem(
+              itemId: item.productId,
+              configId: item.configId,
+              quantity: item.quantity,
+            ),
+          )
+          .toList();
+
+      final String checkoutProviderCode =
+          PaymentConstants.toCheckoutProviderCode(paymentProviderCode);
 
       final checkoutRequest = CheckoutRequest(
         channel: PlatformUtils.getChannel(),
         currency: refreshedCart.currency,
         deliveryAddressId: address.id,
         items: checkoutItems,
-        paymentProviderCode: paymentProviderCode,
-        paymentAccount: PaymentConstants.isCashOnDelivery(paymentProviderCode)
-            ? null
-            : paymentAccount,
+        paymentProviderCode: checkoutProviderCode,
+        paymentAccount: needsPaymentAccount ? paymentAccount : null,
+        idempotencyKey: 'checkout-${const Uuid().v4()}',
+        promoCode: null,
       );
 
-      // Call checkout API
       final response = await _checkoutRepository.checkout(checkoutRequest);
 
       if (mounted) {
@@ -607,120 +546,52 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
       if (!context.mounted) return;
 
-      if (PaymentConstants.isCashOnDelivery(paymentProviderCode) &&
-          (response.resolvedOrderNumber?.isNotEmpty ?? false)) {
-        navigateToCashOnDeliverySuccess(
-          context,
-          response,
-          onAfterNavigate: () =>
-              context.read<CartBloc>().add(CartClearRequested()),
-        );
-        return;
-      }
+      void onPaymentSuccess() =>
+          context.read<CartBloc>().add(CartClearRequested());
 
-      final bool handledDocsInitiate = await tryNavigateDocsInitiateCheckout(
+      await navigateAfterCheckout(
         context,
         response: response,
-        paymentProviderCode: paymentProviderCode,
-        phone: paymentAccount,
-        onAfterNavigate: () =>
-            context.read<CartBloc>().add(CartClearRequested()),
+        paymentProviderCode: checkoutProviderCode,
+        paymentAccount: paymentAccount,
+        onPaymentSuccess: response.isCheckoutCompleteForCartClear
+            ? onPaymentSuccess
+            : null,
       );
-      if (handledDocsInitiate) return;
-
-      if (docsMethod != null &&
-          PaymentConstants.usesDocsWebViewFlow(docsMethod) &&
-          (response.resolvedOrderNumber?.isNotEmpty ?? false)) {
-        await navigateAfterDocsCheckout(
-          context,
-          response: response,
-          paymentMethod: docsMethod,
-          onAfterNavigate: () =>
-              context.read<CartBloc>().add(CartClearRequested()),
-        );
-        return;
-      }
-
-      if (response.isCheckoutCompleteForCartClear) {
-        navigateAfterCheckoutSuccess(
-          context,
-          response,
-          onAfterNavigate: () =>
-              context.read<CartBloc>().add(CartClearRequested()),
-        );
-        return;
-      }
-
-      // Order created (HTTP 200) but payment still pending / initiation failed —
-      // show pending details and direct user to order history to pay later.
-      if (response.isOrderReservedPaymentPending) {
-        navigateToPaymentPending(
-          context,
-          response,
-          onAfterNavigate: () =>
-              context.read<CartBloc>().add(CartClearRequested()),
-        );
-        return;
-      }
-
-      final ref = response.paymentReferenceOrNull;
-      final ord = response.resolvedOrderNumber;
-      if (ref != null &&
-          ref.isNotEmpty &&
-          ord != null &&
-          ord.isNotEmpty) {
-        await context.push<void>(
-          AppRoutes.retryPaymentMethod,
-          extra: <String, dynamic>{
-            'paymentReference': ref,
-            'currency': refreshedCart.currency,
-            'orderNumber': ord,
-            'orderTotal': response.pricingSummary?.totalAmount?.toDouble() ??
-                refreshedCart.estimatedTotal,
-          },
-        );
-      } else {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (BuildContext ctx) => CheckoutInitiationFailedScreen(
-              message: LocalizationService.t(
-                ctx,
-                'checkout.initiationFailedGeneric',
-              ),
-            ),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isPlacingOrder = false;
         });
 
-        // Extract error message, preferring API response body when available
-        String errorMessage = LocalizationService.t(context, 'checkout.failedToPlaceOrder');
-        if (e is DioException && e.response?.data is Map<String, dynamic>) {
-          final data = e.response!.data! as Map<String, dynamic>;
-          final apiMessage = data['message'] as String?;
-          if (apiMessage != null && apiMessage.isNotEmpty) {
-            errorMessage = apiMessage;
-          }
-        }
-        if (errorMessage == LocalizationService.t(context, 'checkout.failedToPlaceOrder')) {
+        String errorMessage = mapCheckoutApiError(
+          e,
+          defaultMessage:
+              LocalizationService.t(context, 'checkout.failedToPlaceOrder'),
+          sessionExpiredMessage:
+              LocalizationService.t(context, 'checkout.sessionExpired'),
+          invalidOrderDataMessage:
+              LocalizationService.t(context, 'checkout.invalidOrderData'),
+          serverErrorMessage:
+              LocalizationService.t(context, 'checkout.serverError'),
+          serviceUnavailableMessage: LocalizationService.t(
+            context,
+            'checkout.serverError',
+          ),
+          conflictMessage: LocalizationService.t(
+            context,
+            'checkout.invalidOrderData',
+          ),
+        );
+        if (errorMessage ==
+            LocalizationService.t(context, 'checkout.failedToPlaceOrder')) {
           if (isUnauthorizedError(e)) {
-            errorMessage = LocalizationService.t(context, 'checkout.sessionExpired');
-          } else if (e.toString().contains('400') ||
-              e.toString().contains('Bad Request')) {
-            errorMessage = LocalizationService.t(context, 'checkout.invalidOrderData');
-          } else if (e.toString().contains('500') ||
-              e.toString().contains('Server Error')) {
-            errorMessage = LocalizationService.t(context, 'checkout.serverError');
+            errorMessage =
+                LocalizationService.t(context, 'checkout.sessionExpired');
           } else if (e.toString().isNotEmpty) {
             final errorStr = e.toString();
             if (errorStr.contains('Exception:')) {
               errorMessage = errorStr.split('Exception:').last.trim();
-            } else {
-              errorMessage = errorStr;
             }
           }
         }
@@ -896,6 +767,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
                   ? _exchangeRatesError
                   : null,
             )
+          else if (!_requiresPaymentPhone)
+            const SizedBox.shrink()
           else
             PaymentAccountPhoneField(
               controller: _paymentPhoneController,

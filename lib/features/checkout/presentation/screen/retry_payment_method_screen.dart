@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/services/localization_service.dart';
-import '../../../../app/router/app_router.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/constants/spacing.dart';
@@ -34,6 +33,7 @@ class _SelectablePaymentMethod {
   final bool hasVariants;
   final List<PaymentMethodVariant> variants;
   final bool? requireAccountNumberOnInitiation;
+  final bool requiresAccount;
 
   _SelectablePaymentMethod({
     required this.id,
@@ -44,6 +44,7 @@ class _SelectablePaymentMethod {
     required this.hasVariants,
     this.variants = const [],
     this.requireAccountNumberOnInitiation,
+    this.requiresAccount = true,
   });
 }
 
@@ -60,20 +61,19 @@ class _PaymentMethodCategory {
 }
 
 /// Screen to choose another payment method when retrying a failed payment.
-/// Calls POST /api/v1/payments/retry with selected method and pops with
-/// [CheckoutResponse] on success.
+/// Calls POST /api/v1/orders/{orderNumber}/retry-payment with selected method.
 class RetryPaymentMethodScreen extends StatefulWidget {
   const RetryPaymentMethodScreen({
     super.key,
-    required this.paymentReference,
+    required this.orderNumber,
     required this.currency,
-    this.orderNumber,
+    this.paymentReference,
     this.orderTotal,
   });
 
-  final String paymentReference;
+  final String orderNumber;
   final String currency;
-  final String? orderNumber;
+  final String? paymentReference;
   final double? orderTotal;
 
   @override
@@ -125,6 +125,20 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
   bool get _isPayPalSelected =>
       PaymentConstants.isPayPal(_selectedPaymentProviderCode);
 
+  bool get _requiresPaymentPhone {
+    final String? providerCode = _selectedPaymentProviderCode;
+    if (providerCode == null || providerCode.isEmpty) return false;
+
+    final _SelectablePaymentMethod? method = _getSelectedMethod();
+    return PaymentConstants.shouldCollectPaymentAccount(
+      providerCode,
+      displayName: method?.displayName,
+      apiRequiresAccount: method?.requiresAccount ?? false,
+      legacyRequireAccountOnInitiation:
+          method?.requireAccountNumberOnInitiation,
+    );
+  }
+
   bool _paypalReadyForCheckout() {
     if (!_isPayPalSelected) return true;
     final String code = widget.currency.toUpperCase();
@@ -171,113 +185,36 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       _errorMessage = null;
     });
     try {
-      final response = await _paymentMethodsRepository.getPaymentMethods();
-      final List<_PaymentMethodCategory> categories = [];
+      final providers = await _paymentMethodsRepository.getSelectableProviders(
+        cartCurrency: widget.currency,
+      );
+      final List<_SelectablePaymentMethod> selectable = providers
+          .where((p) => _methodVisibleForCart(p.providerCode, widget.currency))
+          .map(
+            (p) => _SelectablePaymentMethod(
+              id: p.providerCode,
+              displayName: p.displayName,
+              iconUrl: p.iconUrl,
+              variantCode: p.providerCode,
+              currency: widget.currency,
+              hasVariants: false,
+              requiresAccount: p.requiresAccount,
+            ),
+          )
+          .toList();
 
-      // Item codes already exposed through nested items, so duplicate
-      // top-level entries (e.g. PESAPAL_CARD) are skipped.
-      final Set<String> nestedItemCodes = {
-        for (final method in response.data)
-          for (final item in method.paymentMethodItemResponses) item.itemCode,
-      };
-
-      for (final paymentMethod in response.data) {
-        final List<_SelectablePaymentMethod> methods = [];
-
-        // Some methods (CBE Birr, QPay, Amole, …) come with no inner
-        // items; the top-level method itself is the selectable option.
-        if (paymentMethod.paymentMethodItemResponses.isEmpty) {
-          if (nestedItemCodes.contains(paymentMethod.code)) continue;
-          if (PaymentConstants.isHiddenPaymentProvider(
-            paymentMethod.code,
-            displayName: paymentMethod.displayName,
-          )) {
-            continue;
-          }
-          if (!_methodVisibleForCart(
-            paymentMethod.code,
-            widget.currency,
-          )) {
-            continue;
-          }
-          categories.add(
-            _PaymentMethodCategory(
-              categoryName: paymentMethod.displayName,
-              categoryIconUrl: paymentMethod.iconUrl,
-              methods: [
-                _SelectablePaymentMethod(
-                  id: paymentMethod.code,
-                  displayName: paymentMethod.displayName,
-                  iconUrl: paymentMethod.iconUrl,
-                  variantCode: paymentMethod.code,
-                  currency: widget.currency,
-                  hasVariants: false,
+      final List<_PaymentMethodCategory> categories = selectable.isEmpty
+          ? <_PaymentMethodCategory>[]
+          : <_PaymentMethodCategory>[
+              _PaymentMethodCategory(
+                categoryName: LocalizationService.t(
+                  context,
+                  'checkout.selectPaymentMethod',
                 ),
-              ],
-            ),
-          );
-          continue;
-        }
-
-        for (final item in paymentMethod.paymentMethodItemResponses) {
-          if (PaymentConstants.isHiddenPaymentProvider(
-            item.itemCode,
-            displayName: item.displayName,
-          )) {
-            continue;
-          }
-          if (item.hasVariants) {
-            final matchingVariants = item.paymentMethodItemResponses
-                .where(
-                  (v) =>
-                      !PaymentConstants.isHiddenPaymentProvider(
-                        v.variantCode,
-                        displayName: v.displayName,
-                      ) &&
-                      _methodVisibleForCart(v.variantCode, v.currency),
-                )
-                .toList();
-            if (matchingVariants.isEmpty) continue;
-            methods.add(
-              _SelectablePaymentMethod(
-                id: item.itemCode,
-                displayName: item.displayName,
-                iconUrl: item.iconUrl,
-                variantCode: item.itemCode,
-                currency: item.currency,
-                hasVariants: true,
-                variants: matchingVariants,
-                requireAccountNumberOnInitiation:
-                    item.requireAccountNumberOnInitiation,
+                categoryIconUrl: '',
+                methods: selectable,
               ),
-            );
-          } else {
-            if (!_methodVisibleForCart(item.itemCode, item.currency)) continue;
-            methods.add(
-              _SelectablePaymentMethod(
-                id: item.itemCode,
-                displayName: item.displayName,
-                iconUrl: item.iconUrl,
-                variantCode: item.itemCode,
-                currency: item.currency,
-                hasVariants: false,
-                requireAccountNumberOnInitiation:
-                    item.requireAccountNumberOnInitiation,
-              ),
-            );
-          }
-        }
-
-        if (methods.isNotEmpty) {
-          categories.add(
-            _PaymentMethodCategory(
-              categoryName: paymentMethod.displayName,
-              categoryIconUrl: paymentMethod.iconUrl,
-              methods: methods,
-            ),
-          );
-        }
-      }
+            ];
 
       if (mounted) {
         setState(() {
@@ -369,10 +306,16 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         ? _selectedVariantCode!
         : method.id;
 
-    final bool isPayPal = PaymentConstants.isPayPal(paymentProviderCode);
+    final bool needsPaymentAccount =
+        PaymentConstants.shouldCollectPaymentAccount(
+      paymentProviderCode,
+      displayName: method.displayName,
+      apiRequiresAccount: method.requiresAccount,
+      legacyRequireAccountOnInitiation: method.requireAccountNumberOnInitiation,
+    );
 
     String? paymentAccount;
-    if (isPayPal) {
+    if (!needsPaymentAccount) {
       paymentAccount = null;
     } else {
       if (!isValidPaymentAccount(_paymentPhoneNumber)) {
@@ -388,7 +331,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     }
 
     // Sahay: customer lookup, show customer name and confirm before retrying payment
-    if (paymentProviderCode == PaymentConstants.sahayProviderCode) {
+    if (PaymentConstants.isSahay(paymentProviderCode)) {
       try {
         final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount!);
         if (!mounted) return;
@@ -445,46 +388,29 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
 
     setState(() => _errorMessage = null);
     try {
+      final String orderNumber = widget.orderNumber.trim();
+      if (orderNumber.isEmpty) {
+        throw Exception('Missing order number');
+      }
+
+      final String checkoutProviderCode =
+          PaymentConstants.toCheckoutProviderCode(paymentProviderCode);
       final request = PaymentRetryRequest(
-        paymentReference: widget.paymentReference,
-        paymentProviderCode: paymentProviderCode,
+        paymentProviderCode: checkoutProviderCode,
         paymentAccount: paymentAccount,
       );
-      final updated = await _checkoutRepository.retryPayment(request);
+      final updated = await _checkoutRepository.retryPayment(
+        orderNumber: orderNumber,
+        request: request,
+      );
       if (!mounted) return;
 
-      // For USSD (Telebirr, etc.): push initiation confirmation before webview
-      if (PaymentConstants.isUssdPaymentProvider(paymentProviderCode)) {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (context) => UssdPaymentSuccessScreen(
-              orderNumber: updated.orderNumber ?? widget.orderNumber,
-            ),
-          ),
-        );
-        if (!mounted) return;
-      }
-
-      final init = updated.paymentInitiation;
-      final nextAction = init?.nextAction?.trim() ?? '';
-      final paymentUrl = init?.paymentUrl?.trim() ?? '';
-
-      if (nextAction == CheckoutResponse.nextActionScanQr &&
-          paymentUrl.isNotEmpty) {
-        navigateAfterRetryPaymentSuccess(context, updated);
-        return;
-      }
-
-      if (nextAction == CheckoutResponse.nextActionRedirectToPaymentUrl &&
-          paymentUrl.isNotEmpty) {
-        context.push(
-          AppRoutes.paymentWebView,
-          extra: <String, dynamic>{
-            'paymentUrl': paymentUrl,
-            'orderNumber': updated.orderNumber,
-          },
-        );
-      }
+      await navigateAfterRetryPaymentSuccess(
+        context,
+        updated,
+        paymentProviderCode: checkoutProviderCode,
+        paymentAccount: paymentAccount,
+      );
       if (mounted) context.pop(updated);
     } catch (e) {
       if (mounted) {
@@ -540,9 +466,11 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         ? '${LocalizationService.t(context, 'checkout.payOrder')} ${widget.orderNumber}'
         : LocalizationService.t(context, 'checkout.selectPaymentMethod');
 
-    final phoneValid = isValidPaymentAccount(_paymentPhoneNumber);
     final bool canPay = _getSelectedMethod() != null &&
-        (_isPayPalSelected ? _paypalReadyForCheckout() : phoneValid);
+        (_isPayPalSelected
+            ? _paypalReadyForCheckout()
+            : !_requiresPaymentPhone ||
+                isValidPaymentAccount(_paymentPhoneNumber));
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -648,7 +576,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
                                         ? _exchangeRatesError
                                         : null,
                               )
-                            else if (!_isPayPalSelected)
+                            else if (_requiresPaymentPhone)
                               PaymentAccountPhoneField(
                                 controller: _paymentPhoneController,
                                 initialCountryCode: _initialCountryCode,

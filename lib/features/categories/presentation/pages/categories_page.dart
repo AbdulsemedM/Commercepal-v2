@@ -7,7 +7,6 @@ import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/categories/data/models/category.dart';
 // import 'package:commercepal/features/categories/data/models/sub_category.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import '../widgets/category_sidebar.dart';
 import '../widgets/product_grid.dart';
@@ -48,13 +47,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBarWidget(
           cartCount: cartCount,
-          userInitials: AuthService().userInitials ?? 'U',
           onSearchTap: () {
-            // Navigate to search screen when search bar is tapped
             context.push(AppRoutes.productSearch);
           },
           onSearchSubmitted: (String query) {
-            // Navigate to search screen with query
             context.push(
               '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
             );
@@ -64,14 +60,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
             // Handle logo tap
           },
           onCartTap: () {
-            // Navigate to cart tab
             _navigateToTab(context, 2);
           },
-          onProfileTap: () {
-            // Navigate to profile tab
-            _navigateToTab(context, 3);
-          },
-          hasNotification: false,
         ),
         body: BlocBuilder<CategoriesBloc, CategoriesState>(
           builder: (context, state) {

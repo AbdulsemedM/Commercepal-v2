@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class PlatformUtils {
   PlatformUtils._();
 
-  /// Get the platform channel name (ANDROID, IOS, or WEB)
+  /// Get the platform channel name accepted by the backend Channel enum:
+  /// MOBILE_APP_ANDROID, MOBILE_APP_IOS, or WEB.
   static String getChannel() {
     if (kIsWeb) {
       return 'WEB';

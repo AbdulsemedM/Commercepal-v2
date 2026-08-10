@@ -58,3 +58,11 @@ bool isValidPaymentAccount(String? raw) {
   if (raw == null || raw.isEmpty) return false;
   return PhoneUtils.isValidLoginIdentifier(normalizePaymentAccount(raw));
 }
+
+/// Telebirr phone normalization per payment guide (+251XXXXXXXXX).
+String normalizeTelebirrPhone(String phone) {
+  phone = phone.replaceAll(RegExp(r'[\s\-()]'), '');
+  if (phone.startsWith('09')) return '+251${phone.substring(1)}';
+  if (phone.startsWith('9') && phone.length == 9) return '+251$phone';
+  return phone;
+}

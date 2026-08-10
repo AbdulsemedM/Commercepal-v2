@@ -6,11 +6,12 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:commercepal/services/localization_service.dart';
 import '../../../../app/router/app_router.dart';
+import '../../../cart/bloc/cart_bloc.dart';
 import '../../bloc/payment_status_cubit.dart';
+import '../../data/models/payment_constants.dart';
 import '../widgets/payment_status_polling_banner.dart';
 
 /// Allowed hosts for payment WebView (exact host or subdomain).
-/// Backend must only return URLs for these gateways.
 const Set<String> _allowedPaymentHostSuffixes = {
   'sahaypay.com',
   'telebirr.com',
@@ -19,6 +20,7 @@ const Set<String> _allowedPaymentHostSuffixes = {
   'paypal.com',
   'cbe.com.et',
   'commercepal.com',
+  'ziina.com',
 };
 
 /// In-app WebView screen for completing payment at [paymentUrl].
@@ -27,10 +29,12 @@ class PaymentWebViewScreen extends StatelessWidget {
     super.key,
     required this.paymentUrl,
     this.orderNumber,
+    this.paymentProviderCode,
   });
 
   final String paymentUrl;
   final String? orderNumber;
+  final String? paymentProviderCode;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +45,14 @@ class PaymentWebViewScreen extends StatelessWidget {
         child: _PaymentWebViewBody(
           paymentUrl: paymentUrl,
           orderNumber: orderNum,
+          paymentProviderCode: paymentProviderCode,
         ),
       );
     }
-    return _PaymentWebViewBody(paymentUrl: paymentUrl);
+    return _PaymentWebViewBody(
+      paymentUrl: paymentUrl,
+      paymentProviderCode: paymentProviderCode,
+    );
   }
 }
 
@@ -52,19 +60,87 @@ class _PaymentWebViewBody extends StatefulWidget {
   const _PaymentWebViewBody({
     required this.paymentUrl,
     this.orderNumber,
+    this.paymentProviderCode,
   });
 
   final String paymentUrl;
   final String? orderNumber;
+  final String? paymentProviderCode;
 
   @override
   State<_PaymentWebViewBody> createState() => _PaymentWebViewBodyState();
 }
 
-class _PaymentWebViewBodyState extends State<_PaymentWebViewBody> {
+class _PaymentWebViewBodyState extends State<_PaymentWebViewBody>
+    with WidgetsBindingObserver {
   late final WebViewController _controller;
   bool _isLoading = true;
   String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initWebView();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    final String? orderNumber = widget.orderNumber?.trim();
+    if (orderNumber == null || orderNumber.isEmpty || !mounted) return;
+    context.read<PaymentStatusCubit>().checkNow();
+  }
+
+  void _initWebView() {
+    if (!_isPaymentUrlAllowed(widget.paymentUrl)) {
+      _loadError = 'Invalid or disallowed payment URL';
+      _isLoading = false;
+      _controller = WebViewController();
+      return;
+    }
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            final String url = request.url;
+            if (url.contains('commercepal.com/checkout/success')) {
+              return NavigationDecision.prevent;
+            }
+            if (url.contains('commercepal.com/checkout/cancel')) {
+              return NavigationDecision.prevent;
+            }
+            if (!_isPaymentUrlAllowed(url)) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageStarted: (_) {
+            if (mounted) setState(() => _isLoading = true);
+          },
+          onPageFinished: (_) {
+            if (mounted) setState(() => _isLoading = false);
+          },
+          onWebResourceError: (WebResourceError error) {
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _loadError = error.description.isNotEmpty
+                  ? error.description
+                  : 'Failed to load payment page';
+            });
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.paymentUrl));
+  }
 
   static bool _isHostAllowed(String host) {
     final String h = host.toLowerCase();
@@ -85,136 +161,34 @@ class _PaymentWebViewBodyState extends State<_PaymentWebViewBody> {
     return _isHostAllowed(uri.host);
   }
 
-  static const String _browserUserAgent =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_isPaymentUrlAllowed(widget.paymentUrl)) {
-      _loadError = 'Invalid or disallowed payment URL';
-      _isLoading = false;
-      _controller = WebViewController();
-      return;
-    }
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (NavigationRequest request) {
-            if (!_isPaymentUrlAllowed(request.url)) {
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onPageStarted: (_) {
-            if (mounted) setState(() => _isLoading = true);
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() => _isLoading = false);
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (!mounted) return;
-            setState(() {
-              _isLoading = false;
-              _loadError = error.description.isNotEmpty
-                  ? error.description
-                  : 'Could not load the payment page (${error.errorCode}).';
-            });
-          },
-        ),
-      );
-    _loadPaymentUrl();
-  }
-
-  Future<void> _loadPaymentUrl() async {
-    await _controller.setUserAgent(_browserUserAgent);
-    if (!mounted) return;
-    await _controller.loadRequest(Uri.parse(widget.paymentUrl.trim()));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final title = widget.orderNumber != null
-        ? '${LocalizationService.t(context, 'checkout.order')} ${widget.orderNumber} – ${LocalizationService.t(context, 'checkout.orderCompletePayment')}'
-        : LocalizationService.t(context, 'checkout.orderCompletePayment');
-
-    if (_loadError != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go(AppRoutes.dashboard),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Icon(Icons.warning_amber_rounded,
-                    size: 48, color: Colors.orange),
-                const SizedBox(height: 16),
-                Text(
-                  _loadError!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => context.go(AppRoutes.dashboard),
-                  child: Text(
-                    LocalizationService.t(context, 'checkout.continueShopping'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    final String? orderNumber = widget.orderNumber?.trim();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.dashboard),
-        ),
-        actions: <Widget>[
-          IconButton(
-            tooltip: 'Open in browser',
-            icon: const Icon(Icons.open_in_browser),
-            onPressed: () async {
-              final uri = Uri.tryParse(widget.paymentUrl.trim());
-              if (uri != null && await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-          ),
-        ],
+        title: Text(LocalizationService.t(context, 'checkout.completePayment')),
       ),
       body: Column(
         children: <Widget>[
-          if (widget.orderNumber != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: PaymentStatusPollingBanner(
-                orderNumber: widget.orderNumber!,
-                onSuccess: () => navigateOnPaymentStatusSuccess(context),
+          if (orderNumber != null && orderNumber.isNotEmpty)
+            PaymentStatusPollingBanner(
+              orderNumber: orderNumber,
+              onSuccess: () => navigateOnPaymentStatusSuccess(
+                context,
+                clearCart: true,
               ),
             ),
-          if (_isLoading) const LinearProgressIndicator(minHeight: 3),
           Expanded(
-            child: Stack(
-              children: <Widget>[
-                WebViewWidget(controller: _controller),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
-              ],
-            ),
+            child: _loadError != null
+                ? Center(child: Text(_loadError!))
+                : Stack(
+                    children: <Widget>[
+                      WebViewWidget(controller: _controller),
+                      if (_isLoading)
+                        const Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
           ),
         ],
       ),

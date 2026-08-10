@@ -12,7 +12,7 @@ import '../../../orders/data/repository/orders_repository.dart';
 import '../../data/models/checkout_response.dart';
 import '../widgets/qr_code_display.dart';
 
-/// Shown after checkout when [CheckoutResponse.nextActionScanQr] is returned
+/// Shown after checkout when nextAction is `SCAN_QR` or `SHOW_QR_CODE`
 /// (e.g. QPay bank-app QR payments).
 class QpayQrPaymentScreen extends StatefulWidget {
   const QpayQrPaymentScreen({
@@ -114,7 +114,7 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
     final ColorScheme scheme = theme.colorScheme;
     final initiation = widget.response.paymentInitiation;
     final orderNumber = widget.response.resolvedOrderNumber ?? '';
-    final qrPayload = initiation?.paymentUrl?.trim() ?? '';
+    final qrPayload = widget.response.resolvedQrPayload ?? '';
     final providerCode =
         initiation?.paymentProviderCode?.trim().toUpperCase() ?? 'QPAY';
     final summary = widget.response.pricingSummary;
@@ -248,9 +248,7 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
                   LocalizationService.t(
                     context,
                     'checkout.checkingPaymentStatus',
-                  )
-                      .replaceAll('{current}', '$_pollAttempt')
-                      .replaceAll('{max}', '$_pollMaxAttempts'),
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),

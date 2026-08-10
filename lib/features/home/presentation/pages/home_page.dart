@@ -11,7 +11,6 @@ import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
 import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
 import '../widgets/categories_section.dart';
@@ -20,7 +19,6 @@ import '../widgets/home_discover_section.dart';
 import '../widgets/home_wholesale_section.dart';
 import '../widgets/recently_viewed_section.dart';
 import '../widgets/trust_badges_strip.dart';
-import 'package:commercepal/features/products/presentation/widgets/visual_search_entry_actions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -75,7 +73,6 @@ class _HomePageState extends State<HomePage> {
         child: Scaffold(
           appBar: AppBarWidget(
             cartCount: cartCount,
-            userInitials: AuthService().userInitials ?? 'U',
             onSearchTap: () {
               context.push(AppRoutes.productSearch);
             },
@@ -91,13 +88,6 @@ class _HomePageState extends State<HomePage> {
             onCartTap: () {
               _navigateToTab(context, 2);
             },
-            onProfileTap: () {
-              _navigateToTab(context, 3);
-            },
-            hasNotification: false,
-            additionalActions: const <Widget>[
-              VisualSearchEntryActions(),
-            ],
           ),
           body: RefreshIndicator(
             onRefresh: () => _onPullToRefresh(context),
