@@ -1,3 +1,4 @@
+import 'payment_constants.dart';
 import 'payment_flow_constants.dart';
 
 class PricingSummary {
@@ -207,6 +208,18 @@ class CheckoutResponse {
     }
     final String status = (paymentStatus ?? '').trim().toUpperCase();
     return status == PaymentStatus.success;
+  }
+
+  /// Whether the cart should be cleared after this checkout for [paymentProviderCode].
+  ///
+  /// Cash on delivery creates a confirmed order even when the API returns
+  /// `paymentInitiation.success: false` / `nextAction: RETRY_PAYMENT`.
+  bool shouldClearCartAfterCheckout(String? paymentProviderCode) {
+    if (PaymentConstants.isCashOnDelivery(paymentProviderCode) &&
+        (resolvedOrderNumber?.isNotEmpty ?? false)) {
+      return true;
+    }
+    return isCheckoutCompleteForCartClear;
   }
 
   /// Order was reserved with payment still pending (HTTP checkout may be 200

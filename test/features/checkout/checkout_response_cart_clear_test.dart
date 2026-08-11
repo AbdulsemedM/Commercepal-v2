@@ -50,5 +50,25 @@ void main() {
       expect(r.isCheckoutCompleteForCartClear, isFalse);
       expect(r.isOrderReservedPaymentPending, isTrue);
     });
+
+    test('COD clears cart even when initiation says RETRY_PAYMENT', () {
+      final r = CheckoutResponse.fromJson(<String, dynamic>{
+        'orderNumber': 'CPA08115S7VDA9K',
+        'paymentStatus': 'PENDING',
+        'paymentInitiation': <String, dynamic>{
+          'success': false,
+          'orderNumber': 'CPA08115S7VDA9K',
+          'paymentReference': 'CP-20260811-AUNAUY3H',
+          'paymentProviderCode': 'UNKNOWN',
+          'paymentInstructions':
+              'Payment processing failed. Please try again or choose another payment method.',
+          'nextAction': 'RETRY_PAYMENT',
+        },
+      });
+      expect(r.isCheckoutCompleteForCartClear, isFalse);
+      expect(r.shouldClearCartAfterCheckout('CASH'), isTrue);
+      expect(r.shouldClearCartAfterCheckout('COD'), isTrue);
+      expect(r.shouldClearCartAfterCheckout('TELE_BIRR'), isFalse);
+    });
   });
 }

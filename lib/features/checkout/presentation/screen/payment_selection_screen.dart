@@ -554,7 +554,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         response: response,
         paymentProviderCode: checkoutProviderCode,
         paymentAccount: paymentAccount,
-        onPaymentSuccess: response.isCheckoutCompleteForCartClear
+        onPaymentSuccess: response.shouldClearCartAfterCheckout(checkoutProviderCode)
             ? onPaymentSuccess
             : null,
       );

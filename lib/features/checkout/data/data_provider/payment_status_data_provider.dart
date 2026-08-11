@@ -87,7 +87,7 @@ class PaymentStatusDataProvider {
     try {
       final Response<Map<String, dynamic>> response =
           await _apiService.get<Map<String, dynamic>>(
-        '/api/v1/payments/status/$orderNumber',
+        '/api/v1/payments/order/$orderNumber/status',
       );
       if (response.data == null) {
         throw DioException(

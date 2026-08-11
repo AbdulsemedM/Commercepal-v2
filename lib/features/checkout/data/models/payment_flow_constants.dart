@@ -34,7 +34,7 @@ class NextAction {
   static const String openAdditionalInput = 'OPEN_ADDITIONAL_INPUT';
 }
 
-/// Payment status from GET /payments/status/{orderNumber}.
+/// Payment status from GET /payments/order/{orderNumber}/status.
 class PaymentStatus {
   PaymentStatus._();
 

@@ -79,6 +79,17 @@ Future<void> navigateAfterCheckout(
     return;
   }
 
+  // COD: order is placed successfully even when initiation reports
+  // RETRY_PAYMENT / success:false / UNKNOWN (backend quirk).
+  if (PaymentConstants.isCashOnDelivery(paymentProviderCode)) {
+    navigateToCashOnDeliverySuccess(
+      context,
+      response,
+      onPaymentSuccess: onPaymentSuccess,
+    );
+    return;
+  }
+
   String nextAction = response.resolvedNextAction ?? '';
   String? paymentUrl = response.resolvedPaymentUrl;
   String? ussdCode = response.resolvedUssdCode;
@@ -91,8 +102,6 @@ Future<void> navigateAfterCheckout(
       nextAction = PaymentConstants.isQPay(paymentProviderCode)
           ? NextAction.scanQr
           : NextAction.redirectToPaymentUrl;
-    } else if (PaymentConstants.isCashOnDelivery(paymentProviderCode)) {
-      nextAction = NextAction.success;
     } else {
       nextAction = NextAction.pending;
     }
@@ -100,19 +109,11 @@ Future<void> navigateAfterCheckout(
 
   switch (nextAction) {
     case NextAction.success:
-      if (PaymentConstants.isCashOnDelivery(paymentProviderCode)) {
-        navigateToCashOnDeliverySuccess(
-          context,
-          response,
-          onPaymentSuccess: onPaymentSuccess,
-        );
-      } else {
-        navigateToPaymentPending(
-          context,
-          response,
-          paymentProviderCode: paymentProviderCode,
-        );
-      }
+      navigateToPaymentPending(
+        context,
+        response,
+        paymentProviderCode: paymentProviderCode,
+      );
       return;
 
     case NextAction.ussdCode:
