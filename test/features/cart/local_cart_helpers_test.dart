@@ -66,6 +66,17 @@ void main() {
       );
     });
 
+    test('matches same product ignoring cp- prefix', () {
+      expect(
+        cartItemsMatchVariant(item(productId: 'cp-prod-1'), 'prod-1', null),
+        isTrue,
+      );
+      expect(
+        cartItemsMatchVariant(item(productId: 'prod-1'), 'cp-prod-1', ''),
+        isTrue,
+      );
+    });
+
     test('does not merge different variants', () {
       expect(
         cartItemsMatchVariant(item(configId: 'red'), 'prod-1', 'blue'),

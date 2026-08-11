@@ -51,7 +51,7 @@ class CartDataProvider {
 
       final Map<String, dynamic>? data =
           response.data!['data'] as Map<String, dynamic>?;
-      if (data != null && data.containsKey('cartId')) {
+      if (data != null && data['cartId'] != null) {
         return Cart.fromJson(data);
       }
 
@@ -136,7 +136,7 @@ class CartDataProvider {
 
       final Map<String, dynamic>? data =
           response.data!['data'] as Map<String, dynamic>?;
-      if (data != null && data.containsKey('cartId')) {
+      if (data != null && data['cartId'] != null) {
         return Cart.fromJson(data);
       }
 
@@ -171,7 +171,9 @@ class CartDataProvider {
 
       final Map<String, dynamic>? data =
           response.data!['data'] as Map<String, dynamic>?;
-      if (data != null && data.containsKey('cartId')) {
+      // DELETE may return cartId: null with an empty items list even when the
+      // cart still exists — only trust a non-null cartId, otherwise re-fetch.
+      if (data != null && data['cartId'] != null) {
         return Cart.fromJson(data);
       }
 

@@ -7,6 +7,7 @@ import '../models/update_cart_item_request.dart';
 import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import '../data_provider/local_cart_data_provider.dart';
+import '../../utils/cart_item_merge.dart';
 
 import 'package:commercepal/features/products/data/models/product.dart';
 
@@ -45,11 +46,66 @@ class CartRepository {
     return cart;
   }
 
+  /// Merges duplicate product+variant lines on the server, then mirrors locally.
+  Future<Cart> _reconcileAndMirror(Cart cart) async {
+    final CartItemMergeResult merge = mergeDuplicateCartItems(cart.items);
+    if (!merge.hasDuplicates) {
+      return _mirrorRemoteCart(cart);
+    }
+
+    AppLogger.i(
+      'Reconciling ${merge.extraLineIdsToDelete.length} duplicate cart line(s)',
+    );
+
+    try {
+      Cart latest = cart;
+
+      // Update kept line quantities first while extras still exist.
+      // Deleting first can empty the cart on the API (null cartId response).
+      for (final MapEntry<int, int> entry in merge.quantityUpdates.entries) {
+        latest = await _dataProvider.updateCartItem(
+          entry.key,
+          UpdateCartItemRequest(quantity: entry.value),
+        );
+      }
+
+      for (final int extraId in merge.extraLineIdsToDelete) {
+        latest = await _dataProvider.deleteCartItem(extraId);
+      }
+
+      // Re-check in case the server still returned duplicates after reconcile.
+      final CartItemMergeResult after = mergeDuplicateCartItems(latest.items);
+      if (after.hasDuplicates) {
+        latest = cartWithMergedItems(latest, after.items);
+      }
+
+      return _mirrorRemoteCart(latest);
+    } catch (e) {
+      AppLogger.w(
+        'Cart duplicate reconcile failed; falling back to client merge',
+        data: e,
+      );
+      try {
+        final Cart refreshed = await _dataProvider.getCart();
+        final CartItemMergeResult after =
+            mergeDuplicateCartItems(refreshed.items);
+        if (after.hasDuplicates) {
+          return _mirrorRemoteCart(
+            cartWithMergedItems(refreshed, after.items),
+          );
+        }
+        return _mirrorRemoteCart(refreshed);
+      } catch (_) {
+        return _mirrorRemoteCart(cartWithMergedItems(cart, merge.items));
+      }
+    }
+  }
+
   Future<Cart> addToCart(AddToCartRequest request, {Product? product}) async {
     final AddToCartRequest resolvedRequest = await _withLocale(request);
     try {
       final Cart cart = await _dataProvider.addToCart(resolvedRequest);
-      return _mirrorRemoteCart(cart);
+      return _reconcileAndMirror(cart);
     } catch (e) {
       if (product != null) {
         AppLogger.w(
@@ -65,17 +121,22 @@ class CartRepository {
   Future<Cart> getCart() async {
     try {
       final Cart cart = await _dataProvider.getCart();
-      return _mirrorRemoteCart(cart);
+      return _reconcileAndMirror(cart);
     } catch (e) {
       AppLogger.w('Remote get-cart failed; using local cache', data: e);
-      return _localDataProvider.getCart();
+      final Cart local = await _localDataProvider.getCart();
+      final CartItemMergeResult merge = mergeDuplicateCartItems(local.items);
+      if (!merge.hasDuplicates) return local;
+      final Cart merged = cartWithMergedItems(local, merge.items);
+      await _localDataProvider.saveCart(merged);
+      return merged;
     }
   }
 
   Future<Cart> updateCartItem(int itemId, UpdateCartItemRequest request) async {
     try {
       final Cart cart = await _dataProvider.updateCartItem(itemId, request);
-      return _mirrorRemoteCart(cart);
+      return _reconcileAndMirror(cart);
     } catch (e) {
       AppLogger.w(
         'Remote update-cart-item failed; using local cache',
@@ -88,7 +149,7 @@ class CartRepository {
   Future<Cart> deleteCartItem(int itemId) async {
     try {
       final Cart cart = await _dataProvider.deleteCartItem(itemId);
-      return _mirrorRemoteCart(cart);
+      return _reconcileAndMirror(cart);
     } catch (e) {
       AppLogger.w(
         'Remote delete-cart-item failed; using local cache',
@@ -143,7 +204,7 @@ class CartRepository {
     AppLogger.i(
       'Fetched merged cart with ${mergedCart.items.length} items from backend',
     );
-    await _localDataProvider.saveCart(mergedCart);
+    await _reconcileAndMirror(mergedCart);
     AppLogger.i('Saved merged cart locally');
   }
 }

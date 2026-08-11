@@ -1,4 +1,5 @@
 import 'package:commercepal/features/products/data/models/product.dart';
+import '../../utils/cart_product_id.dart';
 import '../models/add_to_cart_request.dart';
 import '../models/cart.dart';
 import '../models/cart_item.dart';
@@ -14,7 +15,8 @@ String? normalizeCartConfigId(String? configId) {
 }
 
 bool cartItemsMatchVariant(CartItem item, String productId, String? configId) {
-  return item.productId == productId &&
+  return normalizeCartProductId(item.productId) ==
+          normalizeCartProductId(productId) &&
       normalizeCartConfigId(item.configId) == normalizeCartConfigId(configId);
 }
 
