@@ -10,6 +10,7 @@ import '../../../../core/utils/money_formatter.dart';
 import '../../../../services/localization_service.dart';
 import '../../../orders/data/repository/orders_repository.dart';
 import '../../data/models/checkout_response.dart';
+import '../utils/qr_image_capture.dart';
 import '../widgets/qr_code_display.dart';
 
 /// Shown after checkout when nextAction is `SCAN_QR` or `SHOW_QR_CODE`
@@ -18,9 +19,19 @@ class QpayQrPaymentScreen extends StatefulWidget {
   const QpayQrPaymentScreen({
     super.key,
     required this.response,
+    @visibleForTesting this.initialPaymentConfirmed = false,
+    @visibleForTesting this.disablePaymentPolling = false,
   });
 
   final CheckoutResponse response;
+
+  /// When true, renders the post-payment UI without waiting for polling.
+  @visibleForTesting
+  final bool initialPaymentConfirmed;
+
+  /// Skips countdown and order polling (for widget tests).
+  @visibleForTesting
+  final bool disablePaymentPolling;
 
   @override
   State<QpayQrPaymentScreen> createState() => _QpayQrPaymentScreenState();
@@ -30,20 +41,31 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
   static const int _pollMaxAttempts = 40;
   static const Duration _pollInterval = Duration(seconds: 15);
   static const Duration _qrExpiry = Duration(minutes: 5);
+  static const double _qrDisplaySize = 260;
 
-  final OrdersRepository _ordersRepository = OrdersRepository();
+  OrdersRepository? _ordersRepository;
+  final GlobalKey _qrCaptureKey = GlobalKey();
   Timer? _countdownTimer;
   Timer? _pollTimer;
   Duration _remaining = _qrExpiry;
   int _pollAttempt = 0;
   bool _paymentConfirmed = false;
+  bool _isSavingQr = false;
   String? _pollStatusMessage;
 
   @override
   void initState() {
     super.initState();
-    _startCountdown();
-    _startPaymentPolling();
+    if (widget.initialPaymentConfirmed) {
+      _paymentConfirmed = true;
+      _pollStatusMessage = LocalizationService.tForLanguage(
+        'en',
+        'checkout.paymentConfirmed',
+      );
+    } else if (!widget.disablePaymentPolling) {
+      _startCountdown();
+      _startPaymentPolling();
+    }
   }
 
   @override
@@ -81,8 +103,8 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
       setState(() => _pollAttempt++);
 
       try {
-        final order =
-            await _ordersRepository.getOrderByOrderNumber(orderNumber);
+        final order = await (_ordersRepository ??= OrdersRepository())
+            .getOrderByOrderNumber(orderNumber);
         if (!mounted) return;
 
         final status = order.paymentStatus.toUpperCase();
@@ -106,6 +128,38 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds.remainder(60);
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _saveQrToGallery() async {
+    if (_isSavingQr || _paymentConfirmed) return;
+
+    setState(() => _isSavingQr = true);
+    try {
+      await captureAndSaveQrToGallery(boundaryKey: _qrCaptureKey);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'checkout.qrSavedToGallery'),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            LocalizationService.t(context, 'checkout.qrSaveFailed'),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingQr = false);
+      }
+    }
   }
 
   @override
@@ -162,18 +216,61 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: Spacing.lg),
-                    QrCodeDisplay(data: qrPayload, size: 220),
-                    const SizedBox(height: Spacing.md),
-                    Text(
-                      LocalizationService.t(
-                        context,
-                        'checkout.openBankAppScanQr',
+                    RepaintBoundary(
+                      key: _qrCaptureKey,
+                      child: QrCodeDisplay(
+                        data: qrPayload,
+                        size: _qrDisplaySize,
                       ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
                     ),
+                    if (!_paymentConfirmed) ...[
+                      const SizedBox(height: Spacing.lg),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          key: const Key('qpay_save_qr_button'),
+                          onPressed: _isSavingQr ? null : _saveQrToGallery,
+                          icon: _isSavingQr
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: scheme.primary,
+                                  ),
+                                )
+                              : const Icon(Icons.download_rounded, size: 18),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: scheme.outlineVariant),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: Spacing.md,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          label: Text(
+                            LocalizationService.t(
+                              context,
+                              'checkout.saveQrToGallery',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.md),
+                      Text(
+                        LocalizationService.t(
+                          context,
+                          'checkout.qrGalleryImportInstructions',
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                     const SizedBox(height: Spacing.lg),
                     Text(
                       _formatCountdown(_remaining),

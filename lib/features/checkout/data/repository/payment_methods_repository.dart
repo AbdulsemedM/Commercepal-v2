@@ -53,8 +53,19 @@ class PaymentMethodsRepository {
     // API often returns CASH + COD (+ CASH_ON_DELIVERY); show one COD entry.
     return _dedupeCashOnDelivery(filtered)
       ..sort(
-        (PublicPaymentMethod a, PublicPaymentMethod b) =>
-            a.sortOrder.compareTo(b.sortOrder),
+        (PublicPaymentMethod a, PublicPaymentMethod b) {
+          final int rankCompare = PaymentConstants.checkoutDisplaySortRank(
+            a.providerCode,
+            displayName: a.displayName,
+          ).compareTo(
+            PaymentConstants.checkoutDisplaySortRank(
+              b.providerCode,
+              displayName: b.displayName,
+            ),
+          );
+          if (rankCompare != 0) return rankCompare;
+          return a.sortOrder.compareTo(b.sortOrder);
+        },
       );
   }
 

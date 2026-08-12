@@ -161,6 +161,20 @@ class PaymentConstants {
     return haystack.contains('QPAY');
   }
 
+  /// eBirr variants (E_BIRR, EBIRR_COOPAY, EBIRR_KAFFI); excludes Telebirr and CBE Birr.
+  static bool isEbirr(String? code, {String? displayName}) {
+    return toDocsPaymentMethod(code, displayName: displayName) ==
+        DocsPaymentMethod.eBirr;
+  }
+
+  /// Checkout list order: QPay (0), eBirr (1), CBE Birr (2), then everything else (3).
+  static int checkoutDisplaySortRank(String? code, {String? displayName}) {
+    if (isQPay(code, displayName: displayName)) return 0;
+    if (isEbirr(code, displayName: displayName)) return 1;
+    if (isCbeBirr(code, displayName: displayName)) return 2;
+    return 3;
+  }
+
   /// Provider codes that initiate USSD payment; show "USSD payment initiated" success popup after checkout.
   /// CBE_BIRR is excluded: we redirect straight to payment URL without USSD confirmation.
   static const Set<String> ussdPaymentProviderCodes = <String>{
