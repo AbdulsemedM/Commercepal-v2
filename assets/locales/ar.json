@@ -408,7 +408,7 @@
   "checkout.saveQrToGallery": "حفظ QR في المعرض",
   "checkout.qrSavedToGallery": "تم حفظ رمز QR في معرض الصور",
   "checkout.qrSaveFailed": "تعذر حفظ رمز QR. يرجى المحاولة مرة أخرى.",
-  "checkout.qrGalleryImportInstructions": "احفظ رمز QR هذا في معرض الصور، ثم افتح تطبيق البنك (Telebirr أو CBE أو Awash أو أي بنك يدعم QPay)، واختر الدفع من المعرض أو استيراد QR، وحدد الصورة المحفوظة، وأكمل الدفع.",
+  "checkout.qrGalleryImportInstructions": "احفظ رمز QR هذا في معرض الصور، ثم افتح تطبيق البنك (CBE أو Awash أو Dashen أو أي بنك إثيوبي)، واختر الدفع من المعرض أو استيراد QR، وحدد الصورة المحفوظة، وأكمل الدفع.",
   "checkout.waitingForPaymentConfirmation": "في انتظار تأكيد الدفع...",
   "checkout.checkingPaymentStatus": "جاري التحقق من حالة الدفع — يرجى إبقاء هذه الصفحة مفتوحة.",
   "checkout.paymentConfirmed": "تم تأكيد الدفع!",

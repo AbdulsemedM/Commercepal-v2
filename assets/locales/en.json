@@ -408,7 +408,7 @@
   "checkout.saveQrToGallery": "Save QR to Gallery",
   "checkout.qrSavedToGallery": "QR code saved to your gallery",
   "checkout.qrSaveFailed": "Could not save QR code. Please try again.",
-  "checkout.qrGalleryImportInstructions": "Save this QR code to your gallery, then open your banking app (Telebirr, CBE, Awash, or any QPay-supported bank), choose Pay from gallery or Import QR, select the saved image, and complete your payment.",
+  "checkout.qrGalleryImportInstructions": "Save this QR code to your gallery, then open your banking app (CBE, Awash, Dashen, or any Ethiopian bank), choose Pay from gallery or Import QR, select the saved image, and complete your payment.",
   "checkout.waitingForPaymentConfirmation": "Waiting for payment confirmation...",
   "checkout.checkingPaymentStatus": "Checking payment status — please keep this page open.",
   "checkout.paymentConfirmed": "Payment confirmed!",
