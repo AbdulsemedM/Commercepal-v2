@@ -161,18 +161,24 @@ class PaymentConstants {
     return haystack.contains('QPAY');
   }
 
-  /// eBirr variants (E_BIRR, EBIRR_COOPAY, EBIRR_KAFFI); excludes Telebirr and CBE Birr.
+  /// eBirr variants (E_BIRR, EBIRR_COOPAY, EBIRR_KAFFI); excludes Telebirr, CBE Birr, and Edahab.
   static bool isEbirr(String? code, {String? displayName}) {
-    return toDocsPaymentMethod(code, displayName: displayName) ==
-        DocsPaymentMethod.eBirr;
+    if (isEdahab(code, displayName: displayName)) return false;
+    if (isTelebirr(code, displayName: displayName)) return false;
+    if (isCbeBirr(code, displayName: displayName)) return false;
+    final String haystack = _normalizedHaystack(code, displayName);
+    return haystack.contains('EBIRR') || haystack.contains('EBIR');
   }
 
-  /// Checkout list order: QPay (0), eBirr (1), CBE Birr (2), then everything else (3).
+  /// Checkout list order: QPay, eBirr, CBE Birr, Amole, COD, Telebirr, then everything else.
   static int checkoutDisplaySortRank(String? code, {String? displayName}) {
     if (isQPay(code, displayName: displayName)) return 0;
     if (isEbirr(code, displayName: displayName)) return 1;
     if (isCbeBirr(code, displayName: displayName)) return 2;
-    return 3;
+    if (isAmole(code, displayName: displayName)) return 3;
+    if (isCashOnDelivery(code)) return 4;
+    if (isTelebirr(code, displayName: displayName)) return 5;
+    return 6;
   }
 
   /// Provider codes that initiate USSD payment; show "USSD payment initiated" success popup after checkout.

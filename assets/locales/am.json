@@ -408,7 +408,7 @@
   "checkout.saveQrToGallery": "QR ወደ ጋለሪ ያስቀምጡ",
   "checkout.qrSavedToGallery": "QR ኮድ ወደ ጋለሪዎ ተቀምጧል",
   "checkout.qrSaveFailed": "QR ኮድ ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
-  "checkout.qrGalleryImportInstructions": "ይህን QR ኮድ ወደ ጋለሪዎ ያስቀምጡ፣ ከዚያ የባንክ መተግበሪያዎን ይክፈቱ (ቴሌብር፣ CBE፣ Awash ወይም QPay የሚደግፈው ማንኛውም ባንክ)፣ ከጋለሪ መክፈል ወይም QR አስመጣን ይምረጡ፣ የተቀመጠውን ምስል ይምረጡ እና ክፍያዎን ያጠናቅቁ።",
+  "checkout.qrGalleryImportInstructions": "ይህን QR ኮድ ወደ ጋለሪዎ ያስቀምጡ፣ ከዚያ የባንክ መተግበሪያዎን ይክፈቱ (CBE፣ Awash፣ Dashen ወይም ማንኛውም የኢትዮጵያ ባንክ)፣ ከጋለሪ መክፈል ወይም QR አስመጣን ይምረጡ፣ የተቀመጠውን ምስል ይምረጡ እና ክፍያዎን ያጠናቅቁ።",
   "checkout.waitingForPaymentConfirmation": "የክፍያ ማረጋገጫ በመጠባበቅ ላይ...",
   "checkout.checkingPaymentStatus": "የክፍያ ሁኔታ በመፈተሽ ላይ — እባክዎ ይህን ገጽ ክፍት ያድርጉ።",
   "checkout.paymentConfirmed": "ክፍያ ተረጋግጧል!",

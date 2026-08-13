@@ -25,8 +25,17 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
+// Ensure Kotlin sources in Flutter plugins (e.g. firebase_analytics) are compiled.
+// Without this, release builds can fail with "cannot find symbol FlutterFirebaseAnalyticsPlugin".
 subprojects {
-    project.evaluationDependsOn(":app")
+    pluginManager.withPlugin("com.android.library") {
+        if (!pluginManager.hasPlugin("org.jetbrains.kotlin.android") &&
+            !pluginManager.hasPlugin("kotlin-android")
+        ) {
+            pluginManager.apply("org.jetbrains.kotlin.android")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
