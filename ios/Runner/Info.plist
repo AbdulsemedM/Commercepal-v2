@@ -84,16 +84,37 @@
 	<string>This app needs camera access to scan QR codes</string>
 	<key>NSContactsUsageDescription</key>
 	<string>We need access to your contacts to invite your friends.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>CommercePal uses Face ID to securely sign you in to your account.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location when in the background to show you nearby stores and delivery options.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open to show you nearby stores and delivery options.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photos access to get QR code from photo library</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>CommercePal needs permission to save your QPay QR code to your photo gallery so you can complete payment in your banking app.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>CommercePal uses Face ID to securely sign you in to your account.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photos access to get QR code from photo library</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
