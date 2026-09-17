@@ -8,7 +8,7 @@ import '../models/cart.dart';
 import '../models/clear_cart_response.dart';
 import '../models/update_cart_item_request.dart';
 
-/// Remote cart API client for `/api/v1/cart*`.
+/// Remote cart API client for `/api/cart*`.
 ///
 /// Guests are identified via `X-Session-Id`; logged-in users via `Authorization`
 /// (both set by [AuthInterceptor]). Add-to-cart also sends `X-Country` and
@@ -20,8 +20,8 @@ class CartDataProvider {
 
   final ApiService _apiService;
   final Storage _storage;
-  static const String _cartEndpoint = '/api/v1/cart';
-  static const String _cartItemsEndpoint = '/api/v1/cart/items';
+  static const String _cartEndpoint = '/api/cart';
+  static const String _cartItemsEndpoint = '/api/cart/items';
 
   Future<Map<String, String>> _cartLocaleHeaders() async {
     final String country = await _storage.getSelectedCountry();

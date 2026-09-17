@@ -1,4 +1,4 @@
-/// Flat payment method from GET /public/payment-methods.
+/// Flat payment method from GET /api/payment-methods.
 class PublicPaymentMethod {
   final String providerCode;
   final String displayName;
@@ -38,7 +38,9 @@ class PublicPaymentMethod {
       accountPlaceholder: json['accountPlaceholder'] as String?,
       iconUrl: json['iconUrl'] as String?,
       isEnabled: json['isEnabled'] as bool? ?? true,
-      sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+      sortOrder: (json['sortOrder'] as num?)?.toInt() ??
+          (json['displayOrder'] as num?)?.toInt() ??
+          0,
       supportedCurrencies: (json['supportedCurrencies'] as List<dynamic>?)
               ?.map((dynamic e) => e.toString())
               .toList() ??

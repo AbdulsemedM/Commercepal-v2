@@ -61,7 +61,7 @@ class _PaymentMethodCategory {
 }
 
 /// Screen to choose another payment method when retrying a failed payment.
-/// Calls POST /api/v1/orders/{orderNumber}/retry-payment with selected method.
+/// Calls POST /api/orders/{orderNumber}/retry-payment with selected method.
 class RetryPaymentMethodScreen extends StatefulWidget {
   const RetryPaymentMethodScreen({
     super.key,

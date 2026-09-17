@@ -80,10 +80,10 @@ class AuthInterceptor extends Interceptor {
   ) async {
     // Skip adding token for public endpoints.
     final isPublicCategories =
-        options.path.contains('/api/v1/categories') &&
+        options.path.contains('/api/categories') &&
         !options.path.contains('/subcategories');
     final isPublicCustomerRegister =
-        options.path.contains('/api/v1/customers/register');
+        options.path.contains('/api/customers/register');
     if (isPublicCategories || isPublicCustomerRegister) {
       return super.onRequest(options, handler);
     }

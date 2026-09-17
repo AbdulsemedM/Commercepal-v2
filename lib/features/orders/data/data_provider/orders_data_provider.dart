@@ -10,7 +10,7 @@ class OrdersDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _ordersEndpoint = '/api/v1/orders';
+  static const String _ordersEndpoint = '/api/orders';
 
   Future<OrdersResponse> getOrders({
     int? customerId,
@@ -120,7 +120,7 @@ class OrdersDataProvider {
   }
 
   /// Fetches a single order by order number (for order tracking / detail).
-  /// Backend should expose GET /api/v1/orders/{orderNumber} or equivalent.
+  /// Backend should expose GET /api/orders/{orderNumber} or equivalent.
   Future<Order> getOrderByOrderNumber(String orderNumber) async {
     try {
       final uri = '$_ordersEndpoint/$orderNumber';

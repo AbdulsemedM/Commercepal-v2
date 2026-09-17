@@ -10,7 +10,7 @@ class ResetPasswordDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/credentials/password/reset';
+  static const String _endpoint = '/api/credentials/password/reset';
 
   Future<ResetPasswordResponse> resetPassword(
     ResetPasswordRequest request,

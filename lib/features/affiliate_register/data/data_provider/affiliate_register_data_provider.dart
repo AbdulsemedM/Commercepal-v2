@@ -9,7 +9,7 @@ class AffiliateRegisterDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/affiliates/register';
+  static const String _endpoint = '/api/affiliates/register';
 
   Future<void> register(AffiliateRegisterRequestDto request) async {
     try {

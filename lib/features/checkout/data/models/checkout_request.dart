@@ -20,7 +20,7 @@ class CheckoutItem {
       };
 }
 
-/// POST /api/v1/orders/checkout — matches production web checkout body.
+/// POST /api/orders/checkout — matches production web checkout body.
 class CheckoutRequest {
   final String channel;
   final String currency;

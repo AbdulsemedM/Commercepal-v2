@@ -10,7 +10,7 @@ class ProfileDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _profileEndpoint = '/api/v1/customers/me';
+  static const String _profileEndpoint = '/api/customers/me';
 
   Future<ProfileResponse> getProfile() async {
     try {
@@ -69,7 +69,7 @@ class ProfileDataProvider {
     }
   }
 
-  /// Permanently deletes the signed-in customer account (DELETE `/api/v1/customers/me`).
+  /// Permanently deletes the signed-in customer account (DELETE `/api/customers/me`).
   Future<void> deleteAccount() async {
     try {
       await _apiService.delete<void>(_profileEndpoint);

@@ -10,7 +10,7 @@ class SupportChatDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _base = '/api/v1/support/session';
+  static const String _base = '/api/support/session';
 
   Future<SupportSession> startSession({String? initialMessage}) async {
     try {

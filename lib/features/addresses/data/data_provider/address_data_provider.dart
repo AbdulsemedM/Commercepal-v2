@@ -14,7 +14,7 @@ class AddressDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/customers/addresses';
+  static const String _endpoint = '/api/customers/addresses';
 
   Future<Address> addAddress(AddAddressRequest request) async {
     try {

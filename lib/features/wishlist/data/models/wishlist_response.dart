@@ -30,7 +30,7 @@ class WishlistPagination {
   }
 }
 
-/// Response from GET /api/v1/wishlist?page=...
+/// Response from GET /api/wishlist?page=...
 class WishlistResponse {
   const WishlistResponse({
     required this.pagination,

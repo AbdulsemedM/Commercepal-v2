@@ -9,9 +9,9 @@ void main() {
       expect(
         isUnauthorizedError(
           DioException(
-            requestOptions: RequestOptions(path: '/api/v1/profile'),
+            requestOptions: RequestOptions(path: '/api/profile'),
             response: Response(
-              requestOptions: RequestOptions(path: '/api/v1/profile'),
+              requestOptions: RequestOptions(path: '/api/profile'),
               statusCode: 401,
             ),
           ),
@@ -21,9 +21,9 @@ void main() {
       expect(
         isUnauthorizedError(
           DioException(
-            requestOptions: RequestOptions(path: '/api/v1/profile'),
+            requestOptions: RequestOptions(path: '/api/profile'),
             response: Response(
-              requestOptions: RequestOptions(path: '/api/v1/profile'),
+              requestOptions: RequestOptions(path: '/api/profile'),
               statusCode: 403,
             ),
           ),
@@ -36,9 +36,9 @@ void main() {
       expect(
         isUnauthorizedError(
           DioException(
-            requestOptions: RequestOptions(path: '/api/v1/products/search'),
+            requestOptions: RequestOptions(path: '/api/products/search'),
             response: Response(
-              requestOptions: RequestOptions(path: '/api/v1/products/search'),
+              requestOptions: RequestOptions(path: '/api/products/search'),
               statusCode: 404,
             ),
           ),
@@ -64,9 +64,9 @@ void main() {
       expect(
         isUnauthorizedError(
           DioException(
-            requestOptions: RequestOptions(path: '/api/v1/orders'),
+            requestOptions: RequestOptions(path: '/api/orders'),
             response: Response(
-              requestOptions: RequestOptions(path: '/api/v1/orders'),
+              requestOptions: RequestOptions(path: '/api/orders'),
               statusCode: 400,
               data: <String, dynamic>{'message': 'Session expired'},
             ),

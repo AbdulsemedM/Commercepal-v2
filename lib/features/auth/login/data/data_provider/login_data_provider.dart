@@ -10,7 +10,7 @@ class LoginDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/auth/login';
+  static const String _endpoint = '/api/auth/login';
 
   Future<LoginResponse> login(LoginRequest request) async {
     try {

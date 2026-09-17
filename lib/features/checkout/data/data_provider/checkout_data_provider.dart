@@ -15,10 +15,10 @@ class CheckoutDataProvider {
 
   final ApiService _apiService;
   final Storage _storage;
-  static const String _checkoutEndpoint = '/api/v1/orders/checkout';
-  static const String _sahayCheckEndpoint = '/api/v1/payments/sahay/check';
+  static const String _checkoutEndpoint = '/api/orders/checkout';
+  static const String _sahayCheckEndpoint = '/api/payments/sahay/check';
   static const String _sahayCustomerLookupEndpoint =
-      '/api/v1/payments/sahaypay/customer-lookup';
+      '/api/payments/sahaypay/customer-lookup';
 
   Future<CheckoutResponse> checkout(CheckoutRequest request) async {
     return _postCheckout(request.toJson());
@@ -63,7 +63,7 @@ class CheckoutDataProvider {
     required PaymentRetryRequest request,
   }) async {
     final String path =
-        '/api/v1/orders/${Uri.encodeComponent(orderNumber)}/retry-payment';
+        '/api/orders/${Uri.encodeComponent(orderNumber)}/retry-payment';
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         path,

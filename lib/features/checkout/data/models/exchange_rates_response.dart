@@ -76,14 +76,39 @@ class ExchangeRatesResponse {
   });
 
   factory ExchangeRatesResponse.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = json['data'] as List<dynamic>? ?? <dynamic>[];
+    final Object? raw = json['data'];
+    final List<ForeignExchangeRate> rates;
+    if (raw is List) {
+      rates = raw
+          .whereType<Map<String, dynamic>>()
+          .map(ForeignExchangeRate.fromJson)
+          .toList();
+    } else if (raw is Map) {
+      // Web public shape: { "usdToEtb": 200.0, "usdToAed": 3.67 }
+      rates = <ForeignExchangeRate>[];
+      for (final MapEntry<dynamic, dynamic> entry in raw.entries) {
+        final String key = entry.key.toString();
+        final Object? value = entry.value;
+        if (value is! num || value <= 0) continue;
+        final String lower = key.toLowerCase();
+        if (!lower.startsWith('usdto') || lower.length <= 5) continue;
+        final String target = lower.substring(5).toUpperCase();
+        rates.add(
+          ForeignExchangeRate(
+            id: 0,
+            baseCurrency: 'USD',
+            targetCurrency: target,
+            rate: value.toDouble(),
+          ),
+        );
+      }
+    } else {
+      rates = const <ForeignExchangeRate>[];
+    }
     return ExchangeRatesResponse(
       status: json['status'] as int? ?? 200,
       message: json['message'] as String? ?? '',
-      data: raw
-          .whereType<Map<String, dynamic>>()
-          .map(ForeignExchangeRate.fromJson)
-          .toList(),
+      data: rates,
     );
   }
 

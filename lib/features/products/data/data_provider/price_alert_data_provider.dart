@@ -15,7 +15,7 @@ class PriceAlertDataProvider {
   }) async {
     try {
       await _apiService.post<Map<String, dynamic>>(
-        '/api/v1/products/$productId/price-alert',
+        '/api/products/$productId/price-alert',
         data: <String, dynamic>{'targetPrice': targetPrice},
       );
     } on DioException catch (e) {
@@ -27,7 +27,7 @@ class PriceAlertDataProvider {
   Future<void> removePriceAlert({required String productId}) async {
     try {
       await _apiService.delete<Map<String, dynamic>>(
-        '/api/v1/products/$productId/price-alert',
+        '/api/products/$productId/price-alert',
       );
     } on DioException catch (e) {
       AppLogger.e('Remove price alert failed', error: e, stack: e.stackTrace);

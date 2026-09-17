@@ -9,9 +9,9 @@ class AffiliateDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _myProfileEndpoint = '/api/v1/affiliates/my-profile';
+  static const String _myProfileEndpoint = '/api/affiliates/my-profile';
   static const String _registerFromCustomerEndpoint =
-      '/api/v1/affiliates/register/from-customer';
+      '/api/affiliates/register/from-customer';
 
   Future<AffiliateMyProfileResponse?> getMyProfile() async {
     try {

@@ -10,9 +10,9 @@ class CategoriesDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _categoriesEndpoint = '/api/v1/categories';
+  static const String _categoriesEndpoint = '/api/categories';
   static const String _subCategoriesEndpoint =
-      '/api/v1/categories/subcategories/category';
+      '/api/categories/subcategories/category';
 
   Future<CategoriesResponse> getCategories() async {
     try {

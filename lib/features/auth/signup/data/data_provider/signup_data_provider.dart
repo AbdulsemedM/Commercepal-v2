@@ -10,7 +10,7 @@ class SignupDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/customers/register';
+  static const String _endpoint = '/api/customers/register';
 
   Future<SignupResponse> signup(SignupRequest request) async {
     try {

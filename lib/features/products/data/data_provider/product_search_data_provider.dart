@@ -10,7 +10,7 @@ class ProductSearchDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _searchEndpoint = '/api/v1/products/search';
+  static const String _searchEndpoint = '/api/products/search';
 
   Future<ProductSearchResponse> searchProducts(
     ProductSearchRequest request,

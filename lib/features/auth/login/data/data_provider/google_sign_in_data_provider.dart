@@ -19,7 +19,7 @@ class GoogleSignInDataProvider {
 
   final ApiService _apiService;
   final GoogleSignIn _googleSignIn;
-  static const String _oauth2Endpoint = '/api/v1/auth/oauth2/login';
+  static const String _oauth2Endpoint = '/api/auth/oauth2/login';
 
   /// Sign in with Google and authenticate with backend
   Future<LoginResponse> signInWithGoogle({String? channel, String? deviceId}) async {

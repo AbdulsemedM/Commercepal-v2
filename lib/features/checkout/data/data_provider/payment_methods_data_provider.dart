@@ -13,8 +13,9 @@ class PaymentMethodsDataProvider {
 
   final ApiService _apiService;
   final Storage _storage;
-  static const String _legacyEndpoint = '/api/v1/payment-methods';
-  static const String _publicEndpoint = '/api/v1/public/payment-methods';
+  static const String _legacyEndpoint = '/api/payment-methods';
+  // Same gateway path the website uses ( /api/public/payment-methods 404s ).
+  static const String _publicEndpoint = '/api/payment-methods';
 
   Future<Map<String, String>> _localeQueryParams() async {
     final String country = await _storage.getSelectedCountry();

@@ -9,7 +9,7 @@ class ProductDetailsDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _detailsEndpoint = '/api/v1/products';
+  static const String _detailsEndpoint = '/api/products';
 
   Future<ProductDetailsResponse> getProductDetails(
     String itemId, {

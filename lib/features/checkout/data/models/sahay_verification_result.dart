@@ -1,5 +1,5 @@
 /// Result of Sahay customer lookup API.
-/// GET /api/v1/payments/sahaypay/customer-lookup?phoneNumber=251XXXXXXXXX
+/// GET /api/payments/sahaypay/customer-lookup?phoneNumber=251XXXXXXXXX
 /// Response: { status: 0, message: "string", data: { customerName: "ABDI MOHAMED" } }
 class SahayVerificationResult {
   final bool success;

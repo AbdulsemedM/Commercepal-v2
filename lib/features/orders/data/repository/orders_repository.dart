@@ -10,7 +10,7 @@ class OrdersRepository {
 
   final OrdersDataProvider _dataProvider;
 
-  /// Fetches orders from GET /api/v1/orders?page=0&size=20 (auth via Bearer token).
+  /// Fetches orders from GET /api/orders?page=0&size=20 (auth via Bearer token).
   Future<OrdersResponse> getOrders({
     int? customerId,
     String? stageCategory,

@@ -9,7 +9,7 @@ class LogoutDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/auth/logout';
+  static const String _endpoint = '/api/auth/logout';
 
   Future<LogoutResponse> logout() async {
     try {

@@ -9,7 +9,8 @@ class ExchangeRatesDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/admin/foreign-exchange';
+  // Matches commercepal.com web: /api/public/exchange-rates (admin route needs auth).
+  static const String _endpoint = '/api/public/exchange-rates';
 
   Future<ExchangeRatesResponse> getExchangeRates() async {
     try {

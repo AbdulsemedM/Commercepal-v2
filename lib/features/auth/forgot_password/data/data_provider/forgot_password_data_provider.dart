@@ -10,7 +10,7 @@ class ForgotPasswordDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/credentials/password/forgot';
+  static const String _endpoint = '/api/credentials/password/forgot';
 
   Future<ForgotPasswordResponse> forgotPassword(
     ForgotPasswordRequest request,

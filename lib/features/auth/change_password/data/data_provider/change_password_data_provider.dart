@@ -10,7 +10,7 @@ class ChangePasswordDataProvider {
     : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/credentials/password/change';
+  static const String _endpoint = '/api/credentials/password/change';
 
   Future<ChangePasswordResponse> changePassword(
     ChangePasswordRequest request,

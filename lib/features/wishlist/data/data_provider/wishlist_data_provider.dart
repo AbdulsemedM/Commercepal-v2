@@ -9,10 +9,10 @@ class WishlistDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/wishlist';
-  static const String _clearEndpoint = '/api/v1/wishlist/clear';
+  static const String _endpoint = '/api/wishlist';
+  static const String _clearEndpoint = '/api/wishlist/clear';
 
-  /// Sync wishlist with backend: POST /api/v1/wishlist with list of product IDs.
+  /// Sync wishlist with backend: POST /api/wishlist with list of product IDs.
   Future<void> syncWishlist(List<String> productIds) async {
     try {
       await _apiService.post<Map<String, dynamic>>(
@@ -32,7 +32,7 @@ class WishlistDataProvider {
     }
   }
 
-  /// Get wishlist: GET /api/v1/wishlist?page=0
+  /// Get wishlist: GET /api/wishlist?page=0
   Future<WishlistResponse> getWishlist({int page = 0}) async {
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
@@ -63,7 +63,7 @@ class WishlistDataProvider {
     }
   }
 
-  /// Clear wishlist: POST /api/v1/wishlist/clear
+  /// Clear wishlist: POST /api/wishlist/clear
   Future<void> clearWishlist() async {
     try {
       await _apiService.post<Map<String, dynamic>>(_clearEndpoint);
@@ -80,7 +80,7 @@ class WishlistDataProvider {
     }
   }
 
-  /// Remove items from wishlist: DELETE /api/v1/wishlist with body ["id1", "id2"]
+  /// Remove items from wishlist: DELETE /api/wishlist with body ["id1", "id2"]
   Future<void> removeFromWishlist(List<String> productIds) async {
     if (productIds.isEmpty) return;
     try {

@@ -11,8 +11,8 @@ class VisualSearchDataProvider {
 
   final ApiService _apiService;
 
-  static const String _imageSearchEndpoint = '/api/v1/products/image-search';
-  static const String _searchByUrlEndpoint = '/api/v1/products/search-by-url';
+  static const String _imageSearchEndpoint = '/api/products/image-search';
+  static const String _searchByUrlEndpoint = '/api/products/search-by-url';
 
   Future<VisualSearchResult> searchByImage({
     required String imageBase64,

@@ -12,12 +12,12 @@ class PaymentStatusDataProvider {
   final ApiService _apiService;
 
   static const String _telebirrInitiateEndpoint =
-      '/api/v1/payments/telebirr/initiate';
+      '/api/payments/telebirr/initiate';
   static const String _edahabInitiateEndpoint =
-      '/api/v1/payments/edahab/initiate';
+      '/api/payments/edahab/initiate';
 
   static const String _cbeBirrInitiateEndpoint =
-      '/api/v1/payments/cbe-birr/initiate';
+      '/api/payments/cbe-birr/initiate';
 
   Future<PaymentInitiateResult> initiateCbeBirr({
     required String orderNumber,
@@ -87,7 +87,7 @@ class PaymentStatusDataProvider {
     try {
       final Response<Map<String, dynamic>> response =
           await _apiService.get<Map<String, dynamic>>(
-        '/api/v1/payments/order/$orderNumber/status',
+        '/api/payments/order/$orderNumber/status',
       );
       if (response.data == null) {
         throw DioException(

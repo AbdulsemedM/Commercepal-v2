@@ -10,7 +10,7 @@ class RefreshTokenDataProvider {
   RefreshTokenDataProvider({Dio? dio}) : _dio = dio ?? _createRefreshDio();
 
   final Dio _dio;
-  static const String _endpoint = '/api/v1/auth/refresh';
+  static const String _endpoint = '/api/auth/refresh';
 
   // Create a separate Dio instance for refresh requests to avoid circular dependency
   static Dio _createRefreshDio() {

@@ -23,7 +23,7 @@ import '../utils/checkout_payment_navigation.dart';
 /// Displays the checkout response from the backend after placing an order:
 /// order number, pricing summary, payment status, payment initiation details.
 /// When payment has failed (e.g. nextAction RETRY_PAYMENT), user can retry
-/// via POST /api/v1/payments/retry.
+/// via POST /api/payments/retry.
 class OrderPlacedScreen extends StatefulWidget {
   const OrderPlacedScreen({
     super.key,

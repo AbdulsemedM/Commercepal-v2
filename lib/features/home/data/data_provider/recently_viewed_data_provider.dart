@@ -9,7 +9,7 @@ class RecentlyViewedDataProvider {
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _endpoint = '/api/v1/products/recently-viewed';
+  static const String _endpoint = '/api/products/recently-viewed';
 
   /// Fetches recently viewed products. Requires [country] and [currency] for
   /// X-Country and X-Currency headers. Authorization is added by AuthInterceptor.

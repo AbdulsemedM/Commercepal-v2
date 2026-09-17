@@ -1,4 +1,4 @@
-/// Request body for POST /api/v1/orders/{orderNumber}/retry-payment
+/// Request body for POST /api/orders/{orderNumber}/retry-payment
 class PaymentRetryRequest {
   final String paymentProviderCode;
   final String? paymentAccount;
