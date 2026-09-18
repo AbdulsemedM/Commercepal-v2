@@ -30,6 +30,7 @@ class Storage {
   static const String _keyRefreshToken = 'refresh_token';
   static const String _keyTokenType = 'token_type';
   static const String _keyExpiresIn = 'expires_in';
+  static const String _keyAuthChannel = 'auth_channel';
   static const String _keyUserEmail = 'user_email';
   static const String _keyDeviceId = 'device_id';
   static const String _keySelectedCountry = 'selected_country_code';
@@ -96,6 +97,14 @@ class Storage {
     return value != null ? int.tryParse(value) : null;
   }
 
+  Future<void> saveAuthChannel(String channel) async {
+    await _storage.write(key: _keyAuthChannel, value: channel);
+  }
+
+  Future<String?> getAuthChannel() async {
+    return await _storage.read(key: _keyAuthChannel);
+  }
+
   Future<String?> getUserEmail() async {
     return await _storage.read(key: _keyUserEmail);
   }
@@ -108,6 +117,7 @@ class Storage {
       _storage.delete(key: _keyRefreshToken),
       _storage.delete(key: _keyTokenType),
       _storage.delete(key: _keyExpiresIn),
+      _storage.delete(key: _keyAuthChannel),
       _storage.delete(key: _keyUserEmail),
       _storage.delete(key: _keyCustomerId),
       _storage.delete(key: _keyProfileCache),

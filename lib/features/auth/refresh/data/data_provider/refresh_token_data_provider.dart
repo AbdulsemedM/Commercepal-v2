@@ -44,7 +44,18 @@ class RefreshTokenDataProvider {
         );
       }
 
-      return RefreshTokenResponse.fromJson(response.data!);
+      final responseData = response.data!;
+      final data = responseData['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: 'Invalid response structure: missing data field',
+        );
+      }
+
+      return RefreshTokenResponse.fromJson(data);
     } on DioException catch (e) {
       AppLogger.e('Refresh token failed', error: e, stack: e.stackTrace);
       rethrow;

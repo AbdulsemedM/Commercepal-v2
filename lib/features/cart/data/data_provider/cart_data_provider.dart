@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:commercepal/core/logging/app_logger.dart';
+import 'package:commercepal/core/network/auth_request_options.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/api_service.dart';
 import '../models/add_to_cart_request.dart';
@@ -22,6 +23,7 @@ class CartDataProvider {
   final Storage _storage;
   static const String _cartEndpoint = '/api/cart';
   static const String _cartItemsEndpoint = '/api/cart/items';
+  static const String _cartMergeEndpoint = '/api/cart/merge';
 
   Future<Map<String, String>> _cartLocaleHeaders() async {
     final String country = await _storage.getSelectedCountry();
@@ -34,29 +36,26 @@ class CartDataProvider {
 
   Future<Cart> addToCart(AddToCartRequest request) async {
     try {
-      final response = await _apiService.post<Map<String, dynamic>>(
-        _cartItemsEndpoint,
-        data: request.toJson(),
-        headers: await _cartLocaleHeaders(),
-      );
-
-      if (response.data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response from server',
-        );
-      }
-
-      final Map<String, dynamic>? data =
-          response.data!['data'] as Map<String, dynamic>?;
-      if (data != null && data['cartId'] != null) {
-        return Cart.fromJson(data);
-      }
-
-      return getCart();
+      return await _postAddToCart(request);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        AppLogger.w(
+          'Add-to-cart rejected auth token; retrying with guest session',
+        );
+        try {
+          return await _postAddToCart(
+            request,
+            extra: <String, dynamic>{kForceGuestSessionExtra: true},
+          );
+        } on DioException catch (guestError) {
+          AppLogger.e(
+            'Guest add-to-cart fallback failed',
+            error: guestError,
+            stack: guestError.stackTrace,
+          );
+          rethrow;
+        }
+      }
       if (e.response?.statusCode == 500) {
         return _reconcileCartAfterAddFailure(e);
       }
@@ -66,6 +65,35 @@ class CartDataProvider {
       AppLogger.e('Unexpected error during add to cart', error: e, stack: stack);
       rethrow;
     }
+  }
+
+  Future<Cart> _postAddToCart(
+    AddToCartRequest request, {
+    Map<String, dynamic>? extra,
+  }) async {
+    final response = await _apiService.post<Map<String, dynamic>>(
+      _cartItemsEndpoint,
+      data: request.toJson(),
+      headers: await _cartLocaleHeaders(),
+      extra: extra,
+    );
+
+    if (response.data == null) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: 'Invalid response from server',
+      );
+    }
+
+    final Map<String, dynamic>? data =
+        response.data!['data'] as Map<String, dynamic>?;
+    if (data != null && data['cartId'] != null) {
+      return Cart.fromJson(data);
+    }
+
+    return getCart();
   }
 
   Future<Cart> _reconcileCartAfterAddFailure(DioException original) async {
@@ -78,6 +106,32 @@ class CartDataProvider {
       return cart;
     } catch (_) {
       throw original;
+    }
+  }
+
+  /// Merges the guest cart (identified by [guestCartId]) into the logged-in cart.
+  /// Returns true when merge succeeded or was already applied (409/400).
+  Future<bool> mergeGuestCart(String guestCartId) async {
+    try {
+      await _apiService.post<Map<String, dynamic>>(
+        _cartMergeEndpoint,
+        data: <String, dynamic>{'guestCartId': guestCartId},
+        extra: <String, dynamic>{kIncludeGuestSessionExtra: true},
+      );
+      return true;
+    } on DioException catch (e) {
+      final int? status = e.response?.statusCode;
+      if (status == 409 || status == 400) {
+        AppLogger.w(
+          'Cart merge already applied or rejected (status $status)',
+        );
+        return true;
+      }
+      AppLogger.e('Cart merge failed', error: e, stack: e.stackTrace);
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.e('Unexpected error during cart merge', error: e, stack: stack);
+      rethrow;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/notification_service.dart';
 import '../data_provider/login_data_provider.dart';
 import '../data_provider/google_sign_in_data_provider.dart';
@@ -29,6 +30,7 @@ class LoginRepository {
       expiresIn: response.expiresIn,
       userEmail: request.loginIdentifier,
     );
+    await _storage.saveAuthChannel(request.channel);
 
     await NotificationService().registerTokenWithBackend();
 
@@ -36,8 +38,9 @@ class LoginRepository {
   }
 
   Future<Map<String, dynamic>> signInWithGoogle({String? channel, String? deviceId}) async {
+    final String resolvedChannel = channel ?? PlatformUtils.getGoogleSignInChannel();
     final response = await _googleSignInDataProvider.signInWithGoogle(
-      channel: channel,
+      channel: resolvedChannel,
       deviceId: deviceId,
     );
 
@@ -52,6 +55,7 @@ class LoginRepository {
       expiresIn: response.expiresIn,
       userEmail: googleUser?.email,
     );
+    await _storage.saveAuthChannel(resolvedChannel);
 
     await NotificationService().registerTokenWithBackend();
 

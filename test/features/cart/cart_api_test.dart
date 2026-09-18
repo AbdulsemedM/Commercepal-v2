@@ -5,6 +5,18 @@ import 'package:commercepal/features/cart/utils/cart_product_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('apiCartConfigId', () {
+    test('maps empty and zero to 0', () {
+      expect(apiCartConfigId(''), '0');
+      expect(apiCartConfigId('0'), '0');
+      expect(apiCartConfigId('  '), '0');
+    });
+
+    test('preserves variant ids', () {
+      expect(apiCartConfigId('variant-1'), 'variant-1');
+    });
+  });
+
   group('normalizeCartProductId', () {
     test('adds cp- prefix when missing', () {
       expect(normalizeCartProductId('2085245075104260097'), 'cp-2085245075104260097');
@@ -33,6 +45,18 @@ void main() {
         'configId': 'variant-1',
         'quantity': 2,
       });
+    });
+
+    test('maps empty configId to 0 for base products', () {
+      final item = AddToCartItem(
+        productId: '2085245075104260097',
+        configId: '',
+        quantity: 1,
+        currency: 'ETB',
+        country: 'ET',
+      );
+
+      expect(item.toJson()['configId'], '0');
     });
   });
 

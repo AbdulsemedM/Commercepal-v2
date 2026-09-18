@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
-import 'package:commercepal/core/auth/token_refresh_biometric_gate.dart';
+import 'package:commercepal/core/network/auth_request_options.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/single_flight.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
@@ -33,7 +33,7 @@ class AuthInterceptor extends Interceptor {
 
   /// Refresh slightly before the real expiry so a token cannot lapse while a
   /// request is in flight, and to absorb small device clock skew.
-  static const Duration _expiryLeeway = Duration(seconds: 30);
+  static const Duration _expiryLeeway = Duration(minutes: 5);
 
   /// Marks a request that has already been retried once after a refresh, so a
   /// persistently rejecting endpoint cannot loop.
@@ -88,9 +88,11 @@ class AuthInterceptor extends Interceptor {
       return super.onRequest(options, handler);
     }
 
-    // Stable per-install session id so the backend can track guest carts
-    // (required when unauthenticated: "Send X-Session-Id header or authenticate").
-    options.headers['X-Session-Id'] = await _storage.getOrCreateDeviceId();
+    if (options.extra[kForceGuestSessionExtra] == true) {
+      options.headers.remove('Authorization');
+      options.headers['X-Session-Id'] = await _storage.getOrCreateDeviceId();
+      return super.onRequest(options, handler);
+    }
 
     var accessToken = await _storage.getAccessToken();
 
@@ -100,15 +102,34 @@ class AuthInterceptor extends Interceptor {
         await _refreshTokenIfNeeded(options);
       } catch (_) {
         // A genuine rejection already cleared the session and notified. Any
-        // other failure (offline, timeout, dismissed biometric prompt) leaves
+        // other failure (offline, timeout) leaves
         // the stored credentials alone so the next request can try again.
       }
       accessToken = await _storage.getAccessToken();
     }
 
-    if (accessToken != null && accessToken.isNotEmpty) {
+    final bool hasAccessToken =
+        accessToken != null && accessToken.isNotEmpty;
+    final bool includeGuestSession =
+        options.extra[kIncludeGuestSessionExtra] == true;
+
+    // Web cart: guests use X-Session-Id; logged-in cart uses Bearer only unless
+    // merging a guest cart (includeGuestSession).
+    if (shouldAttachGuestSessionId(
+      hasAccessToken: hasAccessToken,
+      includeGuestSession: includeGuestSession,
+      forceGuestSession: false,
+    )) {
+      options.headers['X-Session-Id'] = await _storage.getOrCreateDeviceId();
+    } else {
+      options.headers.remove('X-Session-Id');
+    }
+
+    if (hasAccessToken) {
       final tokenType = await _storage.getTokenType() ?? 'Bearer';
       options.headers['Authorization'] = '$tokenType $accessToken';
+    } else {
+      options.headers.remove('Authorization');
     }
 
     super.onRequest(options, handler);
@@ -129,7 +150,12 @@ class AuthInterceptor extends Interceptor {
       return super.onError(err, handler);
     }
 
-    if (_dio == null || requestOptions.extra[_retriedFlag] == true) {
+    if (_dio == null) {
+      return super.onError(err, handler);
+    }
+
+    if (requestOptions.extra[_retriedFlag] == true) {
+      await _rejectSession(requestOptions, usedRefreshToken: null);
       return super.onError(err, handler);
     }
 
@@ -149,18 +175,12 @@ class AuthInterceptor extends Interceptor {
     requestOptions.extra[_retriedFlag] = true;
 
     try {
-      final response = await _dio.request<dynamic>(
-        requestOptions.path,
-        data: requestOptions.data,
-        queryParameters: requestOptions.queryParameters,
-        options: Options(
-          method: requestOptions.method,
-          headers: requestOptions.headers,
-          extra: requestOptions.extra,
-        ),
-      );
+      final response = await _dio.fetch<dynamic>(requestOptions);
       handler.resolve(response);
     } on DioException catch (retryError) {
+      if (retryError.response?.statusCode == 401) {
+        await _rejectSession(requestOptions, usedRefreshToken: null);
+      }
       super.onError(retryError, handler);
     } catch (_) {
       super.onError(err, handler);
@@ -185,14 +205,6 @@ class AuthInterceptor extends Interceptor {
         await _rejectSession(options, usedRefreshToken: null);
       }
       throw const SessionRejected();
-    }
-
-    final bool bioOk =
-        await TokenRefreshBiometricGate.instance.ensureUnlockedForRefresh();
-    if (!bioOk) {
-      // The credentials are still valid server-side, so they are kept and the
-      // next request prompts again rather than forcing a full re-login.
-      throw const RefreshBiometricDenied();
     }
 
     try {
@@ -229,7 +241,7 @@ class AuthInterceptor extends Interceptor {
       await NotificationService().unregisterTokenFromBackend();
       await _storage.clearAuthSession();
       if (await _canNotifyOnAuthFailure(options)) {
-        AuthService().notifySessionExpired();
+        AuthService().invalidateSession();
       }
     } finally {
       _rejectingSession = false;

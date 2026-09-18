@@ -37,6 +37,12 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears in-memory login state after tokens were wiped (e.g. 401 after refresh).
+  void invalidateSession() {
+    _isLoggedIn = false;
+    notifySessionExpired();
+  }
+
   void clearSessionExpired() {
     if (!_sessionExpired) return;
     _sessionExpired = false;

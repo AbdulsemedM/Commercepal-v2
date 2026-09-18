@@ -33,11 +33,10 @@ class ApiService {
     Object? data,
     Map<String, dynamic>? query,
     Map<String, String>? headers,
+    Map<String, dynamic>? extra,
   }) async {
     try {
-      final options = headers != null && headers.isNotEmpty
-          ? Options(headers: headers)
-          : null;
+      final Options? options = _buildOptions(headers: headers, extra: extra);
       return await _dio.post<T>(
         path, 
         data: data, 
@@ -96,5 +95,18 @@ class ApiService {
       AppLogger.e('DELETE failed: $path', error: e, stack: e.stackTrace);
       rethrow;
     }
+  }
+
+  Options? _buildOptions({
+    Map<String, String>? headers,
+    Map<String, dynamic>? extra,
+  }) {
+    final bool hasHeaders = headers != null && headers.isNotEmpty;
+    final bool hasExtra = extra != null && extra.isNotEmpty;
+    if (!hasHeaders && !hasExtra) return null;
+    return Options(
+      headers: hasHeaders ? headers : null,
+      extra: hasExtra ? extra : null,
+    );
   }
 }

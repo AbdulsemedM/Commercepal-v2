@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../data_provider/cart_data_provider.dart';
 import '../models/add_to_cart_request.dart';
 import '../models/cart.dart';
@@ -23,6 +25,17 @@ class CartRepository {
   final CartDataProvider _dataProvider;
   final LocalCartDataProvider _localDataProvider;
   final Storage _storage;
+
+  /// Only cache locally when the device is offline — not when the API rejects
+  /// the payload (e.g. invalid configId), which would look like success in UI
+  /// but fail at checkout.
+  bool _shouldFallbackToLocalCart(Object error) {
+    if (error is! DioException) return false;
+    return error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError;
+  }
 
   Future<AddToCartRequest> _withLocale(AddToCartRequest request) async {
     final String country = await _storage.getSelectedCountry();
@@ -107,9 +120,9 @@ class CartRepository {
       final Cart cart = await _dataProvider.addToCart(resolvedRequest);
       return _reconcileAndMirror(cart);
     } catch (e) {
-      if (product != null) {
+      if (product != null && _shouldFallbackToLocalCart(e)) {
         AppLogger.w(
-          'Remote add-to-cart failed; falling back to local cache',
+          'Remote add-to-cart failed (offline); falling back to local cache',
           data: e,
         );
         return _localDataProvider.addToCart(resolvedRequest, product: product);
@@ -170,16 +183,27 @@ class CartRepository {
     }
   }
 
-  /// After login, merge any offline local items then fetch the authoritative cart.
+  /// After login, merge guest session cart then upload any offline-only items.
   Future<void> syncLocalCartToRemote() async {
-    final Cart localCart = await _localDataProvider.getCart();
+    final String guestCartId = await _storage.getOrCreateDeviceId();
+    var mergeSucceeded = false;
 
-    if (localCart.items.isNotEmpty) {
+    try {
+      mergeSucceeded = await _dataProvider.mergeGuestCart(guestCartId);
+      if (mergeSucceeded) {
+        AppLogger.i('Guest cart merged into account (session $guestCartId)');
+      }
+    } catch (e) {
+      AppLogger.w('Guest cart merge failed; will try offline item upload', data: e);
+    }
+
+    final Cart localCart = await _localDataProvider.getCart();
+    if (!mergeSucceeded && localCart.items.isNotEmpty) {
       final String savedCountry = await _storage.getSelectedCountry();
       final String savedCurrency = await _storage.getSelectedCurrency();
 
       AppLogger.i(
-        'Syncing ${localCart.items.length} local cart items to backend',
+        'Uploading ${localCart.items.length} offline cart item(s) to backend',
       );
 
       for (final item in localCart.items) {
@@ -197,7 +221,7 @@ class CartRepository {
         await _dataProvider.addToCart(request);
       }
 
-      AppLogger.i('Successfully uploaded local cart items to backend');
+      AppLogger.i('Successfully uploaded offline cart items to backend');
     }
 
     final Cart mergedCart = await _dataProvider.getCart();

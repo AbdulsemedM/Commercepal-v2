@@ -18,7 +18,7 @@ class AddToCartItem {
   /// Docs cart body — productId, configId, quantity only (headers carry locale).
   Map<String, dynamic> toJson() => <String, dynamic>{
         'productId': normalizeCartProductId(productId),
-        'configId': configId,
+        'configId': apiCartConfigId(configId),
         'quantity': quantity,
       };
 }

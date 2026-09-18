@@ -8,3 +8,11 @@ String normalizeCartProductId(String productId) {
   }
   return 'cp-$trimmed';
 }
+
+/// The cart API expects `"0"` for the default/base variant; an empty string is
+/// rejected with 400.
+String apiCartConfigId(String configId) {
+  final String trimmed = configId.trim();
+  if (trimmed.isEmpty || trimmed == '0') return '0';
+  return trimmed;
+}

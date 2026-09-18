@@ -11,12 +11,23 @@ class LoginResponse {
     required this.expiresIn,
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
-    accessToken: json['accessToken'] as String,
-    refreshToken: json['refreshToken'] as String,
-    tokenType: json['tokenType'] as String? ?? 'Bearer',
-    expiresIn: json['expiresIn'] as int,
-  );
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    final String? accessToken =
+        json['accessToken'] as String? ?? json['token'] as String?;
+    final String? refreshToken = json['refreshToken'] as String?;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw FormatException('Login response missing accessToken');
+    }
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw FormatException('Login response missing refreshToken');
+    }
+    return LoginResponse(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      tokenType: json['tokenType'] as String? ?? 'Bearer',
+      expiresIn: (json['expiresIn'] as num?)?.toInt() ?? 3600,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'accessToken': accessToken,
