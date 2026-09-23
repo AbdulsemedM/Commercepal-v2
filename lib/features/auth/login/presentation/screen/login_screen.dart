@@ -61,7 +61,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _prefillFromRememberMe() async {
     final String? email = await _storage.getRememberedEmail();
     final String? savedCipher = await _storage.getRememberedPasswordCipher();
-    final String? bound = await _storage.getRememberMeBoundDeviceId();
     final bool biometricOn = await _storage.getBiometricEnabled();
     final bool enrolled = await _biometricService.hasEnrolledBiometrics;
     final bool gateSavedLoginWithBio = savedCipher != null &&
@@ -87,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
       password = await RememberMeCrypto.tryDecryptPassword(
         _storage,
         savedCipher,
-        bound,
       );
     }
     if (!mounted) return;
@@ -128,12 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _applyDecryptedSavedCredentials() async {
     final String? email = await _storage.getRememberedEmail();
     final String? cipher = await _storage.getRememberedPasswordCipher();
-    final String? bound = await _storage.getRememberMeBoundDeviceId();
     if (cipher == null || cipher.isEmpty) return;
     final String? password = await RememberMeCrypto.tryDecryptPassword(
       _storage,
       cipher,
-      bound,
     );
     if (!mounted) return;
     if (password == null || password.isEmpty) {

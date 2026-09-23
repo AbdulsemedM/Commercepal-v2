@@ -7,6 +7,7 @@ import '../theme/colors.dart';
 import '../widgets/app_dialog.dart';
 import 'app_update_check_result.dart';
 import 'app_update_constants.dart';
+import 'remote_config_value_validators.dart';
 
 /// Shows the app update modal (optional or mandatory) and opens the store when Update is tapped.
 class AppUpdateModal {
@@ -78,12 +79,17 @@ class AppUpdateModal {
   }
 
   static Future<void> _openStore(String storeUrl) async {
-    final String url = storeUrl.trim().isEmpty ? _fallbackStoreUrl() : storeUrl;
+    final bool android = Platform.isAndroid;
+    String url = storeUrl.trim().isEmpty ? _fallbackStoreUrl() : storeUrl.trim();
+    if (!RemoteConfigValueValidators.isAllowedStoreUrl(url, android: android)) {
+      url = _fallbackStoreUrl();
+    }
     try {
-      if (Platform.isAndroid) {
+      if (android) {
         // Prefer market: intent so the Play Store app opens directly
         final marketUri = Uri.parse(AppUpdateConstants.storeIntentAndroid);
-        final launched = await _launchWithMode(marketUri, LaunchMode.externalApplication);
+        final launched =
+            await _launchWithMode(marketUri, LaunchMode.externalApplication);
         if (launched) return;
       }
       final uri = Uri.parse(url);

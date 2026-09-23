@@ -1,5 +1,2 @@
-import 'package:uuid/uuid.dart';
-
-Future<String> getDeviceId() async {
-  return const Uuid().v4();
-}
+/// Web has no stable platform device identifier.
+Future<String?> tryGetPlatformDeviceId() async => null;

@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:convert';
 
+import 'package:commercepal/core/utils/device_id_utils_io.dart'
+    if (dart.library.html) 'package:commercepal/core/utils/device_id_utils_web.dart'
+    as platform_device_id;
+import 'package:commercepal/core/utils/install_device_id.dart';
 import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 
 class Storage {
@@ -9,15 +16,24 @@ class Storage {
   static final Storage _instance = Storage._internal();
   factory Storage() => _instance;
 
+  /// Android encryption for auth tokens and other sensitive values.
+  ///
+  /// Uses flutter_secure_storage v10+ custom ciphers (AES-GCM + RSA-OAEP
+  /// Keystore wrap). Values are encrypted before being written to disk.
+  ///
+  /// Intentionally does **not** set `encryptedSharedPreferences: true`: that
+  /// Jetpack Security path is deprecated in the package (removed in v11) and
+  /// superseded by these ciphers. Legacy EncryptedSharedPreferences data is
+  /// migrated on first access via [migrateOnAlgorithmChange].
+  static const AndroidOptions androidSecureOptions = AndroidOptions(
+    migrateOnAlgorithmChange: true,
+    storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+    keyCipherAlgorithm:
+        KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+  );
+
   static const _storage = FlutterSecureStorage(
-    // v10+ defaults: AES-GCM storage + RSA-OAEP key wrap (no AES/CBC in APK).
-    // migrateOnAlgorithmChange migrates tokens from older EncryptedSharedPreferences.
-    aOptions: AndroidOptions(
-      migrateOnAlgorithmChange: true,
-      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
-      keyCipherAlgorithm:
-          KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
-    ),
+    aOptions: androidSecureOptions,
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
@@ -49,6 +65,7 @@ class Storage {
   static const String _keyDashboardCoachmarksDone = 'dashboard_coachmarks_v1_done';
   static const String _keyRememberedPasswordCipher = 'remembered_password_cipher';
   static const String _keyRememberMeDeviceId = 'remember_me_device_id';
+  static const String _keyRememberMeSecret = 'remember_me_secret';
   static const String _keyJustLoggedOut = 'just_logged_out';
   static const String _keyProfileCache = 'profile_cache_v1';
   static const String _keyShorebirdRolloutGroup = 'shorebird_rollout_group';
@@ -147,21 +164,53 @@ class Storage {
     await _storage.delete(key: key);
   }
 
-  // Device ID management
+  /// Install-scoped soft identifier for guest session, FCM, and API metadata.
+  ///
+  /// Prefer an already-persisted value, then a platform-supported ID
+  /// (ANDROID_ID / IDFV), else a UUID v4 generated **once** and stored.
+  ///
+  /// This is **not** hardware attestation or an authentication control. It
+  /// resets when app data is cleared or the app is reinstalled. Server-side
+  /// device binding (when required) should be managed by the backend after
+  /// authentication.
   Future<String> getOrCreateDeviceId() async {
-    String? deviceId = await _storage.read(key: _keyDeviceId);
-    
-    if (deviceId == null || deviceId.isEmpty) {
-      // Generate a new device ID
-      deviceId = _uuid.v4();
-      await _storage.write(key: _keyDeviceId, value: deviceId);
+    final String? persisted = await _storage.read(key: _keyDeviceId);
+    if (persisted != null && persisted.trim().isNotEmpty) {
+      return persisted.trim();
     }
-    
+
+    final String? platformId =
+        await platform_device_id.tryGetPlatformDeviceId();
+    final String deviceId = resolveInstallDeviceId(
+      persisted: null,
+      platformId: platformId,
+      fallbackUuid: _uuid.v4(),
+    );
+    await _storage.write(key: _keyDeviceId, value: deviceId);
     return deviceId;
   }
 
   Future<String?> getDeviceId() async {
     return await _storage.read(key: _keyDeviceId);
+  }
+
+  /// Random 32-byte key material for remember-me AES-GCM (base64).
+  ///
+  /// Separate from [getOrCreateDeviceId] so a client device ID is not used
+  /// as a cryptographic security control (CWE-330 / device-identity bypass).
+  Future<Uint8List> getOrCreateRememberMeKey() async {
+    final String? existing = await _storage.read(key: _keyRememberMeSecret);
+    if (existing != null && existing.isNotEmpty) {
+      return Uint8List.fromList(base64Decode(existing));
+    }
+    final Random random = Random.secure();
+    final Uint8List bytes =
+        Uint8List.fromList(List<int>.generate(32, (_) => random.nextInt(256)));
+    await _storage.write(
+      key: _keyRememberMeSecret,
+      value: base64Encode(bytes),
+    );
+    return bytes;
   }
 
   /// Stable 1–100 cohort used for Shorebird percentage-based patch rollouts.
@@ -326,29 +375,27 @@ class Storage {
     await _storage.delete(key: _keyRememberedEmail);
   }
 
-  /// Encrypted password blob (AES-GCM concatenation, base64). Bound device id stored separately.
+  /// Encrypted password blob (AES-GCM concatenation, base64).
+  ///
+  /// Key material lives in [_keyRememberMeSecret] (Keychain/Keystore-scoped),
+  /// not a client device UUID.
   Future<void> saveRememberedPasswordCipher({
     required String cipherBase64,
-    required String boundDeviceId,
   }) async {
-    await Future.wait([
-      _storage.write(key: _keyRememberedPasswordCipher, value: cipherBase64),
-      _storage.write(key: _keyRememberMeDeviceId, value: boundDeviceId),
-    ]);
+    await _storage.write(key: _keyRememberedPasswordCipher, value: cipherBase64);
+    // Drop legacy device-id binding from older installs.
+    await _storage.delete(key: _keyRememberMeDeviceId);
   }
 
   Future<String?> getRememberedPasswordCipher() async {
     return await _storage.read(key: _keyRememberedPasswordCipher);
   }
 
-  Future<String?> getRememberMeBoundDeviceId() async {
-    return await _storage.read(key: _keyRememberMeDeviceId);
-  }
-
   Future<void> clearRememberMeCredentials() async {
     await Future.wait([
       _storage.delete(key: _keyRememberedPasswordCipher),
       _storage.delete(key: _keyRememberMeDeviceId),
+      _storage.delete(key: _keyRememberMeSecret),
     ]);
   }
 

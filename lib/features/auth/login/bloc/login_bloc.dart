@@ -57,11 +57,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           event.password,
         );
         if (cipher != null) {
-          final String deviceId = await _storage.getOrCreateDeviceId();
-          await _storage.saveRememberedPasswordCipher(
-            cipherBase64: cipher,
-            boundDeviceId: deviceId,
-          );
+          await _storage.saveRememberedPasswordCipher(cipherBase64: cipher);
         }
       } else {
         await _storage.clearRememberedEmail();

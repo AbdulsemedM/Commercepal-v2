@@ -4,6 +4,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 import '../logging/app_logger.dart';
 import 'app_update_constants.dart';
+import 'remote_config_value_validators.dart';
 
 /// Keys for Firebase Remote Config parameters.
 abstract final class RemoteConfigKeys {
@@ -98,22 +99,49 @@ class AppUpdateRemoteConfig {
   }
 
   /// Latest required version for the current platform (Android or iOS).
+  /// Returns empty string if the remote value is not a valid app version.
   static String get latestAppVersionForCurrentPlatform {
-    if (Platform.isAndroid) {
-      return instance.getString(RemoteConfigKeys.latestAppVersionAndroid);
+    final raw = Platform.isAndroid
+        ? instance.getString(RemoteConfigKeys.latestAppVersionAndroid)
+        : instance.getString(RemoteConfigKeys.latestAppVersionIos);
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return '';
+    if (!RemoteConfigValueValidators.isValidAppVersion(trimmed)) {
+      AppLogger.w(
+        'Remote Config: invalid latest app version; treating as empty',
+      );
+      return '';
     }
-    return instance.getString(RemoteConfigKeys.latestAppVersionIos);
+    return trimmed;
   }
 
-  static String get storeUrlAndroid =>
-      instance.getString(RemoteConfigKeys.storeUrlAndroid).trim().isNotEmpty
-          ? instance.getString(RemoteConfigKeys.storeUrlAndroid)
-          : AppUpdateConstants.storeUrlAndroid;
+  static String get storeUrlAndroid {
+    final raw = instance.getString(RemoteConfigKeys.storeUrlAndroid).trim();
+    if (raw.isNotEmpty &&
+        RemoteConfigValueValidators.isAllowedStoreUrl(raw, android: true)) {
+      return raw;
+    }
+    if (raw.isNotEmpty) {
+      AppLogger.w(
+        'Remote Config: invalid store_url_android; using hardcoded fallback',
+      );
+    }
+    return AppUpdateConstants.storeUrlAndroid;
+  }
 
-  static String get storeUrlIos =>
-      instance.getString(RemoteConfigKeys.storeUrlIos).trim().isNotEmpty
-          ? instance.getString(RemoteConfigKeys.storeUrlIos)
-          : AppUpdateConstants.storeUrlIos;
+  static String get storeUrlIos {
+    final raw = instance.getString(RemoteConfigKeys.storeUrlIos).trim();
+    if (raw.isNotEmpty &&
+        RemoteConfigValueValidators.isAllowedStoreUrl(raw, android: false)) {
+      return raw;
+    }
+    if (raw.isNotEmpty) {
+      AppLogger.w(
+        'Remote Config: invalid store_url_ios; using hardcoded fallback',
+      );
+    }
+    return AppUpdateConstants.storeUrlIos;
+  }
 
   /// Store URL for the current platform.
   static String get storeUrlForCurrentPlatform {
@@ -123,15 +151,30 @@ class AppUpdateRemoteConfig {
 
   /// Remote-configurable home promo line (may be empty).
   static String get homePromoBanner =>
-      instance.getString(RemoteConfigKeys.homePromoBanner).trim();
+      RemoteConfigValueValidators.sanitizeDisplayMessage(
+        instance.getString(RemoteConfigKeys.homePromoBanner),
+      );
 
   /// Optional global notice (may be empty).
   static String get maintenanceMessage =>
-      instance.getString(RemoteConfigKeys.maintenanceMessage).trim();
+      RemoteConfigValueValidators.sanitizeDisplayMessage(
+        instance.getString(RemoteConfigKeys.maintenanceMessage),
+      );
 
   /// Hard minimum store version. Empty means no floor is enforced.
-  static String get minimumSupportedVersion =>
-      instance.getString(RemoteConfigKeys.minimumSupportedVersion).trim();
+  /// Invalid remote values are treated as empty (floor disabled).
+  static String get minimumSupportedVersion {
+    final trimmed =
+        instance.getString(RemoteConfigKeys.minimumSupportedVersion).trim();
+    if (trimmed.isEmpty) return '';
+    if (!RemoteConfigValueValidators.isValidAppVersion(trimmed)) {
+      AppLogger.w(
+        'Remote Config: invalid minimum_supported_version; ignoring floor',
+      );
+      return '';
+    }
+    return trimmed;
+  }
 
   /// When true, Shorebird patch checks/downloads are skipped.
   static bool get killSwitchPatchDisabled {

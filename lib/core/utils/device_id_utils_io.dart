@@ -1,20 +1,33 @@
 import 'dart:io' show Platform;
 
+import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:uuid/uuid.dart';
 
-Future<String> getDeviceId() async {
+/// Platform-supported device identifier, or null when unavailable.
+///
+/// - Android: [Settings.Secure.ANDROID_ID] via the `android_id` package
+/// - iOS: `identifierForVendor`
+///
+/// Does **not** generate a UUID fallback; callers persist a UUID once if null.
+Future<String?> tryGetPlatformDeviceId() async {
   try {
-    final deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      return androidInfo.id;
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      return iosInfo.identifierForVendor ?? const Uuid().v4();
+      final String? androidId = await const AndroidId().getId();
+      if (androidId != null && androidId.isNotEmpty) {
+        return androidId;
+      }
+      return null;
+    }
+    if (Platform.isIOS) {
+      final iosInfo = await DeviceInfoPlugin().iosInfo;
+      final String? idfv = iosInfo.identifierForVendor;
+      if (idfv != null && idfv.isNotEmpty) {
+        return idfv;
+      }
+      return null;
     }
   } catch (_) {
-    // Fallback on any error
+    // Plugin missing or platform error — treat as unavailable.
   }
-  return const Uuid().v4();
+  return null;
 }

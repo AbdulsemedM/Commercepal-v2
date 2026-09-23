@@ -5,18 +5,22 @@ import 'package:cryptography/cryptography.dart';
 
 import 'package:commercepal/core/storage/storage.dart';
 
-/// Device-bound AES-GCM for remember-me password storage.
+/// AES-GCM for remember-me password storage.
+///
+/// Key material is a random secret in flutter_secure_storage (Keychain /
+/// Keystore), not a client-generated device UUID. Device IDs must not be used
+/// as a cryptographic security control (CWE-330).
 ///
 /// Token/session data uses flutter_secure_storage v10+ (AES-GCM, not CBC).
 /// Residual MobSF CBC hits may still appear from other Google SDK bytecode.
 class RememberMeCrypto {
   RememberMeCrypto._();
 
-  static final List<int> _pepper = utf8.encode('commercepal-rm-v1-pepper');
+  static final List<int> _pepper = utf8.encode('commercepal-rm-v2-pepper');
 
   static Future<SecretKey> _secretKey(Storage storage) async {
-    final String deviceId = await storage.getOrCreateDeviceId();
-    final List<int> input = utf8.encode(deviceId) + _pepper;
+    final List<int> keyBytes = await storage.getOrCreateRememberMeKey();
+    final List<int> input = keyBytes + _pepper;
     final Digest digest = sha256.convert(input);
     return SecretKey(digest.bytes);
   }
@@ -31,19 +35,12 @@ class RememberMeCrypto {
     return base64Encode(box.concatenation());
   }
 
-  /// Returns null if device binding fails or decryption fails.
+  /// Returns null if decryption fails (including legacy deviceId-derived
+  /// ciphertext from older app versions).
   static Future<String?> tryDecryptPassword(
     Storage storage,
     String cipherBase64,
-    String? boundDeviceId,
   ) async {
-    if (boundDeviceId == null || boundDeviceId.isEmpty) {
-      return null;
-    }
-    final String current = await storage.getOrCreateDeviceId();
-    if (boundDeviceId != current) {
-      return null;
-    }
     try {
       final AesGcm algorithm = AesGcm.with256bits();
       final SecretKey secretKey = await _secretKey(storage);
