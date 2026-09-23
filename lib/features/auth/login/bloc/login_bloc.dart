@@ -42,7 +42,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final request = LoginRequest(
         loginIdentifier: event.loginIdentifier,
         password: event.password,
-        channel: event.channel ?? PlatformUtils.getChannel(),
+        channel: event.channel ?? PlatformUtils.getAuthChannel(),
       );
 
       final response = await _repository.login(request);

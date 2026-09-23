@@ -16,7 +16,7 @@ class RefreshTokenRepository {
 
   Future<RefreshTokenResponse> refreshToken(String refreshToken) async {
     final String channel =
-        await _storage.getAuthChannel() ?? PlatformUtils.getChannel();
+        await _storage.getAuthChannel() ?? PlatformUtils.getAuthChannel();
     final request = RefreshTokenRequest(
       refreshToken: refreshToken,
       channel: channel,

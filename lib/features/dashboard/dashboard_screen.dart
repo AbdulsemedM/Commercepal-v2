@@ -23,20 +23,15 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class DashboardScreenState extends State<DashboardScreen> {
-  late int _currentIndex;
+  static const int _tabCount = 4;
 
-  final List<Widget> _pages = <Widget>[
-    const HomePage(),
-    const CategoriesPage(),
-    const CartPage(),
-    const ProfilePage(),
-  ];
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTab ?? 0;
-    if (_currentIndex < 0 || _currentIndex >= _pages.length) {
+    if (_currentIndex < 0 || _currentIndex >= _tabCount) {
       _currentIndex = 0;
     }
     AuthService().addListener(_onAuthServiceChanged);
@@ -107,7 +102,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   void changeTab(int index) {
-    if (index >= 0 && index < _pages.length) {
+    if (index >= 0 && index < _tabCount) {
       setState(() {
         _currentIndex = index;
       });
@@ -142,7 +137,15 @@ class DashboardScreenState extends State<DashboardScreen> {
             backgroundColor: scheme.surface,
             body: Stack(
               children: <Widget>[
-                IndexedStack(index: _currentIndex, children: _pages),
+                IndexedStack(
+                  index: _currentIndex,
+                  children: <Widget>[
+                    const HomePage(),
+                    const CategoriesPage(),
+                    const CartPage(),
+                    ProfilePage(isActive: _currentIndex == 3),
+                  ],
+                ),
                 const DraggableSupportChatFab(),
               ],
             ),

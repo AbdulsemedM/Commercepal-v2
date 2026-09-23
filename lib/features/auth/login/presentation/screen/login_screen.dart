@@ -284,7 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
       LoginSubmitted(
         loginIdentifier: loginIdentifier,
         password: _passwordController.text,
-        channel: PlatformUtils.getChannel(),
+        channel: PlatformUtils.getAuthChannel(),
         rememberMe: _rememberMe,
         usedPhoneLogin: _loginMethod == LoginMethod.phone,
       ),
@@ -381,6 +381,9 @@ class _LoginScreenState extends State<LoginScreen> {
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
+          // Embedded in the dashboard profile tab — do not rewrite the route
+          // (that would look like a forced redirect away from Cart/Home).
+          if (widget.hideBackButton) return;
           _goToDashboardProfileTab();
         },
         child: Scaffold(

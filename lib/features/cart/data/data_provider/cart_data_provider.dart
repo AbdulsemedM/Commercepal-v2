@@ -5,7 +5,6 @@ import 'package:commercepal/core/network/auth_request_options.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
 import 'package:commercepal/services/api_service.dart';
-import 'package:commercepal/services/auth_service.dart';
 import '../models/add_to_cart_request.dart';
 import '../models/cart.dart';
 import '../models/clear_cart_response.dart';
@@ -21,17 +20,14 @@ class CartDataProvider {
     ApiService? apiService,
     Storage? storage,
     RefreshTokenRepository? refreshTokenRepository,
-    AuthService? authService,
   })  : _apiService = apiService ?? ApiService(),
         _storage = storage ?? Storage(),
         _refreshTokenRepository =
-            refreshTokenRepository ?? RefreshTokenRepository(),
-        _authService = authService ?? AuthService();
+            refreshTokenRepository ?? RefreshTokenRepository();
 
   final ApiService _apiService;
   final Storage _storage;
   final RefreshTokenRepository _refreshTokenRepository;
-  final AuthService _authService;
   static const String _cartEndpoint = '/api/cart';
   static const String _cartItemsEndpoint = '/api/cart/items';
   static const String _cartMergeEndpoint = '/api/cart/merge';
@@ -69,8 +65,7 @@ class CartDataProvider {
     }
   }
 
-  /// Website cart 401 path: refresh once, retry auth, then drop tokens and
-  /// finish as guest (`forceGuestSession`).
+  /// Refresh once, retry auth, then finish as guest without signing the user out.
   Future<T> _runWithWebCartAuthFallback<T>(
     Future<T> Function() authenticated,
     Future<T> Function() asGuest,
@@ -96,11 +91,14 @@ class CartDataProvider {
     }
 
     AppLogger.w(
-      'Cart rejected auth after refresh; dropping tokens and using guest session',
+      'Cart rejected auth after refresh; using guest session without logout',
     );
-    await _storage.clearAuthSession();
-    _authService.invalidateSession();
     return asGuest();
+  }
+
+  /// Account cart only — no guest fallback. Used before checkout.
+  Future<Cart> getAuthenticatedCart() async {
+    return _fetchCart();
   }
 
   Future<Cart> _postAddToCart(

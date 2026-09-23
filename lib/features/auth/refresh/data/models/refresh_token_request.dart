@@ -7,7 +7,7 @@ class RefreshTokenRequest {
   RefreshTokenRequest({
     required this.refreshToken,
     String? channel,
-  }) : channel = channel ?? PlatformUtils.getChannel();
+  }) : channel = channel ?? PlatformUtils.getAuthChannel();
 
   Map<String, dynamic> toJson() => {
     'refreshToken': refreshToken,

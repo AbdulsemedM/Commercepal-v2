@@ -18,6 +18,12 @@ class PlatformUtils {
     }
   }
 
+  /// Channel used for email/password login and token refresh.
+  ///
+  /// Fresh MOBILE_APP_* tokens are accepted by `/api/cart`. This stays on the
+  /// device channel so refresh matches the token that was issued at login.
+  static String getAuthChannel() => getChannel();
+
   /// Channel for Google OAuth2 login POST.
   ///
   /// The backend currently returns 500 for [MOBILE_APP_ANDROID] on
@@ -27,7 +33,7 @@ class PlatformUtils {
     if (kIsWeb || Platform.isAndroid) {
       return 'WEB';
     }
-    return getChannel();
+    return getAuthChannel();
   }
 
   /// Check if running on Android

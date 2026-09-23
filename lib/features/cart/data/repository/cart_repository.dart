@@ -231,4 +231,16 @@ class CartRepository {
     await _reconcileAndMirror(mergedCart);
     AppLogger.i('Saved merged cart locally');
   }
+
+  /// Merge the guest session into the account cart, then return the Bearer cart.
+  /// Throws [DioException] 401 when the session cannot load an account cart.
+  Future<Cart> prepareCartForCheckout() async {
+    final String guestCartId = await _storage.getOrCreateDeviceId();
+    try {
+      await _dataProvider.mergeGuestCart(guestCartId);
+    } catch (e) {
+      AppLogger.w('Checkout cart merge failed', data: e);
+    }
+    return _dataProvider.getAuthenticatedCart();
+  }
 }

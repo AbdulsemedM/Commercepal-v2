@@ -9,6 +9,7 @@ import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
 import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
+import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../app/router/app_router.dart';
@@ -495,19 +496,48 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         }
       }
 
-      final Cart refreshedCart = await CartRepository().getCart();
+      final Cart refreshedCart;
+      try {
+        refreshedCart = await CartRepository().prepareCartForCheckout();
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 401 || isUnauthorizedError(e)) {
+          if (mounted) {
+            setState(() => _isPlacingOrder = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  LocalizationService.t(context, 'checkout.sessionExpired'),
+                ),
+                backgroundColor: AppColors.warning,
+              ),
+            );
+            context.push(AppRoutes.login);
+          }
+          return;
+        }
+        rethrow;
+      }
 
       if (refreshedCart.items.isEmpty) {
         if (mounted) {
           setState(() => _isPlacingOrder = false);
+          final bool needsLogin = !AuthService().isLoggedIn;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                LocalizationService.t(context, 'checkout.invalidOrderData'),
+                LocalizationService.t(
+                  context,
+                  needsLogin
+                      ? 'checkout.sessionExpired'
+                      : 'checkout.invalidOrderData',
+                ),
               ),
               backgroundColor: AppColors.warning,
             ),
           );
+          if (needsLogin) {
+            context.push(AppRoutes.login);
+          }
         }
         return;
       }

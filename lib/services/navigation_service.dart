@@ -23,7 +23,11 @@ class NavigationService {
     }
   }
 
-  /// Returns true when [error] is an auth rejection and the user was redirected.
+  /// Returns true when [error] is an auth rejection.
+  ///
+  /// Does not redirect to login — session expiry is surfaced via the Dashboard
+  /// snackbar ([AuthService.sessionExpired]) so the user can continue browsing
+  /// and tap Login when ready.
   bool handleSessionExpired(dynamic error) {
     if (!isUnauthorizedError(error)) {
       return false;
@@ -33,7 +37,6 @@ class NavigationService {
       return false;
     }
 
-    redirectToLogin();
     return true;
   }
 
