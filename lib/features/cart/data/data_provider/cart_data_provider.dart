@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/core/network/auth_request_options.dart';
 import 'package:commercepal/core/storage/storage.dart';
+import 'package:commercepal/features/auth/refresh/data/repository/refresh_token_repository.dart';
 import 'package:commercepal/services/api_service.dart';
+import 'package:commercepal/services/auth_service.dart';
 import '../models/add_to_cart_request.dart';
 import '../models/cart.dart';
 import '../models/clear_cart_response.dart';
@@ -15,12 +17,21 @@ import '../models/update_cart_item_request.dart';
 /// (both set by [AuthInterceptor]). Add-to-cart also sends `X-Country` and
 /// `X-Currency` per the docs contract.
 class CartDataProvider {
-  CartDataProvider({ApiService? apiService, Storage? storage})
-      : _apiService = apiService ?? ApiService(),
-        _storage = storage ?? Storage();
+  CartDataProvider({
+    ApiService? apiService,
+    Storage? storage,
+    RefreshTokenRepository? refreshTokenRepository,
+    AuthService? authService,
+  })  : _apiService = apiService ?? ApiService(),
+        _storage = storage ?? Storage(),
+        _refreshTokenRepository =
+            refreshTokenRepository ?? RefreshTokenRepository(),
+        _authService = authService ?? AuthService();
 
   final ApiService _apiService;
   final Storage _storage;
+  final RefreshTokenRepository _refreshTokenRepository;
+  final AuthService _authService;
   static const String _cartEndpoint = '/api/cart';
   static const String _cartItemsEndpoint = '/api/cart/items';
   static const String _cartMergeEndpoint = '/api/cart/merge';
@@ -36,26 +47,17 @@ class CartDataProvider {
 
   Future<Cart> addToCart(AddToCartRequest request) async {
     try {
-      return await _postAddToCart(request);
+      return await _runWithWebCartAuthFallback(
+        () => _postAddToCart(request),
+        () => _postAddToCart(
+          request,
+          extra: <String, dynamic>{
+            kForceGuestSessionExtra: true,
+            kIncludeGuestSessionExtra: true,
+          },
+        ),
+      );
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        AppLogger.w(
-          'Add-to-cart rejected auth token; retrying with guest session',
-        );
-        try {
-          return await _postAddToCart(
-            request,
-            extra: <String, dynamic>{kForceGuestSessionExtra: true},
-          );
-        } on DioException catch (guestError) {
-          AppLogger.e(
-            'Guest add-to-cart fallback failed',
-            error: guestError,
-            stack: guestError.stackTrace,
-          );
-          rethrow;
-        }
-      }
       if (e.response?.statusCode == 500) {
         return _reconcileCartAfterAddFailure(e);
       }
@@ -65,6 +67,40 @@ class CartDataProvider {
       AppLogger.e('Unexpected error during add to cart', error: e, stack: stack);
       rethrow;
     }
+  }
+
+  /// Website cart 401 path: refresh once, retry auth, then drop tokens and
+  /// finish as guest (`forceGuestSession`).
+  Future<T> _runWithWebCartAuthFallback<T>(
+    Future<T> Function() authenticated,
+    Future<T> Function() asGuest,
+  ) async {
+    try {
+      return await authenticated();
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 401) rethrow;
+    }
+
+    final String? refreshToken = await _storage.getRefreshToken();
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      try {
+        await _refreshTokenRepository.refreshToken(refreshToken);
+        return await authenticated();
+      } on DioException catch (e) {
+        if (e.response?.statusCode != 401) {
+          AppLogger.w('Cart token refresh failed; continuing as guest', data: e);
+        }
+      } catch (e) {
+        AppLogger.w('Cart token refresh failed; continuing as guest', data: e);
+      }
+    }
+
+    AppLogger.w(
+      'Cart rejected auth after refresh; dropping tokens and using guest session',
+    );
+    await _storage.clearAuthSession();
+    _authService.invalidateSession();
+    return asGuest();
   }
 
   Future<Cart> _postAddToCart(
@@ -137,32 +173,10 @@ class CartDataProvider {
 
   Future<Cart> getCart() async {
     try {
-      final response =
-          await _apiService.get<Map<String, dynamic>>(_cartEndpoint);
-
-      if (response.data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response from server',
-        );
-      }
-
-      final Map<String, dynamic> responseData = response.data!;
-      final Map<String, dynamic>? data =
-          responseData['data'] as Map<String, dynamic>?;
-
-      if (data == null) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          error: 'Invalid response structure: missing data field',
-        );
-      }
-
-      return Cart.fromJson(data);
+      return await _runWithWebCartAuthFallback(
+        () => _fetchCart(),
+        () => _fetchCart(forceGuest: true),
+      );
     } on DioException catch (e) {
       AppLogger.e('Get cart failed', error: e, stack: e.stackTrace);
       rethrow;
@@ -170,6 +184,42 @@ class CartDataProvider {
       AppLogger.e('Unexpected error during get cart', error: e, stack: stack);
       rethrow;
     }
+  }
+
+  Future<Cart> _fetchCart({bool forceGuest = false}) async {
+    final response = await _apiService.get<Map<String, dynamic>>(
+      _cartEndpoint,
+      extra: forceGuest
+          ? <String, dynamic>{
+              kForceGuestSessionExtra: true,
+              kIncludeGuestSessionExtra: true,
+            }
+          : null,
+    );
+
+    if (response.data == null) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: 'Invalid response from server',
+      );
+    }
+
+    final Map<String, dynamic> responseData = response.data!;
+    final Map<String, dynamic>? data =
+        responseData['data'] as Map<String, dynamic>?;
+
+    if (data == null) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: 'Invalid response structure: missing data field',
+      );
+    }
+
+    return Cart.fromJson(data);
   }
 
   Future<Cart> updateCartItem(int itemId, UpdateCartItemRequest request) async {

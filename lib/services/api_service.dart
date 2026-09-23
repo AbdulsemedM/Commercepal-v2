@@ -12,11 +12,10 @@ class ApiService {
     String path, {
     Map<String, dynamic>? query,
     Map<String, String>? headers,
+    Map<String, dynamic>? extra,
   }) async {
     try {
-      final options = headers != null && headers.isNotEmpty
-          ? Options(headers: headers)
-          : null;
+      final Options? options = _buildOptions(headers: headers, extra: extra);
       return await _dio.get<T>(
         path,
         queryParameters: query,

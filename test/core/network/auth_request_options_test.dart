@@ -44,4 +44,20 @@ void main() {
       );
     });
   });
+
+  group('isCartGuestFallbackRoute', () {
+    test('includes cart read and item mutations', () {
+      expect(isCartGuestFallbackRoute('/api/cart'), isTrue);
+      expect(isCartGuestFallbackRoute('/api/cart/items'), isTrue);
+      expect(isCartGuestFallbackRoute('/api/cart/items/42'), isTrue);
+    });
+
+    test('excludes cart merge', () {
+      expect(isCartGuestFallbackRoute('/api/cart/merge'), isFalse);
+    });
+
+    test('excludes non-cart routes', () {
+      expect(isCartGuestFallbackRoute('/api/orders'), isFalse);
+    });
+  });
 }

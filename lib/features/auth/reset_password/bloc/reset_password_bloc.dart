@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/reset_password/data/models/reset_password_request.dart';
 import 'package:commercepal/features/auth/reset_password/data/repository/reset_password_repository.dart';
 
@@ -26,9 +27,11 @@ class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
 
     try {
       final request = ResetPasswordRequest(
-        emailOrPhone: event.emailOrPhone,
-        verificationCode: event.verificationCode,
+        target: event.emailOrPhone,
+        verificationToken: event.verificationCode,
         newPassword: event.newPassword,
+        confirmPassword: event.confirmPassword,
+        channel: PlatformUtils.getChannel(),
       );
 
       final response = await _repository.resetPassword(request);
@@ -69,6 +72,14 @@ class ResetPasswordBloc extends Bloc<ResetPasswordEvent, ResetPasswordState> {
     if (data is Map) {
       final message = data['message'];
       if (message is String && message.isNotEmpty) return message;
+      final errors = data['errors'];
+      if (errors is Map && errors.isNotEmpty) {
+        final first = errors.values.first;
+        if (first is String && first.isNotEmpty) return first;
+        if (first is List && first.isNotEmpty && first.first is String) {
+          return first.first as String;
+        }
+      }
     }
     return null;
   }

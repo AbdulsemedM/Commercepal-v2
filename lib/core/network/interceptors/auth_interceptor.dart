@@ -150,6 +150,12 @@ class AuthInterceptor extends Interceptor {
       return super.onError(err, handler);
     }
 
+    // Cart matches the website fetch client: refresh + guest fallback live
+    // in CartDataProvider so this interceptor must not consume the 401.
+    if (isCartGuestFallbackRoute(requestOptions.path)) {
+      return super.onError(err, handler);
+    }
+
     if (_dio == null) {
       return super.onError(err, handler);
     }

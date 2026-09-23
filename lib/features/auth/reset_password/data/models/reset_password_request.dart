@@ -1,17 +1,26 @@
+import 'package:commercepal/core/utils/platform_utils.dart';
+
+/// Body for POST /api/credentials/password/reset (matches API validation).
 class ResetPasswordRequest {
-  final String emailOrPhone;
-  final String verificationCode;
+  final String target;
+  final String verificationToken;
   final String newPassword;
+  final String confirmPassword;
+  final String channel;
 
   ResetPasswordRequest({
-    required this.emailOrPhone,
-    required this.verificationCode,
+    required this.target,
+    required this.verificationToken,
     required this.newPassword,
-  });
+    required this.confirmPassword,
+    String? channel,
+  }) : channel = channel ?? PlatformUtils.getChannel();
 
-  Map<String, dynamic> toJson() => {
-        'emailOrPhone': emailOrPhone,
-        'verificationCode': verificationCode,
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'target': target,
+        'verificationToken': verificationToken,
         'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+        'channel': channel,
       };
 }

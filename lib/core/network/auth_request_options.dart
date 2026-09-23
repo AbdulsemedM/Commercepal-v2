@@ -18,3 +18,11 @@ bool shouldAttachGuestSessionId({
   if (forceGuestSession) return true;
   return !hasAccessToken || includeGuestSession;
 }
+
+/// Cart routes that own 401 handling (refresh once, then guest fallback).
+/// Merge is excluded because it requires a valid Bearer token.
+bool isCartGuestFallbackRoute(String path) {
+  if (!path.contains('/api/cart')) return false;
+  if (path.contains('/api/cart/merge')) return false;
+  return true;
+}
