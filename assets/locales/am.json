@@ -365,7 +365,6 @@
   "checkout.paymentPendingSubtitle": "ትዕዛዝዎ ቀርቧል፣ ግን ክፍያ አልተጠናቀቀም። ከትዕዛዝ ታሪክ በማንኛውም ጊዜ መክፈል ይችላሉ።",
   "checkout.paymentPendingBannerTitle": "ክፍያ አልተጠናቀቀም",
   "checkout.paymentPendingBannerBody": "ከትዕዛዝ ታሪክ በትዕዛዝ ቁጥርዎ ክፍያውን እንደገና መሞከር ወይም ማጠናቀቅ ይችላሉ።",
-
   "checkout.paymentStatusPollingTitle": "የክፍያ ማረጋገጫ በመጠበቅ ላይ",
   "checkout.paymentStatusPollingBody": "የክፍያ ሁኔታ በመፈተሽ ላይ…",
   "checkout.paymentStatusSuccessTitle": "ክፍያ ተረጋግጧል",
@@ -553,7 +552,6 @@
   "supportChat.quickAction.trackOrder": "ትዕዛዜን ክተል",
   "supportChat.quickAction.shareProduct": "የምርት አገናኝ አጋራ",
   "supportChat.quickAction.talkToAgent": "ከወኪል ጋር ተነጋገር",
-
   "visualSearch.title": "የምስል ፍለጋ",
   "visualSearch.takePhoto": "ፎቶ አንሳ",
   "visualSearch.fromGallery": "ከጋለሪ",
@@ -566,7 +564,6 @@
   "visualSearch.errorNetwork": "መገናኘት አልተቻለም። እንደገና ይሞክሩ።",
   "visualSearch.errorGeneric": "የምስል ፍለጋ አልተሳካም። እንደገና ይሞክሩ።",
   "visualSearch.retry": "እንደገና ይሞክሩ",
-
   "priceAlert.set": "ዋጋ ከወረደ አሳውቀኝ",
   "priceAlert.active": "የዋጋ ማንቂያ ንቁ ነው",
   "priceAlert.loginRequired": "መግባት ያስፈልጋል",
@@ -577,5 +574,26 @@
   "priceAlert.saved": "የዋጋ ማንቂያ ተቀምጧል",
   "priceAlert.removed": "የዋጋ ማንቂያ ተወግዷል",
   "priceAlert.errorNetwork": "መገናኘት አልተቻለም።",
-  "priceAlert.errorGeneric": "የዋጋ ማንቂያ ማዘመን አልተሳካም።"
+  "priceAlert.errorGeneric": "የዋጋ ማንቂያ ማዘመን አልተሳካም።",
+  "common.retry": "እንደገና ሞክር",
+  "common.cancel": "ሰርዝ",
+  "common.close": "ዝጋ",
+  "common.done": "ተጠናቋል",
+  "common.save": "አስቀምጥ",
+  "common.continue": "ቀጥል",
+  "common.seeAll": "ሁሉንም ይመልከቱ",
+  "common.remove": "አስወግድ",
+  "common.increase": "ብዛት ጨምር",
+  "common.decrease": "ብዛት ቀንስ",
+  "common.somethingWentWrong": "የሆነ ችግር ተፈጥሯል",
+  "common.checkConnection": "ግንኙነትዎን ያረጋግጡ እና እንደገና ይሞክሩ።",
+  "price.was": "ቀድሞ",
+  "price.percentOff": "-{percent}%",
+  "rating.semantic": "ከ5 {rating} ደረጃ፣ {count} ግምገማዎች",
+  "appBar.visualSearch": "በፎቶ ይፈልጉ",
+  "visualSearch.subtitle": "ከፎቶ ወይም ከምርት ሊንክ ተመሳሳይ ምርቶችን ያግኙ።",
+  "visualSearch.searchLink": "ሊንክ ፈልግ",
+  "visualSearch.idleTitle": "በምስል ይፈልጉ",
+  "visualSearch.resultsTitle": "ተመሳሳይ ምርቶች",
+  "visualSearch.resultsCount": "{count} ተዛማጅ ተገኝተዋል"
 }

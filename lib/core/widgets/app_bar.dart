@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/theme/commerce_colors.dart';
+import 'package:commercepal/core/theme/tokens.dart';
+import 'package:commercepal/core/widgets/app_badge.dart';
 import 'package:commercepal/services/localization_service.dart';
 
+/// Search-first brand header: a full-bleed band with logo (or back button),
+/// search field with visual-search shortcut, optional actions and cart.
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   const AppBarWidget({
     super.key,
@@ -17,7 +23,11 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.showVisualSearch = true,
     this.onVisualSearchTap,
     this.additionalActions,
+    this.showBackButton,
   });
+
+  /// Height of the bar below the status bar.
+  static const double barHeight = 64;
 
   final int cartCount;
   final String? Function(String) onSearchSubmitted;
@@ -25,16 +35,20 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onCartTap;
   final String? searchPlaceholder;
   final VoidCallback? onSearchTap;
+
   /// Camera shortcut inside the search field (defaults to visual search route).
   final bool showVisualSearch;
   final VoidCallback? onVisualSearchTap;
+
   /// Shown after the search field and before the cart icon (e.g. overflow menu).
   final List<Widget>? additionalActions;
 
+  /// Shows a back arrow (calling [onLogoTap], or popping) instead of the
+  /// logo. Defaults to true when the current route can pop.
+  final bool? showBackButton;
+
   @override
-  Size get preferredSize {
-    return const Size.fromHeight(kToolbarHeight + 36);
-  }
+  Size get preferredSize => const Size.fromHeight(barHeight);
 
   void _openVisualSearch(BuildContext context) {
     if (onVisualSearchTap != null) {
@@ -46,208 +60,186 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final String placeholder =
-        searchPlaceholder ??
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors c = context.commerce;
+    final bool isDark = theme.brightness == Brightness.dark;
+    final String placeholder = searchPlaceholder ??
         LocalizationService.t(context, 'appBar.searchPlaceholder');
-    final Color barColor = isDark ? scheme.surface : AppColors.primary;
-    final Color searchFill = isDark ? scheme.surfaceContainerLow : Colors.white;
-    final Color searchSecondary = scheme.onSurfaceVariant;
-    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final bool canPop = ModalRoute.of(context)?.canPop ?? false;
+    final bool back = showBackButton ?? canPop;
 
-    return ColoredBox(
-      color: scaffoldBg,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-          child: Container(
-            decoration: BoxDecoration(
-              color: barColor,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
+    final Color searchFill =
+        isDark ? scheme.surfaceContainerHigh : Colors.white;
+    final Color searchIcon = scheme.onSurfaceVariant;
+
+    final Widget leading = back
+        ? IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: onLogoTap ?? () => Navigator.of(context).maybePop(),
+            icon: Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.arrow_forward_rounded
+                  : Icons.arrow_back_rounded,
+              color: c.onHeader,
+            ),
+          )
+        : Semantics(
+            button: onLogoTap != null,
+            label: 'CommercePal',
+            child: InkWell(
+              onTap: onLogoTap,
+              borderRadius: AppRadius.smAll,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppRadius.smAll,
                 ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.sm + 2,
-              vertical: Spacing.sm,
-            ),
-            child: Row(
-              children: <Widget>[
-                InkWell(
-                  onTap: onLogoTap,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.all(4),
+                child: ClipRRect(
+                  borderRadius: AppRadius.xsAll,
+                  child: Image.asset(
+                    'assets/images/app_icon.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.storefront_rounded,
+                      color: scheme.primary,
+                      size: 22,
                     ),
-                    alignment: Alignment.center,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/images/app_icon.png',
-                        width: 32,
-                        height: 32,
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return const Icon(
-                            Icons.bolt_rounded,
-                            color: AppColors.navy,
-                            size: 22,
-                          );
-                        },
+                  ),
+                ),
+              ),
+            ),
+          );
+
+    final Widget search = Semantics(
+      textField: onSearchTap == null,
+      button: onSearchTap != null,
+      label: placeholder,
+      child: Material(
+        color: searchFill,
+        borderRadius: AppRadius.mdAll,
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: 42,
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: InkWell(
+                  onTap: onSearchTap,
+                  child: Row(
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 12,
+                          end: 6,
+                        ),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: searchIcon,
+                          size: 22,
+                        ),
                       ),
-                    ),
+                      Expanded(
+                        child: onSearchTap != null
+                            ? Text(
+                                placeholder,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: searchIcon,
+                                ),
+                              )
+                            : TextField(
+                                textInputAction: TextInputAction.search,
+                                decoration: InputDecoration(
+                                  hintText: placeholder,
+                                  hintStyle: theme.textTheme.bodyMedium
+                                      ?.copyWith(color: searchIcon),
+                                  filled: false,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                                style: theme.textTheme.bodyMedium,
+                                onSubmitted: (String value) {
+                                  if (value.trim().isEmpty) return;
+                                  onSearchSubmitted(value.trim());
+                                },
+                              ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: Spacing.sm),
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: searchFill,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: InkWell(
-                            onTap: onSearchTap,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Row(
-                              children: <Widget>[
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 12,
-                                    right: 4,
-                                  ),
-                                  child: Icon(
-                                    Icons.search,
-                                    color: searchSecondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    enabled: onSearchTap == null,
-                                    decoration: InputDecoration(
-                                      hintText: placeholder,
-                                      hintStyle: TextStyle(
-                                        color: searchSecondary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: scheme.onSurface,
-                                    ),
-                                    onSubmitted: (String value) {
-                                      onSearchSubmitted(value);
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (showVisualSearch)
-                          IconButton(
-                            tooltip: 'Visual search',
-                            onPressed: () => _openVisualSearch(context),
-                            icon: Icon(
-                              Icons.camera_alt_outlined,
-                              color: searchSecondary,
-                              size: 20,
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 36,
-                              minHeight: 36,
-                            ),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                      ],
-                    ),
+              ),
+              if (showVisualSearch) ...<Widget>[
+                Container(width: 1, height: 22, color: scheme.outlineVariant),
+                IconButton(
+                  tooltip: LocalizationService.t(
+                    context,
+                    'appBar.visualSearch',
                   ),
-                ),
-                if (additionalActions != null &&
-                    additionalActions!.isNotEmpty) ...[
-                  const SizedBox(width: Spacing.xs),
-                  ...additionalActions!,
-                ],
-                const SizedBox(width: Spacing.sm),
-                InkWell(
-                  onTap: onCartTap,
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        Icon(
-                          Icons.shopping_cart_outlined,
-                          color: isDark ? scheme.onSurface : Colors.white,
-                          size: 24,
-                        ),
-                        if (cartCount > 0)
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 2,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 18,
-                                minHeight: 18,
-                              ),
-                              decoration: const BoxDecoration(
-                                color: AppColors.pink,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                cartCount > 99 ? '99+' : '$cartCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.2,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  onPressed: () => _openVisualSearch(context),
+                  icon: Icon(
+                    Icons.photo_camera_outlined,
+                    color: searchIcon,
+                    size: 21,
+                  ),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(44, 42),
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final Widget cart = IconButton(
+      tooltip: LocalizationService.t(context, 'nav.cart'),
+      onPressed: onCartTap,
+      icon: CountBadge(
+        count: cartCount,
+        child: Icon(
+          Icons.shopping_cart_outlined,
+          color: c.onHeader,
+          size: 26,
+        ),
+      ),
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Material(
+        color: c.header,
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: barHeight,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: Spacing.sm,
+                end: Spacing.xxs,
+              ),
+              child: Row(
+                children: <Widget>[
+                  leading,
+                  const SizedBox(width: Spacing.xs),
+                  Expanded(child: search),
+                  if (additionalActions != null &&
+                      additionalActions!.isNotEmpty)
+                    ...additionalActions!,
+                  cart,
+                ],
+              ),
             ),
           ),
         ),

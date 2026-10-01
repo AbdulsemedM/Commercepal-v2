@@ -1,58 +1,55 @@
 import 'package:flutter/material.dart';
 
 import 'colors.dart';
+import 'tokens.dart';
 
 /// Shared radii, shadows, and brand gradients for commerce surfaces.
+///
+/// Kept for existing call sites; new code should use [AppRadius],
+/// [AppShadows] and [CommerceColors] directly.
 class AppDecorations {
   AppDecorations._();
 
-  static const double radiusSm = 10;
-  static const double radiusMd = 16;
-  static const double radiusLg = 20;
+  static const double radiusSm = AppRadius.sm;
+  static const double radiusMd = AppRadius.md;
+  static const double radiusLg = AppRadius.lg;
   static const double categoryChipSize = 56;
 
-  static BorderRadius get cardBorderRadius =>
-      BorderRadius.circular(radiusMd);
+  static BorderRadius get cardBorderRadius => AppRadius.mdAll;
 
-  static BorderRadius get chipBorderRadius =>
-      BorderRadius.circular(radiusSm);
+  static BorderRadius get chipBorderRadius => AppRadius.smAll;
 
-  /// Soft elevated card shadow (matches commercepal.com product cards).
+  /// Subtle card elevation.
   static List<BoxShadow> softCardShadow([Color? shadowColor]) {
     final Color c = shadowColor ?? Colors.black;
     return <BoxShadow>[
       BoxShadow(
-        color: c.withValues(alpha: 0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 4),
+        color: c.withValues(alpha: 0.06),
+        blurRadius: 10,
+        offset: const Offset(0, 3),
       ),
       BoxShadow(
-        color: c.withValues(alpha: 0.04),
-        blurRadius: 4,
+        color: c.withValues(alpha: 0.03),
+        blurRadius: 2,
         offset: const Offset(0, 1),
       ),
     ];
   }
 
-  /// Maroon → gold hero gradient (website “Shop the World” banner).
+  /// Deep maroon brand gradient for hero moments (splash, promo banners).
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: <Color>[
-      AppColors.primary,
-      Color(0xFFB45309),
-      AppColors.secondary,
-    ],
-    stops: <double>[0.0, 0.55, 1.0],
+    colors: <Color>[AppColors.maroon, AppColors.maroonDark],
   );
 
-  /// Semi-transparent overlay used on top of banner images.
+  /// Overlay used on top of banner images to keep text legible.
   static LinearGradient get heroImageOverlay => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
         colors: <Color>[
-          AppColors.primary.withValues(alpha: 0.72),
-          AppColors.secondary.withValues(alpha: 0.55),
+          Colors.black.withValues(alpha: 0.55),
+          Colors.black.withValues(alpha: 0.0),
         ],
       );
 
@@ -67,50 +64,47 @@ class AppDecorations {
     );
   }
 
-  /// Soft cream used for quantity steppers / icon tiles on cream pages.
-  static const Color softCream = Color(0xFFFDF3E3);
+  /// Neutral tile fill for quantity steppers / icon tiles.
+  static const Color softCream = AppColors.surfaceMuted;
 
-  /// Primary action gradient (magenta → deep maroon).
+  /// Primary action fill. Kept as a gradient type for existing call sites,
+  /// but solid: the new system uses flat colour for CTAs.
   static const LinearGradient primaryCtaGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: <Color>[
-      AppColors.pink,
-      AppColors.primary,
-    ],
+    colors: <Color>[AppColors.maroon, AppColors.maroon],
   );
 
-  /// Cycled pastel gradients for category / subcategory tiles.
+  /// Muted mid-tone fills for image fallbacks on category / cart tiles.
+  /// Call sites draw white icons on top, so every pair keeps white legible.
   static const List<LinearGradient> accentGradients = <LinearGradient>[
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFFA78BFA), Color(0xFF7C3AED)],
+      colors: <Color>[Color(0xFFA23B72), Color(0xFF7E1E57)],
     ),
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFFF472B6), Color(0xFFDB2777)],
+      colors: <Color>[Color(0xFF4F6D8F), Color(0xFF3A5576)],
     ),
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFFFBBF24), Color(0xFFD97706)],
+      colors: <Color>[Color(0xFFC2643A), Color(0xFF9E4A26)],
     ),
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFF2DD4BF), Color(0xFF0D9488)],
+      colors: <Color>[Color(0xFF2F7F73), Color(0xFF1F6258)],
     ),
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFF4ADE80), Color(0xFF16A34A)],
+      colors: <Color>[Color(0xFF6E5A9E), Color(0xFF54437F)],
     ),
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: <Color>[Color(0xFF94A3B8), Color(0xFF475569)],
+      colors: <Color>[Color(0xFF64748B), Color(0xFF475569)],
     ),
   ];
 

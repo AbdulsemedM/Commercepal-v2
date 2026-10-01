@@ -48,4 +48,25 @@ class LocalizationService {
   }
 
   static List<String> get supportedLocaleCodes => List.unmodifiable(_supportedLocales);
+
+  /// [t] with `{placeholder}` substitution, e.g.
+  /// `tf(context, 'price.percentOff', {'percent': '20'})`.
+  static String tf(
+    BuildContext context,
+    String key,
+    Map<String, Object?> args,
+  ) {
+    String out = t(context, key);
+    args.forEach((String k, Object? v) {
+      out = out.replaceAll('{$k}', '${v ?? ''}');
+    });
+    return out;
+  }
+}
+
+extension LocalizationX on BuildContext {
+  /// Translated string for [key], with optional `{placeholder}` [args].
+  String tr(String key, [Map<String, Object?>? args]) => args == null
+      ? LocalizationService.t(this, key)
+      : LocalizationService.tf(this, key, args);
 }

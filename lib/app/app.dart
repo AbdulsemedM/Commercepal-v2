@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../core/network/connectivity_banner_host.dart';
 import '../core/update/app_update_remote_config.dart';
 import '../core/update/shorebird_patch_host.dart';
+import '../core/theme/commerce_colors.dart';
 import '../core/theme/theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/locale/locale_controller.dart';
@@ -70,75 +71,96 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 child: ThemeControllerScope(
                   themeController: _themeController,
                   child: MaterialApp.router(
-                routerConfig: appRouter,
-                theme: AppTheme.light,
-                darkTheme: AppTheme.dark,
-                themeMode: _themeController.themeMode,
-                debugShowCheckedModeBanner: false,
-                locale: locale,
-                supportedLocales: LocaleController.supportedLocales,
-                localizationsDelegates: const [
-                  FallbackMaterialLocalizationsDelegate(),
-                  FallbackCupertinoLocalizationsDelegate(),
-                  FallbackWidgetsLocalizationsDelegate(),
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                localeResolutionCallback: (locale, supported) {
-                  for (final s in supported) {
-                    if (s.languageCode == locale?.languageCode) return s;
-                  }
-                  return const Locale('en');
-                },
-                builder: (context, child) {
-                  String maintenance = '';
-                  try {
-                    maintenance = AppUpdateRemoteConfig.maintenanceMessage;
-                  } catch (_) {}
-                  return ShorebirdPatchHost(
-                    child: Directionality(
-                      textDirection:
-                          isRtl ? TextDirection.rtl : TextDirection.ltr,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: <Widget>[
-                          ConnectivityBannerHost(child: child!),
-                          if (maintenance.isNotEmpty)
-                            Positioned(
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              child: SafeArea(
-                                bottom: false,
-                                child: Material(
-                                  elevation: 3,
-                                  color: Colors.deepOrange.shade50,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    child: Text(
-                                      maintenance,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Colors.deepOrange.shade900,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                        height: 1.3,
+                    routerConfig: appRouter,
+                    theme: AppTheme.light,
+                    darkTheme: AppTheme.dark,
+                    themeMode: _themeController.themeMode,
+                    debugShowCheckedModeBanner: false,
+                    locale: locale,
+                    supportedLocales: LocaleController.supportedLocales,
+                    localizationsDelegates: const [
+                      FallbackMaterialLocalizationsDelegate(),
+                      FallbackCupertinoLocalizationsDelegate(),
+                      FallbackWidgetsLocalizationsDelegate(),
+                      GlobalMaterialLocalizations.delegate,
+                      GlobalWidgetsLocalizations.delegate,
+                      GlobalCupertinoLocalizations.delegate,
+                    ],
+                    localeResolutionCallback: (locale, supported) {
+                      for (final s in supported) {
+                        if (s.languageCode == locale?.languageCode) return s;
+                      }
+                      return const Locale('en');
+                    },
+                    builder: (context, child) {
+                      String maintenance = '';
+                      try {
+                        maintenance = AppUpdateRemoteConfig.maintenanceMessage;
+                      } catch (_) {}
+                      final CommerceColors commerce = context.commerce;
+                      // Honour the OS font size, but cap it so dense commerce
+                      // layouts stay usable at the largest accessibility sizes.
+                      return MediaQuery.withClampedTextScaling(
+                        minScaleFactor: 0.9,
+                        maxScaleFactor: 1.35,
+                        child: ShorebirdPatchHost(
+                          child: Directionality(
+                            textDirection:
+                                isRtl ? TextDirection.rtl : TextDirection.ltr,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                ConnectivityBannerHost(child: child!),
+                                if (maintenance.isNotEmpty)
+                                  Positioned(
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: SafeArea(
+                                      bottom: false,
+                                      child: Material(
+                                        color: commerce.warningContainer,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 10,
+                                          ),
+                                          child: Row(
+                                            children: <Widget>[
+                                              Icon(
+                                                Icons.construction_rounded,
+                                                size: 18,
+                                                color:
+                                                    commerce.onWarningContainer,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  maintenance,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: commerce
+                                                            .onWarningContainer,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
+                              ],
                             ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               );
             },

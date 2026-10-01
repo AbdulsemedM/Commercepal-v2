@@ -365,7 +365,6 @@
   "checkout.paymentPendingSubtitle": "Your order was placed, but payment is not complete yet. You can open Order History anytime to pay for this order.",
   "checkout.paymentPendingBannerTitle": "Payment not completed",
   "checkout.paymentPendingBannerBody": "You can retry or finish payment from Order History using your order number.",
-
   "checkout.paymentStatusPollingTitle": "Waiting for payment confirmation",
   "checkout.paymentStatusPollingBody": "Checking payment status…",
   "checkout.paymentStatusSuccessTitle": "Payment confirmed",
@@ -413,7 +412,6 @@
   "checkout.checkingPaymentStatus": "Checking payment status — please keep this page open.",
   "checkout.paymentConfirmed": "Payment confirmed!",
   "checkout.initiationFailedGeneric": "We could not start payment for this order. Your cart is unchanged. Try again or go back to your cart.",
-
   "orderHistory.title": "Order History",
   "orderHistory.all": "All",
   "orderHistory.delivered": "Delivered",
@@ -430,7 +428,6 @@
   "orderHistory.multipleItems": "Multiple items",
   "orderHistory.waiting": "Waiting",
   "orderHistory.pending": "Pending",
-
   "wishlist.title": "Wishlist",
   "wishlist.productsSaved": "Products you saved",
   "wishlist.empty": "Your wishlist is empty",
@@ -439,7 +436,6 @@
   "wishlist.removedSnackbar": "Removed from wishlist",
   "wishlist.removeFailed": "Could not remove item. Try again.",
   "wishlist.undoFailed": "Could not restore item. Try adding it again from the product page.",
-
   "addresses.title": "My Addresses",
   "addresses.added": "Address added successfully",
   "addresses.updated": "Address updated successfully",
@@ -482,7 +478,6 @@
   "addresses.setAsDefaultAddress": "Set as default address",
   "addresses.updateAddress": "Update Address",
   "addresses.saveAddress": "Save Address",
-
   "changePassword.title": "Change Password",
   "changePassword.subtitle": "Secure your account with a new password",
   "changePassword.currentPassword": "Current Password",
@@ -501,7 +496,6 @@
   "changePassword.pleaseConfirm": "Please confirm your password",
   "changePassword.passwordsDoNotMatch": "Passwords do not match",
   "changePassword.updateButton": "Update Password",
-
   "contactUs.title": "Contact Us",
   "contactUs.getInTouch": "Get in Touch",
   "contactUs.subtitle": "If you have any inquiries, get in touch with us.\nWe will be happy to help you.",
@@ -517,7 +511,6 @@
   "contactUs.socialTiktok": "Discover the beauty of our brand and explore our visual world on TikTok.",
   "contactUs.socialTwitter": "Follow us for real-time updates and lively discussions.",
   "contactUs.socialTelegram": "Connect with us on Telegram @CP9491.",
-
   "home.localRecent.title": "Continue browsing",
   "compare.title": "Compare products",
   "compare.clear": "Clear all",
@@ -559,7 +552,6 @@
   "supportChat.quickAction.trackOrder": "Track my order",
   "supportChat.quickAction.shareProduct": "Share a product link",
   "supportChat.quickAction.talkToAgent": "Talk to an agent",
-
   "visualSearch.title": "Visual Search",
   "visualSearch.subtitle": "Find similar products from a photo or a product link.",
   "visualSearch.takePhoto": "Take photo",
@@ -577,7 +569,6 @@
   "visualSearch.errorNetwork": "Couldn't connect. Check your connection and try again.",
   "visualSearch.errorGeneric": "Visual search failed. Please try again.",
   "visualSearch.retry": "Try again",
-
   "priceAlert.set": "Alert me if price drops",
   "priceAlert.active": "Price alert active",
   "priceAlert.loginRequired": "Sign in required",
@@ -588,5 +579,21 @@
   "priceAlert.saved": "Price alert saved",
   "priceAlert.removed": "Price alert removed",
   "priceAlert.errorNetwork": "Couldn't connect. Try again.",
-  "priceAlert.errorGeneric": "Couldn't update price alert. Try again."
+  "priceAlert.errorGeneric": "Couldn't update price alert. Try again.",
+  "common.retry": "Retry",
+  "common.cancel": "Cancel",
+  "common.close": "Close",
+  "common.done": "Done",
+  "common.save": "Save",
+  "common.continue": "Continue",
+  "common.seeAll": "See all",
+  "common.remove": "Remove",
+  "common.increase": "Increase quantity",
+  "common.decrease": "Decrease quantity",
+  "common.somethingWentWrong": "Something went wrong",
+  "common.checkConnection": "Check your connection and try again.",
+  "price.was": "was",
+  "price.percentOff": "-{percent}%",
+  "rating.semantic": "Rated {rating} out of 5, {count} reviews",
+  "appBar.visualSearch": "Search by photo"
 }

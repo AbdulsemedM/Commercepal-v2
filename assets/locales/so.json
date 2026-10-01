@@ -365,7 +365,6 @@
   "checkout.paymentPendingSubtitle": "Dalabka waa la dhigay, laakiin lacag bixinta ma dhammaystirnayn. Waad ka furi kartaa taariikhda dalabaadka si aad u bixiso.",
   "checkout.paymentPendingBannerTitle": "Lacag bixinta ma dhammaystirnayn",
   "checkout.paymentPendingBannerBody": "Waxaad dib ugu dayi kartaa ama ku dhammaystiri kartaa lacag bixinta taariikhda dalabaadka.",
-
   "checkout.paymentStatusPollingTitle": "Sugitaanka xaqiijinta lacag bixinta",
   "checkout.paymentStatusPollingBody": "Hubinta xaaladda lacag bixinta…",
   "checkout.paymentStatusSuccessTitle": "Lacag bixinta waa la xaqiijiyay",
@@ -413,7 +412,6 @@
   "checkout.checkingPaymentStatus": "Xaalada lacag bixinta waa la hubinayaa — fadlan boggan furan ha ka tagin.",
   "checkout.paymentConfirmed": "Lacag bixinta waa la xaqiijiyey!",
   "checkout.initiationFailedGeneric": "Lacag bixinta dalbashadan lama bilaabi karin. Gaadhigaaga lama bedelin. Mar kale isku day ama ku noqo gaadhigaaga.",
-
   "orderHistory.title": "Taariikhda Dalabka",
   "orderHistory.all": "Dhammaan",
   "orderHistory.delivered": "La gudbiyey",
@@ -430,7 +428,6 @@
   "orderHistory.multipleItems": "Alaabta badan",
   "orderHistory.waiting": "Sugitaanka",
   "orderHistory.pending": "Sugitaanka",
-
   "wishlist.title": "Liiska Rajada",
   "wishlist.productsSaved": "Alaabta aad keydsatay",
   "wishlist.empty": "Liiska rajadaadu waa madhan",
@@ -439,7 +436,6 @@
   "wishlist.removedSnackbar": "Removed from wishlist",
   "wishlist.removeFailed": "Could not remove. Try again.",
   "wishlist.undoFailed": "Could not restore. Add the product again.",
-
   "addresses.title": "Cinwaanadayda",
   "addresses.added": "Cinwaanka si guul leh ayaa loo daray",
   "addresses.updated": "Cinwaanka si guul leh ayaa loo cusboonaysiiyey",
@@ -482,7 +478,6 @@
   "addresses.setAsDefaultAddress": "U yeel cinwaanka caadiga ah",
   "addresses.updateAddress": "Cusboonaysii cinwaanka",
   "addresses.saveAddress": "Keydi cinwaanka",
-
   "changePassword.title": "Beddel furaha",
   "changePassword.subtitle": "Badbaadi akoonkaaga furaha cusub",
   "changePassword.currentPassword": "Furaha hadda jira",
@@ -501,7 +496,6 @@
   "changePassword.pleaseConfirm": "Fadlan xaqiiji furaha",
   "changePassword.passwordsDoNotMatch": "Furaha ma isu eg",
   "changePassword.updateButton": "Cusboonaysii furaha",
-
   "contactUs.title": "Nala soo xiriir",
   "contactUs.getInTouch": "Nala soo xiriir",
   "contactUs.subtitle": "Haddii aad wax su'aal ah qabato, nala soo xiriir.\nWaxaan ku faraxsanahay inaan kaa caawino.",
@@ -517,7 +511,6 @@
   "contactUs.socialTiktok": "Nala soo xiriir TikTok.",
   "contactUs.socialTwitter": "Nala soo xiriir Twitter.",
   "contactUs.socialTelegram": "Nala soo xiriir Telegram @CP9491.",
-
   "home.localRecent.title": "Continue browsing",
   "compare.title": "Compare products",
   "compare.clear": "Clear all",
@@ -559,7 +552,6 @@
   "supportChat.quickAction.trackOrder": "Raadi dalabkayga",
   "supportChat.quickAction.shareProduct": "La wadaag xiriirka alaabta",
   "supportChat.quickAction.talkToAgent": "La hadal wakiil",
-
   "visualSearch.title": "Raadinta muuqaalka",
   "visualSearch.subtitle": "Ka hel alaabo la mid ah sawir ama link badeeco.",
   "visualSearch.takePhoto": "Sawir qaado",
@@ -577,7 +569,6 @@
   "visualSearch.errorNetwork": "Isku xirka waa guuldareystay. Isku day mar kale.",
   "visualSearch.errorGeneric": "Raadinta muuqaalka waa guuldareysatay.",
   "visualSearch.retry": "Isku day mar kale",
-
   "priceAlert.set": "I ogeysii marka qiimuhu hoos u dhaco",
   "priceAlert.active": "Digniinta qiimaha waa firfircoon",
   "priceAlert.loginRequired": "Galitaanka ayaa loo baahan yahay",
@@ -588,5 +579,21 @@
   "priceAlert.saved": "Digniinta qiimaha waa la kaydiyay",
   "priceAlert.removed": "Digniinta qiimaha waa la saaray",
   "priceAlert.errorNetwork": "Isku xirka waa guuldareystay.",
-  "priceAlert.errorGeneric": "Cusboonaysiinta digniinta qiimaha waa guuldareysatay."
+  "priceAlert.errorGeneric": "Cusboonaysiinta digniinta qiimaha waa guuldareysatay.",
+  "common.retry": "Isku day mar kale",
+  "common.cancel": "Jooji",
+  "common.close": "Xir",
+  "common.done": "Dhammaad",
+  "common.save": "Kaydi",
+  "common.continue": "Sii wad",
+  "common.seeAll": "Arag dhammaan",
+  "common.remove": "Ka saar",
+  "common.increase": "Kordhi tirada",
+  "common.decrease": "Yaree tirada",
+  "common.somethingWentWrong": "Wax baa khaldamay",
+  "common.checkConnection": "Hubi xiriirkaaga oo isku day mar kale.",
+  "price.was": "hore",
+  "price.percentOff": "-{percent}%",
+  "rating.semantic": "Qiimeyn {rating} ee 5, {count} faallooyin",
+  "appBar.visualSearch": "Ku raadi sawir"
 }

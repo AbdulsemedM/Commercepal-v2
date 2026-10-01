@@ -1,7 +1,13 @@
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'package:commercepal/core/theme/commerce_colors.dart';
+import 'package:commercepal/core/theme/tokens.dart';
+import 'package:commercepal/core/widgets/app_badge.dart';
 import 'package:commercepal/services/localization_service.dart';
 
+/// Main tab bar: flat surface, hairline top border and an animated indicator
+/// above the selected tab.
 class PillBottomNavBar extends StatelessWidget {
   const PillBottomNavBar({
     super.key,
@@ -16,14 +22,14 @@ class PillBottomNavBar extends StatelessWidget {
   final List<int>? badgeCounts;
   final Color? activeColor;
 
+  static const double _barHeight = 60;
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool isDark = theme.brightness == Brightness.dark;
-    final Color selectedColor = activeColor ?? AppColors.pink;
-    final Color inactiveColor =
-        theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
-    final Color barColor = isDark ? theme.colorScheme.surface : AppColors.cream;
+    final ColorScheme scheme = theme.colorScheme;
+    final Color selectedColor = activeColor ?? scheme.primary;
+    final Color inactiveColor = scheme.onSurfaceVariant;
 
     final List<_NavItemData> items = <_NavItemData>[
       _NavItemData(
@@ -48,41 +54,69 @@ class PillBottomNavBar extends StatelessWidget {
       ),
     ];
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: barColor,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        color: scheme.surface,
+        border: Border(top: BorderSide(color: context.commerce.border)),
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: List<Widget>.generate(items.length, (int index) {
-              final bool isSelected = index == currentIndex;
-              final _NavItemData item = items[index];
-              final int count =
-                  (badgeCounts != null && index < badgeCounts!.length)
-                  ? badgeCounts![index]
-                  : 0;
-              return Expanded(
-                child: _NavItem(
-                  icon: isSelected ? item.selectedIcon : item.icon,
-                  label: item.label,
-                  isSelected: isSelected,
-                  selectedColor: selectedColor,
-                  inactiveColor: inactiveColor,
-                  badgeCount: count,
-                  onTap: () => onTap(index),
-                ),
+        child: SizedBox(
+          height: _barHeight,
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double slot = constraints.maxWidth / items.length;
+              const double indicatorWidth = 32;
+              final bool rtl = Directionality.of(context) == TextDirection.rtl;
+              final int visualIndex =
+                  rtl ? items.length - 1 - currentIndex : currentIndex;
+              return Stack(
+                children: <Widget>[
+                  AnimatedPositioned(
+                    duration: AppMotion.medium,
+                    curve: AppMotion.emphasized,
+                    top: 0,
+                    left: slot * visualIndex + (slot - indicatorWidth) / 2,
+                    child: Container(
+                      width: indicatorWidth,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: selectedColor,
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(3),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: List<Widget>.generate(items.length, (int i) {
+                      final _NavItemData item = items[i];
+                      final int count =
+                          (badgeCounts != null && i < badgeCounts!.length)
+                              ? badgeCounts![i]
+                              : 0;
+                      return Expanded(
+                        child: _NavItem(
+                          data: item,
+                          index: i,
+                          total: items.length,
+                          isSelected: i == currentIndex,
+                          selectedColor: selectedColor,
+                          inactiveColor: inactiveColor,
+                          badgeCount: count,
+                          onTap: () {
+                            if (i != currentIndex) {
+                              HapticFeedback.selectionClick();
+                            }
+                            onTap(i);
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                ],
               );
-            }),
+            },
           ),
         ),
       ),
@@ -103,8 +137,9 @@ class _NavItemData {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
-    required this.icon,
-    required this.label,
+    required this.data,
+    required this.index,
+    required this.total,
     required this.isSelected,
     required this.selectedColor,
     required this.inactiveColor,
@@ -112,8 +147,9 @@ class _NavItem extends StatelessWidget {
     required this.badgeCount,
   });
 
-  final IconData icon;
-  final String label;
+  final _NavItemData data;
+  final int index;
+  final int total;
   final bool isSelected;
   final Color selectedColor;
   final Color inactiveColor;
@@ -122,79 +158,49 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color contentColor = isSelected ? selectedColor : inactiveColor;
+    final Color color = isSelected ? selectedColor : inactiveColor;
+    final TextStyle? labelStyle =
+        Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            );
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? selectedColor.withValues(alpha: 0.09)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      label: badgeCount > 0 ? '${data.label}, $badgeCount' : data.label,
+      hint: '${index + 1}/$total',
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: onTap,
+        containedInkWell: true,
+        highlightShape: BoxShape.rectangle,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Icon(icon, color: contentColor, size: 24),
-                if (badgeCount > 0)
-                  Positioned(
-                    right: -8,
-                    top: -6,
-                    child: _Badge(count: badgeCount),
-                  ),
-              ],
+            CountBadge(
+              count: badgeCount,
+              child: AnimatedSwitcher(
+                duration: AppMotion.fast,
+                child: Icon(
+                  isSelected ? data.selectedIcon : data.icon,
+                  key: ValueKey<bool>(isSelected),
+                  color: color,
+                  size: 24,
+                ),
+              ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
-              label,
+              data.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: contentColor,
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
+              style: labelStyle,
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final TextStyle textStyle = theme.textTheme.labelSmall!.copyWith(
-      color: Colors.white,
-      fontWeight: FontWeight.w700,
-      height: 1,
-      fontSize: 10,
-    );
-
-    final String text = count > 99 ? '99+' : '$count';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-      decoration: BoxDecoration(
-        color: AppColors.pink,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      alignment: Alignment.center,
-      child: Text(text, style: textStyle),
     );
   }
 }
