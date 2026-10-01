@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
-import '../../../../core/constants/spacing.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/constants/country_currency_constants.dart';
+import '../../../../core/design_system.dart';
+import '../../../../core/widgets/checkout_screen_header.dart';
 import '../../../../services/localization_service.dart';
 import '../../../orders/data/repository/orders_repository.dart';
 import '../../data/models/checkout_response.dart';
@@ -57,11 +57,8 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
   void initState() {
     super.initState();
     if (widget.initialPaymentConfirmed) {
+      // Message falls back to the localized "payment confirmed" at build.
       _paymentConfirmed = true;
-      _pollStatusMessage = LocalizationService.tForLanguage(
-        'en',
-        'checkout.paymentConfirmed',
-      );
     } else if (!widget.disablePaymentPolling) {
       _startCountdown();
       _startPaymentPolling();
@@ -137,24 +134,10 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
     try {
       await captureAndSaveQrToGallery(boundaryKey: _qrCaptureKey);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'checkout.qrSavedToGallery'),
-          ),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      AppSnackbars.success(context, context.tr('checkout.qrSavedToGallery'));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'checkout.qrSaveFailed'),
-          ),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      AppSnackbars.error(context, context.tr('checkout.qrSaveFailed'));
     } finally {
       if (mounted) {
         setState(() => _isSavingQr = false);
@@ -164,7 +147,7 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final initiation = widget.response.paymentInitiation;
     final orderNumber = widget.response.resolvedOrderNumber ?? '';
@@ -176,291 +159,429 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
         (summary?.currency ?? widget.response.currency ?? '').trim().isNotEmpty
             ? (summary?.currency ?? widget.response.currency)!.trim()
             : 'ETB';
-    final total = summary?.totalAmount ?? summary?.subtotal;
+    final total = widget.response.resolvedTotalAmount ?? summary?.subtotal;
+    final bool expired = !_paymentConfirmed && _remaining == Duration.zero;
 
     return Scaffold(
-      backgroundColor: scheme.surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.lg,
-            vertical: Spacing.lg,
-          ),
-          child: Column(
-            children: <Widget>[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(Spacing.lg),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: scheme.shadow.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+        child: Column(
+          children: <Widget>[
+            CheckoutScreenHeader(
+              title: context.tr('checkout.qpay.title'),
+              showBack: false,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.gutter,
+                  Spacing.xs,
+                  Spacing.gutter,
+                  Spacing.lg,
                 ),
-                child: Column(
-                  children: <Widget>[
-                    Text(
-                      LocalizationService.t(
-                        context,
-                        'checkout.scanToPayWithQpay',
-                      ),
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1A2744),
-                      ),
-                      textAlign: TextAlign.center,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSizes.maxContentWidth,
                     ),
-                    const SizedBox(height: Spacing.lg),
-                    RepaintBoundary(
-                      key: _qrCaptureKey,
-                      child: QrCodeDisplay(
-                        data: qrPayload,
-                        size: _qrDisplaySize,
-                      ),
-                    ),
-                    if (!_paymentConfirmed) ...[
-                      const SizedBox(height: Spacing.lg),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          key: const Key('qpay_save_qr_button'),
-                          onPressed: _isSavingQr ? null : _saveQrToGallery,
-                          icon: _isSavingQr
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: scheme.primary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        _AmountHeader(
+                          total: total,
+                          currency: currency,
+                          orderNumber: orderNumber,
+                          providerCode: providerCode,
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(Spacing.md),
+                            child: Column(
+                              children: <Widget>[
+                                RepaintBoundary(
+                                  key: _qrCaptureKey,
+                                  child: QrCodeDisplay(
+                                    data: qrPayload,
+                                    size: _qrDisplaySize,
                                   ),
-                                )
-                              : const Icon(Icons.download_rounded, size: 18),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: BorderSide(color: scheme.outlineVariant),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: Spacing.md,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                                ),
+                                if (!_paymentConfirmed) ...[
+                                  const SizedBox(height: Spacing.md),
+                                  _ExpiryIndicator(
+                                    remaining: _remaining,
+                                    total: _qrExpiry,
+                                    label: expired
+                                        ? context.tr('checkout.qpay.expired')
+                                        : context.tr(
+                                            'checkout.qpay.expiresIn',
+                                            <String, Object?>{
+                                              'time':
+                                                  _formatCountdown(_remaining),
+                                            },
+                                          ),
+                                    expired: expired,
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                  AppButton.secondary(
+                                    key: const Key('qpay_save_qr_button'),
+                                    label:
+                                        context.tr('checkout.saveQrToGallery'),
+                                    icon: Icons.download_rounded,
+                                    size: AppButtonSize.medium,
+                                    loading: _isSavingQr,
+                                    onPressed:
+                                        _isSavingQr ? null : _saveQrToGallery,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                          label: Text(
-                            LocalizationService.t(
-                              context,
-                              'checkout.saveQrToGallery',
-                            ),
+                        ),
+                        const SizedBox(height: Spacing.md),
+                        _PaymentStatusLine(
+                          confirmed: _paymentConfirmed,
+                          title: _paymentConfirmed
+                              ? (_pollStatusMessage ??
+                                  context.tr('checkout.paymentConfirmed'))
+                              : context.tr(
+                                  'checkout.waitingForPaymentConfirmation',
+                                ),
+                          body: !_paymentConfirmed && _pollAttempt > 0
+                              ? context.tr('checkout.checkingPaymentStatus')
+                              : null,
+                        ),
+                        if (!_paymentConfirmed) ...[
+                          const SizedBox(height: Spacing.md),
+                          _InstructionSteps(
+                            title: context.tr('checkout.qpay.howToPay'),
+                            steps: <String>[
+                              context.tr('checkout.qpay.step1'),
+                              context.tr('checkout.qpay.step2'),
+                              context.tr('checkout.qpay.step3'),
+                              context.tr('checkout.qpay.step4'),
+                            ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      Text(
-                        LocalizationService.t(
-                          context,
-                          'checkout.qrGalleryImportInstructions',
-                        ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          height: 1.45,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    const SizedBox(height: Spacing.lg),
-                    Text(
-                      _formatCountdown(_remaining),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: Spacing.sm),
-                    Text(
-                      _paymentConfirmed
-                          ? (_pollStatusMessage ??
-                              LocalizationService.t(
-                                context,
-                                'checkout.paymentConfirmed',
-                              ))
-                          : LocalizationService.t(
-                              context,
-                              'checkout.waitingForPaymentConfirmation',
-                            ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _paymentConfirmed
-                            ? AppColors.success
-                            : scheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              const SizedBox(height: Spacing.lg),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(Spacing.md),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: scheme.outlineVariant),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                border: Border(top: BorderSide(color: context.commerce.border)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.gutter,
+                  Spacing.sm,
+                  Spacing.gutter,
+                  Spacing.sm,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _DetailRow(
-                      label: LocalizationService.t(context, 'checkout.order'),
-                      value: orderNumber.isEmpty ? '—' : orderNumber,
+                child: Center(
+                  heightFactor: 1,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSizes.maxContentWidth,
                     ),
-                    const SizedBox(height: Spacing.sm),
-                    _DetailRow(
-                      label: LocalizationService.t(context, 'checkout.total'),
-                      value: total != null
-                          ? MoneyFormatter.format(total, currency)
-                          : '—',
-                      valueStyle: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.sm),
-                    _DetailRow(
-                      label: LocalizationService.t(
-                        context,
-                        'checkout.payment',
-                      ),
-                      value: providerCode,
-                    ),
-                  ],
+                    child: _paymentConfirmed
+                        ? AppButton.primary(
+                            label: context.tr('checkout.myOrders'),
+                            icon: Icons.receipt_long_outlined,
+                            onPressed: () => context.go(AppRoutes.orderHistory),
+                          )
+                        : Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: AppButton.secondary(
+                                  label: context.tr('checkout.myOrders'),
+                                  onPressed: () =>
+                                      context.go(AppRoutes.orderHistory),
+                                ),
+                              ),
+                              const SizedBox(width: Spacing.sm),
+                              Expanded(
+                                child: AppButton.primary(
+                                  label:
+                                      context.tr('checkout.continueShopping'),
+                                  onPressed: () =>
+                                      context.go(AppRoutes.dashboard),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
-              if (!_paymentConfirmed && _pollAttempt > 0) ...[
-                const SizedBox(height: Spacing.lg),
-                Text(
-                  LocalizationService.t(
-                    context,
-                    'checkout.checkingPaymentStatus',
-                  ),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: Spacing.xxl),
-              if (_paymentConfirmed)
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => context.go(AppRoutes.orderHistory),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      LocalizationService.t(context, 'checkout.myOrders'),
-                    ),
-                  ),
-                )
-              else
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => context.go(AppRoutes.orderHistory),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFB45309),
-                          side: const BorderSide(color: AppColors.secondary),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Spacing.md,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          LocalizationService.t(context, 'checkout.myOrders'),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Spacing.md),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => context.go(AppRoutes.dashboard),
-                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: scheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Spacing.md,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        label: Text(
-                          LocalizationService.t(
-                            context,
-                            'checkout.continueShopping',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: Spacing.lg),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.valueStyle,
+/// Amount to pay, order number and provider, shown above the QR.
+class _AmountHeader extends StatelessWidget {
+  const _AmountHeader({
+    required this.total,
+    required this.currency,
+    required this.orderNumber,
+    required this.providerCode,
   });
 
-  final String label;
-  final String value;
-  final TextStyle? valueStyle;
+  final num? total;
+  final String currency;
+  final String orderNumber;
+  final String providerCode;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final TextStyle? caption = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+    return Column(
       children: <Widget>[
-        SizedBox(
-          width: 72,
-          child: Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+        Text(
+          context.tr('checkout.qpay.amountToPay'),
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: Spacing.xxs),
+        if (total != null)
+          PriceTag(
+            amount: total!,
+            currency: CountryCurrencyConstants.getCurrencySymbol(currency),
+            size: PriceTagSize.large,
+          )
+        else
+          Text('—', style: theme.textTheme.headlineSmall),
+        const SizedBox(height: Spacing.xs),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: Spacing.xs,
+          runSpacing: Spacing.xxs,
+          children: <Widget>[
+            Text(context.tr('checkout.order'), style: caption),
+            SelectableText(
+              orderNumber.isEmpty ? '—' : orderNumber,
+              style: caption?.copyWith(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            AppBadge(label: providerCode, tone: AppBadgeTone.neutral),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Countdown text with a thin bar showing how much validity is left.
+class _ExpiryIndicator extends StatelessWidget {
+  const _ExpiryIndicator({
+    required this.remaining,
+    required this.total,
+    required this.label,
+    required this.expired,
+  });
+
+  final Duration remaining;
+  final Duration total;
+  final String label;
+  final bool expired;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
+    final double fraction = total.inSeconds <= 0
+        ? 0
+        : (remaining.inSeconds / total.inSeconds).clamp(0.0, 1.0);
+    // Amber in the last minute so the shopper knows to hurry.
+    final Color accent = expired
+        ? scheme.error
+        : remaining.inSeconds <= 60
+            ? commerce.warning
+            : scheme.primary;
+    return Column(
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              expired ? Icons.timer_off_outlined : Icons.timer_outlined,
+              size: AppSizes.iconSm,
+              color: accent,
+            ),
+            const SizedBox(width: Spacing.xxs),
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: expired ? scheme.error : scheme.onSurface,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.xs),
+        ExcludeSemantics(
+          child: ClipRRect(
+            borderRadius: AppRadius.pillAll,
+            child: LinearProgressIndicator(
+              value: fraction,
+              minHeight: 4,
+              color: accent,
+              backgroundColor: scheme.surfaceContainerHighest,
             ),
           ),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: valueStyle ??
-                theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
       ],
+    );
+  }
+}
+
+/// Live status line: waiting (info tone) or confirmed (success tone).
+class _PaymentStatusLine extends StatelessWidget {
+  const _PaymentStatusLine({
+    required this.confirmed,
+    required this.title,
+    this.body,
+  });
+
+  final bool confirmed;
+  final String title;
+  final String? body;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final CommerceColors commerce = context.commerce;
+    final Color accent = confirmed ? commerce.success : commerce.info;
+    final Color container =
+        confirmed ? commerce.successContainer : commerce.infoContainer;
+    final Color onContainer =
+        confirmed ? commerce.onSuccessContainer : commerce.onInfoContainer;
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.all(Spacing.sm),
+        decoration: BoxDecoration(
+          color: container,
+          borderRadius: AppRadius.mdAll,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              confirmed
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.schedule_rounded,
+              color: accent,
+              size: AppSizes.iconMd,
+            ),
+            const SizedBox(width: Spacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: onContainer,
+                    ),
+                  ),
+                  if (body != null) ...[
+                    const SizedBox(height: Spacing.xxs),
+                    Text(
+                      body!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: onContainer,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Numbered how-to-pay steps.
+class _InstructionSteps extends StatelessWidget {
+  const _InstructionSteps({required this.title, required this.steps});
+
+  final String title;
+  final List<String> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text(title, style: theme.textTheme.titleSmall),
+            ),
+            const SizedBox(height: Spacing.sm),
+            for (int i = 0; i < steps.length; i++) ...[
+              if (i > 0) const SizedBox(height: Spacing.sm),
+              MergeSemantics(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${i + 1}',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.sm),
+                    Expanded(
+                      child: Text(
+                        steps[i],
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
