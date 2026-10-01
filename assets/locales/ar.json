@@ -698,5 +698,13 @@
   "cart.unavailableBanner": "لا يمكن طلب {count} عناصر حاليًا. أزلها لإتمام الشراء.",
   "cart.savingAmount": "توفر {amount}",
   "cart.proceedToCheckout": "المتابعة للدفع ({count})",
-  "cart.unavailableBannerOne": "لا يمكن طلب عنصر واحد حاليًا. أزله لإتمام الشراء."
+  "cart.unavailableBannerOne": "لا يمكن طلب عنصر واحد حاليًا. أزله لإتمام الشراء.",
+  "checkout.itemsCount": "{count} عناصر",
+  "checkout.showAllItems": "عرض كل العناصر ({count})",
+  "checkout.savings": "التوفير",
+  "checkout.featured": "مميز",
+  "addresses.phoneNumber": "رقم الهاتف",
+  "addresses.city": "المدينة",
+  "categories.empty": "لا توجد فئات بعد",
+  "categories.shopAll": "تسوق كل {name}"
 }

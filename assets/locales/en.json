@@ -292,7 +292,7 @@
   "cart.removeItemTooltip": "Remove item",
   "cart.noAddressDetails": "No address details",
   "checkout.orderPlaced": "Order placed",
-  "checkout.orderSummary": "Order Summary",
+  "checkout.orderSummary": "Order summary",
   "checkout.subtotal": "Subtotal",
   "checkout.discount": "Discount",
   "checkout.delivery": "Delivery",
@@ -698,5 +698,13 @@
   "cart.unavailableBanner": "{count} items can't be ordered right now. Remove them to check out.",
   "cart.savingAmount": "You save {amount}",
   "cart.proceedToCheckout": "Proceed to checkout ({count})",
-  "cart.unavailableBannerOne": "One item can't be ordered right now. Remove it to check out."
+  "cart.unavailableBannerOne": "One item can't be ordered right now. Remove it to check out.",
+  "checkout.itemsCount": "{count} items",
+  "checkout.showAllItems": "Show all {count} items",
+  "checkout.savings": "Savings",
+  "checkout.featured": "Featured",
+  "addresses.phoneNumber": "Phone number",
+  "addresses.city": "City",
+  "categories.empty": "No categories yet",
+  "categories.shopAll": "Shop all {name}"
 }

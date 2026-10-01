@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
@@ -37,7 +39,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBarWidget(
           cartCount: cartCount,
           onSearchTap: () {
@@ -58,46 +59,24 @@ class _CategoriesPageState extends State<CategoriesPage> {
         ),
         body: BlocBuilder<CategoriesBloc, CategoriesState>(
           builder: (context, state) {
-            if (state is CategoriesLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
             if (state is CategoriesError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.grey, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<CategoriesBloc>().add(FetchCategories());
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+              return AppEmptyState(
+                isError: true,
+                icon: Icons.category_outlined,
+                title: context.tr('common.somethingWentWrong'),
+                subtitle: state.message,
+                primaryLabel: context.tr('common.retry'),
+                onPrimary: () =>
+                    context.read<CategoriesBloc>().add(FetchCategories()),
               );
             }
 
             if (state is CategoriesLoaded) {
               final categories = state.categories;
               if (categories.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No categories found',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
+                return AppEmptyState(
+                  icon: Icons.category_outlined,
+                  title: context.tr('categories.empty'),
                 );
               }
 
@@ -133,15 +112,70 @@ class _CategoriesPageState extends State<CategoriesPage> {
               );
             }
 
-            return const Center(
-              child: Text(
-                'Loading categories...',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            );
+            return const _CategoriesSkeleton();
           },
         ),
       ),
+    );
+  }
+}
+
+class _CategoriesSkeleton extends StatelessWidget {
+  const _CategoriesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: CategorySidebar.width,
+          color: scheme.surfaceContainerHigh,
+          child: Column(
+            children: List<Widget>.generate(
+              7,
+              (_) => const Padding(
+                padding: EdgeInsets.symmetric(vertical: Spacing.sm),
+                child: Column(
+                  children: <Widget>[
+                    ShimmerLoading(
+                      width: 44,
+                      height: 44,
+                      borderRadius: BorderRadius.all(Radius.circular(22)),
+                    ),
+                    SizedBox(height: 6),
+                    ShimmerLoading(width: 56, height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: GridView.count(
+            crossAxisCount: 3,
+            padding: const EdgeInsets.all(Spacing.sm),
+            mainAxisSpacing: Spacing.sm,
+            crossAxisSpacing: Spacing.xs,
+            childAspectRatio: 0.72,
+            physics: const NeverScrollableScrollPhysics(),
+            children: List<Widget>.generate(
+              9,
+              (_) => const Column(
+                children: <Widget>[
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: ShimmerLoading(borderRadius: AppRadius.mdAll),
+                  ),
+                  SizedBox(height: 6),
+                  ShimmerLoading(width: 60, height: 10),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

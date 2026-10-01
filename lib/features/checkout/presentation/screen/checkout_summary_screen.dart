@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/widgets/checkout_step_indicator.dart';
 import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -31,7 +30,6 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
 
     if (cart == null) {
       return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Column(
             children: <Widget>[
@@ -54,7 +52,6 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
     return BlocProvider(
       create: (context) => AddressBloc()..add(AddressLoadRequested()),
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Column(
             children: [
@@ -81,9 +78,6 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: Spacing.sm),
-                      OrderSummaryCard(cart: cart),
-                      const SizedBox(height: Spacing.sm),
                       AddressSelectionSection(
                         onAddressSelected: (address) {
                           setState(() {
@@ -91,84 +85,107 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                           });
                         },
                       ),
+                      const SizedBox(height: Spacing.lg),
+                      OrderSummaryCard(cart: cart),
                       const SizedBox(height: Spacing.xl),
                     ],
                   ),
                 ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Spacing.md,
-                    Spacing.sm,
-                    Spacing.md,
-                    Spacing.md,
-                  ),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: _selectedAddress == null
-                          ? null
-                          : AppDecorations.primaryCtaGradient,
-                      color: _selectedAddress == null
-                          ? Colors.grey.shade300
-                          : null,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: _selectedAddress == null
-                          ? null
-                          : <BoxShadow>[
-                              BoxShadow(
-                                color: AppColors.pink.withOpacity(0.35),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _selectedAddress == null
-                            ? null
-                            : () {
-                                AppAnalytics.logBeginCheckout(
-                                  value: cart.estimatedTotal,
-                                  currency: cart.currency,
-                                );
-                                context.push(
-                                  AppRoutes.paymentSelection,
-                                  extra: <String, dynamic>{
-                                    'cart': cart,
-                                    'address': _selectedAddress,
-                                    'phoneNumber': _selectedAddress!.phoneNumber,
-                                  },
-                                );
-                              },
-                        borderRadius: BorderRadius.circular(28),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Spacing.md + 2,
-                          ),
-                          child: Center(
-                            child: Text(
-                              LocalizationService.t(
-                                context,
-                                'checkout.continueToPayment',
-                              ),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: _selectedAddress == null
-                                    ? Colors.grey.shade600
-                                    : Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
+              _ContinueBar(
+                total: cart.estimatedTotal,
+                currency: cart.currency,
+                enabled: _selectedAddress != null,
+                onContinue: () {
+                  AppAnalytics.logBeginCheckout(
+                    value: cart.estimatedTotal,
+                    currency: cart.currency,
+                  );
+                  context.push(
+                    AppRoutes.paymentSelection,
+                    extra: <String, dynamic>{
+                      'cart': cart,
+                      'address': _selectedAddress,
+                      'phoneNumber': _selectedAddress!.phoneNumber,
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContinueBar extends StatelessWidget {
+  const _ContinueBar({
+    required this.total,
+    required this.currency,
+    required this.enabled,
+    required this.onContinue,
+  });
+
+  final double total;
+  final String currency;
+  final bool enabled;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(top: BorderSide(color: context.commerce.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.gutter,
+            Spacing.sm,
+            Spacing.gutter,
+            Spacing.sm,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      context.tr('checkout.total'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                   ),
-                ),
+                  PriceTag(
+                    amount: total,
+                    currency:
+                        CountryCurrencyConstants.getCurrencySymbol(currency),
+                  ),
+                ],
               ),
+              const SizedBox(height: Spacing.sm),
+              AppButton.primary(
+                label: context.tr('checkout.continueToPayment'),
+                trailingIcon: Icons.arrow_forward_rounded,
+                onPressed: enabled ? onContinue : null,
+              ),
+              if (!enabled)
+                Padding(
+                  padding: const EdgeInsets.only(top: Spacing.xs),
+                  child: Text(
+                    context.tr('checkout.addAddressToContinue'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

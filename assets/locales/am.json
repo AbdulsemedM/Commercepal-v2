@@ -698,5 +698,13 @@
   "cart.unavailableBanner": "{count} ዕቃዎች አሁን ሊታዘዙ አይችሉም። ለመክፈል ያስወግዷቸው።",
   "cart.savingAmount": "{amount} ይቆጥባሉ",
   "cart.proceedToCheckout": "ወደ ክፍያ ይቀጥሉ ({count})",
-  "cart.unavailableBannerOne": "አንድ ዕቃ አሁን ሊታዘዝ አይችልም። ለመክፈል ያስወግዱት።"
+  "cart.unavailableBannerOne": "አንድ ዕቃ አሁን ሊታዘዝ አይችልም። ለመክፈል ያስወግዱት።",
+  "checkout.itemsCount": "{count} ዕቃዎች",
+  "checkout.showAllItems": "ሁሉንም {count} ዕቃዎች አሳይ",
+  "checkout.savings": "ቁጠባ",
+  "checkout.featured": "ተመራጭ",
+  "addresses.phoneNumber": "ስልክ ቁጥር",
+  "addresses.city": "ከተማ",
+  "categories.empty": "እስካሁን ምድቦች የሉም",
+  "categories.shopAll": "ሁሉንም {name} ይግዙ"
 }

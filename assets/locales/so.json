@@ -698,5 +698,13 @@
   "cart.unavailableBanner": "{count} shay hadda lama dalban karo. Ka saar si aad u bixiso.",
   "cart.savingAmount": "Waxaad keydisaa {amount}",
   "cart.proceedToCheckout": "U gudub bixinta ({count})",
-  "cart.unavailableBannerOne": "Hal shay hadda lama dalban karo. Ka saar si aad u bixiso."
+  "cart.unavailableBannerOne": "Hal shay hadda lama dalban karo. Ka saar si aad u bixiso.",
+  "checkout.itemsCount": "{count} shay",
+  "checkout.showAllItems": "Muuji dhammaan {count} shay",
+  "checkout.savings": "Keydin",
+  "checkout.featured": "La xusay",
+  "addresses.phoneNumber": "Lambarka taleefanka",
+  "addresses.city": "Magaalada",
+  "categories.empty": "Weli ma jiraan qaybo",
+  "categories.shopAll": "Iibso dhammaan {name}"
 }

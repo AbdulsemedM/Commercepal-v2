@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+
+import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/utils/category_image_assets.dart';
 import 'package:commercepal/features/categories/data/models/sub_category.dart';
-import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/services/localization_service.dart';
 
+/// Right pane of the Categories tab: title, "Shop all" link and a 3-column
+/// grid of subcategory tiles.
 class ProductGrid extends StatelessWidget {
   const ProductGrid({
     super.key,
@@ -21,238 +23,180 @@ class ProductGrid extends StatelessWidget {
   final bool isLoading;
   final String? errorMessage;
 
+  void _search(BuildContext context, String term) {
+    // Keep spaces/punctuation in the display name; encode for the route only.
+    context.push(
+      '${AppRoutes.productSearch}?query=${Uri.encodeComponent(term.trim())}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
+    final Widget body;
+    if (isLoading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (errorMessage != null) {
+      body = AppEmptyState(
+        compact: true,
+        isError: true,
+        icon: Icons.error_outline_rounded,
+        title: errorMessage!,
+      );
+    } else if (subCategories.isEmpty) {
+      body = AppEmptyState(
+        compact: true,
+        icon: Icons.category_outlined,
+        title: context.tr('home.categories.noSubcategories'),
+        primaryLabel: context.tr('categories.shopAll', <String, Object?>{
+          'name': categoryName,
+        }),
+        onPrimary: () => _search(context, categoryName),
+      );
+    } else {
+      body = GridView.builder(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.sm,
+          0,
+          Spacing.sm,
+          Spacing.xl,
+        ),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: Spacing.sm,
+          crossAxisSpacing: Spacing.xs,
+          childAspectRatio: 0.72,
+        ),
+        itemCount: subCategories.length,
+        itemBuilder: (BuildContext context, int i) => _SubCategoryTile(
+          subCategory: subCategories[i],
+          onTap: () => _search(context, subCategories[i].name),
+        ),
+      );
+    }
+
     return Expanded(
-      child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
+      child: ColoredBox(
+        color: scheme.surface,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.all(Spacing.md),
-              child: Text(
-                '$categoryName Subcategories',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                Spacing.sm,
+                Spacing.md,
+                Spacing.xxs,
+                Spacing.sm,
               ),
-            ),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: scheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: Spacing.md),
-                              Text(
-                                errorMessage!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: scheme.onSurfaceVariant),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        )
-                      : subCategories.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No subcategories available',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            )
-                          : _buildRows(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRows(BuildContext context) {
-    final List<Widget> rows = <Widget>[];
-    for (int i = 0; i < subCategories.length; i += 2) {
-      final bool isLastOdd =
-          i == subCategories.length - 1 && subCategories.length.isOdd;
-      if (isLastOdd) {
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: Spacing.md),
-            child: SizedBox(
-              height: 150,
-              child: _SubCategoryCard(
-                subCategory: subCategories[i],
-                gradientIndex: i,
-                fullWidth: true,
-              ),
-            ),
-          ),
-        );
-      } else {
-        final SubCategory left = subCategories[i];
-        final SubCategory? right =
-            i + 1 < subCategories.length ? subCategories[i + 1] : null;
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: Spacing.md),
-            child: SizedBox(
-              height: 150,
               child: Row(
                 children: <Widget>[
                   Expanded(
-                    child: _SubCategoryCard(
-                      subCategory: left,
-                      gradientIndex: i,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        categoryName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: Spacing.md),
-                  Expanded(
-                    child: right != null
-                        ? _SubCategoryCard(
-                            subCategory: right,
-                            gradientIndex: i + 1,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
+                  if (subCategories.isNotEmpty)
+                    AppButton.text(
+                      label: context.tr('common.seeAll'),
+                      size: AppButtonSize.small,
+                      onPressed: () => _search(context, categoryName),
+                    ),
                 ],
               ),
             ),
-          ),
-        );
-      }
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Spacing.md,
-        0,
-        Spacing.md,
-        Spacing.md,
+            Expanded(child: body),
+          ],
+        ),
       ),
-      children: rows,
     );
   }
 }
 
-class _SubCategoryCard extends StatelessWidget {
-  const _SubCategoryCard({
-    required this.subCategory,
-    required this.gradientIndex,
-    this.fullWidth = false,
-  });
+class _SubCategoryTile extends StatelessWidget {
+  const _SubCategoryTile({required this.subCategory, required this.onTap});
 
   final SubCategory subCategory;
-  final int gradientIndex;
-  final bool fullWidth;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final fallbackIcon = CategoryImageAssets.iconForName(subCategory.name);
-    final hasNetworkImage =
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool hasNetworkImage =
         subCategory.imageUrl != null && subCategory.imageUrl!.isNotEmpty;
-    final String? assetPath =
-        CategoryImageAssets.assetPathForName(subCategory.name);
-    final gradient = AppDecorations.accentGradientAt(gradientIndex);
+    final String? path = CategoryImageAssets.assetPathForName(subCategory.name);
+    final Widget fallback = ColoredBox(
+      color: scheme.surfaceContainerHigh,
+      child: Icon(
+        CategoryImageAssets.iconForName(subCategory.name),
+        color: scheme.onSurfaceVariant,
+        size: 28,
+      ),
+    );
 
-    Widget imageBody() {
-      // Nested folder assets: assets/images/subcategories/{parent}/{slug}.jpg
-      final String? path = assetPath;
-      if (path != null &&
-          path.contains('/subcategories/') &&
-          path.split('/subcategories/').last.contains('/')) {
-        return Image.asset(
-          path,
-          fit: BoxFit.cover,
+    Widget network() => AppNetworkImage(
+          url: subCategory.imageUrl!,
           width: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            if (!hasNetworkImage) return _buildIconBody(fallbackIcon);
-            return Image.network(
-              subCategory.imageUrl!,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (_, __, ___) => _buildIconBody(fallbackIcon),
-            );
-          },
+          height: double.infinity,
+          memCacheWidth: (120 * MediaQuery.devicePixelRatioOf(context)).round(),
+          errorWidget: fallback,
         );
-      }
-      if (hasNetworkImage) {
-        return Image.network(
-          subCategory.imageUrl!,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildIconBody(fallbackIcon),
-        );
-      }
-      return _buildIconBody(fallbackIcon);
+
+    final Widget image;
+    // Nested folder assets: assets/images/subcategories/{parent}/{slug}.jpg
+    if (path != null &&
+        path.contains('/subcategories/') &&
+        path.split('/subcategories/').last.contains('/')) {
+      image = Image.asset(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => hasNetworkImage ? network() : fallback,
+      );
+    } else if (hasNetworkImage) {
+      image = network();
+    } else {
+      image = fallback;
     }
 
-    return InkWell(
-      onTap: () {
-        // Keep spaces/punctuation in the display name; encode for the route only.
-        final query = Uri.encodeComponent(subCategory.name.trim());
-        context.push('${AppRoutes.productSearch}?query=$query');
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppDecorations.softCardShadow(),
-        ),
-        clipBehavior: Clip.antiAlias,
+    return Semantics(
+      button: true,
+      label: subCategory.name,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.mdAll,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: gradient),
-                child: imageBody(),
+            AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: AppRadius.mdAll,
+                child: image,
               ),
             ),
-            Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: fullWidth ? Spacing.md : Spacing.sm,
-                vertical: Spacing.sm,
-              ),
-              child: Text(
-                subCategory.name,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.navy,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 6),
+            Text(
+              subCategory.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildIconBody(IconData icon) {
-    return Center(
-      child: Icon(icon, color: Colors.white, size: fullWidth ? 48 : 40),
     );
   }
 }
