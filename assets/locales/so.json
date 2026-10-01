@@ -622,5 +622,21 @@
   "home.discover.shoes": "Kabaha",
   "home.discover.audio": "Codka",
   "home.categories.all": "Dhammaan",
-  "home.categories.noSubcategories": "Weli ma jiraan qaybo-hoosaad"
+  "home.categories.noSubcategories": "Weli ma jiraan qaybo-hoosaad",
+  "productSearch.popular": "Raadinta caanka ah",
+  "productSearch.resultsCount": "{count} natiijo",
+  "productSearch.showingOf": "Waxaa la muujinayaa {shown} ee {total}",
+  "productSearch.editSearch": "Wax ka beddel raadinta",
+  "productSearch.suggestion.watches": "Saacado",
+  "productSearch.suggestion.perfume": "Cadar",
+  "productSearch.suggestion.laptop": "Laabtoob",
+  "productSearch.suggestion.shoes": "Kabo",
+  "productSearch.suggestion.phones": "Taleefanno casri ah",
+  "productSearch.suggestion.headphones": "Sameecado",
+  "priceFilter.any": "Qiime kasta",
+  "priceFilter.under": "Ka hooseeya {amount}",
+  "priceFilter.custom": "Qiimaha",
+  "priceFilter.title": "Xadka qiimaha",
+  "priceFilter.clear": "Tirtir",
+  "priceFilter.apply": "Codso"
 }

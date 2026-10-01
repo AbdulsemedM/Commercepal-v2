@@ -622,5 +622,21 @@
   "home.discover.shoes": "Shoes",
   "home.discover.audio": "Audio",
   "home.categories.all": "All",
-  "home.categories.noSubcategories": "No subcategories yet"
+  "home.categories.noSubcategories": "No subcategories yet",
+  "productSearch.popular": "Popular searches",
+  "productSearch.resultsCount": "{count} results",
+  "productSearch.showingOf": "Showing {shown} of {total}",
+  "productSearch.editSearch": "Edit search",
+  "productSearch.suggestion.watches": "Watches",
+  "productSearch.suggestion.perfume": "Perfume",
+  "productSearch.suggestion.laptop": "Laptops",
+  "productSearch.suggestion.shoes": "Shoes",
+  "productSearch.suggestion.phones": "Smartphones",
+  "productSearch.suggestion.headphones": "Headphones",
+  "priceFilter.any": "Any price",
+  "priceFilter.under": "Under {amount}",
+  "priceFilter.custom": "Price",
+  "priceFilter.title": "Price range",
+  "priceFilter.clear": "Clear",
+  "priceFilter.apply": "Apply"
 }

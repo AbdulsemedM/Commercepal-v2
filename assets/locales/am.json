@@ -622,5 +622,21 @@
   "home.discover.shoes": "ጫማዎች",
   "home.discover.audio": "የድምፅ መሣሪያዎች",
   "home.categories.all": "ሁሉም",
-  "home.categories.noSubcategories": "እስካሁን ንዑስ ምድቦች የሉም"
+  "home.categories.noSubcategories": "እስካሁን ንዑስ ምድቦች የሉም",
+  "productSearch.popular": "ተወዳጅ ፍለጋዎች",
+  "productSearch.resultsCount": "{count} ውጤቶች",
+  "productSearch.showingOf": "ከ{total} {shown} በማሳየት ላይ",
+  "productSearch.editSearch": "ፍለጋውን አስተካክል",
+  "productSearch.suggestion.watches": "ሰዓቶች",
+  "productSearch.suggestion.perfume": "ሽቶ",
+  "productSearch.suggestion.laptop": "ላፕቶፖች",
+  "productSearch.suggestion.shoes": "ጫማዎች",
+  "productSearch.suggestion.phones": "ስማርት ስልኮች",
+  "productSearch.suggestion.headphones": "የጆሮ ማዳመጫዎች",
+  "priceFilter.any": "ማንኛውም ዋጋ",
+  "priceFilter.under": "ከ{amount} በታች",
+  "priceFilter.custom": "ዋጋ",
+  "priceFilter.title": "የዋጋ ክልል",
+  "priceFilter.clear": "አጽዳ",
+  "priceFilter.apply": "ተግብር"
 }

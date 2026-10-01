@@ -24,6 +24,10 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.onVisualSearchTap,
     this.additionalActions,
     this.showBackButton,
+    this.controller,
+    this.focusNode,
+    this.autofocus = false,
+    this.onChanged,
   });
 
   /// Height of the bar below the status bar.
@@ -46,6 +50,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   /// Shows a back arrow (calling [onLogoTap], or popping) instead of the
   /// logo. Defaults to true when the current route can pop.
   final bool? showBackButton;
+
+  /// Live search field wiring (search screen). Ignored when [onSearchTap]
+  /// is set, since the field is then a tap target only.
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final ValueChanged<String>? onChanged;
 
   @override
   Size get preferredSize => const Size.fromHeight(barHeight);
@@ -149,6 +160,10 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               )
                             : TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                autofocus: autofocus,
+                                onChanged: onChanged,
                                 textInputAction: TextInputAction.search,
                                 decoration: InputDecoration(
                                   hintText: placeholder,
@@ -173,6 +188,30 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
               ),
+              if (controller != null && onSearchTap == null)
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller!,
+                  builder: (BuildContext context, TextEditingValue v, _) {
+                    if (v.text.isEmpty) return const SizedBox.shrink();
+                    return IconButton(
+                      tooltip: MaterialLocalizations.of(context)
+                          .deleteButtonTooltip,
+                      onPressed: () {
+                        controller!.clear();
+                        onChanged?.call('');
+                        focusNode?.requestFocus();
+                      },
+                      icon: Icon(
+                        Icons.cancel_rounded,
+                        color: searchIcon,
+                        size: 20,
+                      ),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(40, 42),
+                      ),
+                    );
+                  },
+                ),
               if (showVisualSearch) ...<Widget>[
                 Container(width: 1, height: 22, color: scheme.outlineVariant),
                 IconButton(

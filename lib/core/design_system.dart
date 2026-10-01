@@ -10,6 +10,7 @@ export 'theme/colors.dart';
 export 'theme/commerce_colors.dart';
 export 'theme/tokens.dart';
 export 'theme/typography.dart';
+export 'utils/money_formatter.dart';
 export 'widgets/app_badge.dart';
 export 'widgets/app_button.dart';
 export 'widgets/app_dialog.dart';

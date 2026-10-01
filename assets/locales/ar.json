@@ -622,5 +622,21 @@
   "home.discover.shoes": "الأحذية",
   "home.discover.audio": "الصوتيات",
   "home.categories.all": "الكل",
-  "home.categories.noSubcategories": "لا توجد فئات فرعية بعد"
+  "home.categories.noSubcategories": "لا توجد فئات فرعية بعد",
+  "productSearch.popular": "عمليات البحث الشائعة",
+  "productSearch.resultsCount": "{count} نتيجة",
+  "productSearch.showingOf": "عرض {shown} من {total}",
+  "productSearch.editSearch": "تعديل البحث",
+  "productSearch.suggestion.watches": "ساعات",
+  "productSearch.suggestion.perfume": "عطور",
+  "productSearch.suggestion.laptop": "لابتوب",
+  "productSearch.suggestion.shoes": "أحذية",
+  "productSearch.suggestion.phones": "هواتف ذكية",
+  "productSearch.suggestion.headphones": "سماعات رأس",
+  "priceFilter.any": "أي سعر",
+  "priceFilter.under": "أقل من {amount}",
+  "priceFilter.custom": "السعر",
+  "priceFilter.title": "نطاق السعر",
+  "priceFilter.clear": "مسح",
+  "priceFilter.apply": "تطبيق"
 }

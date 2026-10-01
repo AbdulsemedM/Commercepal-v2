@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/design_system.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
 import 'package:commercepal/services/localization_service.dart';
 
