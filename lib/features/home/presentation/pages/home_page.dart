@@ -5,7 +5,6 @@ import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
-import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
@@ -29,8 +28,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState = context
-        .findAncestorStateOfType<DashboardScreenState>();
+    final DashboardScreenState? dashboardState =
+        context.findAncestorStateOfType<DashboardScreenState>();
     if (dashboardState != null) {
       dashboardState.changeTab(tabIndex);
     }
@@ -91,54 +90,48 @@ class _HomePageState extends State<HomePage> {
           ),
           body: RefreshIndicator(
             onRefresh: () => _onPullToRefresh(context),
-            child: SingleChildScrollView(
+            child: CustomScrollView(
               key: const PageStorageKey<String>('home_scroll_v1'),
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: Spacing.md),
-                  const BannerSection(),
-                  const SizedBox(height: Spacing.md),
-                  const HomeCatalogModeToggle(),
-                  const SizedBox(height: Spacing.lg),
-                  const CategoriesSection(),
-                  const SizedBox(height: Spacing.lg),
-                  BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
-                    builder: (context, mode) {
-                      if (mode == HomeCatalogMode.wholesale) {
-                        return const HomeWholesaleSection();
-                      }
-                      return const HomeDiscoverSection();
-                    },
+              slivers: <Widget>[
+                const SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(height: Spacing.md),
+                      BannerSection(),
+                      SizedBox(height: Spacing.md),
+                      HomeCatalogModeToggle(),
+                      SizedBox(height: Spacing.lg),
+                      CategoriesSection(),
+                      SizedBox(height: Spacing.lg),
+                      // Hidden until the shopper has viewed something.
+                      RecentlyViewedSection(),
+                    ],
                   ),
-                  const SizedBox(height: Spacing.lg),
-                  const RecentlyViewedSection(),
-                  const TrustBadgesStrip(),
-                  const SizedBox(height: Spacing.xl),
-                ],
-              ),
+                ),
+                BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
+                  builder: (context, mode) {
+                    if (mode == HomeCatalogMode.wholesale) {
+                      return const HomeWholesaleSection();
+                    }
+                    return const HomeDiscoverSection();
+                  },
+                ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: Spacing.xl,
+                      bottom: Spacing.xl,
+                    ),
+                    child: TrustBadgesStrip(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
-    }
-
-    int cartCountFromState(CartState cartState) {
-      if (cartState is CartLoaded ||
-          cartState is CartItemAdded ||
-          cartState is CartItemUpdated ||
-          cartState is CartItemDeleted) {
-        final Cart cart = cartState is CartLoaded
-            ? cartState.cart
-            : cartState is CartItemAdded
-                ? cartState.cart
-                : cartState is CartItemUpdated
-                    ? cartState.cart
-                    : (cartState as CartItemDeleted).cart;
-        return cart.totalItems;
-      }
-      return 0;
     }
 
     return MultiBlocProvider(
@@ -163,7 +156,7 @@ class _HomePageState extends State<HomePage> {
           ? BlocBuilder<CartBloc, CartState>(
               bloc: cartBloc,
               builder: (BuildContext context, CartState cartState) {
-                return homeScaffold(context, cartCountFromState(cartState));
+                return homeScaffold(context, cartBloc!.itemCount);
               },
             )
           : Builder(

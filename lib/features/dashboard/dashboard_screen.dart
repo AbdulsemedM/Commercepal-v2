@@ -115,20 +115,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     return BlocBuilder<CartBloc, CartState>(
         builder: (context, cartState) {
           // Calculate badge counts
-          int cartCount = 0;
-          if (cartState is CartLoaded ||
-              cartState is CartItemAdded ||
-              cartState is CartItemUpdated ||
-              cartState is CartItemDeleted) {
-            final cart = cartState is CartLoaded
-                ? cartState.cart
-                : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
-            cartCount = cart.totalItems;
-          }
+          final int cartCount = context.read<CartBloc>().itemCount;
 
           final List<int> badges = <int>[0, 0, cartCount, 0];
 

@@ -143,7 +143,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: Spacing.md,
               mainAxisSpacing: Spacing.md,
-              childAspectRatio: 0.52,
+              childAspectRatio: kProductGridAspectRatio,
             ),
             delegate: SliverChildBuilderDelegate(
               (_, __) => const ProductCardShimmer(),
@@ -476,7 +476,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: Spacing.md,
             mainAxisSpacing: Spacing.md,
-            childAspectRatio: 0.52,
+            childAspectRatio: kProductGridAspectRatio,
           ),
           delegate: SliverChildBuilderDelegate(
             (BuildContext context, int index) {

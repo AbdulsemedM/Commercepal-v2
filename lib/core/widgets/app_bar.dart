@@ -77,12 +77,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         ? IconButton(
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             onPressed: onLogoTap ?? () => Navigator.of(context).maybePop(),
-            icon: Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.arrow_forward_rounded
-                  : Icons.arrow_back_rounded,
-              color: c.onHeader,
-            ),
+            // Mirrors automatically in RTL.
+            icon: Icon(Icons.arrow_back_rounded, color: c.onHeader),
           )
         : Semantics(
             button: onLogoTap != null,

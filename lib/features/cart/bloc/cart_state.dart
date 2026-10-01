@@ -43,3 +43,15 @@ final class CartCleared extends CartState {
   CartCleared(this.response);
 }
 
+
+extension CartStateX on CartState {
+  /// The cart carried by this state, or null for loading/error/initial.
+  Cart? get cartOrNull => switch (this) {
+        CartLoaded(:final Cart cart) ||
+        CartItemAdded(:final Cart cart) ||
+        CartItemUpdated(:final Cart cart) ||
+        CartItemDeleted(:final Cart cart) =>
+          cart,
+        _ => null,
+      };
+}

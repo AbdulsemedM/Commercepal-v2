@@ -29,17 +29,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
   }
 
-  int _cartCountFromState(CartState cartState) {
-    if (cartState is CartLoaded) return cartState.cart.totalItems;
-    if (cartState is CartItemAdded) return cartState.cart.totalItems;
-    if (cartState is CartItemUpdated) return cartState.cart.totalItems;
-    if (cartState is CartItemDeleted) return cartState.cart.totalItems;
-    return 0;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final int cartCount = _cartCountFromState(context.watch<CartBloc>().state);
+    final int cartCount = context.watch<CartBloc>().itemCount;
 
     return BlocProvider(
       create: (context) => CategoriesBloc()..add(FetchCategories()),

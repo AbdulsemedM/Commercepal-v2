@@ -27,7 +27,6 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final bool rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Padding(
       padding: padding,
@@ -80,12 +79,8 @@ class SectionHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(actionLabel!),
-                  Icon(
-                    rtl
-                        ? Icons.chevron_left_rounded
-                        : Icons.chevron_right_rounded,
-                    size: 20,
-                  ),
+                  // Mirrors automatically in RTL.
+                  const Icon(Icons.chevron_right_rounded, size: 20),
                 ],
               ),
             ),

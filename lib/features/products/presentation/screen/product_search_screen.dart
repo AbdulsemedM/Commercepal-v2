@@ -581,20 +581,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
       value: cartBloc,
       child: BlocBuilder<CartBloc, CartState>(
         builder: (context, cartState) {
-          int cartCount = 0;
-          if (cartState is CartLoaded ||
-              cartState is CartItemAdded ||
-              cartState is CartItemUpdated ||
-              cartState is CartItemDeleted) {
-            final cart = cartState is CartLoaded
-                ? cartState.cart
-                : cartState is CartItemAdded
-                    ? cartState.cart
-                    : cartState is CartItemUpdated
-                        ? cartState.cart
-                        : (cartState as CartItemDeleted).cart;
-            cartCount = cart.totalItems;
-          }
+          final int cartCount = cartBloc!.itemCount;
 
           final ColorScheme scheme = Theme.of(context).colorScheme;
 
@@ -659,7 +646,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: Spacing.md,
                               mainAxisSpacing: Spacing.md,
-                              childAspectRatio: 0.52,
+                              childAspectRatio: kProductGridAspectRatio,
                             ),
                             itemCount: 6,
                             itemBuilder: (context, index) {
@@ -892,7 +879,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
                                                   crossAxisCount: 2,
                                                   crossAxisSpacing: Spacing.md,
                                                   mainAxisSpacing: Spacing.md,
-                                                  childAspectRatio: 0.52,
+                                                  childAspectRatio: kProductGridAspectRatio,
                                                 ),
                                                 itemCount:
                                                     filteredProducts.length,

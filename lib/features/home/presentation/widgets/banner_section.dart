@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 /// Auto-advancing carousel of branded promo banners (matches the web).
 class BannerSection extends StatefulWidget {
@@ -40,6 +39,10 @@ class _BannerSectionState extends State<BannerSection> {
 
   void _scheduleAutoAdvance() {
     _autoAdvanceTimer?.cancel();
+    // Respect the OS "reduce motion" setting: no auto-advancing carousel.
+    final bool reduceMotion = WidgetsBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+    if (reduceMotion) return;
     _autoAdvanceTimer = Timer.periodic(_autoAdvanceInterval, (_) {
       if (!mounted || !_pageController.hasClients) return;
       final int next = (_currentPage + 1) % _bannerAssets.length;
@@ -71,73 +74,14 @@ class _BannerSectionState extends State<BannerSection> {
   }
 
   void _showComingSoonDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext ctx) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.bolt_rounded,
-                    size: 36,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: Spacing.md),
-                Text(
-                  'Coming Soon',
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.navy,
-                      ),
-                ),
-                const SizedBox(height: Spacing.sm),
-                Text(
-                  'Flash Deals are on the way. We are putting together '
-                  'lightning-fast offers — check back soon.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.navy.withValues(alpha: 0.7),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: Spacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: AppColors.onSecondary,
-                      padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Got it',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    AppDialog.show<void>(
+      context,
+      icon: const Icon(Icons.bolt_rounded),
+      title: context.tr('home.flashDeals.comingSoonTitle'),
+      message: context.tr('home.flashDeals.comingSoonMessage'),
+      actions: <AppDialogAction>[
+        AppDialogAction(label: context.tr('common.gotIt'), isPrimary: true),
+      ],
     );
   }
 
@@ -150,69 +94,85 @@ class _BannerSectionState extends State<BannerSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: AspectRatio(
-        aspectRatio: _bannerAspectRatio,
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: _bannerAssets.length,
-              itemBuilder: (BuildContext context, int index) {
-                final double screenWidth = MediaQuery.sizeOf(context).width;
-                final double dpr = MediaQuery.devicePixelRatioOf(context);
-                // Decode near display width, not full 1536px source.
-                final int cacheWidth =
-                    ((screenWidth - (Spacing.md * 2)) * dpr).round();
-                return GestureDetector(
-                  onTap: () => _onBannerTap(index),
-                  child: Image.asset(
-                    _bannerAssets[index],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    cacheWidth: cacheWidth > 0 ? cacheWidth : null,
-                  ),
-                );
-              },
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: Spacing.sm,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List<Widget>.generate(_bannerAssets.length, (int i) {
-                  final bool active = i == _currentPage;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: active ? 18 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: active
-                          ? AppColors.secondary
-                          : Colors.white.withValues(alpha: 0.55),
-                    ),
-                  );
-                }),
+    final List<String> labels = <String>[
+      context.tr('home.banner.megaSale'),
+      context.tr('home.banner.newArrivals'),
+      context.tr('home.banner.flashDeals'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
+      child: ClipRRect(
+        borderRadius: AppRadius.mdAll,
+        child: AspectRatio(
+          aspectRatio: _bannerAspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              NotificationListener<ScrollStartNotification>(
+                // Pause auto-advance while the user is swiping.
+                onNotification: (ScrollStartNotification n) {
+                  if (n.dragDetails != null) _autoAdvanceTimer?.cancel();
+                  return false;
+                },
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _bannerAssets.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final double screenWidth = MediaQuery.sizeOf(context).width;
+                    final double dpr = MediaQuery.devicePixelRatioOf(context);
+                    // Decode near display width, not full 1536px source.
+                    final int cacheWidth =
+                        ((screenWidth - (Spacing.gutter * 2)) * dpr).round();
+                    return Semantics(
+                      button: true,
+                      label: labels[index],
+                      hint: '${index + 1}/${_bannerAssets.length}',
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => _onBannerTap(index),
+                        child: Image.asset(
+                          _bannerAssets[index],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          cacheWidth: cacheWidth > 0 ? cacheWidth : null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+              PositionedDirectional(
+                start: 0,
+                end: 0,
+                bottom: Spacing.xs,
+                child: ExcludeSemantics(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children:
+                        List<Widget>.generate(_bannerAssets.length, (int i) {
+                      final bool active = i == _currentPage;
+                      return AnimatedContainer(
+                        duration: AppMotion.fast,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: active ? 16 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          borderRadius: AppRadius.pillAll,
+                          color: active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.5),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

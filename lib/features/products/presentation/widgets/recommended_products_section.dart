@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_product_rows.dart';
 import 'package:commercepal/features/home/presentation/widgets/product_card.dart';
 import 'package:commercepal/features/products/data/models/product.dart';
@@ -126,26 +127,29 @@ class _YouMayAlsoLikeSectionState extends State<YouMayAlsoLikeSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Text(
-              'You May Also Like',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ),
-          const SizedBox(height: Spacing.sm),
+          SectionHeader(title: context.tr('product.youMayAlsoLike')),
+          const SizedBox(height: Spacing.xs),
           if (_loading)
-            const SizedBox(
-              height: kHomeProductRowHeight,
-              child: Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
+            SizedBox(
+              height: homeProductRowHeight(context),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.md,
+                  vertical: kHomeProductRowVerticalInset,
+                ),
+                itemCount: 3,
+                separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
+                itemBuilder: (_, __) => const SizedBox(
+                  width: kHomeProductCardWidth,
+                  child: ProductCardShimmer(),
+                ),
               ),
             )
           else
             SizedBox(
-              height: kHomeProductRowHeight,
+              height: homeProductRowHeight(context),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(

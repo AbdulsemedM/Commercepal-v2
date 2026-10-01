@@ -1,23 +1,21 @@
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Brand-styled catalogue mode switcher (Retail ↔ Wholesale).
+/// Catalogue mode switcher (Retail ↔ Wholesale) as a segmented control.
 class HomeCatalogModeToggle extends StatelessWidget {
   const HomeCatalogModeToggle({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
       child: BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
         builder: (context, mode) {
-          final isWholesale = mode == HomeCatalogMode.wholesale;
+          final bool isWholesale = mode == HomeCatalogMode.wholesale;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -29,15 +27,12 @@ class HomeCatalogModeToggle extends StatelessWidget {
                   context.read<HomeCatalogModeCubit>().setMode(next);
                 },
               ),
-              const SizedBox(height: Spacing.sm),
+              const SizedBox(height: Spacing.xs),
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
+                duration: AppMotion.fast,
                 child: Text(
                   key: ValueKey<bool>(isWholesale),
-                  LocalizationService.t(
-                    context,
+                  context.tr(
                     isWholesale
                         ? 'home.catalog.wholesaleHint'
                         : 'home.catalog.retailHint',
@@ -45,7 +40,6 @@ class HomeCatalogModeToggle extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.3,
                       ),
                 ),
               ),
@@ -68,57 +62,37 @@ class _CatalogModeTrack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isWholesale = mode == HomeCatalogMode.wholesale;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final CommerceColors c = context.commerce;
+    final bool isWholesale = mode == HomeCatalogMode.wholesale;
+    final bool rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Container(
-      height: 56,
-      padding: const EdgeInsets.all(4),
+      height: 44,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: scheme.brightness == Brightness.dark
-            ? scheme.surfaceContainerHighest
-            : AppDecorations.softCream,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.55),
-        ),
-        boxShadow: AppDecorations.softCardShadow(),
+        color: scheme.surfaceContainerHigh,
+        borderRadius: AppRadius.pillAll,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final thumbWidth = (constraints.maxWidth - 8) / 2;
+          final double thumbWidth = constraints.maxWidth / 2;
+          // Visual position flips in RTL so "Retail" stays first.
+          final bool thumbAtEnd = isWholesale != rtl;
           return Stack(
             children: <Widget>[
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-                left: isWholesale ? thumbWidth + 4 : 0,
+                duration: AppMotion.medium,
+                curve: AppMotion.emphasized,
+                left: thumbAtEnd ? thumbWidth : 0,
                 top: 0,
                 bottom: 0,
                 width: thumbWidth,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: isWholesale
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: <Color>[
-                              Color(0xFFB45309),
-                              AppColors.secondary,
-                            ],
-                          )
-                        : AppDecorations.primaryCtaGradient,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: (isWholesale
-                                ? AppColors.secondary
-                                : AppColors.primary)
-                            .withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    color: scheme.surface,
+                    borderRadius: AppRadius.pillAll,
+                    boxShadow: AppShadows.sm(scheme.brightness),
                   ),
                 ),
               ),
@@ -127,22 +101,18 @@ class _CatalogModeTrack extends StatelessWidget {
                   Expanded(
                     child: _ModeOption(
                       selected: !isWholesale,
-                      label: LocalizationService.t(
-                        context,
-                        'home.catalog.retail',
-                      ),
+                      label: context.tr('home.catalog.retail'),
                       icon: Icons.storefront_rounded,
+                      activeColor: scheme.primary,
                       onTap: () => onSelect(HomeCatalogMode.retail),
                     ),
                   ),
                   Expanded(
                     child: _ModeOption(
                       selected: isWholesale,
-                      label: LocalizationService.t(
-                        context,
-                        'home.catalog.wholesale',
-                      ),
+                      label: context.tr('home.catalog.wholesale'),
                       icon: Icons.inventory_2_rounded,
+                      activeColor: c.deal,
                       onTap: () => onSelect(HomeCatalogMode.wholesale),
                     ),
                   ),
@@ -161,46 +131,51 @@ class _ModeOption extends StatelessWidget {
     required this.selected,
     required this.label,
     required this.icon,
+    required this.activeColor,
     required this.onTap,
   });
 
   final bool selected;
   final String label;
   final IconData icon;
+  final Color activeColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     final Color fg = selected
-        ? Colors.white
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurfaceVariant;
 
-    return Material(
-      color: Colors.transparent,
+    return Semantics(
+      selected: selected,
+      button: true,
+      inMutuallyExclusiveGroup: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        splashColor: Colors.white24,
+        borderRadius: AppRadius.pillAll,
         child: Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              AnimatedScale(
-                scale: selected ? 1.0 : 0.92,
-                duration: const Duration(milliseconds: 220),
-                child: Icon(icon, size: 20, color: fg),
-              ),
-              const SizedBox(width: 8),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                style: TextStyle(
-                  color: fg,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 14,
-                  letterSpacing: 0.2,
+              Icon(icon, size: 18, color: selected ? activeColor : fg),
+              const SizedBox(width: 6),
+              Flexible(
+                child: AnimatedDefaultTextStyle(
+                  duration: AppMotion.fast,
+                  style: (theme.textTheme.labelLarge ?? const TextStyle())
+                      .copyWith(
+                    color: fg,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                child: Text(label),
               ),
             ],
           ),

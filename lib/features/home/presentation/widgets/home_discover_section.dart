@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
 import 'package:commercepal/features/home/data/home_discover_config.dart';
 import 'package:commercepal/features/home/presentation/widgets/home_image_prefetch.dart';
@@ -33,22 +33,19 @@ class HomeDiscoverSection extends StatelessWidget {
       },
       builder: (context, state) {
         if (state is HomeDiscoverLoading || state is HomeDiscoverInitial) {
-          return const _DiscoverLoading();
+          return const SliverToBoxAdapter(child: HomeSectionsSkeleton());
         }
         if (state is HomeDiscoverError) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
-            child: Center(
-              child: Text(
-                state.message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
+          return SliverToBoxAdapter(
+            child: AppEmptyState(
+              compact: true,
+              isError: true,
+              icon: Icons.wifi_off_rounded,
+              title: context.tr('common.somethingWentWrong'),
+              subtitle: context.tr('common.checkConnection'),
+              primaryLabel: context.tr('common.retry'),
+              onPrimary: () =>
+                  context.read<HomeDiscoverBloc>().add(FetchHomeDiscover()),
             ),
           );
         }
@@ -61,23 +58,19 @@ class HomeDiscoverSection extends StatelessWidget {
             sections: state.sections,
             maxProductsPerSection: kHomeDiscoverMaxProductsPerSection,
           );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              for (var i = 0; i < kHomeDiscoverSections.length; i++) ...[
-                if (i > 0) const SizedBox(height: Spacing.lg),
+          return SliverList.separated(
+            itemCount: kHomeDiscoverSections.length,
+            separatorBuilder: (_, __) => const SizedBox(height: Spacing.lg),
+            itemBuilder: (BuildContext context, int i) =>
                 _DiscoverCategoryBlock(
-                  sectionIndex: i,
-                  config: kHomeDiscoverSections[i],
-                  products: state.sections[kHomeDiscoverSections[i].id] ??
-                      <Product>[],
-                ),
-              ],
-              const SizedBox(height: Spacing.md),
-            ],
+              sectionIndex: i,
+              config: kHomeDiscoverSections[i],
+              products:
+                  state.sections[kHomeDiscoverSections[i].id] ?? <Product>[],
+            ),
           );
         }
-        return const SizedBox.shrink();
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
       },
     );
   }
@@ -107,8 +100,8 @@ class _DiscoverCategoryBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
           child: HomeSectionHeader(
-            title: config.title,
-            actionLabel: 'See more',
+            title: _localizedTitle(context, config),
+            actionLabel: context.tr('common.seeAll'),
             onAction: () {
               context.push(
                 '${AppRoutes.productSearch}?query=${Uri.encodeComponent(config.searchQuery)}',
@@ -121,7 +114,7 @@ class _DiscoverCategoryBlock extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
             child: Text(
-              'No products in this category right now.',
+              context.tr('home.discover.empty'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -131,63 +124,18 @@ class _DiscoverCategoryBlock extends StatelessWidget {
           for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
             HomeProductRow(
               products: rows[rowIndex],
-              imagePriorityBase: sectionIndex * kHomeDiscoverMaxProductsPerSection +
-                  rowIndex * kHomeProductsPerRow,
+              imagePriorityBase:
+                  sectionIndex * kHomeDiscoverMaxProductsPerSection +
+                      rowIndex * kHomeProductsPerRow,
             ),
       ],
     );
   }
 }
 
-class _DiscoverLoading extends StatelessWidget {
-  const _DiscoverLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (var s = 0; s < 4; s++) ...[
-          if (s > 0) const SizedBox(height: Spacing.lg),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 120,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.sm),
-          for (var row = 0; row < 2; row++)
-            SizedBox(
-              height: kHomeProductRowHeight,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: kHomeProductRowVerticalInset,
-                ),
-                itemCount: kHomeProductsPerRow,
-                separatorBuilder: (_, __) => const SizedBox(width: Spacing.sm),
-                itemBuilder: (_, __) => Container(
-                  width: kHomeProductCardWidth,
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: AppDecorations.cardBorderRadius,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ],
-    );
-  }
+/// Translated section title, falling back to the config's English title.
+String _localizedTitle(BuildContext context, HomeDiscoverSectionConfig c) {
+  final String key = 'home.discover.${c.id}';
+  final String t = context.tr(key);
+  return t == key ? c.title : t;
 }

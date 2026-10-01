@@ -49,20 +49,9 @@ class _ProductDetailsReviewsScreenState
     return BlocBuilder<CartBloc, CartState>(
       bloc: cartBloc,
       builder: (context, cartState) {
-        int cartCount = 0;
-        if (cartState is CartLoaded ||
-            cartState is CartItemAdded ||
-            cartState is CartItemUpdated ||
-            cartState is CartItemDeleted) {
-          final cart = cartState is CartLoaded
-              ? cartState.cart
-              : cartState is CartItemAdded
-                  ? cartState.cart
-                  : cartState is CartItemUpdated
-                      ? cartState.cart
-                      : (cartState as CartItemDeleted).cart;
-          cartCount = cart.totalItems;
-        }
+        final int cartCount = cartBloc?.itemCount ??
+            cartState.cartOrNull?.totalItems ??
+            0;
 
         final ColorScheme scheme = Theme.of(context).colorScheme;
         return Scaffold(
