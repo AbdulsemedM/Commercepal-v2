@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:flutter/services.dart';
+
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/variant.dart';
 
+/// Multi-select option tiles; each selected option gets its own quantity.
 class MultiVariantSelectorWidget extends StatelessWidget {
   const MultiVariantSelectorWidget({
     super.key,
@@ -13,238 +16,151 @@ class MultiVariantSelectorWidget extends StatelessWidget {
   });
 
   final List<Variant> variants;
-  final Map<int, int> selectedVariants; // variant index -> quantity
+
+  /// variant index -> quantity
+  final Map<int, int> selectedVariants;
   final ValueChanged<int> onVariantToggled;
   final ValueChanged<(int, int)> onQuantityChanged;
 
+  String _label(BuildContext context, int index) {
+    final Variant v = variants[index];
+    if (v.configurators.isNotEmpty) {
+      return v.configurators.map((c) => c.value).join(' / ');
+    }
+    return context.tr('product.option', <String, Object?>{'n': index + 1});
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (variants.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (variants.isEmpty) return const SizedBox.shrink();
 
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          'Select Variants',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.navy,
-              ),
+          context.tr('product.chooseOptions'),
+          style: theme.textTheme.titleSmall,
         ),
         const SizedBox(height: Spacing.sm),
         Wrap(
-          spacing: Spacing.sm,
-          runSpacing: Spacing.sm,
+          spacing: Spacing.xs,
+          runSpacing: Spacing.xs,
           children: List<Widget>.generate(variants.length, (int index) {
             final Variant variant = variants[index];
-            final bool isSelected = selectedVariants.containsKey(index);
-            final int quantity = selectedVariants[index] ?? 0;
-
-            String label = '';
-            if (variant.configurators.isNotEmpty) {
-              label = variant.configurators.map((c) => c.value).join(' / ');
-            } else {
-              label = 'Option ${index + 1}';
-            }
-
-            final bool isInStock = variant.quantity > 0;
+            final bool selected = selectedVariants.containsKey(index);
+            final bool inStock = variant.quantity > 0;
             final String? priceText =
                 variant.pricing?.formattedCurrentPrice.isNotEmpty == true
                     ? variant.pricing!.formattedCurrentPrice
                     : null;
+            final Color fg =
+                inStock ? scheme.onSurface : scheme.onSurfaceVariant;
 
-            return GestureDetector(
-              onTap: isInStock ? () => onVariantToggled(index) : null,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: <Widget>[
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    constraints: const BoxConstraints(minWidth: 120),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.md,
-                      vertical: Spacing.sm + 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isInStock
-                          ? Colors.white
-                          : scheme.surfaceContainerHighest,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : isInStock
-                                ? const Color(0xFFD6CBBF)
-                                : scheme.outline,
-                        width: isSelected ? 2.5 : 1,
+            return Semantics(
+              button: true,
+              selected: selected,
+              enabled: inStock,
+              child: Material(
+                color: selected
+                    ? scheme.primaryContainer
+                    : (inStock ? scheme.surface : scheme.surfaceContainerHigh),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.mdAll,
+                  side: BorderSide(
+                    color: selected ? scheme.primary : scheme.outline,
+                    width: selected ? 2 : 1,
+                  ),
+                ),
+                child: InkWell(
+                  borderRadius: AppRadius.mdAll,
+                  onTap: inStock
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          onVariantToggled(index);
+                        }
+                      : null,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 96),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.sm,
+                        vertical: Spacing.xs + 2,
                       ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: isInStock
-                                ? AppColors.navy
-                                : scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        if (priceText != null) ...[
-                          const SizedBox(height: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
                           Text(
-                            priceText,
-                            style: TextStyle(
-                              color: isInStock
-                                  ? AppColors.pink
-                                  : scheme.onSurfaceVariant,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                            _label(context, index),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: fg,
+                              decoration:
+                                  inStock ? null : TextDecoration.lineThrough,
                             ),
                           ),
-                        ],
-                        if (!isInStock) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Out of Stock',
-                            style: TextStyle(
-                              color: scheme.onSurfaceVariant,
-                              fontSize: 10,
-                              fontStyle: FontStyle.italic,
+                          if (priceText != null)
+                            Text(
+                              priceText,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: fg,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                        if (isSelected && quantity > 1) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Qty $quantity',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                          if (!inStock)
+                            Text(
+                              context.tr('product.outOfStock'),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                  if (isSelected)
-                    Positioned(
-                      top: -6,
-                      right: -6,
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                ],
+                ),
               ),
             );
           }),
         ),
-        if (selectedVariants.isNotEmpty) ...[
+        if (selectedVariants.isNotEmpty) ...<Widget>[
           const SizedBox(height: Spacing.md),
-          ...selectedVariants.entries.map((MapEntry<int, int> entry) {
-            final int variantIndex = entry.key;
-            final int quantity = entry.value;
-            final Variant variant = variants[variantIndex];
-
-            String label = '';
-            if (variant.configurators.isNotEmpty) {
-              label = variant.configurators.map((c) => c.value).join(' / ');
-            } else {
-              label = 'Option ${variantIndex + 1}';
-            }
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: Spacing.sm),
-              padding: const EdgeInsets.all(Spacing.sm),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: scheme.outlineVariant),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: scheme.outlineVariant),
-                      borderRadius: BorderRadius.circular(8),
+          Card(
+            child: Column(
+              children: <Widget>[
+                for (final MapEntry<int, int> entry
+                    in selectedVariants.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.xs,
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        IconButton(
-                          icon: const Icon(Icons.remove, size: 18),
-                          onPressed: quantity > 1
-                              ? () => onQuantityChanged(
-                                    (variantIndex, quantity - 1),
-                                  )
-                              : null,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                        ),
-                        Container(
-                          width: 36,
-                          alignment: Alignment.center,
+                        Expanded(
                           child: Text(
-                            '$quantity',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
+                            _label(context, entry.key),
+                            style: theme.textTheme.bodyMedium,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add, size: 18),
-                          onPressed: variant.quantity > quantity
-                              ? () => onQuantityChanged(
-                                    (variantIndex, quantity + 1),
-                                  )
-                              : null,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
+                        QuantityStepper(
+                          compact: true,
+                          value: entry.value,
+                          max: variants[entry.key].quantity > 0
+                              ? variants[entry.key].quantity
+                              : 99,
+                          onChanged: (int q) =>
+                              onQuantityChanged((entry.key, q)),
+                          onRemove: () => onVariantToggled(entry.key),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            );
-          }),
+              ],
+            ),
+          ),
         ],
       ],
     );

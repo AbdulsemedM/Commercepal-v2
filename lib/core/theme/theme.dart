@@ -147,7 +147,8 @@ class AppTheme {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.mdAll,
-          side: isLight ? BorderSide(color: commerce.border) : BorderSide.none,
+          // Bordered in both modes so cards stay defined on any background.
+          side: BorderSide(color: commerce.border),
         ),
       ),
       dividerTheme: DividerThemeData(

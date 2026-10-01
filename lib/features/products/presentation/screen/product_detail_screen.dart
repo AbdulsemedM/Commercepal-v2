@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
@@ -64,6 +64,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isInCart = false;
   bool _isInWishlist = false;
   bool _isAddingToCart = false;
+  /// Set by Buy now: jump to the cart once the add succeeds.
+  bool _buyNowPending = false;
   String? _wishlistStateLoadedForProductId;
   String _cachedCountry = 'ET'; // Default Ethiopia, will be loaded in initState
   // Map to track multiple variants with their quantities
@@ -112,9 +114,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _scrollToReviews() {
     final BuildContext? target = _reviewsKey.currentContext;
     if (target == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No customer feedback yet')),
-      );
+      AppSnackbars.info(context, context.tr('product.noReviewsYet'));
       return;
     }
     Scrollable.ensureVisible(
@@ -128,18 +128,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Map<String, String> _buildSpecifications(ProductDetails product) {
     final Map<String, String> specs = <String, String>{
       if (product.physicalParameters.length > 0)
-        'Length': '${product.physicalParameters.length}cm',
+        context.tr('product.spec.length'):
+            '${product.physicalParameters.length} cm',
       if (product.physicalParameters.width > 0)
-        'Width': '${product.physicalParameters.width}cm',
+        context.tr('product.spec.width'): '${product.physicalParameters.width} cm',
       if (product.physicalParameters.height > 0)
-        'Height': '${product.physicalParameters.height}cm',
+        context.tr('product.spec.height'):
+            '${product.physicalParameters.height} cm',
       if (product.physicalParameters.weight > 0)
-        'Weight': '${product.physicalParameters.weight}g',
+        context.tr('product.spec.weight'):
+            '${product.physicalParameters.weight} g',
       if (product.minOrderQuantity > 1)
-        'Min. order quantity': '${product.minOrderQuantity}',
+        context.tr('product.spec.minOrder'): '${product.minOrderQuantity}',
       if (product.quantityStep > 1)
-        'Quantity step': '${product.quantityStep}',
-      if (product.hasHierarchicalConfigurators) 'Configurable options': 'Yes',
+        context.tr('product.spec.quantityStep'): '${product.quantityStep}',
+      if (product.hasHierarchicalConfigurators)
+        context.tr('product.spec.configurable'): context.tr('common.yes'),
     };
 
     for (final String line in product.description) {
@@ -250,24 +254,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               ListTile(
-                leading: const Icon(Icons.compare_arrows),
-                title: const Text('Compare'),
-                subtitle: const Text('Add to compare (up to 4)'),
+                leading: const Icon(Icons.compare_arrows_rounded),
+                title: Text(context.tr('product.compare')),
+                subtitle: Text(context.tr('product.compareHint')),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await Storage().addProductCompareId(product.id);
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Added to compare. Opening compare screen…'),
-                    ),
-                  );
                   context.push(AppRoutes.productCompare);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.ios_share_outlined),
-                title: const Text('Share & link'),
+                title: Text(context.tr('product.share')),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await showProductActionsSheet(
@@ -301,28 +300,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     ProductDetails productDetails, {
     required String fallbackName,
     required String fallbackImageUrl,
+    bool buyNow = false,
   }) {
     if (_isAddingToCart) return;
 
     if (widget.productId == null || widget.productId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Product ID is required'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, context.tr('common.somethingWentWrong'));
       return;
     }
 
     if (!_canPurchase(productDetails)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'This item is currently unavailable and cannot be added to your cart.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppSnackbars.error(context, context.tr('product.unavailableMessage'));
       return;
     }
 
@@ -330,12 +318,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     // If product has variants, user must select at least one
     if (hasVariants && _selectedVariants.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one variant'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppSnackbars.info(context, context.tr('product.selectOption'));
       return;
     }
 
@@ -344,6 +327,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     HapticFeedback.lightImpact();
     setState(() {
       _isAddingToCart = true;
+      _buyNowPending = buyNow;
     });
 
     if (!hasVariants) {
@@ -404,14 +388,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       // Nothing was dispatched, so no CartItemAdded will clear the spinner.
       setState(() {
         _isAddingToCart = false;
+        _buyNowPending = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'The selected options are currently unavailable. Please choose another option.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
+      AppSnackbars.error(
+        context,
+        context.tr('product.optionsUnavailable'),
       );
       return;
     }
@@ -457,6 +438,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
       child: BlocListener<CartBloc, CartState>(
+        // Only react to adds started from this screen.
+        listenWhen: (_, CartState state) =>
+            _isAddingToCart && (state is CartItemAdded || state is CartError),
         listener: (context, state) {
           if (state is CartItemAdded) {
             HapticFeedback.mediumImpact();
@@ -467,26 +451,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 currency: _getCurrency(context),
               );
             }
+            final bool buyNow = _buyNowPending;
             setState(() {
               _isInCart = true;
               _isAddingToCart = false;
+              _buyNowPending = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Item added to cart'),
-                backgroundColor: Colors.green,
-              ),
+            if (buyNow) {
+              _navigateToTab(context, 2);
+              return;
+            }
+            AppSnackbars.success(
+              context,
+              context.tr('product.addedToCart'),
+              actionLabel: context.tr('product.viewCart'),
+              onAction: () => _navigateToTab(context, 2),
             );
           } else if (state is CartError) {
             setState(() {
               _isAddingToCart = false;
+              _buyNowPending = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           }
         },
         child: BlocBuilder<CartBloc, CartState>(
@@ -494,7 +480,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             final int cartCount = context.read<CartBloc>().itemCount;
 
             return Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              // Product pages read as one sheet, like a catalogue page.
+              backgroundColor: Theme.of(context).colorScheme.surface,
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(AppBarWidget.barHeight),
                 child: BlocBuilder<ProductDetailsBloc, ProductDetailsState>(
@@ -518,18 +505,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     },
                     additionalActions: pdState is ProductDetailsLoaded
                         ? <Widget>[
-                            Semantics(
-                              label: 'Product actions',
-                              button: true,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () => _onProductOverflowMenu(
-                                  context,
-                                  pdState.productDetails,
-                                ),
+                            IconButton(
+                              tooltip: context.tr('product.moreActions'),
+                              icon: Icon(
+                                Icons.more_vert_rounded,
+                                color: context.commerce.onHeader,
+                              ),
+                              onPressed: () => _onProductOverflowMenu(
+                                context,
+                                pdState.productDetails,
                               ),
                             ),
                           ]
@@ -616,6 +600,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         ),
                                       ]
                                     : []));
+                    final String resolvedCurrency =
+                        selectedVariant?.pricing?.currency.isNotEmpty == true
+                            ? selectedVariant!.pricing!.currency
+                            : (product.pricing.currency.isNotEmpty
+                                ? product.pricing.currency
+                                : _getCurrency(context));
                     final String fallbackImageUrl = galleryImages.isEmpty
                         ? ''
                         : (galleryImages.first.main.isNotEmpty
@@ -640,7 +630,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: Spacing.sm),
                                   ProductImageGallery(
                                     images: galleryImages,
                                     isInWishlist: _isInWishlist,
@@ -650,38 +639,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   const SizedBox(height: Spacing.md),
                                   ProductInfoSection(
                                     title: displayTitle,
-                                    price: currentPrice,
-                                    originalPrice: product
-                                            .pricing
-                                            .formattedOriginalPrice
-                                            .isNotEmpty
-                                        ? product.pricing.formattedOriginalPrice
+                                    price: selectedVariant
+                                            ?.pricing?.currentPrice ??
+                                        product.pricing.currentPrice,
+                                    originalPrice: product.pricing.isOnDiscount
+                                        ? product.pricing.originalPrice
                                         : null,
-                                    isOnDiscount: product.pricing.isOnDiscount,
+                                    currency: resolvedCurrency,
+                                    priceText: currentPrice,
                                     rating: displayRating,
                                     reviewCount: displayReviewCount,
+                                    onRatingTap: _scrollToReviews,
                                     code: product.id,
                                     category: product.categoryId,
-                                    keywords: product.brandName,
-                                    vendorName: product.vendorName.isNotEmpty
-                                        ? product.vendorName
-                                        : null,
+                                    storeName: product.brandName.isNotEmpty
+                                        ? product.brandName
+                                        : (product.vendorName.isNotEmpty
+                                            ? product.vendorName
+                                            : null),
                                     stockLevel: product.stockLevel,
-                                    status: product.status.isNotEmpty
-                                        ? product.status
-                                        : null,
-                                    stuffStatus:
-                                        product.stuffStatus.isNotEmpty
-                                            ? product.stuffStatus
-                                            : null,
-                                    createdTime:
-                                        product.createdTime.isNotEmpty
-                                            ? product.createdTime
-                                            : null,
-                                    updatedTime:
-                                        product.updatedTime.isNotEmpty
-                                            ? product.updatedTime
-                                            : null,
+                                    stuffStatus: product.stuffStatus,
+                                    createdTime: product.createdTime,
                                     isSellAllowed: product.isSellAllowed,
                                     variantSelector:
                                         product.variants.isNotEmpty
@@ -742,13 +720,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     },
                                     onCustomerFeedback: () {
                                       if (product.customerReviews.isEmpty) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'No customer feedback yet',
-                                            ),
-                                          ),
+                                        AppSnackbars.info(
+                                          context,
+                                          context.tr('product.noReviewsYet'),
                                         );
                                         return;
                                       }
@@ -773,14 +747,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Text(
-                                              'Description',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
+                                            Semantics(
+                                              header: true,
+                                              child: Text(
+                                                context.tr(
+                                                  'product.description',
+                                                ),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge,
+                                              ),
                                             ),
                                             const SizedBox(height: Spacing.sm),
                                             ...paragraphs.map(
@@ -794,9 +770,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                       .textTheme
                                                       .bodyMedium
                                                       ?.copyWith(
-                                                        color:
-                                                            Colors.grey[800],
-                                                        height: 1.4,
+                                                        height: 1.5,
                                                       ),
                                                 ),
                                               ),
@@ -870,101 +844,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         BlocBuilder<CartBloc, CartState>(
                           builder: (context, cartState) {
                             bool itemInCart = _isInCart;
-                            if (cartState is CartLoaded ||
-                                cartState is CartItemAdded ||
-                                cartState is CartItemUpdated ||
-                                cartState is CartItemDeleted) {
-                              final cart = cartState is CartLoaded
-                                  ? cartState.cart
-                                  : cartState is CartItemAdded
-                                  ? cartState.cart
-                                  : cartState is CartItemUpdated
-                                  ? cartState.cart
-                                  : (cartState as CartItemDeleted).cart;
+                            final cart = cartState.cartOrNull;
+                            if (cart != null) {
                               itemInCart = cart.items.any(
                                 (item) => item.productId == widget.productId,
                               );
-                              if (itemInCart && !_isInCart) {
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  if (mounted) {
-                                    setState(() {
-                                      _isInCart = true;
-                                    });
-                                  }
-                                });
-                              }
                             }
 
-                            // Calculate total quantity and price for selected variants
-                            int totalQuantity = _selectedVariants.values.fold(0, (sum, qty) => sum + qty);
+                            // Total quantity and price for selected variants.
+                            final int totalQuantity = _selectedVariants.values
+                                .fold(0, (int sum, int qty) => sum + qty);
                             double totalPrice = 0.0;
-                            for (final entry in _selectedVariants.entries) {
-                              final variantIndex = entry.key;
-                              final quantity = entry.value;
-                              if (variantIndex < product.variants.length) {
-                                final variant = product.variants[variantIndex];
-                                final price = variant.pricing?.currentPrice ?? product.pricing.currentPrice;
-                                totalPrice += price * quantity;
+                            for (final MapEntry<int, int> entry
+                                in _selectedVariants.entries) {
+                              if (entry.key < product.variants.length) {
+                                final variant = product.variants[entry.key];
+                                final double price =
+                                    variant.pricing?.currentPrice ??
+                                        product.pricing.currentPrice;
+                                totalPrice += price * entry.value;
                               }
                             }
-                            
-                            final hasSelectedVariants = _selectedVariants.isNotEmpty;
-                            final int displayQuantity =
-                                totalQuantity > 0 ? totalQuantity : _quantity;
-                            final String resolvedCurrency =
-                                selectedVariant?.pricing?.currency.isNotEmpty ==
-                                        true
-                                    ? selectedVariant!.pricing!.currency
-                                    : (product.pricing.currency.isNotEmpty
-                                        ? product.pricing.currency
-                                        : _getCurrency(context));
-                            final double resolvedUnitPrice =
-                                selectedVariant?.pricing?.currentPrice ??
-                                    product.pricing.currentPrice;
+                            final bool hasSelectedVariants =
+                                _selectedVariants.isNotEmpty;
+
+                            void add({bool buyNow = false}) {
+                              _handleAddToCart(
+                                context,
+                                product,
+                                fallbackName: displayTitle,
+                                fallbackImageUrl: fallbackImageUrl,
+                                buyNow: buyNow,
+                              );
+                            }
 
                             return AddToCartSection(
                               isInCart: itemInCart && !hasSelectedVariants,
                               isInWishlist: _isInWishlist,
                               isAddingToCart: _isAddingToCart,
                               canAddToCart: _canPurchase(product),
-                              quantity: displayQuantity,
-                              unitPrice: hasSelectedVariants
-                                  ? MoneyFormatter.format(
-                                      totalPrice,
-                                      resolvedCurrency,
-                                    )
-                                  : currentPrice,
+                              quantity: totalQuantity,
                               total: hasSelectedVariants
                                   ? MoneyFormatter.format(
                                       totalPrice,
                                       resolvedCurrency,
                                     )
-                                  : (resolvedUnitPrice > 0
-                                      ? MoneyFormatter.format(
-                                          resolvedUnitPrice * displayQuantity,
-                                          resolvedCurrency,
-                                        )
-                                      : null),
-                              onAddToCart: () {
-                                _handleAddToCart(
-                                  context,
-                                  product,
-                                  fallbackName: displayTitle,
-                                  fallbackImageUrl: fallbackImageUrl,
-                                );
-                              },
-                              onQuantityChanged: (int newQuantity) {
-                                // This is handled by the multi-variant selector
-                                // Keep for backward compatibility
-                                if (!hasSelectedVariants) {
-                                  setState(() {
-                                    _quantity = newQuantity;
-                                  });
-                                }
-                              },
-                              onToggleFavorite: () => _toggleWishlist(product),
+                                  : null,
+                              onAddToCart: add,
+                              onBuyNow: () => add(buyNow: true),
+                              onViewCart: () => _navigateToTab(context, 2),
                             );
                           },
                         ),
