@@ -691,5 +691,12 @@
   "product.error.offline.title": "Dhibaato xiriir",
   "product.error.offline.hint": "Hubi shabakaddaada oo isku day mar kale.",
   "product.error.generic.title": "Alaabtan lama soo dejin karin",
-  "product.error.generic.hint": "Wax baa khaldamay markii la soo dejinayay alaabtan."
+  "product.error.generic.hint": "Wax baa khaldamay markii la soo dejinayay alaabtan.",
+  "cart.titleCount": "Gaadhiga ({count})",
+  "cart.itemRemovedNamed": "\"{name}\" waa la saaray",
+  "cart.priceDropSaved": "Qiimaha wuu dhacay · keydi {amount}",
+  "cart.unavailableBanner": "{count} shay hadda lama dalban karo. Ka saar si aad u bixiso.",
+  "cart.savingAmount": "Waxaad keydisaa {amount}",
+  "cart.proceedToCheckout": "U gudub bixinta ({count})",
+  "cart.unavailableBannerOne": "Hal shay hadda lama dalban karo. Ka saar si aad u bixiso."
 }

@@ -691,5 +691,12 @@
   "product.error.offline.title": "مشكلة في الاتصال",
   "product.error.offline.hint": "تحقق من الشبكة وحاول مرة أخرى.",
   "product.error.generic.title": "تعذر تحميل هذا المنتج",
-  "product.error.generic.hint": "حدث خطأ أثناء تحميل هذا المنتج."
+  "product.error.generic.hint": "حدث خطأ أثناء تحميل هذا المنتج.",
+  "cart.titleCount": "السلة ({count})",
+  "cart.itemRemovedNamed": "تمت إزالة \"{name}\"",
+  "cart.priceDropSaved": "انخفض السعر · وفّر {amount}",
+  "cart.unavailableBanner": "لا يمكن طلب {count} عناصر حاليًا. أزلها لإتمام الشراء.",
+  "cart.savingAmount": "توفر {amount}",
+  "cart.proceedToCheckout": "المتابعة للدفع ({count})",
+  "cart.unavailableBannerOne": "لا يمكن طلب عنصر واحد حاليًا. أزله لإتمام الشراء."
 }

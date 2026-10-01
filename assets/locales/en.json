@@ -691,5 +691,12 @@
   "product.error.offline.title": "Connection issue",
   "product.error.offline.hint": "Check your network and try again.",
   "product.error.generic.title": "Couldn't load this product",
-  "product.error.generic.hint": "Something went wrong while loading this product."
+  "product.error.generic.hint": "Something went wrong while loading this product.",
+  "cart.titleCount": "Cart ({count})",
+  "cart.itemRemovedNamed": "Removed \"{name}\"",
+  "cart.priceDropSaved": "Price dropped · save {amount}",
+  "cart.unavailableBanner": "{count} items can't be ordered right now. Remove them to check out.",
+  "cart.savingAmount": "You save {amount}",
+  "cart.proceedToCheckout": "Proceed to checkout ({count})",
+  "cart.unavailableBannerOne": "One item can't be ordered right now. Remove it to check out."
 }

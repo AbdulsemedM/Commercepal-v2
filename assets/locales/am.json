@@ -691,5 +691,12 @@
   "product.error.offline.title": "የግንኙነት ችግር",
   "product.error.offline.hint": "ኔትወርክዎን ያረጋግጡ እና እንደገና ይሞክሩ።",
   "product.error.generic.title": "ይህን ምርት መጫን አልተቻለም",
-  "product.error.generic.hint": "ይህን ምርት በመጫን ላይ ችግር ተፈጥሯል።"
+  "product.error.generic.hint": "ይህን ምርት በመጫን ላይ ችግር ተፈጥሯል።",
+  "cart.titleCount": "ጋሪ ({count})",
+  "cart.itemRemovedNamed": "\"{name}\" ተወግዷል",
+  "cart.priceDropSaved": "ዋጋ ቀንሷል · {amount} ይቆጥቡ",
+  "cart.unavailableBanner": "{count} ዕቃዎች አሁን ሊታዘዙ አይችሉም። ለመክፈል ያስወግዷቸው።",
+  "cart.savingAmount": "{amount} ይቆጥባሉ",
+  "cart.proceedToCheckout": "ወደ ክፍያ ይቀጥሉ ({count})",
+  "cart.unavailableBannerOne": "አንድ ዕቃ አሁን ሊታዘዝ አይችልም። ለመክፈል ያስወግዱት።"
 }
