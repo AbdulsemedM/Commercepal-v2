@@ -492,40 +492,50 @@ class _LoginScreenState extends State<LoginScreen> {
                                     if (!isLoading) _submitLogin(context);
                                   },
                                 ),
-                                const SizedBox(height: Spacing.sm),
-                                // Forgot password link
-                                ForgotPasswordLink(
-                                  onTap: () {
-                                    context.push(AppRoutes.forgotPassword);
-                                  },
-                                ),
-                                const SizedBox(height: Spacing.sm),
-                                // Remember me — whole row is the tap target.
-                                MergeSemantics(
-                                  child: InkWell(
-                                    borderRadius: AppRadius.smAll,
-                                    onTap: () => setState(
-                                        () => _rememberMe = !_rememberMe),
-                                    child: Row(
-                                      children: <Widget>[
-                                        Checkbox(
-                                          value: _rememberMe,
-                                          onChanged: (bool? value) => setState(
-                                            () => _rememberMe = value ?? false,
+                                const SizedBox(height: Spacing.xs),
+                                // Remember me (whole label tappable) + forgot
+                                // password on one row.
+                                Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: MergeSemantics(
+                                        child: InkWell(
+                                          borderRadius: AppRadius.smAll,
+                                          onTap: () => setState(
+                                            () => _rememberMe = !_rememberMe,
+                                          ),
+                                          child: Row(
+                                            children: <Widget>[
+                                              Checkbox(
+                                                value: _rememberMe,
+                                                onChanged: (bool? value) =>
+                                                    setState(
+                                                  () => _rememberMe =
+                                                      value ?? false,
+                                                ),
+                                              ),
+                                              Flexible(
+                                                child: Text(
+                                                  LocalizationService.t(
+                                                    context,
+                                                    'auth.login.rememberMe',
+                                                  ),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        Text(
-                                          LocalizationService.t(
-                                            context,
-                                            'auth.login.rememberMe',
-                                          ),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                    ForgotPasswordLink(
+                                      onTap: () {
+                                        context.push(AppRoutes.forgotPassword);
+                                      },
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: Spacing.lg),
                                 AuthPrimaryButton(

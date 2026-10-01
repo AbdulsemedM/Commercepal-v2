@@ -64,6 +64,7 @@ class LoginMethodTabs extends StatelessWidget {
         borderRadius: AppRadius.pillAll,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           for (final (LoginMethod m, IconData icon, String key)
               in <(LoginMethod, IconData, String)>[
@@ -405,13 +406,10 @@ class ForgotPasswordLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: AppButton.text(
-        label: context.tr('auth.login.forgotPassword'),
-        size: AppButtonSize.small,
-        onPressed: onTap,
-      ),
+    return AppButton.text(
+      label: context.tr('auth.login.forgotPassword'),
+      size: AppButtonSize.small,
+      onPressed: onTap,
     );
   }
 }
