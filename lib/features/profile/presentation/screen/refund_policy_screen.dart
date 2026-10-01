@@ -19,13 +19,13 @@ class RefundPolicyScreen extends StatelessWidget {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -34,7 +34,7 @@ class RefundPolicyScreen extends StatelessWidget {
           'Refund Policy',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -49,7 +49,7 @@ class RefundPolicyScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: Spacing.lg),
@@ -214,7 +214,7 @@ class RefundPolicyScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         if (content.isNotEmpty) ...[
@@ -245,7 +245,7 @@ class RefundPolicyScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: Spacing.xs),

@@ -260,7 +260,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
                   color: scheme.onSurfaceVariant,
                 ),
                 filled: true,
-                fillColor: AppColors.cream.withValues(alpha: 0.65),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerLow.withValues(alpha: 0.65),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: Spacing.md,
                   vertical: Spacing.md,
@@ -316,14 +316,14 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              color: AppColors.cream,
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFF0E6D8)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.image_search_rounded,
               size: 40,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: Spacing.lg),
@@ -332,7 +332,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.navy,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
           ),
           const SizedBox(height: Spacing.sm),
@@ -378,7 +378,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
                 LocalizationService.t(context, 'visualSearch.analyzing'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
             ),
@@ -450,7 +450,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
                               ),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),
                       const SizedBox(height: Spacing.xs),
@@ -520,7 +520,7 @@ class _SourceActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.cream,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
       child: InkWell(
         onTap: onTap,
@@ -532,7 +532,7 @@ class _SourceActionCard extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-            border: Border.all(color: const Color(0xFFF0E6D8)),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Column(
             children: <Widget>[
@@ -551,7 +551,7 @@ class _SourceActionCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
             ],

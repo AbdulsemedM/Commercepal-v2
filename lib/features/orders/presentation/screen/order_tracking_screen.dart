@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           Icon(
                             Icons.error_outline,
                             size: 48,
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: Spacing.md),
                           Text(
@@ -83,7 +84,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.shade700,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: Spacing.lg),
@@ -147,7 +148,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1),
                   ),
                   child: const Icon(
                     Icons.arrow_back,
@@ -270,7 +271,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       orderDateFormatted,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (order.orderNumber.isNotEmpty) ...[
@@ -279,7 +280,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         'Order #${order.orderNumber}',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -330,7 +331,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             width: double.infinity,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
             child: item.productImageUrl.isNotEmpty
@@ -342,19 +343,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       errorBuilder: (_, __, ___) => Icon(
                         Icons.image,
                         size: 40,
-                        color: Colors.grey.shade400,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                   )
-                : Icon(Icons.image, size: 40, color: Colors.grey.shade400),
+                : Icon(Icons.image, size: 40, color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(height: Spacing.xs),
           Text(
             item.productName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -363,7 +364,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             const SizedBox(height: 2),
             Text(
               item.productConfiguration,
-              style: const TextStyle(fontSize: 11, color: Colors.black87),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -371,12 +372,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           const SizedBox(height: 2),
           Text(
             '${MoneyFormatter.format(item.unitPrice, currency)}',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 2),
           Text(
             'QTY ${item.quantity}',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -397,21 +398,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         text: 'Your CommercePal invoice for order ${order.orderNumber}',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invoice ready. Save or share the PDF.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        AppSnackbars.success(context, 'Invoice ready. Save or share the PDF.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate invoice: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackbars.error(context, 'Failed to generate invoice: $e');
       }
     } finally {
       if (mounted) setState(() => _isGeneratingInvoice = false);
@@ -465,7 +456,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       case OrderStage.outForDelivery:
         return const Color(0xFFFFD520);
       default:
-        return Colors.grey;
+        return Theme.of(context).colorScheme.onSurfaceVariant;
     }
   }
 
@@ -564,7 +555,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         color: filled ? AppColors.primary : Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(
-          color: filled ? AppColors.primary : Colors.grey.shade300,
+          color: filled ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
           width: 2,
         ),
       ),
@@ -578,7 +569,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     return Container(
       width: 2,
       height: 60,
-      color: filled ? AppColors.primary : Colors.grey.shade300,
+      color: filled ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
     );
   }
 
@@ -604,7 +595,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               fontWeight: FontWeight.w600,
               color: isActive || isCompleted
                   ? AppColors.primary
-                  : Colors.grey.shade600,
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           if (item.tips.isNotEmpty) ...<Widget>[
@@ -613,7 +604,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               item.tips,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),

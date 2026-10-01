@@ -12,7 +12,7 @@ class VisualSearchEntryActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = iconColor ?? AppColors.navy;
+    final Color color = iconColor ?? Theme.of(context).colorScheme.onSurface;
     return IconButton(
       tooltip: 'Visual search',
       icon: Icon(Icons.camera_alt_outlined, color: color, size: 22),

@@ -77,9 +77,9 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
                             Icons.check_circle,
                             color: AppColors.primary,
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.circle_outlined,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     onTap: () {
                       setState(() {

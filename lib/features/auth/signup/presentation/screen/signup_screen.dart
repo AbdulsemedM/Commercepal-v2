@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -62,12 +63,7 @@ class _SignupScreenState extends State<SignupScreen> {
           child: BlocListener<SignupBloc, SignupState>(
             listener: (context, state) {
               if (state is SignupSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                AppSnackbars.success(context, state.message);
                 // Navigate to login after showing success message
                 Future.delayed(const Duration(seconds: 2), () {
                   if (mounted) {
@@ -79,12 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   }
                 });
               } else if (state is SignupFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<SignupBloc, SignupState>(
@@ -103,7 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: Container(
                             padding: const EdgeInsets.all(Spacing.xs),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: Theme.of(context).colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -132,7 +123,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             'auth.signup.subtitle',
                           ),
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: Spacing.lg),
                         // First Name and Last Name fields in a row
@@ -141,11 +132,11 @@ class _SignupScreenState extends State<SignupScreen> {
                             Expanded(
                               child: _buildTextField(
                                 controller: _firstNameController,
-                                label: 'First Name',
-                                hint: 'Enter your first name',
+                                label: context.tr('auth.signup.firstName'),
+                                hint: context.tr('auth.signup.firstNamePlaceholder'),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please enter your first name';
+                                    return context.tr('validation.firstNameRequired');
                                   }
                                   return null;
                                 },
@@ -155,11 +146,11 @@ class _SignupScreenState extends State<SignupScreen> {
                             Expanded(
                               child: _buildTextField(
                                 controller: _lastNameController,
-                                label: 'Last Name',
-                                hint: 'Enter your last name',
+                                label: context.tr('auth.signup.lastName'),
+                                hint: context.tr('auth.signup.lastNamePlaceholder'),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please enter your last name';
+                                    return context.tr('validation.lastNameRequired');
                                   }
                                   return null;
                                 },
@@ -171,15 +162,15 @@ class _SignupScreenState extends State<SignupScreen> {
                         // Email field
                         _buildTextField(
                           controller: _emailController,
-                          label: 'Email Address',
-                          hint: 'Enter your email address',
+                          label: context.tr('auth.signup.email'),
+                          hint: context.tr('auth.signup.emailPlaceholder'),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
+                              return context.tr('validation.emailRequired');
                             }
                             if (!value.contains('@') || !value.contains('.')) {
-                              return 'Please enter a valid email address';
+                              return context.tr('validation.emailInvalid');
                             }
                             return null;
                           },
@@ -196,10 +187,10 @@ class _SignupScreenState extends State<SignupScreen> {
                           controller: _passwordController,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
+                              return context.tr('validation.passwordRequired');
                             }
                             if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
+                              return context.tr('validation.passwordMin', {'min': 6});
                             }
                             return null;
                           },
@@ -208,8 +199,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         // Confirm Password field
                         SignupPasswordInputField(
                           controller: _confirmPasswordController,
-                          label: 'Confirm Password',
-                          hint: 'Confirm your password',
+                          label: context.tr('auth.signup.confirmPassword'),
+                          hint: context.tr('auth.signup.confirmPasswordPlaceholder'),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please confirm your password';
@@ -325,7 +316,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             children: <Widget>[
                               Expanded(
                                 child: Divider(
-                                  color: Colors.grey[300],
+                                  color: Theme.of(context).colorScheme.outlineVariant,
                                   thickness: 1,
                                 ),
                               ),
@@ -339,12 +330,12 @@ class _SignupScreenState extends State<SignupScreen> {
                                     'auth.signup.or',
                                   ),
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.grey[600]),
+                                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                               ),
                               Expanded(
                                 child: Divider(
-                                  color: Colors.grey[300],
+                                  color: Theme.of(context).colorScheme.outlineVariant,
                                   thickness: 1,
                                 ),
                               ),
@@ -406,7 +397,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -420,7 +411,7 @@ class _SignupScreenState extends State<SignupScreen> {
             hintText: hint,
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
@@ -460,7 +451,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Text(
           'Phone Number',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -476,7 +467,7 @@ class _SignupScreenState extends State<SignupScreen> {
             hintText: '912345678',
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
@@ -524,10 +515,10 @@ class _SignupScreenState extends State<SignupScreen> {
           },
           validator: (phone) {
             if (phone == null || phone.number.isEmpty) {
-              return 'Please enter your phone number';
+              return context.tr('auth.login.phoneRequired');
             }
             if (phone.number.length < 6) {
-              return 'Please enter a valid phone number';
+              return context.tr('auth.login.phoneInvalid');
             }
             return null;
           },
@@ -566,8 +557,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 textStyle: Theme.of(context).textTheme.bodyLarge,
                 inputDecoration: InputDecoration(
-                  labelText: 'Search',
-                  hintText: 'Start typing to search',
+                  labelText: context.tr('common.search'),
+                  hintText: context.tr('common.startTyping'),
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

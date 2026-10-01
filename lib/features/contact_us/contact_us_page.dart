@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:commercepal/features/contact_us/social_media.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -28,22 +29,12 @@ class _ContactUsPageState extends State<ContactUsPage> {
         await launchUrl(launchUri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $phone'),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          AppSnackbars.error(context, '${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $phone');
         }
       }
     } catch (e) {
       if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${LocalizationService.t(context, 'contactUs.errorLaunching')} ${e.toString()}'),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          AppSnackbars.error(context, '${LocalizationService.t(context, 'contactUs.errorLaunching')} ${e.toString()}');
       }
     }
   }
@@ -63,12 +54,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
       }
 
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackbars.error(context, '${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url');
       }
     } catch (e) {
       if (mounted) {
@@ -132,7 +118,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: AppColors.navy,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -140,7 +126,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                         subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -149,7 +135,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 18,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.outline,
                 ),
               ],
             ),
@@ -170,13 +156,13 @@ class _ContactUsPageState extends State<ContactUsPage> {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -185,7 +171,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           LocalizationService.t(context, "contactUs.title"),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -228,10 +214,10 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   const SizedBox(height: Spacing.lg),
                   Text(
                     LocalizationService.t(context, "contactUs.getInTouch"),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 28,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -242,7 +228,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     style: TextStyle(
                       fontWeight: FontWeight.w400,
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -267,7 +253,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -335,7 +321,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
                               fontSize: 20,
-                              color: Colors.black87,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),
                     ],

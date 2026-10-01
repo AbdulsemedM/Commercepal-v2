@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -53,14 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (_method == LoginMethod.phone) {
       final String normalized = PhoneUtils.normalizeLoginIdentifier(target);
       if (!PhoneUtils.isValidLoginIdentifier(normalized)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'auth.login.phoneInvalid'),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbars.error(context, LocalizationService.t(context, 'auth.login.phoneInvalid'));
         return;
       }
     }
@@ -93,24 +87,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
             listener: (context, state) {
               if (state is ForgotPasswordSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                AppSnackbars.success(context, state.message);
                 final String target = _pendingTarget ?? _resolveTarget();
                 Future.delayed(const Duration(milliseconds: 600), () {
                   if (!context.mounted) return;
                   _goToVerifyOtp(target);
                 });
               } else if (state is ForgotPasswordFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<ForgotPasswordBloc, ForgotPasswordState>(
@@ -149,7 +133,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: Spacing.lg),
                         LoginMethodTabs(
@@ -194,7 +178,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: AppColors.pink,
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),

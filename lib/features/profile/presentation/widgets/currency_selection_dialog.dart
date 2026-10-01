@@ -89,7 +89,7 @@ class _CurrencySelectionDialogState extends State<CurrencySelectionDialog> {
                     subtitle: Text(
                       currency.code,
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -98,9 +98,9 @@ class _CurrencySelectionDialogState extends State<CurrencySelectionDialog> {
                             Icons.check_circle,
                             color: AppColors.primary,
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.circle_outlined,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     onTap: () {
                       setState(() {

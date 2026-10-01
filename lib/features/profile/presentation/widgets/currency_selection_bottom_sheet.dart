@@ -131,7 +131,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: Spacing.sm),
@@ -140,7 +140,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                     LocalizationService.t(context, 'profile.chooseYourCurrency'),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -151,7 +151,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                   // Search field
                   Container(
                     decoration: BoxDecoration(
-                      color: AppDecorations.softCream,
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -163,12 +163,12 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                       decoration: InputDecoration(
                         hintText: LocalizationService.t(context, 'profile.searchCurrencies'),
                         hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                         ),
                         prefixIcon: Icon(
                           Icons.search,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.all(Spacing.md),
@@ -192,14 +192,14 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                               Icon(
                                 Icons.search_off,
                                 size: 64,
-                                color: Colors.grey.shade400,
+                                color: Theme.of(context).colorScheme.outline,
                               ),
                               const SizedBox(height: Spacing.md),
                               Text(
                                 LocalizationService.t(context, 'profile.noCurrenciesFound'),
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey.shade600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -223,7 +223,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : Colors.grey.shade200,
+                                      : Theme.of(context).colorScheme.surfaceContainerHigh,
                                   width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: isSelected
@@ -242,12 +242,12 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                     gradient: LinearGradient(
                                       colors: isSelected
                                           ? [
-                                              AppColors.pink,
+                                              Theme.of(context).colorScheme.primary,
                                               AppColors.primary,
                                             ]
                                           : [
-                                              AppDecorations.softCream,
-                                              Colors.grey.shade200,
+                                              Theme.of(context).colorScheme.surfaceContainerHigh,
+                                              Theme.of(context).colorScheme.surfaceContainerHigh,
                                             ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
@@ -256,7 +256,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                     boxShadow: isSelected
                                         ? [
                                             BoxShadow(
-                                              color: AppColors.pink
+                                              color: Theme.of(context).colorScheme.primary
                                                   .withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
@@ -289,7 +289,7 @@ class _CurrencySelectionBottomSheetState extends State<CurrencySelectionBottomSh
                                 subtitle: Text(
                                   currency.code,
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),

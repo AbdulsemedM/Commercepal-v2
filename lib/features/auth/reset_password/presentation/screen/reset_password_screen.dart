@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -65,14 +66,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (_formKey.currentState?.validate() != true) return;
     if (_emailOrPhone.isEmpty ||
         !RegExp(r'^\d{6}$').hasMatch(_verificationCode)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'auth.otp.sessionExpired'),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, LocalizationService.t(context, 'auth.otp.sessionExpired'));
       context.go(AppRoutes.forgotPassword);
       return;
     }
@@ -106,12 +100,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ).toString(),
                 );
               } else if (state is ResetPasswordFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<ResetPasswordBloc, ResetPasswordState>(
@@ -158,7 +147,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         if (_emailOrPhone.isNotEmpty) ...[
                           const SizedBox(height: Spacing.md),
@@ -171,7 +160,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 .textTheme
                                 .bodyMedium
                                 ?.copyWith(
-                                  color: AppColors.navy,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -254,7 +243,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: AppColors.pink,
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
                             ),

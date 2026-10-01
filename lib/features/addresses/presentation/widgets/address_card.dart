@@ -27,7 +27,7 @@ class AddressCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
         border: Border.all(
-          color: address.isDefault ? AppColors.primary : Colors.grey.shade300,
+          color: address.isDefault ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
           width: address.isDefault ? 2 : 1,
         ),
         boxShadow: AppDecorations.softCardShadow(),
@@ -65,10 +65,10 @@ class AddressCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           address.receiverName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.navy,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -130,14 +130,14 @@ class AddressCard extends StatelessWidget {
                 Icon(
                   Icons.phone_outlined,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: Spacing.xs),
                 Text(
                   address.phoneNumber,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -149,7 +149,7 @@ class AddressCard extends StatelessWidget {
                 Icon(
                   Icons.location_on_outlined,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: Spacing.xs),
                 Expanded(
@@ -157,7 +157,7 @@ class AddressCard extends StatelessWidget {
                     _formatAddress(address),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                   ),

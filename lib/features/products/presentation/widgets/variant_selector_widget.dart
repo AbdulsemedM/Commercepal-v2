@@ -69,13 +69,13 @@ class VariantSelectorWidget extends StatelessWidget {
                           ? AppColors.primary
                           : isInStock
                               ? Colors.white
-                              : Colors.grey[200],
+                              : Theme.of(context).colorScheme.surfaceContainerHigh,
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primary
                             : isInStock
-                                ? Colors.grey[300]!
-                                : Colors.grey[400]!,
+                                ? Theme.of(context).colorScheme.outlineVariant
+                                : Theme.of(context).colorScheme.outline,
                         width: isSelected ? 2 : 1,
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -90,8 +90,8 @@ class VariantSelectorWidget extends StatelessWidget {
                             color: isSelected
                                 ? Colors.white
                                 : isInStock
-                                    ? Colors.black87
-                                    : Colors.grey[600],
+                                    ? Theme.of(context).colorScheme.onSurface
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -117,7 +117,7 @@ class VariantSelectorWidget extends StatelessWidget {
                           Text(
                             'Out of Stock',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
                             ),

@@ -43,7 +43,7 @@ class LanguageSelectionBottomSheet {
                     LocalizationService.t(sheetContext, 'profile.language'),
                     style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                   ),
                 ),

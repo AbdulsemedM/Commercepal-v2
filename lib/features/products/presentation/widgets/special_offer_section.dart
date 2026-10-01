@@ -34,7 +34,7 @@ class SpecialOfferSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: sold / (sold + inStock),
-              backgroundColor: Colors.grey[200],
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.success,
               ),
@@ -46,7 +46,7 @@ class SpecialOfferSection extends StatelessWidget {
           Text(
             '${LocalizationService.t(context, 'home.dealOfDay.sold')}: $sold ${LocalizationService.t(context, 'home.dealOfDay.inStock')}: $inStock',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                 ),
           ),

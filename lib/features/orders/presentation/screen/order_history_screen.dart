@@ -131,13 +131,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () {
@@ -152,7 +152,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           LocalizationService.t(context, 'orderHistory.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         bottom: PreferredSize(
@@ -190,12 +190,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.grey.shade400,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                   const SizedBox(height: Spacing.md),
                   Text(
                     state.message,
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: Spacing.md),
@@ -243,7 +243,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.navy : Colors.grey.shade600,
+                color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 4),
@@ -273,12 +273,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             Icon(
               Icons.shopping_bag_outlined,
               size: 64,
-              color: Colors.grey.shade400,
+              color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: Spacing.md),
             Text(
               LocalizationService.t(context, 'orderHistory.noOrdersFound'),
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -359,7 +359,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
             child: productImageUrl.isNotEmpty
@@ -372,12 +372,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         return Icon(
                           Icons.image,
                           size: 40,
-                          color: Colors.grey.shade400,
+                          color: Theme.of(context).colorScheme.outline,
                         );
                       },
                     ),
                   )
-                : Icon(Icons.image, size: 40, color: Colors.grey.shade400),
+                : Icon(Icons.image, size: 40, color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(width: Spacing.md),
           // Product details
@@ -399,10 +399,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     order.stageLabel.isNotEmpty
                         ? order.stageLabel
                         : _getStatusLabel(context, status),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -412,10 +412,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   order.items.length > 1
                       ? '$productName + ${order.items.length - 1} more'
                       : productName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.navy,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -424,7 +424,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 // Order number
                 Text(
                   '${LocalizationService.t(context, 'orderHistory.orderNumber')}${order.orderNumber}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: Spacing.xs),
                 // Date and total
@@ -435,15 +435,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       formattedDate,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     Text(
                       '${MoneyFormatter.format(order.totalAmount, order.currency)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -501,7 +501,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               // Chevron (same as card tap: go to details)
               Icon(
                 Icons.chevron_right,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: 24,
               ),
             ],
@@ -527,7 +527,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       case 'canceled':
         return Colors.red.shade100;
       default:
-        return Colors.grey.shade100;
+        return Theme.of(context).colorScheme.surfaceContainerHigh;
     }
   }
 

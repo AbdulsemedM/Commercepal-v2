@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -37,13 +38,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -52,47 +53,22 @@ class _AddressesScreenState extends State<AddressesScreen> {
           LocalizationService.t(context, 'addresses.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
       body: BlocConsumer<AddressBloc, AddressState>(
         listener: (context, state) {
           if (state is AddressError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           } else if (state is AddressAdded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'addresses.added')),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.added'));
           } else if (state is AddressUpdated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'addresses.updated')),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.updated'));
           } else if (state is AddressDeleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'addresses.deleted')),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.deleted'));
           } else if (state is AddressSetDefault) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'addresses.defaultUpdated')),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.defaultUpdated'));
           }
         },
         builder: (context, state) {
@@ -112,14 +88,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                   const SizedBox(height: Spacing.md),
                   Text(
                     state.message,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -150,7 +126,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     Icon(
                       Icons.location_on_outlined,
                       size: 64,
-                      color: Colors.grey[400],
+                      color: Theme.of(context).colorScheme.outline,
                     ),
                     const SizedBox(height: Spacing.md),
                     Text(
@@ -158,7 +134,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: Spacing.sm),
@@ -166,7 +142,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       LocalizationService.t(context, 'addresses.addFirstHint'),
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

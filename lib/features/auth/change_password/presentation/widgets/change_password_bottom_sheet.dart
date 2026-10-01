@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -55,7 +56,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     if (strength == weak) return Colors.red;
     if (strength == medium) return Colors.orange;
     if (strength == strong) return Colors.green;
-    return Colors.grey;
+    return Theme.of(context).colorScheme.onSurfaceVariant;
   }
 
   @override
@@ -67,20 +68,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           if (state is ChangePasswordSuccess) {
             HapticFeedback.mediumImpact();
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, state.message);
           } else if (state is ChangePasswordFailure) {
             HapticFeedback.lightImpact();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           }
         },
         child: Container(
@@ -117,7 +108,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               height: 4,
                               margin: const EdgeInsets.only(bottom: Spacing.md),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
+                                color: Theme.of(context).colorScheme.outlineVariant,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -125,10 +116,10 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                           // Title
                           Text(
                             LocalizationService.t(context, 'changePassword.title'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: Spacing.sm),
@@ -137,7 +128,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             LocalizationService.t(context, 'changePassword.subtitle'),
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade700,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               height: 1.5,
                             ),
                           ),
@@ -151,13 +142,13 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
+                              color: Theme.of(context).colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -173,7 +164,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: LocalizationService.t(context, 'changePassword.currentPasswordHint'),
                                 hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
@@ -183,7 +174,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                     _obscureCurrentPassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -202,13 +193,13 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
+                              color: Theme.of(context).colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -230,7 +221,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: LocalizationService.t(context, 'changePassword.newPasswordHint'),
                                 hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
@@ -240,7 +231,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                     _obscureNewPassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -261,7 +252,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                   LocalizationService.t(context, 'changePassword.strengthLabel'),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey.shade700,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                                 Text(
@@ -285,13 +276,13 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: Spacing.sm),
                           Container(
                             decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
+                              color: Theme.of(context).colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
@@ -310,7 +301,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: LocalizationService.t(context, 'changePassword.confirmHint'),
                                 hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
@@ -320,7 +311,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                     _obscureConfirmPassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -342,7 +333,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
                                 gradient: isLoading
                                     ? null
                                     : AppDecorations.primaryCtaGradient,
-                                color: isLoading ? Colors.grey.shade300 : null,
+                                color: isLoading ? Theme.of(context).colorScheme.outlineVariant : null,
                                 borderRadius: BorderRadius.circular(28),
                               ),
                               child: Material(
@@ -423,8 +414,8 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppDecorations.softCream,
-            AppColors.cream,
+            Theme.of(context).colorScheme.surfaceContainerHigh,
+            Theme.of(context).colorScheme.surfaceContainerLow,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -441,7 +432,7 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: AppColors.pink.withOpacity(0.15),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
             ),

@@ -273,7 +273,7 @@ class _SplashScreenState extends State<SplashScreen>
                               gradient: RadialGradient(
                                 colors: <Color>[
                                   AppColors.secondary.withValues(alpha: 0.35),
-                                  AppColors.pink.withValues(alpha: 0.18),
+                                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
                                   Colors.transparent,
                                 ],
                                 stops: const <double>[0.0, 0.55, 0.75],
@@ -405,14 +405,14 @@ class _SplashScreenState extends State<SplashScreen>
                                       child: Container(
                                         width: 8,
                                         height: 8,
-                                        decoration: const BoxDecoration(
+                                        decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: LinearGradient(
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                             colors: <Color>[
                                               AppColors.secondary,
-                                              AppColors.pink,
+                                              Theme.of(context).colorScheme.primary,
                                             ],
                                           ),
                                         ),

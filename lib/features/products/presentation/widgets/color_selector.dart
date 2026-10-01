@@ -50,7 +50,7 @@ class ColorSelector extends StatelessWidget {
                 child: isSelected
                     ? Icon(
                         Icons.check,
-                        color: lightSwatch ? Colors.black87 : Colors.white,
+                        color: lightSwatch ? Theme.of(context).colorScheme.onSurface : Colors.white,
                         size: 18,
                       )
                     : null,

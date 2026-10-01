@@ -117,7 +117,7 @@ class OtpPinInputState extends State<OtpPinInput> {
               // Allow paste of full code; onChanged distributes digits.
               maxLength: widget.length,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.navy,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
               inputFormatters: [
@@ -126,7 +126,7 @@ class OtpPinInputState extends State<OtpPinInput> {
               decoration: InputDecoration(
                 counterText: '',
                 filled: true,
-                fillColor: AppDecorations.softCream,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: Spacing.md,
                 ),

@@ -22,7 +22,7 @@ class FullNameInputField extends StatelessWidget {
         Text(
           LocalizationService.t(context, 'auth.signup.fullName'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -40,16 +40,16 @@ class FullNameInputField extends StatelessWidget {
             ),
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -120,7 +120,7 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
         Text(
           LocalizationService.t(context, 'auth.signup.dateOfBirth'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -137,16 +137,16 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
             ),
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -157,7 +157,7 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
               vertical: Spacing.md,
             ),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today, color: Colors.grey),
+              icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurfaceVariant),
               onPressed: () => _selectDate(context),
             ),
           ),
@@ -186,7 +186,7 @@ class TermsAndPolicyText extends StatelessWidget {
       text: TextSpan(
         style: Theme.of(
           context,
-        ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+        ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         children: <TextSpan>[
           TextSpan(
             text: '${LocalizationService.t(context, 'auth.signup.termsText')} ',
@@ -250,7 +250,7 @@ class SignupEmailInputField extends StatelessWidget {
         Text(
           LocalizationService.t(context, 'auth.signup.email'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -267,16 +267,16 @@ class SignupEmailInputField extends StatelessWidget {
             ),
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -327,7 +327,7 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
           widget.label ??
               LocalizationService.t(context, 'auth.signup.password'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -347,16 +347,16 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
                 ),
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -377,7 +377,7 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               onPressed: () {
                 setState(() {
@@ -407,7 +407,7 @@ class LoginLink extends StatelessWidget {
           text: TextSpan(
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             children: <TextSpan>[
               TextSpan(
                 text:

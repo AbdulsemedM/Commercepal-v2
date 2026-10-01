@@ -52,7 +52,7 @@ class PromoCollectionScaffold extends StatelessWidget {
     }
 
     final Widget body = Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(

@@ -159,7 +159,7 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
     const rows = _CompareRow.values;
     return Table(
       defaultColumnWidth: const IntrinsicColumnWidth(),
-      border: TableBorder.all(color: Colors.grey.shade300),
+      border: TableBorder.all(color: Theme.of(context).colorScheme.outlineVariant),
       children: <TableRow>[
         TableRow(
           children: <Widget>[
@@ -199,7 +199,7 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
                 padding: const EdgeInsets.all(8),
                 child: Text(
                   _rowLabel(context, row),
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
               ..._details.map((ProductDetails? d) {

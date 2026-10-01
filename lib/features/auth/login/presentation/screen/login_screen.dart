@@ -1,8 +1,8 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/core/utils/phone_utils.dart';
@@ -133,14 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (password == null || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'auth.biometric.signInFailed'),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, LocalizationService.t(context, 'auth.biometric.signInFailed'));
       setState(() {
         _needsBiometricToRevealSavedLogin = false;
         _showUnlockSavedLoginButton = false;
@@ -173,14 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
       case BiometricAuthResult.failure:
       case BiometricAuthResult.unavailable:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'auth.biometric.signInFailed'),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbars.error(context, LocalizationService.t(context, 'auth.biometric.signInFailed'));
         setState(() => _showUnlockSavedLoginButton = true);
         break;
       case BiometricAuthResult.cancel:
@@ -269,26 +255,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final String loginIdentifier = _resolveLoginIdentifier();
     if (_loginMethod == LoginMethod.phone &&
         !PhoneUtils.isValidLoginIdentifier(loginIdentifier)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'auth.login.phoneInvalid'),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, LocalizationService.t(context, 'auth.login.phoneInvalid'));
       return;
     }
 
     context.read<LoginBloc>().add(
-      LoginSubmitted(
-        loginIdentifier: loginIdentifier,
-        password: _passwordController.text,
-        channel: PlatformUtils.getAuthChannel(),
-        rememberMe: _rememberMe,
-        usedPhoneLogin: _loginMethod == LoginMethod.phone,
-      ),
-    );
+          LoginSubmitted(
+            loginIdentifier: loginIdentifier,
+            password: _passwordController.text,
+            channel: PlatformUtils.getAuthChannel(),
+            rememberMe: _rememberMe,
+            usedPhoneLogin: _loginMethod == LoginMethod.phone,
+          ),
+        );
   }
 
   @override
@@ -354,14 +333,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case BiometricAuthResult.failure:
       case BiometricAuthResult.unavailable:
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              LocalizationService.t(context, 'auth.biometric.signInFailed'),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackbars.error(context, LocalizationService.t(context, 'auth.biometric.signInFailed'));
         break;
       case BiometricAuthResult.cancel:
         break;
@@ -387,365 +359,291 @@ class _LoginScreenState extends State<LoginScreen> {
           _goToDashboardProfileTab();
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: BlocListener<LoginBloc, LoginState>(
-            listener: (context, state) {
-              if (state is LoginSuccess) {
-                _maybeShowEnableBiometricDialog().then((_) {
-                  if (context.mounted) {
-                    context.go(AppRoutes.dashboard);
+              listener: (context, state) {
+                if (state is LoginSuccess) {
+                  _maybeShowEnableBiometricDialog().then((_) {
+                    if (context.mounted) {
+                      context.go(AppRoutes.dashboard);
+                    }
+                  });
+                } else if (state is LoginFailure) {
+                  String message = state.message;
+                  if (state.isInvalidCredentials) {
+                    message = LocalizationService.t(
+                      context,
+                      state.usedPhoneLogin
+                          ? 'auth.login.invalidCredentialsPhone'
+                          : 'auth.login.invalidCredentialsEmail',
+                    );
                   }
-                });
-              } else if (state is LoginFailure) {
-                String message = state.message;
-                if (state.isInvalidCredentials) {
-                  message = LocalizationService.t(
-                    context,
-                    state.usedPhoneLogin
-                        ? 'auth.login.invalidCredentialsPhone'
-                        : 'auth.login.invalidCredentialsEmail',
-                  );
+                  AppSnackbars.error(context, message);
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: BlocBuilder<LoginBloc, LoginState>(
-              builder: (context, state) {
-                final isLoading = state is LoginLoading;
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        if (!widget.hideBackButton) ...[
-                          const SizedBox(height: Spacing.md),
-                          // Back button
-                          IconButton(
-                            icon: Container(
-                              padding: const EdgeInsets.all(Spacing.xs),
-                              decoration: BoxDecoration(
-                                color: scheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 18,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                            onPressed: _goToDashboardProfileTab,
-                          ),
-                        ] else
-                          const SizedBox(height: Spacing.lg),
-                        const SizedBox(height: Spacing.sm),
-                        // Title
-                        Text(
-                          LocalizationService.t(context, 'auth.login.title'),
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 26,
-                              ),
-                        ),
-                        const SizedBox(height: Spacing.xs),
-                        // Subtitle
-                        Text(
-                          LocalizationService.t(context, 'auth.login.subtitle'),
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                          const SizedBox(height: Spacing.lg),
-                        LoginMethodTabs(
-                          selected: _loginMethod,
-                          onChanged: (LoginMethod method) {
-                            setState(() {
-                              _loginMethod = method;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: Spacing.lg),
-                        if (_showBiometricLogin) ...[
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: isLoading
-                                  ? null
-                                  : () => _signInWithBiometric(),
-                              icon: const Icon(Icons.fingerprint, size: 24),
-                              label: Text(
-                                LocalizationService.t(
-                                  context,
-                                  'auth.biometric.signInWith',
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(color: AppColors.primary),
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: Spacing.md,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                          Row(
-                            children: <Widget>[
-                              Expanded(child: Divider(color: scheme.outlineVariant)),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Spacing.md,
-                                ),
-                                child: Text(
-                                  LocalizationService.t(
-                                    context,
-                                    'auth.login.or',
+              },
+              child: BlocBuilder<LoginBloc, LoginState>(
+                builder: (context, state) {
+                  final isLoading = state is LoginLoading;
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: AutofillGroup(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                if (!widget.hideBackButton) ...[
+                                  const SizedBox(height: Spacing.md),
+                                  // Back button
+                                  AuthBackButton(
+                                      onPressed: _goToDashboardProfileTab),
+                                ] else
+                                  const SizedBox(height: Spacing.lg),
+                                const SizedBox(height: Spacing.sm),
+                                // Title
+                                Semantics(
+                                  header: true,
+                                  child: Text(
+                                    LocalizationService.t(
+                                        context, 'auth.login.title'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
                                   ),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(color: scheme.onSurfaceVariant),
                                 ),
-                              ),
-                              Expanded(child: Divider(color: scheme.outlineVariant)),
-                            ],
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                        ],
-                        if (_needsBiometricToRevealSavedLogin ||
-                            _showUnlockSavedLoginButton) ...[
-                          _StoredCredentialsBiometricCard(
-                            isLoading: isLoading,
-                            onTap: _presentBiometricAndApplySavedCredentials,
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Divider(color: scheme.outlineVariant),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Spacing.md,
-                                ),
-                                child: Text(
+                                const SizedBox(height: Spacing.xs),
+                                // Subtitle
+                                Text(
                                   LocalizationService.t(
-                                    context,
-                                    'auth.login.or',
-                                  ),
+                                      context, 'auth.login.subtitle'),
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
                                       ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
+                                          color: scheme.onSurfaceVariant),
+                                ),
+                                const SizedBox(height: Spacing.lg),
+                                LoginMethodTabs(
+                                  selected: _loginMethod,
+                                  onChanged: (LoginMethod method) {
+                                    setState(() {
+                                      _loginMethod = method;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: Spacing.lg),
+                                if (_showBiometricLogin) ...[
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: isLoading
+                                          ? null
+                                          : () => _signInWithBiometric(),
+                                      icon: const Icon(Icons.fingerprint,
+                                          size: 24),
+                                      label: Text(
+                                        LocalizationService.t(
+                                          context,
+                                          'auth.biometric.signInWith',
+                                        ),
                                       ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(color: scheme.outlineVariant),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                        ],
-                        if (_loginMethod == LoginMethod.email)
-                          EmailInputField(controller: _emailController)
-                        else
-                          PhoneLoginInputField(
-                            controller: _phoneController,
-                            onCompleteNumberChanged: (String complete) {
-                              setState(() {
-                                _completePhoneNumber = complete;
-                              });
-                            },
-                          ),
-                        const SizedBox(height: Spacing.md),
-                        // Password field
-                        PasswordInputField(controller: _passwordController),
-                        const SizedBox(height: Spacing.sm),
-                        // Forgot password link
-                        ForgotPasswordLink(
-                          onTap: () {
-                            context.push(AppRoutes.forgotPassword);
-                          },
-                        ),
-                        const SizedBox(height: Spacing.sm),
-                        // Remember me checkbox
-                        Row(
-                          children: <Widget>[
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: Checkbox(
-                                value: _rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _rememberMe = value ?? false;
-                                  });
-                                },
-                                activeColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _rememberMe = !_rememberMe;
-                                });
-                              },
-                              child: Text(
-                                LocalizationService.t(
-                                  context,
-                                  'auth.login.rememberMe',
-                                ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: scheme.onSurface),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Spacing.lg),
-                        AuthPrimaryButton(
-                          label: LocalizationService.t(
-                            context,
-                            'auth.login.loginButton',
-                          ),
-                          isLoading: isLoading,
-                          onPressed: () => _submitLogin(context),
-                        ),
-                        if (PlatformUtils.shouldShowGoogleSignInButton) ...[
-                          const SizedBox(height: Spacing.md),
-                          // Or separator
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Divider(
-                                  color: scheme.outlineVariant,
-                                  thickness: 1,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Spacing.md,
-                                ),
-                                child: Text(
-                                  LocalizationService.t(
-                                    context,
-                                    'auth.login.or',
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: scheme.primary,
+                                        side: BorderSide(color: scheme.primary),
+                                      ),
+                                    ),
                                   ),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(color: scheme.onSurfaceVariant),
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(
-                                  color: scheme.outlineVariant,
-                                  thickness: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: Spacing.xl),
-                          SocialLoginButton(
-                            type: SocialLoginType.google,
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    context.read<LoginBloc>().add(
-                                      GoogleSignInRequested(
-                                        channel:
-                                            PlatformUtils.getGoogleSignInChannel(),
-                                      ),
-                                    );
+                                  const SizedBox(height: Spacing.lg),
+                                  const _OrDivider(),
+                                  const SizedBox(height: Spacing.lg),
+                                ],
+                                if (_needsBiometricToRevealSavedLogin ||
+                                    _showUnlockSavedLoginButton) ...[
+                                  _StoredCredentialsBiometricCard(
+                                    isLoading: isLoading,
+                                    onTap:
+                                        _presentBiometricAndApplySavedCredentials,
+                                  ),
+                                  const SizedBox(height: Spacing.lg),
+                                  const _OrDivider(),
+                                  const SizedBox(height: Spacing.lg),
+                                ],
+                                if (_loginMethod == LoginMethod.email)
+                                  EmailInputField(controller: _emailController)
+                                else
+                                  PhoneLoginInputField(
+                                    controller: _phoneController,
+                                    onCompleteNumberChanged: (String complete) {
+                                      setState(() {
+                                        _completePhoneNumber = complete;
+                                      });
+                                    },
+                                  ),
+                                const SizedBox(height: Spacing.md),
+                                // Password field
+                                PasswordInputField(
+                                  controller: _passwordController,
+                                  onSubmitted: (_) {
+                                    if (!isLoading) _submitLogin(context);
                                   },
-                          ),
-                          // const SizedBox(height: Spacing.md),
-                          // SocialLoginButton(
-                          //   type: SocialLoginType.facebook,
-                          //   onPressed: () {
-                          //     // TODO: Handle Facebook login
-                          //   },
-                          // ),
-                        ],
-                        const SizedBox(height: Spacing.xxl),
-                        // Sign up link
-                        SignUpLink(
-                          onTap: () {
-                            context.push(AppRoutes.signup);
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        // Become Affiliate Partner button
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: isLoading
-                                ? null
-                                : () {
-                                    context.push(
-                                      AppRoutes.affiliateRegister,
-                                      extra: () {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(
+                                ),
+                                const SizedBox(height: Spacing.sm),
+                                // Forgot password link
+                                ForgotPasswordLink(
+                                  onTap: () {
+                                    context.push(AppRoutes.forgotPassword);
+                                  },
+                                ),
+                                const SizedBox(height: Spacing.sm),
+                                // Remember me — whole row is the tap target.
+                                MergeSemantics(
+                                  child: InkWell(
+                                    borderRadius: AppRadius.smAll,
+                                    onTap: () => setState(
+                                        () => _rememberMe = !_rememberMe),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Checkbox(
+                                          value: _rememberMe,
+                                          onChanged: (bool? value) => setState(
+                                            () => _rememberMe = value ?? false,
+                                          ),
+                                        ),
+                                        Text(
+                                          LocalizationService.t(
                                             context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                LocalizationService.t(
-                                                  context,
-                                                  'affiliate.registrationSuccessMessage',
-                                                ),
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    );
+                                            'auth.login.rememberMe',
+                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: Spacing.lg),
+                                AuthPrimaryButton(
+                                  label: LocalizationService.t(
+                                    context,
+                                    'auth.login.loginButton',
+                                  ),
+                                  isLoading: isLoading,
+                                  onPressed: () => _submitLogin(context),
+                                ),
+                                if (PlatformUtils
+                                    .shouldShowGoogleSignInButton) ...[
+                                  const SizedBox(height: Spacing.md),
+                                  // Or separator
+                                  const _OrDivider(),
+                                  const SizedBox(height: Spacing.xl),
+                                  SocialLoginButton(
+                                    type: SocialLoginType.google,
+                                    onPressed: isLoading
+                                        ? null
+                                        : () {
+                                            context.read<LoginBloc>().add(
+                                                  GoogleSignInRequested(
+                                                    channel: PlatformUtils
+                                                        .getGoogleSignInChannel(),
+                                                  ),
+                                                );
+                                          },
+                                  ),
+                                  // const SizedBox(height: Spacing.md),
+                                  // SocialLoginButton(
+                                  //   type: SocialLoginType.facebook,
+                                  //   onPressed: () {
+                                  //     // TODO: Handle Facebook login
+                                  //   },
+                                  // ),
+                                ],
+                                const SizedBox(height: Spacing.xxl),
+                                // Sign up link
+                                SignUpLink(
+                                  onTap: () {
+                                    context.push(AppRoutes.signup);
                                   },
-                            icon: const Icon(
-                              Icons.star_rounded,
-                              size: 20,
-                              color: AppColors.secondary,
-                            ),
-                            label: Text(
-                              LocalizationService.t(
-                                context,
-                                'affiliate.becomeAffiliatePartner',
-                              ),
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                                ),
+                                const SizedBox(height: Spacing.md),
+                                // Become Affiliate Partner button
+                                Center(
+                                  child: TextButton.icon(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () {
+                                            context.push(
+                                              AppRoutes.affiliateRegister,
+                                              extra: () {
+                                                if (mounted) {
+                                                  AppSnackbars.success(
+                                                    context,
+                                                    LocalizationService.t(
+                                                      context,
+                                                      'affiliate.registrationSuccessMessage',
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            );
+                                          },
+                                    icon: Icon(
+                                      Icons.handshake_outlined,
+                                      size: 20,
+                                      color: context.commerce.deal,
+                                    ),
+                                    label: Text(
+                                      LocalizationService.t(
+                                        context,
+                                        'affiliate.becomeAffiliatePartner',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: Spacing.xl),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: Spacing.xl),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: <Widget>[
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          child: Text(
+            LocalizationService.t(context, 'auth.login.or'),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+        const Expanded(child: Divider()),
+      ],
     );
   }
 }
@@ -761,80 +659,60 @@ class _StoredCredentialsBiometricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return Card(
+      color: scheme.primaryContainer,
       child: InkWell(
-        onTap: isLoading
-            ? null
-            : () {
-                onTap();
-              },
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: AppColors.pink.withValues(alpha: 0.08),
-            border: Border.all(
-              color: AppColors.pink.withValues(alpha: 0.25),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppDecorations.primaryCtaGradient,
-                  ),
-                  alignment: Alignment.center,
-                  child: const FaIcon(
-                    FontAwesomeIcons.fingerprint,
-                    size: 28,
-                    color: Colors.white,
-                  ),
+        onTap: isLoading ? null : () => onTap(),
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.md),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: context.commerce.cta,
                 ),
-                const SizedBox(width: Spacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        LocalizationService.t(
-                          context,
-                          'auth.biometric.unlockSavedLogin',
-                        ),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.navy,
-                            ),
+                alignment: Alignment.center,
+                child: FaIcon(
+                  FontAwesomeIcons.fingerprint,
+                  size: 26,
+                  color: context.commerce.onCta,
+                ),
+              ),
+              const SizedBox(width: Spacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      LocalizationService.t(
+                        context,
+                        'auth.biometric.unlockSavedLogin',
                       ),
-                      const SizedBox(height: Spacing.xs),
-                      Text(
-                        LocalizationService.t(
-                          context,
-                          'auth.biometric.unlockSavedLoginHint',
-                        ),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                              height: 1.35,
-                            ),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: scheme.onPrimaryContainer,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      LocalizationService.t(
+                        context,
+                        'auth.biometric.unlockSavedLoginHint',
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 28,
-                  color: AppColors.pink,
-                ),
-              ],
-            ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: scheme.onPrimaryContainer),
+            ],
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -85,14 +86,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   void _onVerify() {
     final code = _otpKey.currentState?.code ?? _otp;
     if (!RegExp(r'^\d{6}$').hasMatch(code)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'auth.otp.invalid'),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, LocalizationService.t(context, 'auth.otp.invalid'));
       return;
     }
     _goToNewPassword(code);
@@ -118,12 +112,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           child: BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
             listener: (context, state) {
               if (state is ForgotPasswordSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                AppSnackbars.success(context, state.message);
                 _otpKey.currentState?.clear();
                 setState(() {
                   _otp = '';
@@ -131,12 +120,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 });
                 _startCountdown();
               } else if (state is ForgotPasswordFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<ForgotPasswordBloc, ForgotPasswordState>(
@@ -176,7 +160,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         style: Theme.of(context)
                             .textTheme
                             .bodyMedium
-                            ?.copyWith(color: Colors.grey[600]),
+                            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: Spacing.xl),
                       OtpPinInput(
@@ -214,7 +198,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyMedium
-                                    ?.copyWith(color: Colors.grey[600]),
+                                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               )
                             : GestureDetector(
                                 onTap: isResending
@@ -237,7 +221,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                             .textTheme
                                             .bodyMedium
                                             ?.copyWith(
-                                              color: AppColors.pink,
+                                              color: Theme.of(context).colorScheme.primary,
                                               fontWeight: FontWeight.w700,
                                             ),
                                       ),
@@ -256,7 +240,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                 .textTheme
                                 .bodyMedium
                                 ?.copyWith(
-                                  color: AppColors.pink,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),

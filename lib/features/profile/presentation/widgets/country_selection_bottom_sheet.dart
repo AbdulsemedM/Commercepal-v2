@@ -130,7 +130,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: Spacing.sm),
@@ -139,7 +139,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                     LocalizationService.t(context, 'profile.chooseYourLocation'),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -153,7 +153,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                   // Search field
                   Container(
                     decoration: BoxDecoration(
-                      color: AppDecorations.softCream,
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -165,12 +165,12 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                       decoration: InputDecoration(
                         hintText: LocalizationService.t(context, 'profile.searchCountries'),
                         hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                         ),
                         prefixIcon: Icon(
                           Icons.search,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.all(Spacing.md),
@@ -194,14 +194,14 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                               Icon(
                                 Icons.search_off,
                                 size: 64,
-                                color: Colors.grey.shade400,
+                                color: Theme.of(context).colorScheme.outline,
                               ),
                               const SizedBox(height: Spacing.md),
                               Text(
                                 LocalizationService.t(context, 'profile.noCountriesFound'),
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey.shade600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -225,7 +225,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : Colors.grey.shade200,
+                                      : Theme.of(context).colorScheme.surfaceContainerHigh,
                                   width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: isSelected
@@ -241,7 +241,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                                   width: 56,
                                   height: 56,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
+                                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Center(
@@ -263,7 +263,7 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
                                 subtitle: Text(
                                   country.code,
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -301,8 +301,8 @@ class _CountrySelectionBottomSheetState extends State<CountrySelectionBottomShee
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppDecorations.softCream,
-            AppColors.cream,
+            Theme.of(context).colorScheme.surfaceContainerHigh,
+            Theme.of(context).colorScheme.surfaceContainerLow,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
