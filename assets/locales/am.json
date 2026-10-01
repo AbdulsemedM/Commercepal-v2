@@ -759,5 +759,14 @@
   "checkout.webview.errorTitle": "የክፍያ ገጹን መጫን አልቻልንም",
   "checkout.webview.errorBody": "ግንኙነትዎን ያረጋግጡ እና እንደገና ይሞክሩ። ክፍያውን ከየኔ ትዕዛዞችም ማጠናቀቅ ይችላሉ።",
   "checkout.webview.blockedTitle": "ይህ የክፍያ ሊንክ ሊከፈት አይችልም",
-  "checkout.webview.blockedBody": "ለደህንነትዎ ሲባል የታመኑ የክፍያ ገጾችን ብቻ እንከፍታለን። እባክዎ ሌላ የክፍያ ዘዴ ይምረጡ።"
+  "checkout.webview.blockedBody": "ለደህንነትዎ ሲባል የታመኑ የክፍያ ገጾችን ብቻ እንከፍታለን። እባክዎ ሌላ የክፍያ ዘዴ ይምረጡ።",
+  "update.titleOptional": "ዝማኔ አለ",
+  "update.titleMandatory": "ዝማኔ ያስፈልጋል",
+  "update.messageOptional": "ስሪት {version} ከአዳዲስ ባህሪያት እና ማሻሻያዎች ጋር ይገኛል።",
+  "update.messageMandatory": "መተግበሪያውን መጠቀም ለመቀጠል ወደ ስሪት {version} ያዘምኑ።",
+  "update.later": "በኋላ",
+  "update.update": "አዘምን",
+  "quickActions.search": "ምርቶችን ፈልግ",
+  "quickActions.orders": "ትዕዛዞች",
+  "session.expired": "ክፍለ ጊዜዎ አብቅቷል። እባክዎ እንደገና ይግቡ።"
 }

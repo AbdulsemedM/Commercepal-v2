@@ -759,5 +759,14 @@
   "checkout.webview.errorTitle": "تعذّر تحميل صفحة الدفع",
   "checkout.webview.errorBody": "تحقّق من اتصالك وحاول مرة أخرى. يمكنك أيضًا إكمال الدفع من طلباتي.",
   "checkout.webview.blockedTitle": "لا يمكن فتح رابط الدفع هذا",
-  "checkout.webview.blockedBody": "حرصًا على أمانك، نفتح صفحات الدفع الموثوقة فقط. يُرجى اختيار طريقة دفع أخرى."
+  "checkout.webview.blockedBody": "حرصًا على أمانك، نفتح صفحات الدفع الموثوقة فقط. يُرجى اختيار طريقة دفع أخرى.",
+  "update.titleOptional": "تحديث متاح",
+  "update.titleMandatory": "التحديث مطلوب",
+  "update.messageOptional": "الإصدار {version} متاح مع أحدث الميزات والتحسينات.",
+  "update.messageMandatory": "حدّث إلى الإصدار {version} لمواصلة استخدام التطبيق.",
+  "update.later": "لاحقًا",
+  "update.update": "تحديث",
+  "quickActions.search": "البحث عن المنتجات",
+  "quickActions.orders": "الطلبات",
+  "session.expired": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى."
 }

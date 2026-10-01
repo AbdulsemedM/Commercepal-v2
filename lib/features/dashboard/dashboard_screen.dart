@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:commercepal/core/widgets/pill_bottom_nav_bar.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/home/presentation/pages/home_page.dart';
 import 'package:commercepal/features/categories/presentation/pages/categories_page.dart';
 import 'package:commercepal/features/cart/presentation/screen/cart_page.dart';
@@ -44,6 +46,12 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _initQuickActions() async {
+    // Read localized titles before any await (context use).
+    final (String, String, String) titles = (
+      context.tr('quickActions.search'),
+      context.tr('nav.cart'),
+      context.tr('quickActions.orders'),
+    );
     try {
       const QuickActions quickActions = QuickActions();
       await quickActions.initialize((String shortcutType) {
@@ -60,17 +68,17 @@ class DashboardScreenState extends State<DashboardScreen> {
         }
       });
       await quickActions.setShortcutItems(<ShortcutItem>[
-        const ShortcutItem(
+        ShortcutItem(
           type: 'action_search',
-          localizedTitle: 'Search products',
+          localizedTitle: titles.$1,
         ),
-        const ShortcutItem(
+        ShortcutItem(
           type: 'action_cart',
-          localizedTitle: 'Cart',
+          localizedTitle: titles.$2,
         ),
-        const ShortcutItem(
+        ShortcutItem(
           type: 'action_orders',
-          localizedTitle: 'Orders',
+          localizedTitle: titles.$3,
         ),
       ]);
     } catch (_) {}
@@ -86,17 +94,11 @@ class DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     if (AuthService().sessionExpired) {
       AuthService().clearSessionExpired();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Your session has expired.'),
-          duration: const Duration(seconds: 6),
-          action: SnackBarAction(
-            label: 'Login',
-            onPressed: () {
-              context.go(AppRoutes.login);
-            },
-          ),
-        ),
+      AppSnackbars.info(
+        context,
+        context.tr('session.expired'),
+        actionLabel: context.tr('auth.login.loginButton'),
+        onAction: () => context.go(AppRoutes.login),
       );
     }
   }

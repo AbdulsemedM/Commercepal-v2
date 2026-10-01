@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import '../../data/models/variant.dart';
 
@@ -66,13 +65,13 @@ class VariantSelectorWidget extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary
+                          ? Theme.of(context).colorScheme.primary
                           : isInStock
                               ? Colors.white
                               : Theme.of(context).colorScheme.surfaceContainerHigh,
                       border: Border.all(
                         color: isSelected
-                            ? AppColors.primary
+                            ? Theme.of(context).colorScheme.primary
                             : isInStock
                                 ? Theme.of(context).colorScheme.outlineVariant
                                 : Theme.of(context).colorScheme.outline,
@@ -106,7 +105,7 @@ class VariantSelectorWidget extends StatelessWidget {
                             style: TextStyle(
                               color: isSelected
                                   ? Colors.white
-                                  : AppColors.primary,
+                                  : Theme.of(context).colorScheme.primary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),

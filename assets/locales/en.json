@@ -759,5 +759,14 @@
   "checkout.webview.errorTitle": "We couldn't load the payment page",
   "checkout.webview.errorBody": "Check your connection and try again. You can also finish paying from My orders.",
   "checkout.webview.blockedTitle": "This payment link can't be opened",
-  "checkout.webview.blockedBody": "For your security, we only open trusted payment pages. Please choose another payment method."
+  "checkout.webview.blockedBody": "For your security, we only open trusted payment pages. Please choose another payment method.",
+  "update.titleOptional": "Update available",
+  "update.titleMandatory": "Update required",
+  "update.messageOptional": "Version {version} is available with the latest features and improvements.",
+  "update.messageMandatory": "Update to version {version} to keep using the app.",
+  "update.later": "Later",
+  "update.update": "Update",
+  "quickActions.search": "Search products",
+  "quickActions.orders": "Orders",
+  "session.expired": "Your session has expired. Please sign in again."
 }

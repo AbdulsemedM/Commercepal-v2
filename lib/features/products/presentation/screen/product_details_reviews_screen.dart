@@ -1,7 +1,7 @@
+import 'package:commercepal/core/theme/commerce_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -123,38 +123,6 @@ class _ProductDetailsReviewsScreenState
                     ],
                   ),
                 ),
-                const SizedBox(width: Spacing.sm),
-                // Chat/Notification icon
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: AppColors.secondary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      const Icon(
-                        Icons.chat_bubble_outline,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -196,8 +164,8 @@ class _ProductDetailsReviewsScreenState
             Container(
               height: 2,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.all(Radius.circular(1)),
               ),
             )
@@ -455,11 +423,11 @@ class _ProductDetailsReviewsScreenState
     return Row(
       children: List<Widget>.generate(5, (int index) {
         if (index < rating.floor()) {
-          return const Icon(Icons.star, color: Colors.amber, size: 32);
+          return Icon(Icons.star, color: Theme.of(context).extension<CommerceColors>()!.rating, size: 32);
         } else if (index < rating) {
-          return const Icon(Icons.star_half, color: Colors.amber, size: 32);
+          return Icon(Icons.star_half, color: Theme.of(context).extension<CommerceColors>()!.rating, size: 32);
         } else {
-          return const Icon(Icons.star_border, color: Colors.amber, size: 32);
+          return Icon(Icons.star_border, color: Theme.of(context).extension<CommerceColors>()!.rating, size: 32);
         }
       }),
     );
@@ -479,7 +447,7 @@ class _ProductDetailsReviewsScreenState
         Row(
           children: List<Widget>.generate(5, (int index) {
             if (index < stars) {
-              return const Icon(Icons.star, color: Colors.amber, size: 16);
+              return Icon(Icons.star, color: Theme.of(context).extension<CommerceColors>()!.rating, size: 16);
             } else {
               return Icon(
                 Icons.star_border,
@@ -503,7 +471,7 @@ class _ProductDetailsReviewsScreenState
               widthFactor: percentage,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: Theme.of(context).extension<CommerceColors>()!.success,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -550,11 +518,11 @@ class _ProductDetailsReviewsScreenState
             else
               CircleAvatar(
                 radius: 24,
-                backgroundColor: Colors.pink.shade100,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                 child: Text(
                   initials ?? name.substring(0, 2).toUpperCase(),
                   style: TextStyle(
-                    color: Colors.pink.shade700,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -597,14 +565,14 @@ class _ProductDetailsReviewsScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
+                          color: Theme.of(context).extension<CommerceColors>()!.warningContainer,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           'Purchased by 247 supplier',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.orange.shade800,
+                            color: Theme.of(context).extension<CommerceColors>()!.onWarningContainer,
                           ),
                         ),
                       ),
@@ -614,14 +582,14 @@ class _ProductDetailsReviewsScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
+                          color: Theme.of(context).extension<CommerceColors>()!.warningContainer,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           color,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.orange.shade800,
+                            color: Theme.of(context).extension<CommerceColors>()!.onWarningContainer,
                           ),
                         ),
                       ),
@@ -631,9 +599,9 @@ class _ProductDetailsReviewsScreenState
                   // Star rating
                   Row(
                     children: List<Widget>.generate(5, (int index) {
-                      return const Icon(
+                      return Icon(
                         Icons.star,
-                        color: Colors.amber,
+                        color: Theme.of(context).extension<CommerceColors>()!.rating,
                         size: 16,
                       );
                     }),

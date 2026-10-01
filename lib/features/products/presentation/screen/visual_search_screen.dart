@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/widgets/app_empty_state.dart';
 import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/core/widgets/shimmer_loading.dart';
@@ -275,8 +274,8 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
                     width: 1.5,
                   ),
                 ),
@@ -289,7 +288,7 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
                       'visualSearch.searchLink',
                     ),
                     style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.arrow_forward_rounded, size: 20),
@@ -356,20 +355,20 @@ class _VisualSearchScreenState extends State<VisualSearchScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(Spacing.md),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.25),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
           children: <Widget>[
-            const SizedBox(
+            SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2.2,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(width: Spacing.sm),
@@ -540,10 +539,10 @@ class _SourceActionCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 22),
+                child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
               ),
               const SizedBox(height: Spacing.sm),
               Text(

@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/colors.dart';
+import '../../services/localization_service.dart';
 import '../widgets/app_dialog.dart';
 import 'app_update_check_result.dart';
 import 'app_update_constants.dart';
@@ -13,13 +13,6 @@ import 'remote_config_value_validators.dart';
 class AppUpdateModal {
   AppUpdateModal._();
 
-  static const String _titleOptional = 'Update available';
-  static const String _titleMandatory = 'Update required';
-  static const String _messageOptional =
-      'A new version (%s) is available. Update now for the latest features and improvements.';
-  static const String _messageMandatory =
-      'Please update to version %s to continue using the app.';
-
   /// Shows the update modal. For [mandatory], the dialog is not dismissible (no "Later").
   /// "Update" opens [storeUrl] in the store. [onLater] is called when user taps "Later" (optional only).
   static Future<void> show(
@@ -28,11 +21,13 @@ class AppUpdateModal {
     VoidCallback? onLater,
   }) {
     final bool mandatory = result.isMandatory;
-    final String title =
-        mandatory ? _titleMandatory : _titleOptional;
-    final String messageFormatted =
-        (mandatory ? _messageMandatory : _messageOptional)
-            .replaceAll('%s', result.latestVersion);
+    final String title = context.tr(
+      mandatory ? 'update.titleMandatory' : 'update.titleOptional',
+    );
+    final String messageFormatted = context.tr(
+      mandatory ? 'update.messageMandatory' : 'update.messageOptional',
+      <String, Object?>{'version': result.latestVersion},
+    );
 
     final String storeUrl = result.storeUrl.trim().isNotEmpty
         ? result.storeUrl
@@ -41,13 +36,13 @@ class AppUpdateModal {
     final List<AppDialogAction> actions = [
       if (!mandatory)
         AppDialogAction(
-          label: 'Later',
+          label: context.tr('update.later'),
           onPressed: () {
             onLater?.call();
           },
         ),
       AppDialogAction(
-        label: 'Update',
+        label: context.tr('update.update'),
         isPrimary: true,
         onPressed: () {
           // Schedule launch after dialog closes so it runs in a valid context
@@ -62,11 +57,7 @@ class AppUpdateModal {
       context,
       title: title,
       message: messageFormatted,
-      icon: Icon(
-        Icons.system_update_rounded,
-        color: AppColors.primary,
-        size: 40,
-      ),
+      icon: const Icon(Icons.system_update_rounded),
       actions: actions,
       isDismissible: !mandatory,
       onWillPop: mandatory ? () async => false : null,

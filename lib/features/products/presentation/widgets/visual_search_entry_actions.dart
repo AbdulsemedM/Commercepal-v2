@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
 
 /// Camera shortcut for visual product search (e.g. inside custom search fields).
 class VisualSearchEntryActions extends StatelessWidget {

@@ -759,5 +759,14 @@
   "checkout.webview.errorTitle": "Ma aanan soo rari karin bogga lacag bixinta",
   "checkout.webview.errorBody": "Hubi xiriirkaaga oo isku day mar kale. Waxaad sidoo kale ka dhammaystiri kartaa lacag bixinta Dalbashadayda.",
   "checkout.webview.blockedTitle": "Linkigan lacag bixinta lama furi karo",
-  "checkout.webview.blockedBody": "Ammaankaaga awgeed, waxaan furnaa oo keliya bogag lacag bixin oo la aamini karo. Fadlan dooro hab kale oo lacag bixin ah."
+  "checkout.webview.blockedBody": "Ammaankaaga awgeed, waxaan furnaa oo keliya bogag lacag bixin oo la aamini karo. Fadlan dooro hab kale oo lacag bixin ah.",
+  "update.titleOptional": "Cusboonaysiin ayaa la heli karaa",
+  "update.titleMandatory": "Cusboonaysiin ayaa loo baahan yahay",
+  "update.messageOptional": "Nooca {version} ayaa diyaar ah oo leh astaamo iyo horumarro cusub.",
+  "update.messageMandatory": "U cusboonaysii nooca {version} si aad u sii isticmaasho app-ka.",
+  "update.later": "Mar dambe",
+  "update.update": "Cusboonaysii",
+  "quickActions.search": "Raadi alaab",
+  "quickActions.orders": "Dalabyada",
+  "session.expired": "Fadhigaagu wuu dhacay. Fadlan mar kale gal."
 }
