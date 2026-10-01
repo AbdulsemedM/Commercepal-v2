@@ -768,5 +768,6 @@
   "update.update": "Update",
   "quickActions.search": "Search products",
   "quickActions.orders": "Orders",
-  "session.expired": "Your session has expired. Please sign in again."
+  "session.expired": "Your session has expired. Please sign in again.",
+  "common.loading": "Loading…"
 }

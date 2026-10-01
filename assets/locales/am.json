@@ -768,5 +768,6 @@
   "update.update": "አዘምን",
   "quickActions.search": "ምርቶችን ፈልግ",
   "quickActions.orders": "ትዕዛዞች",
-  "session.expired": "ክፍለ ጊዜዎ አብቅቷል። እባክዎ እንደገና ይግቡ።"
+  "session.expired": "ክፍለ ጊዜዎ አብቅቷል። እባክዎ እንደገና ይግቡ።",
+  "common.loading": "በመጫን ላይ…"
 }

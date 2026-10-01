@@ -768,5 +768,6 @@
   "update.update": "Cusboonaysii",
   "quickActions.search": "Raadi alaab",
   "quickActions.orders": "Dalabyada",
-  "session.expired": "Fadhigaagu wuu dhacay. Fadlan mar kale gal."
+  "session.expired": "Fadhigaagu wuu dhacay. Fadlan mar kale gal.",
+  "common.loading": "Waa la soo dejinayaa…"
 }

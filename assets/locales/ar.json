@@ -768,5 +768,6 @@
   "update.update": "تحديث",
   "quickActions.search": "البحث عن المنتجات",
   "quickActions.orders": "الطلبات",
-  "session.expired": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى."
+  "session.expired": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
+  "common.loading": "جارٍ التحميل…"
 }
