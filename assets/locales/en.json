@@ -819,5 +819,8 @@
   "profile.guestSubtitle": "Sign in for the best shopping experience",
   "profile.guestPerkOrders": "Track your orders and deliveries",
   "profile.guestPerkWishlist": "Save favourites to your wishlist",
-  "profile.guestPerkCheckout": "Check out faster with saved addresses"
+  "profile.guestPerkCheckout": "Check out faster with saved addresses",
+  "splash.tagline": "SHOP THE WORLD",
+  "splash.status": "Finding great deals…",
+  "splash.trust": "Secure payments · Fast delivery"
 }

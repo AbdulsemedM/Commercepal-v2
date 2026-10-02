@@ -819,5 +819,8 @@
   "profile.guestSubtitle": "سجّل الدخول لأفضل تجربة تسوق",
   "profile.guestPerkOrders": "تتبع طلباتك وعمليات التوصيل",
   "profile.guestPerkWishlist": "احفظ المفضلة في قائمة الأمنيات",
-  "profile.guestPerkCheckout": "أتمم الشراء أسرع بالعناوين المحفوظة"
+  "profile.guestPerkCheckout": "أتمم الشراء أسرع بالعناوين المحفوظة",
+  "splash.tagline": "تسوّق العالم",
+  "splash.status": "نبحث عن أفضل العروض…",
+  "splash.trust": "دفع آمن · توصيل سريع"
 }

@@ -107,9 +107,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                 padding: const EdgeInsets.all(4),
                 child: ClipRRect(
                   borderRadius: AppRadius.xsAll,
+                  // Full-colour mark made for light backgrounds (the
+                  // yellow/white app_icon disappears on a white tile).
                   child: Image.asset(
-                    'assets/images/app_icon.png',
-                    fit: BoxFit.cover,
+                    'assets/images/Icon.png',
+                    fit: BoxFit.contain,
+                    cacheWidth:
+                        (32 * MediaQuery.devicePixelRatioOf(context)).round(),
                     errorBuilder: (_, __, ___) => Icon(
                       Icons.storefront_rounded,
                       color: scheme.primary,
