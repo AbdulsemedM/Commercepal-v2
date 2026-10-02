@@ -26,7 +26,6 @@ import '../../features/profile/presentation/screen/edit_profile_screen.dart';
 import '../../features/profile/presentation/screen/account_deletion_request_screen.dart';
 import '../../features/profile/data/models/profile_data.dart';
 import '../../features/orders/presentation/screen/order_history_screen.dart';
-import '../../features/orders/presentation/screen/order_summary_screen.dart';
 import '../../features/orders/presentation/screen/order_tracking_screen.dart';
 import '../../features/orders/bloc/orders_bloc.dart';
 import '../../features/orders/bloc/order_tracking_cubit.dart';
@@ -258,8 +257,18 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.orderSummary,
       name: 'orderSummary',
       builder: (BuildContext context, GoRouterState state) {
+        // Deep links (order notifications) open the real order screen; the
+        // old summary screen only ever showed placeholder data.
         final Map<String, String> params = state.uri.queryParameters;
-        return OrderSummaryScreen(orderId: params['id']);
+        final Order? order = state.extra is Order ? state.extra as Order : null;
+        return BlocProvider(
+          create: (_) => OrderTrackingCubit(),
+          child: OrderTrackingScreen(
+            order: order,
+            orderId: params['id'],
+            orderStatus: params['status'],
+          ),
+        );
       },
     ),
     GoRoute(
