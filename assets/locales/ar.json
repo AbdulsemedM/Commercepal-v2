@@ -813,5 +813,11 @@
   "home.deliverToLabel": "التوصيل إلى",
   "home.shopByCategory": "تسوق حسب الفئة",
   "home.seeMore": "عرض المزيد",
-  "home.deals.upTo": "خصم يصل إلى {percent}%"
+  "home.deals.upTo": "خصم يصل إلى {percent}%",
+  "profile.help": "المساعدة",
+  "profile.guestTitle": "مرحبًا بك في كوميرس بال",
+  "profile.guestSubtitle": "سجّل الدخول لأفضل تجربة تسوق",
+  "profile.guestPerkOrders": "تتبع طلباتك وعمليات التوصيل",
+  "profile.guestPerkWishlist": "احفظ المفضلة في قائمة الأمنيات",
+  "profile.guestPerkCheckout": "أتمم الشراء أسرع بالعناوين المحفوظة"
 }

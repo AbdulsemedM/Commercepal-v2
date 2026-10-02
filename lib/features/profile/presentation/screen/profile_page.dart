@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/features/auth/login/presentation/screen/login_screen.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/features/profile/presentation/widgets/profile_content.dart';
 
@@ -44,6 +43,6 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!widget.isActive) {
       return const SizedBox.shrink();
     }
-    return const LoginScreen(hideBackButton: true);
+    return const GuestProfileContent();
   }
 }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 
 class TermsConditionsScreen extends StatelessWidget {

@@ -813,5 +813,11 @@
   "home.deliverToLabel": "U gaarsii",
   "home.shopByCategory": "Ku iibso qayb ahaan",
   "home.seeMore": "Arag wax badan",
-  "home.deals.upTo": "Ilaa {percent}% dhimis"
+  "home.deals.upTo": "Ilaa {percent}% dhimis",
+  "profile.help": "Caawimo",
+  "profile.guestTitle": "Ku soo dhawoow CommercePal",
+  "profile.guestSubtitle": "Gal si aad u hesho khibrad wax iibsi oo ugu fiican",
+  "profile.guestPerkOrders": "La soco dalabyadaada iyo gaarsiinta",
+  "profile.guestPerkWishlist": "Ku kaydi kuwa aad jeceshahay liiska rajada",
+  "profile.guestPerkCheckout": "Ku bixi si dhakhso ah cinwaanno la kaydiyay"
 }

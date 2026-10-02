@@ -813,5 +813,11 @@
   "home.deliverToLabel": "የሚደርስበት",
   "home.shopByCategory": "በምድብ ይግዙ",
   "home.seeMore": "ተጨማሪ ይመልከቱ",
-  "home.deals.upTo": "እስከ {percent}% ቅናሽ"
+  "home.deals.upTo": "እስከ {percent}% ቅናሽ",
+  "profile.help": "እገዛ",
+  "profile.guestTitle": "እንኳን ወደ ኮሜርስፓል በደህና መጡ",
+  "profile.guestSubtitle": "ለምርጥ የግብይት ተሞክሮ ይግቡ",
+  "profile.guestPerkOrders": "ትዕዛዞችዎን እና አቅርቦቶችዎን ይከታተሉ",
+  "profile.guestPerkWishlist": "የሚወዷቸውን በምኞት ዝርዝር ያስቀምጡ",
+  "profile.guestPerkCheckout": "በተቀመጡ አድራሻዎች በፍጥነት ይክፈሉ"
 }

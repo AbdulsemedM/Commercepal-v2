@@ -110,7 +110,7 @@
   "auth.signup.terms": "Terms,",
   "auth.signup.privacy": "Privacy",
   "auth.signup.policy": "Policy,",
-  "auth.signup.createAccountButton": "Create an Account",
+  "auth.signup.createAccountButton": "Create account",
   "auth.signup.or": "Or",
   "auth.signup.socialGoogle": "Sign Up with Google",
   "auth.signup.socialFacebook": "Sign Up with Facebook",
@@ -248,7 +248,7 @@
   "profile.description": "Description",
   "profile.writeSomething": "Write something ...",
   "profile.sendMessage": "Send Message",
-  "profile.editProfile": "Edit Profile",
+  "profile.editProfile": "Edit profile",
   "profile.firstName": "First Name",
   "profile.lastName": "Last Name",
   "profile.pleaseEnterFirstName": "Please enter your first name",
@@ -813,5 +813,11 @@
   "home.deliverToLabel": "Deliver to",
   "home.shopByCategory": "Shop by category",
   "home.seeMore": "See more",
-  "home.deals.upTo": "Up to {percent}% off"
+  "home.deals.upTo": "Up to {percent}% off",
+  "profile.help": "Help",
+  "profile.guestTitle": "Welcome to CommercePal",
+  "profile.guestSubtitle": "Sign in for the best shopping experience",
+  "profile.guestPerkOrders": "Track your orders and deliveries",
+  "profile.guestPerkWishlist": "Save favourites to your wishlist",
+  "profile.guestPerkCheckout": "Check out faster with saved addresses"
 }
