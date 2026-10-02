@@ -89,10 +89,8 @@ class _WholesaleCategoryBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = chunkHomeProducts(
-      products,
-      maxProducts: config.pageSize,
-    );
+    // One scrolling row per section (see home discover).
+    final List<Product> visible = products.take(12).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +108,7 @@ class _WholesaleCategoryBlock extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Spacing.sm),
-        if (rows.isEmpty)
+        if (visible.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
             child: Text(
@@ -121,13 +119,11 @@ class _WholesaleCategoryBlock extends StatelessWidget {
             ),
           )
         else
-          for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
-            HomeProductRow(
-              products: rows[rowIndex],
-              imagePriorityBase:
-                  sectionIndex * kHomeDiscoverMaxProductsPerSection +
-                      rowIndex * kHomeProductsPerRow,
-            ),
+          HomeProductRow(
+            products: visible,
+            imagePriorityBase:
+                sectionIndex * kHomeDiscoverMaxProductsPerSection,
+          ),
       ],
     );
   }
