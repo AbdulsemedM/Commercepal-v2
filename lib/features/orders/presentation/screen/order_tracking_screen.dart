@@ -1,21 +1,22 @@
-import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/orders/bloc/order_tracking_cubit.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/models/order_item.dart';
+import 'package:commercepal/features/orders/presentation/widgets/order_item_thumbnail.dart';
+import 'package:commercepal/features/orders/presentation/widgets/order_section_card.dart';
+import 'package:commercepal/features/orders/presentation/widgets/order_status_badge.dart';
 import 'package:commercepal/features/checkout/data/models/payment_flow_constants.dart';
 import 'package:commercepal/services/invoice_pdf_service.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   const OrderTrackingScreen({
@@ -37,6 +38,23 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isGeneratingInvoice = false;
 
+  /// Timeline step titles, in order (index matches [_getCurrentStatusIndex]).
+  static const List<String> _stepTitleKeys = <String>[
+    'orders.tracking.stepPlaced',
+    'orders.tracking.stepConfirmation',
+    'orders.tracking.stepProcessing',
+    'orders.tracking.stepShipped',
+    'orders.tracking.stepDelivered',
+  ];
+
+  static const List<String> _stepTipKeys = <String>[
+    '',
+    'orders.tracking.tipConfirmation',
+    'orders.tracking.tipProcessing',
+    'orders.tracking.tipShipped',
+    'orders.tracking.tipDelivered',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -54,131 +72,99 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
-        children: <Widget>[
-          _buildAppBar(context),
-          Expanded(
-            child: BlocBuilder<OrderTrackingCubit, OrderTrackingState>(
-              builder: (context, state) {
-                if (state is OrderTrackingLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  );
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: context.tr('common.goBack'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Semantics(
+          header: true,
+          child: Text(context.tr('orders.tracking.title')),
+        ),
+      ),
+      body: BlocBuilder<OrderTrackingCubit, OrderTrackingState>(
+        builder: (context, state) {
+          if (state is OrderTrackingLoading) {
+            return _buildLoading();
+          }
+          if (state is OrderTrackingError) {
+            return AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              isError: true,
+              title: context.tr('common.somethingWentWrong'),
+              subtitle: state.message,
+              primaryLabel: context.tr('common.retry'),
+              onPrimary: () {
+                if (widget.orderId != null) {
+                  context
+                      .read<OrderTrackingCubit>()
+                      .loadOrderByOrderNumber(widget.orderId!);
                 }
-                if (state is OrderTrackingError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(Spacing.lg),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: Spacing.md),
-                          Text(
-                            state.message,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                          TextButton.icon(
-                            onPressed: () {
-                              if (widget.orderId != null) {
-                                context
-                                    .read<OrderTrackingCubit>()
-                                    .loadOrderByOrderNumber(widget.orderId!);
-                              }
-                            },
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                if (state is OrderTrackingLoaded) {
-                  return _buildContent(
-                    context,
-                    state.order,
-                    fromCache: state.fromCache,
-                  );
-                }
-                return const SizedBox.shrink();
               },
-            ),
-          ),
-        ],
+            );
+          }
+          if (state is OrderTrackingLoaded) {
+            return _buildContent(
+              context,
+              state.order,
+              fromCache: state.fromCache,
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<OrderTrackingCubit, OrderTrackingState>(
+        builder: (context, state) {
+          if (state is! OrderTrackingLoaded) return const SizedBox.shrink();
+          return _buildBottomBar(context, state.order);
+        },
       ),
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: AppColors.primary),
-      child: SafeArea(
-        bottom: false,
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
+  Widget _buildLoading() {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(Spacing.gutter),
+      children: const <Widget>[
+        ShimmerLoading(height: 120, width: double.infinity),
+        SizedBox(height: Spacing.sm),
+        ListTileShimmer(),
+        ListTileShimmer(),
+        SizedBox(height: Spacing.sm),
+        ShimmerLoading(height: 240, width: double.infinity),
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(BuildContext context, Order order) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surface,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: context.commerce.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.gutter,
+              Spacing.sm,
+              Spacing.gutter,
+              Spacing.sm,
             ),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.md,
-            vertical: Spacing.sm,
-          ),
-          child: Row(
-            children: <Widget>[
-              InkWell(
-                onTap: () => Navigator.of(context).pop(),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, width: 1),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Image.asset(
-                'assets/images/app_icon.png',
-                width: 40,
-                height: 40,
-                errorBuilder:
-                    (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: AppColors.secondary,
-                          shape: BoxShape.circle,
-                        ),
-                      );
-                    },
-              ),
-            ],
+            child: AppButton.secondary(
+              label: _isGeneratingInvoice
+                  ? context.tr('checkout.generating')
+                  : context.tr('checkout.downloadInvoicePdf'),
+              icon: Icons.download_rounded,
+              loading: _isGeneratingInvoice,
+              onPressed: _isGeneratingInvoice
+                  ? null
+                  : () => _downloadInvoice(context, order),
+            ),
           ),
         ),
       ),
@@ -190,201 +176,229 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     Order order, {
     bool fromCache = false,
   }) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
     final currentStatusIndex = _getCurrentStatusIndex(order);
     final statusLabel = order.stageLabel.isNotEmpty
         ? order.stageLabel
-        : _defaultStageLabel(currentStatusIndex);
-    final Color stageColor = _stageColor(order);
-    final orderDateFormatted = _formatOrderDate(order.orderDate);
-    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+        : _defaultStageLabel(context, currentStatusIndex);
+    final orderDateFormatted = _formatOrderDate(context, order.orderDate);
+    final String statusKey = OrderStatusBadge.pickStatus(
+      <String>[order.currentStage, order.stageCategory],
+    );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(Spacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (fromCache)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: Spacing.md),
-              padding: const EdgeInsets.all(Spacing.md),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Icon(Icons.cloud_off_outlined, color: Colors.amber.shade900),
-                  const SizedBox(width: Spacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Showing the last saved copy of this order. '
-                      'Reconnect and use Retry to refresh.',
-                      style: TextStyle(
-                        color: Colors.amber.shade900,
-                        fontSize: 13,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Column(
-                children: <Widget>[
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.sm),
-                ],
-              ),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Column(
+    return ListView(
+      padding: const EdgeInsets.all(Spacing.gutter),
+      children: <Widget>[
+        if (fromCache)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Spacing.sm),
+            child: Semantics(
+              liveRegion: true,
+              child: Container(
+                padding: const EdgeInsets.all(Spacing.sm),
+                decoration: BoxDecoration(
+                  color: commerce.warningContainer,
+                  borderRadius: AppRadius.mdAll,
+                ),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: stageColor,
-                      ),
+                    Icon(
+                      Icons.cloud_off_outlined,
+                      color: commerce.onWarningContainer,
+                      size: AppSizes.iconMd,
                     ),
-                    const SizedBox(height: Spacing.xs),
-                    Text(
-                      orderDateFormatted,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (order.orderNumber.isNotEmpty) ...[
-                      const SizedBox(height: Spacing.xs),
-                      Text(
-                        'Order #${order.orderNumber}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(width: Spacing.sm),
+                    Expanded(
+                      child: Text(
+                        context.tr('orders.tracking.offlineCopy'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: commerce.onWarningContainer,
+                          height: 1.35,
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
-              if (firstItem != null)
-                _buildProductCard(firstItem, order.currency),
-            ],
-          ),
-          const SizedBox(height: Spacing.xl),
-          OutlinedButton.icon(
-            onPressed: _isGeneratingInvoice ? null : () => _downloadInvoice(context, order),
-            icon: _isGeneratingInvoice
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download),
-            label: Text(
-              _isGeneratingInvoice ? 'Generating…' : 'Download invoice (PDF)',
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
             ),
           ),
-          const SizedBox(height: Spacing.xl),
-          _buildTimeline(currentStatusIndex),
+        // Status header
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(Spacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                OrderStatusBadge(status: statusKey, label: statusLabel),
+                const SizedBox(height: Spacing.xs),
+                Semantics(
+                  header: true,
+                  liveRegion: true,
+                  child: Text(
+                    statusLabel,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (orderDateFormatted.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: Spacing.xxs),
+                  Text(
+                    context.tr('orders.history.placedOn', {
+                      'date': orderDateFormatted,
+                    }),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (order.orderNumber.isNotEmpty)
+                  Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          '${context.tr('orderHistory.orderNumber')}${order.orderNumber}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontFeatures: AppTypography.tabularFigures,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: AppSizes.iconSm,
+                        tooltip: context.tr('checkout.copyOrderNumber'),
+                        icon: Icon(
+                          Icons.copy_rounded,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        onPressed: () {
+                          Clipboard.setData(
+                            ClipboardData(text: order.orderNumber),
+                          );
+                          AppSnackbars.success(
+                            context,
+                            context.tr('checkout.orderNumberCopied'),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (order.items.isNotEmpty) ...<Widget>[
+          const SizedBox(height: Spacing.sm),
+          OrderSectionCard(
+            title: order.items.length == 1
+                ? context.tr('orders.itemCountOne')
+                : context.tr('checkout.itemsCount', {
+                    'count': order.items.length,
+                  }),
+            icon: Icons.inventory_2_outlined,
+            child: Column(
+              children: <Widget>[
+                for (int i = 0; i < order.items.length; i++) ...<Widget>[
+                  if (i > 0)
+                    Divider(height: Spacing.lg, color: commerce.border),
+                  _buildProductRow(order.items[i], order.currency),
+                ],
+              ],
+            ),
+          ),
         ],
-      ),
+        const SizedBox(height: Spacing.sm),
+        OrderSectionCard(
+          title: context.tr('orders.tracking.timelineTitle'),
+          icon: Icons.timeline_rounded,
+          child: _buildTimeline(order, currentStatusIndex),
+        ),
+      ],
     );
   }
 
-  Widget _buildProductCard(OrderItem item, String currency) {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(Spacing.sm),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-        boxShadow: AppDecorations.softCardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: double.infinity,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: item.productImageUrl.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      item.productImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.image,
-                        size: 40,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+  Widget _buildProductRow(OrderItem item, String currency) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        OrderItemThumbnail(
+          url: item.productImageUrl,
+          size: 64,
+          semanticLabel: item.productName,
+        ),
+        const SizedBox(width: Spacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                item.productName,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (item.productConfiguration.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  item.productConfiguration,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: Spacing.xxs),
+              Row(
+                children: <Widget>[
+                  Flexible(
+                    child: PriceTag(
+                      amount: item.unitPrice,
+                      currency:
+                          CountryCurrencyConstants.getCurrencySymbol(currency),
+                      size: PriceTagSize.small,
                     ),
-                  )
-                : Icon(Icons.image, size: 40, color: Theme.of(context).colorScheme.outline),
+                  ),
+                  const SizedBox(width: Spacing.xs),
+                  Text(
+                    context.tr('orders.qty', {'count': item.quantity}),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontFeatures: AppTypography.tabularFigures,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: Spacing.xs),
-          Text(
-            item.productName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (item.productConfiguration.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              item.productConfiguration,
-              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          const SizedBox(height: 2),
-          Text(
-            '${MoneyFormatter.format(item.unitPrice, currency)}',
-            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'QTY ${item.quantity}',
-            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Future<void> _downloadInvoice(BuildContext context, Order order) async {
+    // Resolve localised copy before any async gap.
+    final String shareSubject = context.tr(
+      'checkout.orderPlaced.invoiceShareSubject',
+      {'orderNumber': order.orderNumber},
+    );
+    final String shareText = context.tr(
+      'checkout.orderPlaced.invoiceShareText',
+      {'orderNumber': order.orderNumber},
+    );
+    final String readyMessage = context.tr('checkout.invoiceReady');
+    final String failedMessage = context.tr('checkout.failedToGenerateInvoice');
+
     setState(() => _isGeneratingInvoice = true);
     try {
       final pdfBytes = await InvoicePdfService.buildPdf(order: order);
@@ -394,23 +408,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       if (!mounted) return;
       await Share.shareXFiles(
         [XFile(file.path)],
-        subject: 'Invoice - Order ${order.orderNumber}',
-        text: 'Your CommercePal invoice for order ${order.orderNumber}',
+        subject: shareSubject,
+        text: shareText,
       );
-      if (mounted) {
-        AppSnackbars.success(context, 'Invoice ready. Save or share the PDF.');
+      if (mounted && context.mounted) {
+        AppSnackbars.success(context, readyMessage);
       }
     } catch (e) {
-      if (mounted) {
-        AppSnackbars.error(context, 'Failed to generate invoice: $e');
+      if (mounted && context.mounted) {
+        AppSnackbars.error(context, failedMessage);
       }
     } finally {
       if (mounted) setState(() => _isGeneratingInvoice = false);
     }
   }
 
-  int _getCurrentStatusIndex(Order order) {
-    final stage = order.currentStage.toUpperCase();
+  /// Timeline index for a raw stage code, or null when the stage isn't known.
+  int? _indexForStage(String rawStage) {
+    final stage = rawStage.toUpperCase();
     switch (stage) {
       case OrderStage.paymentPending:
       case 'PENDING':
@@ -425,6 +440,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       case OrderStage.delivered:
         return 4;
     }
+    return null;
+  }
+
+  int _getCurrentStatusIndex(Order order) {
+    final int? fromStage = _indexForStage(order.currentStage);
+    if (fromStage != null) return fromStage;
 
     final category = order.stageCategory.toUpperCase();
     switch (category) {
@@ -444,40 +465,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  Color _stageColor(Order order) {
-    final String stage = order.currentStage.toUpperCase();
-    switch (stage) {
-      case OrderStage.delivered:
-        return AppColors.success;
-      case OrderStage.paymentConfirmed:
-      case OrderStage.processing:
-      case OrderStage.packed:
-      case OrderStage.shipped:
-      case OrderStage.outForDelivery:
-        return const Color(0xFFFFD520);
-      default:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
-    }
-  }
-
-  String _defaultStageLabel(int index) {
+  String _defaultStageLabel(BuildContext context, int index) {
     const labels = <String>[
-      'Order Placed',
-      'Payment Pending',
-      'Processing',
-      'Shipped',
-      'Delivered',
+      'orders.tracking.stepPlaced',
+      'orders.tracking.stagePaymentPending',
+      'orders.tracking.stepProcessing',
+      'orders.tracking.stepShipped',
+      'orders.tracking.stepDelivered',
     ];
-    if (index >= 0 && index < labels.length) return labels[index];
-    return 'Order Placed';
+    if (index >= 0 && index < labels.length) return context.tr(labels[index]);
+    return context.tr('orders.tracking.stepPlaced');
   }
 
-  String _formatOrderDate(String orderDate) {
+  String _formatOrderDate(BuildContext context, String orderDate) {
     if (orderDate.isEmpty) return '';
     try {
       final parsed = DateTime.tryParse(orderDate);
       if (parsed != null) {
-        return DateFormat('EEEE, d MMM y').format(parsed);
+        return formatOrderDate(context, parsed, 'EEEE, d MMM y');
       }
       return orderDate;
     } catch (_) {
@@ -485,144 +490,170 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  Widget _buildTimeline(int currentIndex) {
-    final List<_TimelineItem> items = <_TimelineItem>[
-      const _TimelineItem(title: 'Order Placed', tips: '', isCompleted: true),
-      const _TimelineItem(
-        title: 'Payment / Confirmation',
-        tips:
-            'Your order is awaiting payment confirmation before processing begins',
-        isCompleted: false,
-      ),
-      const _TimelineItem(
-        title: 'Processing',
-        tips:
-            'Once confirmed, your order will be processed and packed for shipping',
-        isCompleted: false,
-      ),
-      const _TimelineItem(
-        title: 'Shipped',
-        tips:
-            'Once your order has been packaged it will be dispatched to your delivery address this may take a while depending on your address',
-        isCompleted: false,
-      ),
-      const _TimelineItem(
-        title: 'Delivered',
-        tips:
-            'Once your order has been shipped and you have received it the delivery will be complete',
-        isCompleted: false,
-      ),
-    ];
+  /// Most recent time each timeline step was entered, from stage history.
+  Map<int, String> _stepDates(BuildContext context, Order order) {
+    final Map<int, String> dates = <int, String>{};
+    final String placed = _formatOrderDate(context, order.orderDate);
+    if (placed.isNotEmpty) dates[0] = placed;
+    for (final OrderStageHistoryEntry entry
+        in order.orderStageHistory ?? const <OrderStageHistoryEntry>[]) {
+      final int? index = _indexForStage(entry.stage);
+      final DateTime? at = DateTime.tryParse(entry.enteredAt);
+      if (index == null || at == null) continue;
+      dates[index] = formatOrderDate(context, at.toLocal(), 'd MMM y, HH:mm');
+    }
+    return dates;
+  }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTimeline(Order order, int currentIndex) {
+    final Map<int, String> dates = _stepDates(context, order);
+    final int last = _stepTitleKeys.length - 1;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Column(
-          children: <Widget>[
-            _timelineCircle(true),
-            _timelineLine(currentIndex > 1),
-            _timelineCircle(currentIndex >= 1),
-            _timelineLine(currentIndex > 2),
-            _timelineCircle(currentIndex >= 2),
-            _timelineLine(currentIndex > 3),
-            _timelineCircle(currentIndex >= 3),
-            _timelineLine(currentIndex > 4),
-            _timelineCircle(currentIndex >= 4),
-          ],
-        ),
-        const SizedBox(width: Spacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _buildTimelineItem(items[0], 0, currentIndex, isFirst: true),
-              _buildTimelineItem(items[1], 1, currentIndex),
-              _buildTimelineItem(items[2], 2, currentIndex),
-              _buildTimelineItem(items[3], 3, currentIndex),
-              _buildTimelineItem(items[4], 4, currentIndex, isLast: true),
-            ],
+        for (int i = 0; i <= last; i++)
+          _buildTimelineItem(
+            title: context.tr(_stepTitleKeys[i]),
+            tips: _stepTipKeys[i].isEmpty ? '' : context.tr(_stepTipKeys[i]),
+            date: dates[i],
+            state: i < currentIndex || (i == currentIndex && i == last)
+                ? _StepState.done
+                : i == currentIndex
+                    ? _StepState.current
+                    : _StepState.upcoming,
+            lineDone: i < currentIndex,
+            isLast: i == last,
           ),
-        ),
       ],
     );
   }
 
-  Widget _timelineCircle(bool filled) {
-    return Container(
+  Widget _buildTimelineItem({
+    required String title,
+    required String tips,
+    required String? date,
+    required _StepState state,
+    required bool lineDone,
+    required bool isLast,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
+
+    final Color dotColor = switch (state) {
+      _StepState.done => commerce.success,
+      _StepState.current => scheme.primary,
+      _StepState.upcoming => scheme.outlineVariant,
+    };
+    final Color lineColor =
+        lineDone ? commerce.success : scheme.outlineVariant;
+
+    final Widget dot = Container(
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: filled ? AppColors.primary : Colors.transparent,
+        color: state == _StepState.upcoming ? scheme.surface : dotColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: filled ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
-          width: 2,
-        ),
+        border: Border.all(color: dotColor, width: 2),
       ),
-      child: filled
-          ? const Icon(Icons.check, color: Colors.white, size: 16)
-          : null,
-    );
-  }
-
-  Widget _timelineLine(bool filled) {
-    return Container(
-      width: 2,
-      height: 60,
-      color: filled ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
-    );
-  }
-
-  Widget _buildTimelineItem(
-    _TimelineItem item,
-    int index,
-    int currentIndex, {
-    bool isFirst = false,
-    bool isLast = false,
-  }) {
-    final bool isActive = index == currentIndex;
-    final bool isCompleted = index < currentIndex;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : Spacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            item.title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: isActive || isCompleted
-                  ? AppColors.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+      alignment: Alignment.center,
+      child: switch (state) {
+        _StepState.done =>
+          Icon(Icons.check_rounded, size: 16, color: commerce.successContainer),
+        _StepState.current => Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: scheme.onPrimary,
+              shape: BoxShape.circle,
             ),
           ),
-          if (item.tips.isNotEmpty) ...<Widget>[
-            const SizedBox(height: Spacing.xs),
-            Text(
-              item.tips,
-              style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5,
+        _StepState.upcoming => null,
+      },
+    );
+
+    final String stateLabel = switch (state) {
+      _StepState.done => context.tr('orders.tracking.stateDone'),
+      _StepState.current => context.tr('orders.tracking.stateCurrent'),
+      _StepState.upcoming => context.tr('orders.tracking.stateUpcoming'),
+    };
+
+    return Semantics(
+      container: true,
+      label: '$title, $stateLabel',
+      liveRegion: state == _StepState.current,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(
+              width: 24,
+              child: Column(
+                children: <Widget>[
+                  dot,
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        color: lineColor,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Spacing.sm),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: 2,
+                  bottom: isLast ? 0 : Spacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: switch (state) {
+                          _StepState.done => scheme.onSurface,
+                          _StepState.current => scheme.primary,
+                          _StepState.upcoming => scheme.onSurfaceVariant,
+                        },
+                        fontWeight: state == _StepState.upcoming
+                            ? FontWeight.w500
+                            : FontWeight.w700,
+                      ),
+                    ),
+                    if (date != null && date.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(
+                        date,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontFeatures: AppTypography.tabularFigures,
+                        ),
+                      ),
+                    ],
+                    if (tips.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: Spacing.xxs),
+                      Text(
+                        tips,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-class _TimelineItem {
-  const _TimelineItem({
-    required this.title,
-    required this.tips,
-    required this.isCompleted,
-  });
-
-  final String title;
-  final String tips;
-  final bool isCompleted;
-}
+enum _StepState { done, current, upcoming }

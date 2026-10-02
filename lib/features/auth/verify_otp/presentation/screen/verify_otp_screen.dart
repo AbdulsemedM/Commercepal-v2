@@ -1,11 +1,9 @@
-import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/auth/forgot_password/bloc/forgot_password_bloc.dart';
@@ -28,6 +26,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   int _secondsRemaining = 60;
   Timer? _timer;
   bool _autoSubmitted = false;
+  bool _showOtpError = false;
 
   @override
   void initState() {
@@ -86,7 +85,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   void _onVerify() {
     final code = _otpKey.currentState?.code ?? _otp;
     if (!RegExp(r'^\d{6}$').hasMatch(code)) {
-      AppSnackbars.error(context, LocalizationService.t(context, 'auth.otp.invalid'));
+      setState(() => _showOtpError = true);
+      AppSnackbars.error(context, context.tr('auth.otp.invalid'));
       return;
     }
     _goToNewPassword(code);
@@ -104,10 +104,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return BlocProvider(
       create: (_) => ForgotPasswordBloc(),
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
             listener: (context, state) {
@@ -117,6 +118,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 setState(() {
                   _otp = '';
                   _autoSubmitted = false;
+                  _showOtpError = false;
                 });
                 _startCountdown();
               } else if (state is ForgotPasswordFailure) {
@@ -128,132 +130,142 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 final bool isResending = state is ForgotPasswordLoading;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const SizedBox(height: Spacing.md),
-                      AuthBackButton(
-                        onPressed: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go(AppRoutes.forgotPassword);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: Spacing.sm),
-                      Text(
-                        LocalizationService.t(context, 'auth.otp.title'),
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 26,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: AutofillGroup(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const SizedBox(height: Spacing.md),
+                            AuthBackButton(
+                              onPressed: () {
+                                if (context.canPop()) {
+                                  context.pop();
+                                } else {
+                                  context.go(AppRoutes.forgotPassword);
+                                }
+                              },
                             ),
-                      ),
-                      const SizedBox(height: Spacing.xs),
-                      Text(
-                        LocalizationService.t(context, 'auth.otp.subtitle')
-                            .replaceAll('{target}', widget.target),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: Spacing.xl),
-                      OtpPinInput(
-                        key: _otpKey,
-                        enabled: !isResending,
-                        onChanged: (value) {
-                          setState(() {
-                            _otp = value;
-                            _autoSubmitted = false;
-                          });
-                        },
-                        onCompleted: (code) {
-                          if (!_autoSubmitted) {
-                            _onOtpCompleted(code);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: Spacing.lg),
-                      AuthPrimaryButton(
-                        label: LocalizationService.t(context, 'auth.otp.verify'),
-                        onPressed: _isOtpValid ? _onVerify : null,
-                        showArrow: false,
-                      ),
-                      const SizedBox(height: Spacing.lg),
-                      Center(
-                        child: _secondsRemaining > 0
-                            ? Text(
-                                LocalizationService.t(
-                                  context,
-                                  'auth.otp.resendIn',
-                                ).replaceAll(
-                                  '{seconds}',
-                                  '$_secondsRemaining',
-                                ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                              )
-                            : GestureDetector(
-                                onTap: isResending
-                                    ? null
-                                    : () => _resend(context),
-                                child: isResending
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        LocalizationService.t(
-                                          context,
-                                          'auth.otp.resend',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
+                            const SizedBox(height: Spacing.sm),
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                context.tr('auth.otp.title'),
+                                style: theme.textTheme.headlineMedium,
                               ),
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () => context.go(AppRoutes.login),
-                          child: Text(
-                            LocalizationService.t(
-                              context,
-                              'auth.otp.backToLogin',
                             ),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w700,
+                            const SizedBox(height: Spacing.xs),
+                            Text(
+                              context.tr('auth.otp.subtitle', <String, Object?>{
+                                'target': widget.target,
+                              }),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: Spacing.xl),
+                            OtpPinInput(
+                              key: _otpKey,
+                              enabled: !isResending,
+                              hasError: _showOtpError,
+                              onChanged: (value) {
+                                setState(() {
+                                  _otp = value;
+                                  _autoSubmitted = false;
+                                  _showOtpError = false;
+                                });
+                              },
+                              onCompleted: (code) {
+                                if (!_autoSubmitted) {
+                                  _onOtpCompleted(code);
+                                }
+                              },
+                            ),
+                            if (_showOtpError) ...<Widget>[
+                              const SizedBox(height: Spacing.xs),
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  context.tr('auth.otp.invalid'),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.error,
+                                  ),
                                 ),
-                          ),
+                              ),
+                            ],
+                            const SizedBox(height: Spacing.xl),
+                            AuthPrimaryButton(
+                              label: context.tr('auth.otp.verify'),
+                              onPressed: _isOtpValid ? _onVerify : null,
+                              showArrow: false,
+                            ),
+                            const SizedBox(height: Spacing.md),
+                            _ResendRow(
+                              secondsRemaining: _secondsRemaining,
+                              isResending: isResending,
+                              onResend: () => _resend(context),
+                            ),
+                            const SizedBox(height: Spacing.xs),
+                            Center(
+                              child: AppButton.text(
+                                label: context.tr('auth.otp.backToLogin'),
+                                onPressed: () => context.go(AppRoutes.login),
+                              ),
+                            ),
+                            const SizedBox(height: Spacing.xl),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: Spacing.xl),
-                    ],
+                    ),
                   ),
                 );
               },
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Countdown while the resend cooldown runs, then a text button.
+class _ResendRow extends StatelessWidget {
+  const _ResendRow({
+    required this.secondsRemaining,
+    required this.isResending,
+    required this.onResend,
+  });
+
+  final int secondsRemaining;
+  final bool isResending;
+  final VoidCallback onResend;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return SizedBox(
+      height: AppSizes.minTouchTarget,
+      child: Center(
+        child: secondsRemaining > 0
+            ? Text(
+                context.tr('auth.otp.resendIn', <String, Object?>{
+                  'seconds': secondsRemaining,
+                }),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              )
+            : AppButton.text(
+                label: context.tr('auth.otp.resend'),
+                icon: Icons.refresh_rounded,
+                loading: isResending,
+                onPressed: isResending ? null : onResend,
+              ),
       ),
     );
   }

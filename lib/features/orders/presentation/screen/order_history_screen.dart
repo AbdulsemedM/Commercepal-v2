@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/features/orders/bloc/orders_bloc.dart';
 import 'package:commercepal/features/orders/data/models/order.dart';
 import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
-import 'package:intl/intl.dart';
+import 'package:commercepal/features/orders/presentation/widgets/order_item_thumbnail.dart';
+import 'package:commercepal/features/orders/presentation/widgets/order_status_badge.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
@@ -29,6 +29,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     'orderHistory.pendingPayment',
     'orderHistory.cancelled',
   ];
+
+  /// Max thumbnails shown per order card before collapsing into "+N".
+  static const int _maxThumbnails = 4;
 
   String? _getStageCategoryForTab(int index) {
     switch (index) {
@@ -121,25 +124,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: pageBg,
-        elevation: 0,
         leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(Spacing.xs),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new,
-              size: 18,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: context.tr('common.goBack'),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -148,65 +137,31 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             }
           },
         ),
-        title: Text(
-          LocalizationService.t(context, 'orderHistory.title'),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        title: Semantics(
+          header: true,
+          child: Text(context.tr('orderHistory.title')),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List<Widget>.generate(_tabKeys.length, (int index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-                    child: _buildTab(index, LocalizationService.t(context, _tabKeys[index])),
-                  );
-                }),
-              ),
-            ),
-          ),
+          preferredSize: const Size.fromHeight(56),
+          child: _buildFilterChips(context),
         ),
       ),
       body: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
-          // print(
-          //   '🔵 OrderHistoryScreen: BlocBuilder rebuild - state: ${state.runtimeType}',
-          // );
           if (state is OrdersLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildLoading();
           }
 
           if (state is OrdersError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  Text(
-                    state.message,
-                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<OrdersBloc>().add(OrdersLoadRequested());
-                    },
-                    child: Text(LocalizationService.t(context, 'orderHistory.retry')),
-                  ),
-                ],
-              ),
+            return AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              isError: true,
+              title: context.tr('common.somethingWentWrong'),
+              subtitle: state.message,
+              primaryLabel: context.tr('orderHistory.retry'),
+              onPrimary: () {
+                context.read<OrdersBloc>().add(OrdersLoadRequested());
+              },
             );
           }
 
@@ -218,47 +173,51 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             return _buildOrderList(filtered);
           }
 
-          return const Center(child: CircularProgressIndicator());
+          return _buildLoading();
         },
       ),
     );
   }
 
-  Widget _buildTab(int index, String label) {
-    final bool isSelected = _selectedTabIndex == index;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-        // Filtering is done client-side from the already-loaded list; no need to reload.
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            if (isSelected)
-              Container(
-                height: 2,
-                width: label.length * 7.0,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.all(Radius.circular(1)),
-                ),
-              )
-            else
-              const SizedBox(height: 2),
-          ],
+  Widget _buildFilterChips(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: Spacing.gutter,
+          vertical: Spacing.xs,
+        ),
+        itemCount: _tabKeys.length,
+        separatorBuilder: (_, __) => const SizedBox(width: Spacing.xs),
+        itemBuilder: (BuildContext context, int index) {
+          final bool isSelected = _selectedTabIndex == index;
+          return ChoiceChip(
+            label: Text(context.tr(_tabKeys[index])),
+            selected: isSelected,
+            showCheckmark: false,
+            onSelected: (_) {
+              setState(() {
+                _selectedTabIndex = index;
+              });
+              // Filtering is done client-side from the already-loaded list; no need to reload.
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(Spacing.gutter),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: Spacing.sm),
+      itemBuilder: (_, __) => const Card(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: Spacing.xs),
+          child: ListTileShimmer(leadingSize: 64),
         ),
       ),
     );
@@ -266,22 +225,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   Widget _buildOrderList(List<Order> orders) {
     if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shopping_bag_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: Spacing.md),
-            Text(
-              LocalizationService.t(context, 'orderHistory.noOrdersFound'),
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
+      return AppEmptyState(
+        icon: Icons.shopping_bag_outlined,
+        title: context.tr('orderHistory.noOrdersFound'),
+        subtitle: context.tr('orders.history.emptySubtitle'),
+        primaryLabel: context.tr('cart.startShopping'),
+        onPrimary: () => context.go(AppRoutes.dashboard),
       );
     }
 
@@ -292,9 +241,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         );
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(Spacing.md),
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(Spacing.gutter),
         itemCount: orders.length,
+        separatorBuilder: (_, __) => const SizedBox(height: Spacing.sm),
         itemBuilder: (BuildContext context, int index) {
           final order = orders[index];
           return _buildOrderCard(order);
@@ -304,16 +255,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Widget _buildOrderCard(Order order) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
     // Get first item for display
     final firstItem = order.items.isNotEmpty ? order.items.first : null;
-    final productName = firstItem?.productName ?? LocalizationService.t(context, 'orderHistory.multipleItems');
-    final productImageUrl = firstItem?.productImageUrl ?? '';
+    final productName = firstItem?.productName ?? context.tr('orderHistory.multipleItems');
 
     // Format date
     String formattedDate = '';
     try {
       final dateTime = DateTime.parse(order.orderDate);
-      formattedDate = DateFormat('dd MMM yyyy').format(dateTime);
+      formattedDate = formatOrderDate(context, dateTime, 'dd MMM yyyy');
     } catch (e) {
       formattedDate = order.orderDate;
     }
@@ -324,185 +277,226 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         : order.currentStage.toLowerCase();
 
     void goToOrderDetails() {
-      if (order.stageCategory.toLowerCase() == 'delivered' ||
-          order.currentStage.toLowerCase() == 'delivered') {
-        context.push('/order-summary?id=${order.orderNumber}');
-      } else {
-        context.pushNamed(
-          'orderTracking',
-          queryParameters: {
-            'id': order.orderNumber,
-            'status': status,
-          },
-          extra: order,
-        );
-      }
+      // Delivered orders too: the tracking screen shows the full order.
+      context.pushNamed(
+        'orderTracking',
+        queryParameters: {
+          'id': order.orderNumber,
+          'status': status,
+        },
+        extra: order,
+      );
     }
 
-    return Material(
-      color: Colors.transparent,
+    final String statusLabel = order.stageLabel.isNotEmpty
+        ? order.stageLabel
+        : _getStatusLabel(context, status);
+    final String statusKey = OrderStatusBadge.pickStatus(
+      <String>[order.currentStage, order.stageCategory],
+    );
+    final int itemCount = order.items.length;
+    final int hiddenCount = itemCount > _maxThumbnails
+        ? itemCount - (_maxThumbnails - 1)
+        : 0;
+    final int shownThumbs =
+        hiddenCount > 0 ? _maxThumbnails - 1 : itemCount;
+
+    return Card(
       child: InkWell(
         onTap: goToOrderDetails,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: Spacing.md),
+        child: Padding(
           padding: const EdgeInsets.all(Spacing.md),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-            boxShadow: AppDecorations.softCardShadow(),
-          ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Product image
-              Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: productImageUrl.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      productImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.image,
-                          size: 40,
-                          color: Theme.of(context).colorScheme.outline,
+              // Header: order number (copyable) + status
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: Text(
+                                '${context.tr('orderHistory.orderNumber')}${order.orderNumber}',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: scheme.onSurface,
+                                  fontFeatures: AppTypography.tabularFigures,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (order.orderNumber.isNotEmpty)
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                iconSize: AppSizes.iconSm,
+                                tooltip: context.tr('checkout.copyOrderNumber'),
+                                icon: Icon(
+                                  Icons.copy_rounded,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: order.orderNumber),
+                                  );
+                                  AppSnackbars.success(
+                                    context,
+                                    context.tr('checkout.orderNumberCopied'),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                        if (formattedDate.isNotEmpty)
+                          Text(
+                            context.tr('orders.history.placedOn', {
+                              'date': formattedDate,
+                            }),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.xs),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(top: Spacing.xs),
+                    child: OrderStatusBadge(
+                      status: statusKey,
+                      label: statusLabel,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.sm),
+              Divider(height: 1, color: context.commerce.border),
+              const SizedBox(height: Spacing.sm),
+              // Item thumbnails
+              Row(
+                children: <Widget>[
+                  if (itemCount == 0)
+                    const OrderItemThumbnail(url: '', size: 56)
+                  else
+                    for (int i = 0; i < shownThumbs; i++)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          end: Spacing.xs,
+                        ),
+                        child: OrderItemThumbnail(
+                          url: order.items[i].productImageUrl,
+                          size: 56,
+                          semanticLabel: order.items[i].productName,
+                        ),
+                      ),
+                  if (hiddenCount > 0)
+                    Semantics(
+                      label: context.tr('orders.history.moreItems', {
+                        'count': hiddenCount,
+                      }),
+                      excludeSemantics: true,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHigh,
+                          borderRadius: AppRadius.smAll,
+                          border: Border.all(color: context.commerce.border),
+                        ),
+                        child: Text(
+                          '+$hiddenCount',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontFeatures: AppTypography.tabularFigures,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Spacing.sm),
+              // Product name
+              Text(
+                order.items.length > 1
+                    ? context.tr('orders.history.itemsMore', {
+                        'name': productName,
+                        'count': order.items.length - 1,
+                      })
+                    : productName,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: Spacing.sm),
+              // Total
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    context.tr('checkout.total'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.xs),
+                  Flexible(
+                    child: PriceTag(
+                      amount: order.totalAmount,
+                      currency: CountryCurrencyConstants.getCurrencySymbol(
+                        order.currency,
+                      ),
+                      size: PriceTagSize.small,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.sm),
+              // Actions: Pay and Track (from API actions.canPay / actions.canTrack)
+              Wrap(
+                spacing: Spacing.xs,
+                runSpacing: Spacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  if (order.canPay)
+                    AppButton.primary(
+                      label: context.tr('orderHistory.pay'),
+                      size: AppButtonSize.small,
+                      fullWidth: false,
+                      icon: Icons.payment_rounded,
+                      onPressed: () => _openPayForOrder(context, order),
+                    ),
+                  if (order.canTrack)
+                    AppButton.secondary(
+                      label: context.tr('orderHistory.track'),
+                      size: AppButtonSize.small,
+                      fullWidth: false,
+                      icon: Icons.local_shipping_outlined,
+                      onPressed: () {
+                        // Prevent card tap when pressing Track
+                        context.pushNamed(
+                          'orderTracking',
+                          queryParameters: {
+                            'id': order.orderNumber,
+                            'status': status,
+                          },
+                          extra: order,
                         );
                       },
                     ),
-                  )
-                : Icon(Icons.image, size: 40, color: Theme.of(context).colorScheme.outline),
-          ),
-          const SizedBox(width: Spacing.md),
-          // Product details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                // Status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.sm,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    order.stageLabel.isNotEmpty
-                        ? order.stageLabel
-                        : _getStatusLabel(context, status),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                // Product name
-                Text(
-                  order.items.length > 1
-                      ? '$productName + ${order.items.length - 1} more'
-                      : productName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: Spacing.xs),
-                // Order number
-                Text(
-                  '${LocalizationService.t(context, 'orderHistory.orderNumber')}${order.orderNumber}',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: Spacing.xs),
-                // Date and total
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '${MoneyFormatter.format(order.totalAmount, order.currency)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                // Actions: Pay and Track (from API actions.canPay / actions.canTrack)
-                if (order.canPay || order.canTrack) ...[
-                  const SizedBox(height: Spacing.sm),
-                  Row(
-                    children: [
-                      if (order.canPay)
-                        Padding(
-                          padding: const EdgeInsets.only(right: Spacing.xs),
-                          child: OutlinedButton(
-                            onPressed: () => _openPayForOrder(context, order),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.sm,
-                                vertical: 4,
-                              ),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(LocalizationService.t(context, 'orderHistory.pay')),
-                          ),
-                        ),
-                      if (order.canTrack)
-                        OutlinedButton(
-                          onPressed: () {
-                            // Prevent card tap when pressing Track
-                            context.pushNamed(
-                              'orderTracking',
-                              queryParameters: {
-                                'id': order.orderNumber,
-                                'status': status,
-                              },
-                              extra: order,
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Spacing.sm,
-                              vertical: 4,
-                            ),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(LocalizationService.t(context, 'orderHistory.track')),
-                        ),
-                    ],
+                  AppButton.text(
+                    label: context.tr('orders.history.viewDetails'),
+                    size: AppButtonSize.small,
+                    trailingIcon: Icons.chevron_right_rounded,
+                    onPressed: goToOrderDetails,
                   ),
                 ],
-              ],
-            ),
-          ),
-              // Chevron (same as card tap: go to details)
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 24,
               ),
             ],
           ),
@@ -511,45 +505,25 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'delivered':
-      case 'all':
-        return Colors.green.shade100;
-      case 'shipped':
-      case 'ongoing':
-        return Colors.blue.shade100;
-      case 'pending':
-      case 'pending_confirmation':
-      case 'pending_payment':
-        return Colors.orange.shade100;
-      case 'cancelled':
-      case 'canceled':
-        return Colors.red.shade100;
-      default:
-        return Theme.of(context).colorScheme.surfaceContainerHigh;
-    }
-  }
-
   String _getStatusLabel(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'delivered':
-        return LocalizationService.t(context, 'orderHistory.delivered');
+        return context.tr('orderHistory.delivered');
       case 'shipped':
       case 'ongoing':
-        return LocalizationService.t(context, 'orderHistory.ongoing');
+        return context.tr('orderHistory.ongoing');
       case 'pending':
       case 'pending_confirmation':
       case 'pending_payment':
-        return LocalizationService.t(context, 'orderHistory.pendingPayment');
+        return context.tr('orderHistory.pendingPayment');
       case 'cancelled':
       case 'canceled':
-        return LocalizationService.t(context, 'orderHistory.cancelled');
+        return context.tr('orderHistory.cancelled');
       case 'confirmed':
       case 'waiting':
-        return LocalizationService.t(context, 'orderHistory.waiting');
+        return context.tr('orderHistory.waiting');
       default:
-        return LocalizationService.t(context, 'orderHistory.pending');
+        return context.tr('orderHistory.pending');
     }
   }
 }

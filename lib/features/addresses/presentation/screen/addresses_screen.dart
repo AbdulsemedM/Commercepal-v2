@@ -1,11 +1,7 @@
-import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/widgets/app_dialog.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/address_bloc.dart';
 import '../../data/models/address.dart';
@@ -28,33 +24,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: pageBg,
-        elevation: 0,
         leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(Spacing.xs),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new,
-              size: 18,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: context.tr('common.goBack'),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          LocalizationService.t(context, 'addresses.title'),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        title: Semantics(
+          header: true,
+          child: Text(context.tr('addresses.title')),
         ),
       ),
       body: BlocConsumer<AddressBloc, AddressState>(
@@ -62,56 +41,41 @@ class _AddressesScreenState extends State<AddressesScreen> {
           if (state is AddressError) {
             AppSnackbars.error(context, state.message);
           } else if (state is AddressAdded) {
-            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.added'));
+            AppSnackbars.success(context, context.tr('addresses.added'));
           } else if (state is AddressUpdated) {
-            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.updated'));
+            AppSnackbars.success(context, context.tr('addresses.updated'));
           } else if (state is AddressDeleted) {
-            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.deleted'));
+            AppSnackbars.success(context, context.tr('addresses.deleted'));
           } else if (state is AddressSetDefault) {
-            AppSnackbars.success(context, LocalizationService.t(context, 'addresses.defaultUpdated'));
+            AppSnackbars.success(context, context.tr('addresses.defaultUpdated'));
           }
         },
         builder: (context, state) {
           if (state is AddressLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
+            return ListView.separated(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(Spacing.gutter),
+              itemCount: 3,
+              separatorBuilder: (_, __) => const SizedBox(height: Spacing.sm),
+              itemBuilder: (_, __) => const Card(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: Spacing.xs),
+                  child: ListTileShimmer(leadingSize: 40),
+                ),
               ),
             );
           }
 
           if (state is AddressError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  Text(
-                    state.message,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: Spacing.lg),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<AddressBloc>().add(AddressLoadRequested());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(LocalizationService.t(context, 'addresses.retry')),
-                  ),
-                ],
-              ),
+            return AppEmptyState(
+              icon: Icons.error_outline_rounded,
+              isError: true,
+              title: context.tr('common.somethingWentWrong'),
+              subtitle: state.message,
+              primaryLabel: context.tr('addresses.retry'),
+              onPrimary: () {
+                context.read<AddressBloc>().add(AddressLoadRequested());
+              },
             );
           }
 
@@ -119,34 +83,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
             final addresses = state.addresses;
 
             if (addresses.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: Spacing.md),
-                    Text(
-                      LocalizationService.t(context, 'addresses.noAddressesYet'),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.sm),
-                    Text(
-                      LocalizationService.t(context, 'addresses.addFirstHint'),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+              return AppEmptyState(
+                icon: Icons.location_on_outlined,
+                title: context.tr('addresses.noAddressesYet'),
+                subtitle: context.tr('addresses.addFirstHint'),
               );
             }
 
@@ -154,10 +94,17 @@ class _AddressesScreenState extends State<AddressesScreen> {
               onRefresh: () async {
                 context.read<AddressBloc>().add(AddressRefreshRequested());
               },
-              color: AppColors.primary,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(Spacing.md),
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                // Bottom inset keeps the last card clear of the FAB.
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.gutter,
+                  Spacing.gutter,
+                  Spacing.gutter,
+                  Spacing.xxxl + Spacing.xxl,
+                ),
                 itemCount: addresses.length,
+                separatorBuilder: (_, __) => const SizedBox(height: Spacing.sm),
                 itemBuilder: (context, index) {
                   return AddressCard(
                     address: addresses[index],
@@ -192,12 +139,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
         onPressed: () {
           AddEditAddressDialog.show(context);
         },
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          LocalizationService.t(context, 'addresses.addAddress'),
-          style: const TextStyle(color: Colors.white),
-        ),
+        tooltip: context.tr('addresses.addAddress'),
+        icon: const Icon(Icons.add_rounded),
+        label: Text(context.tr('addresses.addAddress')),
       ),
     );
   }
@@ -206,14 +150,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
     final addressBloc = context.read<AddressBloc>();
     AppDialog.show<void>(
       context,
-      title: LocalizationService.t(context, 'addresses.deleteTitle'),
+      title: context.tr('addresses.deleteTitle'),
       message:
-          '${LocalizationService.t(context, 'addresses.deleteConfirm')}\n\n${address.receiverName}\n${address.street}, ${address.city}',
+          '${context.tr('addresses.deleteConfirm')}\n\n${address.receiverName}\n${address.street}, ${address.city}',
       icon: const Icon(Icons.delete_outline_rounded),
       actions: <AppDialogAction>[
-        AppDialogAction(label: LocalizationService.t(context, 'cart.cancel')),
+        AppDialogAction(label: context.tr('common.cancel')),
         AppDialogAction(
-          label: LocalizationService.t(context, 'addresses.delete'),
+          label: context.tr('addresses.delete'),
           isDestructive: true,
           onPressed: () {
             addressBloc.add(AddressDeleteRequested(addressId: address.id));
