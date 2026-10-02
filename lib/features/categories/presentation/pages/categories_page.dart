@@ -104,6 +104,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   if (_selectedCategory != null)
                     ProductGrid(
                       categoryName: _selectedCategory!.name,
+                      imageUrl: _selectedCategory!.imageUrl,
                       subCategories: _selectedCategory!.subCategories,
                       isLoading: false,
                       errorMessage: null,

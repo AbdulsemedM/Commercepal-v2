@@ -59,9 +59,13 @@ class HomeProductRow extends StatelessWidget {
     super.key,
     required this.products,
     this.imagePriorityBase = 0,
+    this.horizontalPadding = Spacing.md,
   });
 
   final List<Product> products;
+
+  /// Side inset of the row (narrower panes such as the Categories tab).
+  final double horizontalPadding;
 
   /// First product in this row gets [imagePriorityBase]; subsequent +1.
   final int imagePriorityBase;
@@ -72,8 +76,8 @@ class HomeProductRow extends StatelessWidget {
       height: homeProductRowHeight(context),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
           vertical: kHomeProductRowVerticalInset,
         ),
         itemCount: products.length,

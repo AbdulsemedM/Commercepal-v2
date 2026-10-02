@@ -822,5 +822,9 @@
   "profile.guestPerkCheckout": "Ku bixi si dhakhso ah cinwaanno la kaydiyay",
   "splash.tagline": "IIBSO ADDUUNKA",
   "splash.status": "Waxaan raadinaynaa dalabyo fiican…",
-  "splash.trust": "Lacag bixin ammaan ah · Gaarsiin degdeg ah"
+  "splash.trust": "Lacag bixin ammaan ah · Gaarsiin degdeg ah",
+  "categories.shopByType": "Ku iibso nooc ahaan",
+  "categories.topPicks": "Xulashooyinka ugu sarreeya ee {name}",
+  "categories.typesCount": "{count} nooc",
+  "categories.shopAllShort": "Iibso dhammaan"
 }

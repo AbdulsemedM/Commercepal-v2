@@ -822,5 +822,9 @@
   "profile.guestPerkCheckout": "በተቀመጡ አድራሻዎች በፍጥነት ይክፈሉ",
   "splash.tagline": "ዓለምን ይግዙ",
   "splash.status": "ምርጥ ቅናሾችን በመፈለግ ላይ…",
-  "splash.trust": "ደህንነቱ የተጠበቀ ክፍያ · ፈጣን አቅርቦት"
+  "splash.trust": "ደህንነቱ የተጠበቀ ክፍያ · ፈጣን አቅርቦት",
+  "categories.shopByType": "በዓይነት ይግዙ",
+  "categories.topPicks": "በ{name} ውስጥ ምርጥ ምርጫዎች",
+  "categories.typesCount": "{count} ዓይነቶች",
+  "categories.shopAllShort": "ሁሉንም ይግዙ"
 }

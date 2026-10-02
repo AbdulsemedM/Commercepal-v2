@@ -54,7 +54,7 @@ class CategorySidebar extends StatelessWidget {
                       bottom: Spacing.sm,
                       child: AnimatedContainer(
                         duration: AppMotion.fast,
-                        width: selected ? 3 : 0,
+                        width: selected ? 4 : 0,
                         decoration: BoxDecoration(
                           color: scheme.primary,
                           borderRadius: const BorderRadiusDirectional.horizontal(

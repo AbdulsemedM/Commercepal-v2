@@ -822,5 +822,9 @@
   "profile.guestPerkCheckout": "Check out faster with saved addresses",
   "splash.tagline": "SHOP THE WORLD",
   "splash.status": "Finding great deals…",
-  "splash.trust": "Secure payments · Fast delivery"
+  "splash.trust": "Secure payments · Fast delivery",
+  "categories.shopByType": "Shop by type",
+  "categories.topPicks": "Top picks in {name}",
+  "categories.typesCount": "{count} types",
+  "categories.shopAllShort": "Shop all"
 }

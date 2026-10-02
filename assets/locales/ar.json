@@ -822,5 +822,9 @@
   "profile.guestPerkCheckout": "أتمم الشراء أسرع بالعناوين المحفوظة",
   "splash.tagline": "تسوّق العالم",
   "splash.status": "نبحث عن أفضل العروض…",
-  "splash.trust": "دفع آمن · توصيل سريع"
+  "splash.trust": "دفع آمن · توصيل سريع",
+  "categories.shopByType": "تسوق حسب النوع",
+  "categories.topPicks": "أفضل الاختيارات في {name}",
+  "categories.typesCount": "{count} أنواع",
+  "categories.shopAllShort": "تسوق الكل"
 }
