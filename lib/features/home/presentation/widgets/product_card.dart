@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/app/router/app_router.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/widgets/app_network_image.dart';
-import 'package:commercepal/features/products/data/models/product.dart';
 
+import 'package:commercepal/app/router/app_router.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/features/products/data/models/product.dart';
+import 'package:commercepal/services/localization_service.dart';
+
+/// Grid aspect ratio for two-column product grids (image ≈ square + details).
+const double kProductGridAspectRatio = 0.6;
+
+/// Catalogue tile: image with discount badge, two-line title, rating and
+/// price. The whole tile is a single tap target opening the product page.
 class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
@@ -32,6 +37,8 @@ class ProductCard extends StatelessWidget {
   final String? productId;
   final String imageUrl;
   final String description;
+
+  /// Pre-formatted price ("ETB 1,200.00"). Used only when [product] is null.
   final String price;
   final Product? product;
   final String? currency;
@@ -40,26 +47,33 @@ class ProductCard extends StatelessWidget {
   final bool showProgressBar;
   final double? rating;
   final int? reviewCount;
+
+  /// Pre-formatted list price. Used only when [product] is null.
   final String? originalPrice;
   final int? discountPercentage;
+
+  /// Deprecated: tiles are fully tappable; the button is no longer shown.
   final bool? showViewProductButton;
+
   /// When true, image and content expand to fill the parent (grid cells).
   final bool fillCell;
+
   /// Lower values load sooner on home (ordered image queue).
   final int? imageLoadPriority;
 
-  bool get _showViewProductButton {
-    if (showViewProductButton == false) return false;
+  static const double _imageFallbackHeight = 160;
+
+  String? get _id {
     final String? id = product?.id ?? productId;
-    return id != null && id.isNotEmpty;
+    return (id == null || id.isEmpty) ? null : id;
   }
 
   void _openProductDetail(BuildContext context) {
-    final String? id = product?.id ?? productId;
-    // Always forward what the card already knows so the detail page can fall
-    // back on it when the API returns an empty product record.
+    HapticFeedback.selectionClick();
+    // Forward what the tile already knows so the detail page can fall back
+    // on it when the API returns an empty product record.
     final Map<String, String> query = <String, String>{
-      if (id != null && id.isNotEmpty) 'id': id,
+      if (_id != null) 'id': _id!,
       if (description.isNotEmpty) 'name': description,
       if (price.isNotEmpty) 'price': price,
       if (imageUrl.isNotEmpty) 'image': imageUrl,
@@ -71,159 +85,160 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  void _handleViewProductTap(BuildContext context) {
-    if (!_showViewProductButton) return;
-    HapticFeedback.selectionClick();
-    _openProductDetail(context);
+  /// Parses "ETB 1,234.50" / "$12.00" into 1234.5; null when not numeric.
+  static num? _parseAmount(String? formatted) {
+    if (formatted == null) return null;
+    final String digits = formatted.replaceAll(RegExp(r'[^0-9.]'), '');
+    if (digits.isEmpty) return null;
+    return num.tryParse(digits);
+  }
+
+  /// Leading non-numeric part of a pre-formatted price ("ETB", "$").
+  static String _parsePrefix(String formatted) {
+    final Match? m = RegExp(r'^[^0-9]*').firstMatch(formatted.trim());
+    return (m?.group(0) ?? '').trim();
+  }
+
+  ({num? amount, num? original, String label}) _resolvePrice() {
+    final Product? p = product;
+    if (p != null) {
+      double? original = p.originalPrice;
+      final int? pct = discountPercentage ?? p.discountPercentage;
+      if ((original == null || original <= p.price) &&
+          pct != null &&
+          pct > 0 &&
+          pct < 100) {
+        original = p.price / (1 - pct / 100);
+      }
+      final String code = currency ?? p.currency;
+      return (
+        amount: p.price,
+        original: original,
+        label: CountryCurrencyConstants.getCurrencySymbol(code),
+      );
+    }
+    return (
+      amount: _parseAmount(price),
+      original: _parseAmount(originalPrice),
+      label: currency != null
+          ? CountryCurrencyConstants.getCurrencySymbol(currency!)
+          : _parsePrefix(price),
+    );
+  }
+
+  int? _resolveDiscount(num? amount, num? original) {
+    final int? explicit = discountPercentage ?? product?.discountPercentage;
+    if (explicit != null && explicit > 0) return explicit;
+    if (amount == null || original == null || original <= amount) return null;
+    final int pct = (((original - amount) / original) * 100).round();
+    return pct >= 1 ? pct : null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool bounded = fillCell || constraints.hasBoundedHeight;
-        return _buildCard(context, scheme, isDark, bounded);
+        return _buildCard(context, bounded);
       },
     );
   }
 
-  Widget _buildCard(
-    BuildContext context,
-    ColorScheme scheme,
-    bool isDark,
-    bool bounded,
-  ) {
-    // Compact metrics when height is constrained (home rows / grid cells).
-    final bool compact = bounded;
-    final double pad = compact ? Spacing.xs : Spacing.sm;
-    final double titleSize = compact ? 12.5 : 14.5;
-    final double priceSize = compact ? 13 : 15;
-    final double originalSize = compact ? 9 : 11;
-    final double buttonHeight = compact ? 30 : 36;
-    final double buttonFont = compact ? 10 : 12;
+  Widget _buildCard(BuildContext context, bool bounded) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors c = context.commerce;
+    final bool isLight = theme.brightness == Brightness.light;
 
-    final Widget imageSection = _buildImageSection(
-      context,
-      scheme,
-      expand: compact,
+    final ({num? amount, num? original, String label}) resolved =
+        _resolvePrice();
+    final int? discount = _resolveDiscount(resolved.amount, resolved.original);
+    final bool unavailable = product?.isAvailable == false;
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final double? stars = (rating ?? product?.rating);
+    final int? reviews = reviewCount ?? product?.reviewCount;
+
+    final TextStyle? titleStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontSize: 13.5,
+      height: 1.3,
+      color: scheme.onSurface,
     );
 
-    final Widget titleAndRating = InkWell(
-      onTap: () => _openProductDetail(context),
-      borderRadius: BorderRadius.circular(8),
-      child: Text(
-        description,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isDark ? scheme.onSurface : AppColors.navy,
-              fontSize: titleSize,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-            ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
+    final Widget priceWidget = resolved.amount != null
+        ? PriceTag(
+            amount: resolved.amount!,
+            currency: resolved.label,
+            originalAmount: resolved.original,
+            size: PriceTagSize.small,
+            showDiscountBadge: false,
+            inline: false,
+          )
+        : Text(
+            price,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleSmall?.copyWith(color: c.price),
+          );
 
-    // Discounted price stacked above the crossed-out original, then the
-    // star rating with review count underneath.
-    final Widget priceSection = InkWell(
-      onTap: () => _openProductDetail(context),
-      borderRadius: BorderRadius.circular(8),
+    final Widget details = Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          _buildPriceText(context, isDark, priceSize),
-          if (originalPrice != null) ...[
-            const SizedBox(height: 1),
-            Text(
-              originalPrice!,
-              style: TextStyle(
-                color: scheme.onSurfaceVariant,
-                fontSize: originalSize,
-                height: 1.1,
-                decoration: TextDecoration.lineThrough,
-              ),
+          // Reserve two lines so prices align across a row.
+          SizedBox(
+            height: scaler.scale(13.5) * 1.3 * 2,
+            child: Text(
+              description,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+              style: titleStyle,
             ),
-          ],
-          if ((rating != null && rating! > 0) ||
-              (reviewCount != null && reviewCount! > 0)) ...[
-            const SizedBox(height: 2),
-            Row(
-              children: <Widget>[
-                Icon(
-                  Icons.star,
-                  color: AppColors.secondary,
-                  size: compact ? 12 : 14,
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  (rating != null && rating! > 0)
-                      ? rating!.toStringAsFixed(1)
-                      : '—',
-                  style: TextStyle(
-                    fontSize: compact ? 10 : 12,
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (reviewCount != null) ...[
-                  const SizedBox(width: 2),
-                  Flexible(
-                    child: Text(
-                      '(${reviewCount})',
-                      style: TextStyle(
-                        fontSize: compact ? 9 : 11,
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-
-    final Widget textBlock = InkWell(
-      onTap: () => _openProductDetail(context),
-      borderRadius: BorderRadius.circular(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          titleAndRating,
-          const SizedBox(height: 2),
-          priceSection,
+          ),
+          const SizedBox(height: 4),
+          // In rows/grids, reserve the rating and list-price lines even when
+          // empty so every tile in a row has the same image size.
+          if (bounded)
+            SizedBox(
+              height: scaler.scale(16),
+              child: (stars != null && stars > 0)
+                  ? RatingStars(rating: stars, reviewCount: reviews, size: 12)
+                  : null,
+            )
+          else if (stars != null && stars > 0)
+            RatingStars(rating: stars, reviewCount: reviews, size: 12),
+          const SizedBox(height: 4),
+          if (bounded)
+            SizedBox(
+              height: scaler.scale(36),
+              child: Align(
+                alignment: AlignmentDirectional.topStart,
+                child: priceWidget,
+              ),
+            )
+          else
+            priceWidget,
           if (showProgressBar &&
               sold != null &&
-              inStock != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Sold: ${sold} In Stock: ${inStock}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 10,
-                  ),
-            ),
-            const SizedBox(height: 4),
+              inStock != null &&
+              sold! + inStock! > 0) ...<Widget>[
+            const SizedBox(height: 6),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: AppRadius.pillAll,
               child: LinearProgressIndicator(
                 value: sold! / (sold! + inStock!),
-                backgroundColor:
-                    scheme.surfaceContainerHighest.withValues(alpha: 0.8),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.success,
-                ),
                 minHeight: 4,
+                color: c.deal,
+                backgroundColor: c.dealContainer,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              '${LocalizationService.t(context, 'home.dealOfDay.sold')}: $sold',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -231,217 +246,134 @@ class ProductCard extends StatelessWidget {
       ),
     );
 
-    final Widget? viewProductButton = _showViewProductButton
-        ? SizedBox(
-            width: double.infinity,
-            height: buttonHeight,
-            child: FilledButton(
-              onPressed: () => _handleViewProductTap(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: AppColors.onSecondary,
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                'View Product',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: buttonFont,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-        : null;
-
-    final Widget detailsSection = Padding(
-      padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
-      child: compact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                SizedBox(
-                  height: titleSize * 1.15 * 2,
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: titleAndRating,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                priceSection,
-                if (viewProductButton != null) ...[
-                  const SizedBox(height: 6),
-                  viewProductButton,
-                ],
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                textBlock,
-                if (viewProductButton != null) ...[
-                  const SizedBox(height: Spacing.xs),
-                  viewProductButton,
-                ],
-              ],
-            ),
+    final Widget image = _ProductImage(
+      url: imageUrl,
+      loadPriority: imageLoadPriority,
+      height: bounded ? null : _imageFallbackHeight,
+      discount: discount,
+      unavailable: unavailable,
     );
 
-    return Container(
-      decoration: AppDecorations.elevatedCard(
-        background: isDark ? scheme.surfaceContainerLow : Colors.white,
-        shadowColor: scheme.shadow,
+    final String semanticPrice = resolved.amount != null
+        ? '${resolved.label} ${MoneyFormatter.formatAmount(resolved.amount!)}'
+        : price;
+
+    return Semantics(
+      button: true,
+      label: <String>[
+        description,
+        semanticPrice,
+        if (discount != null) '-$discount%',
+        if (stars != null && stars > 0)
+          context.tr('rating.semantic', <String, Object?>{
+            'rating': stars.toStringAsFixed(1),
+            'count': reviews ?? 0,
+          }),
+      ].join(', '),
+      excludeSemantics: true,
+      child: Material(
+        color: scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdAll,
+          side: isLight ? BorderSide(color: c.border) : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _openProductDetail(context),
+          child: bounded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Expanded(child: image),
+                    details,
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[image, details],
+                ),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: compact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Expanded(child: imageSection),
-                detailsSection,
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                imageSection,
-                detailsSection,
-              ],
-            ),
     );
   }
+}
 
-  /// Price like the web: currency prefix in pink, amount in navy.
-  Widget _buildPriceText(BuildContext context, bool isDark, double priceSize) {
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({
+    required this.url,
+    required this.loadPriority,
+    required this.height,
+    required this.discount,
+    required this.unavailable,
+  });
+
+  final String url;
+  final int? loadPriority;
+  final double? height;
+  final int? discount;
+  final bool unavailable;
+
+  @override
+  Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final Color amountColor = isDark ? scheme.onSurface : AppColors.navy;
-
-    final String priceText = this.price.trim();
-    final int splitIndex = priceText.indexOf(' ');
-    final String prefix =
-        splitIndex > 0 ? priceText.substring(0, splitIndex) : '';
-    final String amount =
-        splitIndex > 0 ? priceText.substring(splitIndex + 1) : priceText;
-
-    return Text.rich(
-      TextSpan(
-        children: <InlineSpan>[
-          if (prefix.isNotEmpty)
-            TextSpan(
-              text: '$prefix ',
-              style: TextStyle(
-                color: AppColors.pink,
-                fontWeight: FontWeight.w700,
-                fontSize: priceSize - 2,
-              ),
-            ),
-          TextSpan(
-            text: amount,
-            style: TextStyle(
-              color: amountColor,
-              fontWeight: FontWeight.w800,
-              fontSize: priceSize,
-            ),
-          ),
-        ],
-      ),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-      style: const TextStyle(height: 1.15),
-    );
-  }
-
-  Widget _buildImageSection(
-    BuildContext context,
-    ColorScheme scheme, {
-    required bool expand,
-  }) {
-    final double fixedHeight = 150;
-
-    return InkWell(
-      onTap: () => _openProductDetail(context),
-      child: Stack(
-        fit: expand ? StackFit.expand : StackFit.loose,
-        children: <Widget>[
-          Container(
-            height: expand ? null : fixedHeight,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: expand
-                  ? null
-                  : const BorderRadius.only(
-                      topLeft: Radius.circular(AppDecorations.radiusMd),
-                      topRight: Radius.circular(AppDecorations.radiusMd),
-                    ),
-            ),
-            child: imageUrl.isNotEmpty
-                ? AppNetworkImage(
-                    url: imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: expand ? double.infinity : fixedHeight,
-                    memCacheWidth: (150 *
-                            MediaQuery.devicePixelRatioOf(context))
-                        .round(),
-                    memCacheHeight: (fixedHeight *
-                            MediaQuery.devicePixelRatioOf(context))
-                        .round(),
-                    loadPriority: imageLoadPriority,
-                    placeholder: _buildPlaceholder(context),
-                    errorWidget: _buildPlaceholder(context),
-                  )
-                : _buildPlaceholder(context),
-          ),
-          if (discountPercentage != null &&
-              discountPercentage! > 0)
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: expand ? 6 : 8,
-                  vertical: expand ? 3 : 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF97316),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '-${discountPercentage}%',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: expand ? 10 : 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      color: scheme.surfaceContainerHighest,
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final Widget placeholder = ColoredBox(
+      color: scheme.surfaceContainerHigh,
       child: Center(
         child: Icon(
-          Icons.image,
-          color: scheme.onSurfaceVariant,
+          Icons.image_outlined,
+          color: scheme.outline,
           size: 28,
         ),
+      ),
+    );
+
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          if (url.isNotEmpty)
+            AppNetworkImage(
+              url: url,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: height ?? double.infinity,
+              memCacheWidth: (180 * dpr).round(),
+              loadPriority: loadPriority,
+              placeholder: const ShimmerLoading(
+                borderRadius: BorderRadius.zero,
+              ),
+              errorWidget: placeholder,
+            )
+          else
+            placeholder,
+          if (unavailable)
+            ColoredBox(
+              color: scheme.surface.withValues(alpha: 0.65),
+              child: Center(
+                child: AppBadge(
+                  label: context.tr('product.outOfStock'),
+                  tone: AppBadgeTone.neutral,
+                  solid: true,
+                  size: AppBadgeSize.medium,
+                ),
+              ),
+            ),
+          if (discount != null && !unavailable)
+            PositionedDirectional(
+              top: 8,
+              start: 8,
+              child: AppBadge(
+                label: context.tr('price.percentOff', <String, Object?>{
+                  'percent': discount,
+                }),
+                tone: AppBadgeTone.deal,
+              ),
+            ),
+        ],
       ),
     );
   }

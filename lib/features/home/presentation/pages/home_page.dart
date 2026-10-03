@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/widgets/app_bar.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
-import 'package:commercepal/features/cart/data/models/cart.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
 import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
@@ -13,8 +12,8 @@ import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import '../widgets/banner_section.dart';
-import '../widgets/categories_section.dart';
-import '../widgets/home_catalog_mode_toggle.dart';
+import '../widgets/category_quad_cards.dart';
+import '../widgets/home_header.dart';
 import '../widgets/home_discover_section.dart';
 import '../widgets/home_wholesale_section.dart';
 import '../widgets/recently_viewed_section.dart';
@@ -29,8 +28,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   void _navigateToTab(BuildContext context, int tabIndex) {
-    final DashboardScreenState? dashboardState = context
-        .findAncestorStateOfType<DashboardScreenState>();
+    final DashboardScreenState? dashboardState =
+        context.findAncestorStateOfType<DashboardScreenState>();
     if (dashboardState != null) {
       dashboardState.changeTab(tabIndex);
     }
@@ -71,74 +70,92 @@ class _HomePageState extends State<HomePage> {
           context.read<HomeWholesaleBloc>().add(FetchHomeWholesale());
         },
         child: Scaffold(
-          appBar: AppBarWidget(
-            cartCount: cartCount,
-            onSearchTap: () {
-              context.push(AppRoutes.productSearch);
-            },
-            onSearchSubmitted: (String query) {
-              context.push(
-                '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-              );
-              return null;
-            },
-            onLogoTap: () {
-              // Handle logo tap
-            },
-            onCartTap: () {
-              _navigateToTab(context, 2);
-            },
+          // Search bar + delivery line + quick links on one brand band.
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(
+              AppBarWidget.barHeight + HomeHeaderExtras.height,
+            ),
+            child: Column(
+              children: <Widget>[
+                AppBarWidget(
+                  cartCount: cartCount,
+                  onSearchTap: () {
+                    context.push(AppRoutes.productSearch);
+                  },
+                  onSearchSubmitted: (String query) {
+                    context.push(
+                      '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                    );
+                    return null;
+                  },
+                  onCartTap: () {
+                    _navigateToTab(context, 2);
+                  },
+                ),
+                const HomeHeaderExtras(),
+              ],
+            ),
           ),
           body: RefreshIndicator(
             onRefresh: () => _onPullToRefresh(context),
-            child: SingleChildScrollView(
+            child: CustomScrollView(
               key: const PageStorageKey<String>('home_scroll_v1'),
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: Spacing.md),
-                  const BannerSection(),
-                  const SizedBox(height: Spacing.md),
-                  const HomeCatalogModeToggle(),
-                  const SizedBox(height: Spacing.lg),
-                  const CategoriesSection(),
-                  const SizedBox(height: Spacing.lg),
-                  BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
-                    builder: (context, mode) {
-                      if (mode == HomeCatalogMode.wholesale) {
-                        return const HomeWholesaleSection();
-                      }
-                      return const HomeDiscoverSection();
-                    },
+              slivers: <Widget>[
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      // Brand band fades into the page behind the hero, so
+                      // header and content read as one surface.
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const <double>[0, 0.55, 1],
+                            colors: <Color>[
+                              context.commerce.header,
+                              context.commerce.header.withValues(alpha: 0.35),
+                              context.commerce.canvas,
+                            ],
+                          ),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.only(bottom: Spacing.md),
+                          child: BannerSection(),
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      const CategoryQuadCards(),
+                      const SizedBox(height: Spacing.xl),
+                      // "Keep shopping" — hidden until something was viewed.
+                      const RecentlyViewedSection(),
+                    ],
                   ),
-                  const SizedBox(height: Spacing.lg),
-                  const RecentlyViewedSection(),
-                  const TrustBadgesStrip(),
-                  const SizedBox(height: Spacing.xl),
-                ],
-              ),
+                ),
+                BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
+                  builder: (context, mode) {
+                    if (mode == HomeCatalogMode.wholesale) {
+                      return const HomeWholesaleSection();
+                    }
+                    return const HomeDiscoverSection();
+                  },
+                ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: Spacing.xl,
+                      bottom: Spacing.xl,
+                    ),
+                    child: TrustBadgesStrip(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
-    }
-
-    int cartCountFromState(CartState cartState) {
-      if (cartState is CartLoaded ||
-          cartState is CartItemAdded ||
-          cartState is CartItemUpdated ||
-          cartState is CartItemDeleted) {
-        final Cart cart = cartState is CartLoaded
-            ? cartState.cart
-            : cartState is CartItemAdded
-                ? cartState.cart
-                : cartState is CartItemUpdated
-                    ? cartState.cart
-                    : (cartState as CartItemDeleted).cart;
-        return cart.totalItems;
-      }
-      return 0;
     }
 
     return MultiBlocProvider(
@@ -163,7 +180,7 @@ class _HomePageState extends State<HomePage> {
           ? BlocBuilder<CartBloc, CartState>(
               bloc: cartBloc,
               builder: (BuildContext context, CartState cartState) {
-                return homeScaffold(context, cartCountFromState(cartState));
+                return homeScaffold(context, cartBloc!.itemCount);
               },
             )
           : Builder(

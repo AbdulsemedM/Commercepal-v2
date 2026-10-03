@@ -1,180 +1,121 @@
-import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
+
+/// Product page skeleton mirroring the loaded layout (square photo,
+/// thumbnails, title, price, stock line, options, purchase bar).
 class ProductDetailShimmer extends StatelessWidget {
   const ProductDetailShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(height: Spacing.sm),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-              child: _buildShimmerBox(
-                scheme,
-                width: double.infinity,
-                height: 300,
-                borderRadius: AppDecorations.radiusLg,
-              ),
-            ),
-            const SizedBox(height: Spacing.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List<Widget>.generate(
-                4,
-                (_) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: _buildShimmerBox(
-                    scheme,
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: Spacing.md),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+    final double width = MediaQuery.sizeOf(context).width;
+    final double imageHeight = math.min(width, 520);
+
+    return Semantics(
+      label: context.tr('common.loading'),
+      child: Column(
+        children: <Widget>[
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  _buildShimmerBox(
-                    scheme,
+                  ShimmerLoading(
                     width: double.infinity,
-                    height: 22,
-                    borderRadius: 6,
-                  ),
-                  const SizedBox(height: Spacing.xs),
-                  _buildShimmerBox(
-                    scheme,
-                    width: MediaQuery.of(context).size.width * 0.55,
-                    height: 22,
-                    borderRadius: 6,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  _buildShimmerBox(
-                    scheme,
-                    width: 150,
-                    height: 30,
-                    borderRadius: 8,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  _buildShimmerBox(
-                    scheme,
-                    width: 120,
-                    height: 18,
-                    borderRadius: 4,
+                    height: imageHeight,
+                    borderRadius: BorderRadius.zero,
                   ),
                   const SizedBox(height: Spacing.sm),
-                  Wrap(
-                    spacing: Spacing.sm,
-                    children: <Widget>[
-                      _buildShimmerBox(
-                        scheme,
-                        width: 130,
-                        height: 52,
-                        borderRadius: 14,
+                  SizedBox(
+                    height: 60,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.gutter,
                       ),
-                      _buildShimmerBox(
-                        scheme,
-                        width: 130,
-                        height: 52,
-                        borderRadius: 14,
-                      ),
-                    ],
+                      itemCount: 5,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: Spacing.xs),
+                      itemBuilder: (_, __) =>
+                          const ShimmerLoading(width: 60, height: 60),
+                    ),
                   ),
-                  const SizedBox(height: Spacing.md),
-                  Row(
-                    children: <Widget>[
-                      _buildShimmerBox(
-                        scheme,
-                        width: 80,
-                        height: 26,
-                        borderRadius: 999,
-                      ),
-                      const SizedBox(width: Spacing.xs),
-                      _buildShimmerBox(
-                        scheme,
-                        width: 56,
-                        height: 26,
-                        borderRadius: 999,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  _buildShimmerBox(
-                    scheme,
-                    width: double.infinity,
-                    height: 88,
-                    borderRadius: AppDecorations.radiusMd,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  _buildShimmerBox(
-                    scheme,
-                    width: double.infinity,
-                    height: 180,
-                    borderRadius: AppDecorations.radiusMd,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _buildShimmerBox(
-                          scheme,
-                          width: double.infinity,
-                          height: 40,
-                          borderRadius: 999,
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      Spacing.gutter,
+                      Spacing.md,
+                      Spacing.gutter,
+                      0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        ShimmerLoading(width: 90, height: 12),
+                        SizedBox(height: Spacing.xs),
+                        ShimmerLoading(width: double.infinity, height: 18),
+                        SizedBox(height: 6),
+                        ShimmerLoading(width: 220, height: 18),
+                        SizedBox(height: Spacing.sm),
+                        ShimmerLoading(width: 140, height: 14),
+                        SizedBox(height: Spacing.md),
+                        ShimmerLoading(width: 170, height: 30),
+                        SizedBox(height: Spacing.sm),
+                        ShimmerLoading(width: 100, height: 14),
+                        SizedBox(height: Spacing.lg),
+                        ShimmerLoading(width: 120, height: 14),
+                        SizedBox(height: Spacing.sm),
+                        Row(
+                          children: <Widget>[
+                            ShimmerLoading(width: 96, height: 44),
+                            SizedBox(width: Spacing.xs),
+                            ShimmerLoading(width: 96, height: 44),
+                            SizedBox(width: Spacing.xs),
+                            ShimmerLoading(width: 96, height: 44),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: Spacing.sm),
-                      Expanded(
-                        child: _buildShimmerBox(
-                          scheme,
-                          width: double.infinity,
-                          height: 40,
-                          borderRadius: 999,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: Spacing.xl),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerBox(
-    ColorScheme scheme, {
-    required double width,
-    required double height,
-    required double borderRadius,
-  }) {
-    final Color base = scheme.surfaceContainerHighest;
-    final Color highlight = scheme.surface;
-    final Color fill = scheme.surfaceContainerLow;
-    return Shimmer.fromColors(
-      baseColor: base,
-      highlightColor: highlight,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(top: BorderSide(color: context.commerce.border)),
+            ),
+            child: const SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.all(Spacing.gutter),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: ShimmerLoading(
+                        height: AppSizes.buttonLg,
+                        borderRadius: AppRadius.pillAll,
+                      ),
+                    ),
+                    SizedBox(width: Spacing.xs),
+                    Expanded(
+                      child: ShimmerLoading(
+                        height: AppSizes.buttonLg,
+                        borderRadius: AppRadius.pillAll,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

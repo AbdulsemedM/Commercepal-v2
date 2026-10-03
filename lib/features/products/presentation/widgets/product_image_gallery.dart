@@ -1,10 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
+
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/product_image.dart';
 import '../screen/product_image_viewer_screen.dart';
 
+/// Full-bleed product photos with page counter, wishlist toggle and
+/// thumbnail strip. Tap opens the zoomable viewer.
 class ProductImageGallery extends StatefulWidget {
   const ProductImageGallery({
     super.key,
@@ -24,15 +28,9 @@ class ProductImageGallery extends StatefulWidget {
 }
 
 class _ProductImageGalleryState extends State<ProductImageGallery> {
-  late int _selectedIndex;
-  late final PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: widget.initialIndex);
-  }
+  late int _selectedIndex = widget.initialIndex;
+  late final PageController _pageController =
+      PageController(initialPage: widget.initialIndex);
 
   @override
   void dispose() {
@@ -40,179 +38,195 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
     super.dispose();
   }
 
+  void _openViewer(int index) {
+    final List<String> urls = widget.images
+        .map((ProductImage img) => img.main.isNotEmpty ? img.main : img.thumbnail)
+        .where((String u) => u.isNotEmpty)
+        .toList();
+    if (urls.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductImageViewerScreen(
+          imageUrls: urls,
+          initialIndex: index.clamp(0, urls.length - 1),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.images.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-        child: _buildMainFrame(child: _buildPlaceholder()),
-      );
-    }
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final double width = MediaQuery.sizeOf(context).width;
+    // Square on phones; capped so tablets don't get a giant image.
+    final double height = math.min(width, 520);
+    final int cacheWidth =
+        (math.min(width, 720) * MediaQuery.devicePixelRatioOf(context)).round();
+    final int count = widget.images.length;
+
+    final Widget placeholder = ColoredBox(
+      color: scheme.surfaceContainerHigh,
+      child: Center(
+        child: Icon(Icons.image_outlined, size: 64, color: scheme.outline),
+      ),
+    );
 
     return Column(
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-          child: _buildMainFrame(
-            child: Stack(
-              children: <Widget>[
+        Container(
+          height: height,
+          width: double.infinity,
+          color: scheme.surface,
+          child: Stack(
+            children: <Widget>[
+              if (count == 0)
+                Positioned.fill(child: placeholder)
+              else
                 PageView.builder(
                   controller: _pageController,
-                  itemCount: widget.images.length,
-                  onPageChanged: (int index) {
-                    setState(() => _selectedIndex = index);
-                  },
+                  itemCount: count,
+                  onPageChanged: (int i) => setState(() => _selectedIndex = i),
                   itemBuilder: (BuildContext context, int index) {
                     final ProductImage image = widget.images[index];
-                    return GestureDetector(
-                      onTap: () {
-                        final List<String> urls = widget.images
-                            .map((ProductImage img) => img.main)
-                            .where((String u) => u.isNotEmpty)
-                            .toList();
-                        if (urls.isEmpty) return;
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => ProductImageViewerScreen(
-                              imageUrls: urls,
-                              initialIndex: index,
-                            ),
+                    final String url =
+                        image.main.isNotEmpty ? image.main : image.thumbnail;
+                    return Semantics(
+                      image: true,
+                      button: true,
+                      label: context.tr('product.photoOf', <String, Object?>{
+                        'index': index + 1,
+                        'count': count,
+                      }),
+                      child: GestureDetector(
+                        onTap: () => _openViewer(index),
+                        child: AppNetworkImage(
+                          url: url,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: height,
+                          memCacheWidth: cacheWidth,
+                          placeholder: const ShimmerLoading(
+                            borderRadius: BorderRadius.zero,
                           ),
-                        );
-                      },
-                      child: Image.network(
-                        image.main,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return _buildPlaceholder();
-                        },
-                        loadingBuilder: (
-                          BuildContext context,
-                          Widget child,
-                          ImageChunkEvent? loadingProgress,
-                        ) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
+                          errorWidget: placeholder,
+                        ),
                       ),
                     );
                   },
                 ),
-                if (widget.onToggleWishlist != null)
-                  Positioned(
-                    top: Spacing.sm,
-                    right: Spacing.sm,
-                    child: Material(
-                      color: Colors.white,
-                      shape: const CircleBorder(),
-                      elevation: 2,
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: widget.onToggleWishlist,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Icon(
-                            widget.isInWishlist
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: AppColors.primary,
-                            size: 22,
-                          ),
+              if (count > 1)
+                PositionedDirectional(
+                  start: Spacing.sm,
+                  bottom: Spacing.sm,
+                  child: ExcludeSemantics(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: AppRadius.pillAll,
+                      ),
+                      child: Text(
+                        '${_selectedIndex + 1}/$count',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontFeatures: AppTypography.tabularFigures,
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              if (widget.onToggleWishlist != null)
+                PositionedDirectional(
+                  top: Spacing.sm,
+                  end: Spacing.sm,
+                  child: Material(
+                    color: scheme.surface,
+                    shape: const CircleBorder(),
+                    elevation: 1,
+                    shadowColor: Colors.black26,
+                    child: IconButton(
+                      tooltip: context.tr(
+                        widget.isInWishlist
+                            ? 'product.removeFromWishlist'
+                            : 'product.addToWishlist',
+                      ),
+                      onPressed: widget.onToggleWishlist,
+                      icon: AnimatedSwitcher(
+                        duration: AppMotion.fast,
+                        transitionBuilder: (Widget c, Animation<double> a) =>
+                            ScaleTransition(scale: a, child: c),
+                        child: Icon(
+                          widget.isInWishlist
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          key: ValueKey<bool>(widget.isInWishlist),
+                          color: widget.isInWishlist
+                              ? scheme.primary
+                              : scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        if (widget.images.length > 1) ...[
-          const SizedBox(height: Spacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List<Widget>.generate(
-              widget.images.length,
-              (int index) {
-                final bool active = index == _selectedIndex;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: active ? 18 : 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: active ? AppColors.primary : Colors.grey[300],
-                  ),
-                );
-              },
-            ),
-          ),
+        if (count > 1) ...<Widget>[
           const SizedBox(height: Spacing.sm),
           SizedBox(
-            height: 64,
-            child: ListView.builder(
+            height: 60,
+            child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-              itemCount: widget.images.length,
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
+              itemCount: count,
+              separatorBuilder: (_, __) => const SizedBox(width: Spacing.xs),
               itemBuilder: (BuildContext context, int index) {
                 final ProductImage image = widget.images[index];
-                final bool isSelected = index == _selectedIndex;
-
-                return GestureDetector(
-                  onTap: () {
-                    _pageController.animateToPage(
+                final bool selected = index == _selectedIndex;
+                return Semantics(
+                  button: true,
+                  selected: selected,
+                  label: context.tr('product.photoOf', <String, Object?>{
+                    'index': index + 1,
+                    'count': count,
+                  }),
+                  child: GestureDetector(
+                    onTap: () => _pageController.animateToPage(
                       index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  child: Container(
-                    width: 64,
-                    margin: const EdgeInsets.only(right: Spacing.xs),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Colors.grey[300]!,
-                        width: isSelected ? 2.5 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.grey[200],
+                      duration: AppMotion.medium,
+                      curve: AppMotion.standard,
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        image.thumbnail.isNotEmpty
-                            ? image.thumbnail
-                            : image.main,
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.image,
-                              color: Colors.grey,
-                            ),
-                          );
-                        },
+                    child: AnimatedContainer(
+                      duration: AppMotion.fast,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: AppRadius.smAll,
+                        border: Border.all(
+                          color: selected
+                              ? scheme.primary
+                              : context.commerce.border,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: AppRadius.xsAll,
+                        child: AppNetworkImage(
+                          url: image.thumbnail.isNotEmpty
+                              ? image.thumbnail
+                              : image.main,
+                          fit: BoxFit.cover,
+                          width: 60,
+                          height: 60,
+                          memCacheWidth:
+                              (60 * MediaQuery.devicePixelRatioOf(context))
+                                  .round(),
+                          errorWidget: placeholder,
+                        ),
                       ),
                     ),
                   ),
@@ -222,29 +236,6 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildMainFrame({required Widget child}) {
-    return Container(
-      height: 300,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2D2D),
-        borderRadius: BorderRadius.circular(AppDecorations.radiusLg),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return const Center(
-      child: Icon(
-        Icons.image_outlined,
-        size: 72,
-        color: Colors.white54,
-      ),
     );
   }
 }

@@ -3,8 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
-import '../../../../core/constants/spacing.dart';
-import '../../../../core/theme/colors.dart';
+import '../../../../core/design_system.dart';
 import '../../../../services/localization_service.dart';
 import '../../../cart/bloc/cart_bloc.dart';
 import '../../bloc/payment_status_cubit.dart';
@@ -65,132 +64,158 @@ class _PaymentStatusPollingBannerState extends State<PaymentStatusPollingBanner>
         }
       },
       builder: (BuildContext context, PaymentStatusState state) {
-        if (state is PaymentStatusSuccess) {
-          return _StatusBanner(
-            icon: Icons.check_circle_outline,
-            color: AppColors.success,
-            title: LocalizationService.t(
-              context,
-              'checkout.paymentStatusSuccessTitle',
+        final _BannerTone? tone = switch (state) {
+          PaymentStatusSuccess() => _BannerTone.success,
+          PaymentStatusFailed() => _BannerTone.error,
+          PaymentStatusTimeout() => _BannerTone.warning,
+          PaymentStatusPolling() => _BannerTone.info,
+          _ => null,
+        };
+        final Widget child = switch (tone) {
+          _BannerTone.success => _StatusBanner(
+              key: const ValueKey<String>('success'),
+              tone: _BannerTone.success,
+              icon: Icons.check_circle_outline_rounded,
+              title: context.tr('checkout.paymentStatusSuccessTitle'),
+              body: context.tr('checkout.paymentStatusSuccessBody'),
             ),
-            body: LocalizationService.t(
-              context,
-              'checkout.paymentStatusSuccessBody',
+          _BannerTone.error => _StatusBanner(
+              key: const ValueKey<String>('failed'),
+              tone: _BannerTone.error,
+              icon: Icons.error_outline_rounded,
+              title: context.tr('checkout.paymentStatusFailedTitle'),
+              body: context.tr('checkout.paymentStatusFailedBody'),
             ),
-          );
-        }
-        if (state is PaymentStatusFailed) {
-          return _StatusBanner(
-            icon: Icons.error_outline,
-            color: AppColors.error,
-            title: LocalizationService.t(
-              context,
-              'checkout.paymentStatusFailedTitle',
+          _BannerTone.warning => _StatusBanner(
+              key: const ValueKey<String>('timeout'),
+              tone: _BannerTone.warning,
+              icon: Icons.schedule_rounded,
+              title: context.tr('checkout.paymentStatusTimeoutTitle'),
+              body: context.tr('checkout.paymentStatusTimeoutBody'),
             ),
-            body: LocalizationService.t(
-              context,
-              'checkout.paymentStatusFailedBody',
+          _BannerTone.info => _StatusBanner(
+              key: const ValueKey<String>('polling'),
+              tone: _BannerTone.info,
+              icon: Icons.sync_rounded,
+              title: context.tr('checkout.paymentStatusPollingTitle'),
+              body: context.tr('checkout.paymentStatusPollingBody'),
+              showProgress: true,
             ),
-          );
-        }
-        if (state is PaymentStatusTimeout) {
-          return _StatusBanner(
-            icon: Icons.schedule_outlined,
-            color: AppColors.warning,
-            title: LocalizationService.t(
-              context,
-              'checkout.paymentStatusTimeoutTitle',
-            ),
-            body: LocalizationService.t(
-              context,
-              'checkout.paymentStatusTimeoutBody',
-            ),
-          );
-        }
-        if (state is PaymentStatusPolling) {
-          return _StatusBanner(
-            icon: Icons.sync,
-            color: AppColors.primary,
-            title: LocalizationService.t(
-              context,
-              'checkout.paymentStatusPollingTitle',
-            ),
-            body: LocalizationService.t(
-              context,
-              'checkout.paymentStatusPollingBody',
-            ),
-            showProgress: true,
-          );
-        }
-        return const SizedBox.shrink();
+          null => const SizedBox.shrink(key: ValueKey<String>('idle')),
+        };
+        return AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : AppMotion.medium,
+          switchInCurve: AppMotion.standard,
+          switchOutCurve: AppMotion.exit,
+          child: child,
+        );
       },
     );
   }
 }
 
+enum _BannerTone { info, success, warning, error }
+
+/// Tone-coloured status row: icon, title, body and an optional progress bar.
 class _StatusBanner extends StatelessWidget {
   const _StatusBanner({
+    super.key,
+    required this.tone,
     required this.icon,
-    required this.color,
     required this.title,
     required this.body,
     this.showProgress = false,
   });
 
+  final _BannerTone tone;
   final IconData icon;
-  final Color color;
   final String title;
   final String body;
   final bool showProgress;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: scheme.onSurface,
-                          ),
-                    ),
-                    const SizedBox(height: Spacing.xs),
-                    Text(
-                      body,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurface,
-                            height: 1.35,
-                          ),
-                    ),
-                  ],
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
+    final (Color accent, Color container, Color onContainer) = switch (tone) {
+      _BannerTone.info => (
+          commerce.info,
+          commerce.infoContainer,
+          commerce.onInfoContainer,
+        ),
+      _BannerTone.success => (
+          commerce.success,
+          commerce.successContainer,
+          commerce.onSuccessContainer,
+        ),
+      _BannerTone.warning => (
+          commerce.warning,
+          commerce.warningContainer,
+          commerce.onWarningContainer,
+        ),
+      _BannerTone.error => (
+          scheme.error,
+          scheme.errorContainer,
+          scheme.onErrorContainer,
+        ),
+    };
+
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(Spacing.sm),
+        decoration: BoxDecoration(
+          color: container,
+          borderRadius: AppRadius.mdAll,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(icon, color: accent, size: AppSizes.iconMd),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: onContainer,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.xxs),
+                      Text(
+                        body,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: onContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (showProgress) ...[
+              const SizedBox(height: Spacing.sm),
+              ClipRRect(
+                borderRadius: AppRadius.pillAll,
+                child: LinearProgressIndicator(
+                  minHeight: 3,
+                  color: accent,
+                  backgroundColor: accent.withValues(alpha: 0.16),
                 ),
               ),
             ],
-          ),
-          if (showProgress) ...[
-            const SizedBox(height: Spacing.sm),
-            const LinearProgressIndicator(minHeight: 3),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -207,12 +232,9 @@ void navigateOnPaymentStatusSuccess(
       // CartBloc may not be in scope on some routes.
     }
   }
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        LocalizationService.t(context, 'checkout.paymentStatusSuccessBody'),
-      ),
-    ),
+  AppSnackbars.success(
+    context,
+    context.tr('checkout.paymentStatusSuccessBody'),
   );
   context.go(AppRoutes.orderHistory);
 }

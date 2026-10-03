@@ -131,13 +131,13 @@ class _AccountDeletionRequestScreenState
           elevation: 0,
           title: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.navy),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () => context.pop(),
           ),
         ),
@@ -196,13 +196,13 @@ class _AccountDeletionRequestScreenState
         elevation: 0,
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.navy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.navy),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
         actions: <Widget>[
@@ -211,7 +211,7 @@ class _AccountDeletionRequestScreenState
               context,
               'profile.accountDeletionOpenInBrowser',
             ),
-            icon: const Icon(Icons.open_in_browser, color: AppColors.navy),
+            icon: Icon(Icons.open_in_browser, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () async {
               final Uri uri = Uri.parse(kAccountDeletionFormUrl);
               if (await canLaunchUrl(uri)) {

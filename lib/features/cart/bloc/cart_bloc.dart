@@ -36,6 +36,26 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   final CartRepository _repository;
   final AuthService _authService;
   bool _wasLoggedIn = false;
+  Cart? _lastKnownCart;
+
+  /// Last cart seen, kept across loading/error states so badges and the
+  /// cart list don't flash empty while an update is in flight.
+  Cart? get lastKnownCart => _lastKnownCart;
+
+  /// Item count for badges, stable across loading states.
+  int get itemCount => _lastKnownCart?.totalItems ?? 0;
+
+  @override
+  void onChange(Change<CartState> change) {
+    super.onChange(change);
+    final CartState next = change.nextState;
+    final Cart? cart = next.cartOrNull;
+    if (cart != null) {
+      _lastKnownCart = cart;
+    } else if (next is CartInitial) {
+      _lastKnownCart = null;
+    }
+  }
 
   @override
   Future<void> close() {

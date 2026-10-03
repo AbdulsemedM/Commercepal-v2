@@ -37,7 +37,7 @@ class SupportChatProductCard extends StatelessWidget {
                         fit: BoxFit.cover,
                       )
                     : ColoredBox(
-                        color: Colors.grey.shade200,
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
                         child: const Icon(Icons.image_outlined),
                       ),
               ),
@@ -59,10 +59,10 @@ class SupportChatProductCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         product.price!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.pink,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/features/products/bloc/price_alert_cubit.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/localization_service.dart';
@@ -58,11 +57,15 @@ class PriceAlertButton extends StatelessWidget {
                     : LocalizationService.t(context, 'priceAlert.set'),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.navy,
-                side: BorderSide(
-                  color: isActive ? AppColors.primary : Colors.grey.shade300,
-                  width: isActive ? 2 : 1,
-                ),
+                foregroundColor: isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+                side: isActive
+                    ? BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.5,
+                      )
+                    : null,
                 minimumSize: const Size(double.infinity, 44),
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -59,12 +60,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                 widget.onRegistrationSuccess?.call();
                 context.pop();
               } else if (state is AffiliateRegisterFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<AffiliateRegisterCubit, AffiliateRegisterState>(
@@ -82,13 +78,13 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                           icon: Container(
                             padding: const EdgeInsets.all(Spacing.xs),
                             decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
+                              color: Theme.of(context).colorScheme.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back_ios_new,
                               size: 18,
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           onPressed: () => context.pop(),
@@ -101,7 +97,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                           ),
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
-                                color: AppColors.navy,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -112,7 +108,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                             'affiliate.registerSubtitle',
                           ),
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: Spacing.lg),
                         Row(
@@ -216,7 +212,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                               gradient: isLoading
                                   ? null
                                   : AppDecorations.primaryCtaGradient,
-                              color: isLoading ? Colors.grey[300] : null,
+                              color: isLoading ? Theme.of(context).colorScheme.outlineVariant : null,
                               borderRadius: BorderRadius.circular(28),
                             ),
                             child: Material(
@@ -340,7 +336,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -354,16 +350,16 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
             hintText: hint,
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
-            fillColor: AppDecorations.softCream,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -394,7 +390,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
         Text(
           'Phone Number',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -410,16 +406,16 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
             hintText: '912345678',
             hintStyle: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             filled: true,
-            fillColor: AppDecorations.softCream,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -471,7 +467,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
         Text(
           'Country',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -499,7 +495,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                 ),
                 searchTextStyle: Theme.of(context).textTheme.bodyLarge!,
                 borderRadius: BorderRadius.circular(12),
@@ -512,8 +508,8 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
               vertical: Spacing.md,
             ),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
-              border: Border.all(color: Colors.grey[300]!),
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -529,7 +525,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
           ),
@@ -545,7 +541,7 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
         Text(
           LocalizationService.t(context, 'affiliate.commissionType'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -554,14 +550,14 @@ class _AffiliateRegisterScreenState extends State<AffiliateRegisterScreen> {
           value: _selectedCommissionType,
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppDecorations.softCream,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

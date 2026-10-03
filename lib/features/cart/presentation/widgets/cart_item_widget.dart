@@ -1,265 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/cart_item.dart';
 
+/// One cart line: image, title, price (with price-drop savings), quantity.
 class CartItemWidget extends StatelessWidget {
   const CartItemWidget({
     super.key,
     required this.item,
     required this.onQuantityChanged,
     required this.onRemove,
+    this.busy = false,
+    this.onTap,
   });
 
   final CartItem item;
   final ValueChanged<int> onQuantityChanged;
   final VoidCallback onRemove;
 
-  String _formatPrice(double price, String currency) {
-    return MoneyFormatter.format(price, currency);
-  }
+  /// Disables the stepper while an update for this line is in flight.
+  final bool busy;
+  final VoidCallback? onTap;
+
+  static const double _imageSize = 88;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool hasPriceDrop = item.priceDropped && item.savingsAmount > 0;
-    final bool isUnavailable = !item.isAvailable;
-    final int gradientSeed = item.id.abs() % AppDecorations.accentGradients.length;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors c = context.commerce;
+    final bool unavailable = !item.isAvailable;
+    final bool priceDrop = item.priceDropped && item.savingsAmount > 0;
+    final String symbol = CountryCurrencyConstants.getCurrencySymbol(
+      item.currency,
+    );
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: Spacing.sm),
-      padding: const EdgeInsets.all(Spacing.sm + 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: isUnavailable
-            ? Border.all(color: AppColors.error.withOpacity(0.3), width: 1)
-            : null,
-        boxShadow: AppDecorations.softCardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (isUnavailable)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.sm,
-                vertical: Spacing.xs,
-              ),
-              margin: const EdgeInsets.only(bottom: Spacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 16,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(width: Spacing.xs),
-                  Expanded(
-                    child: Text(
-                      LocalizationService.t(context, 'cart.itemUnavailable'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (hasPriceDrop && !isUnavailable)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.sm,
-                vertical: Spacing.xs,
-              ),
-              margin: const EdgeInsets.only(bottom: Spacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.arrow_downward_rounded,
-                    size: 16,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: Spacing.xs),
-                  Expanded(
-                    child: Text(
-                      '${LocalizationService.t(context, 'cart.priceDropped')} ${_formatPrice(item.savingsAmount, item.currency)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Row(
+    final Widget fallback = ColoredBox(
+      color: scheme.surfaceContainerHigh,
+      child: Icon(Icons.shopping_bag_outlined, color: scheme.outline),
+    );
+
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.sm),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: item.productImageUrl.isNotEmpty
-                    ? Image.network(
-                        item.productImageUrl,
-                        width: 64,
-                        height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (
-                          BuildContext context,
-                          Object error,
-                          StackTrace? stackTrace,
-                        ) {
-                          return _imageFallback(gradientSeed);
-                        },
-                      )
-                    : _imageFallback(gradientSeed),
+              Opacity(
+                opacity: unavailable ? 0.5 : 1,
+                child: ClipRRect(
+                  borderRadius: AppRadius.smAll,
+                  child: SizedBox.square(
+                    dimension: _imageSize,
+                    child: item.productImageUrl.isNotEmpty
+                        ? AppNetworkImage(
+                            url: item.productImageUrl,
+                            width: _imageSize,
+                            height: _imageSize,
+                            memCacheWidth: (_imageSize *
+                                    MediaQuery.devicePixelRatioOf(context))
+                                .round(),
+                            errorWidget: fallback,
+                          )
+                        : fallback,
+                  ),
+                ),
               ),
-              const SizedBox(width: Spacing.md),
+              const SizedBox(width: Spacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
                       item.productName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isUnavailable
-                                ? scheme.onSurfaceVariant
-                                : AppColors.navy,
-                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: unavailable
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.provider,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontSize: 11,
-                          ),
-                    ),
-                    const SizedBox(height: Spacing.xs),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          _formatPrice(item.currentPrice, item.currency),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: isUnavailable
-                                    ? scheme.onSurfaceVariant
-                                    : AppColors.primary,
-                              ),
+                    if (item.provider.isNotEmpty)
+                      Text(
+                        item.provider,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
-                        if (hasPriceDrop && !isUnavailable) ...[
-                          const SizedBox(width: Spacing.xs),
-                          Text(
-                            _formatPrice(item.priceWhenAdded, item.currency),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
                     const SizedBox(height: Spacing.xs),
-                    Row(
-                      children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppDecorations.softCream,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              IconButton(
-                                icon: const Icon(Icons.remove, size: 16),
-                                onPressed: isUnavailable
-                                    ? null
-                                    : item.quantity > 1
-                                        ? () => onQuantityChanged(
-                                              item.quantity - 1,
-                                            )
-                                        : null,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 30,
-                                  minHeight: 30,
-                                ),
-                                color: isUnavailable
-                                    ? scheme.onSurfaceVariant
-                                    : AppColors.primary,
+                    if (unavailable)
+                      AppBadge(
+                        label: context.tr('cart.itemUnavailable'),
+                        tone: AppBadgeTone.error,
+                        icon: Icons.block_rounded,
+                        size: AppBadgeSize.medium,
+                      )
+                    else ...<Widget>[
+                      PriceTag(
+                        amount: item.currentPrice,
+                        currency: symbol,
+                        originalAmount: priceDrop ? item.priceWhenAdded : null,
+                        size: PriceTagSize.small,
+                        showDiscountBadge: false,
+                      ),
+                      if (priceDrop)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: AppBadge(
+                            label: context.tr('cart.priceDropSaved', <String, Object?>{
+                              'amount': MoneyFormatter.format(
+                                item.savingsAmount,
+                                symbol,
                               ),
-                              Container(
-                                width: 30,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${item.quantity}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: isUnavailable
-                                            ? scheme.onSurfaceVariant
-                                            : AppColors.navy,
-                                      ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add, size: 16),
-                                onPressed: isUnavailable
-                                    ? null
-                                    : () => onQuantityChanged(
-                                          item.quantity + 1,
-                                        ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 30,
-                                  minHeight: 30,
-                                ),
-                                color: isUnavailable
-                                    ? scheme.onSurfaceVariant
-                                    : AppColors.primary,
-                              ),
-                            ],
+                            }),
+                            tone: AppBadgeTone.success,
+                            icon: Icons.trending_down_rounded,
                           ),
                         ),
+                    ],
+                    const SizedBox(height: Spacing.sm),
+                    Row(
+                      children: <Widget>[
+                        if (unavailable)
+                          AppButton(
+                            label: context.tr('cart.remove'),
+                            variant: AppButtonVariant.destructive,
+                            size: AppButtonSize.small,
+                            icon: Icons.delete_outline_rounded,
+                            fullWidth: false,
+                            onPressed: onRemove,
+                          )
+                        else
+                          QuantityStepper(
+                            compact: true,
+                            value: item.quantity,
+                            busy: busy,
+                            onChanged: onQuantityChanged,
+                            onRemove: onRemove,
+                          ),
                         const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 22),
-                          onPressed: onRemove,
-                          color: AppColors.error,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
+                        if (!unavailable && item.quantity > 1)
+                          Text(
+                            MoneyFormatter.format(
+                              item.currentPrice * item.quantity,
+                              symbol,
+                            ),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: c.price,
+                              fontFeatures: AppTypography.tabularFigures,
+                            ),
                           ),
-                          tooltip: LocalizationService.t(
-                            context,
-                            'cart.removeItemTooltip',
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -267,22 +164,7 @@ class CartItemWidget extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _imageFallback(int gradientSeed) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        gradient: AppDecorations.accentGradientAt(gradientSeed),
-      ),
-      child: const Icon(
-        Icons.shopping_bag_outlined,
-        color: Colors.white,
-        size: 26,
+        ),
       ),
     );
   }

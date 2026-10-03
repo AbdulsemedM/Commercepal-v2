@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,11 +20,8 @@ class FullNameInputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          LocalizationService.t(context, 'auth.signup.fullName'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
+          context.tr('auth.signup.fullName'),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextField(
@@ -32,33 +29,12 @@ class FullNameInputField extends StatelessWidget {
           onChanged: onChanged,
           keyboardType: TextInputType.name,
           textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          autofillHints: const <String>[AutofillHints.name],
           style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText: LocalizationService.t(
-              context,
-              'auth.signup.fullNamePlaceholder',
-            ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
+          decoration: authFieldDecoration(
+            context,
+            hintText: context.tr('auth.signup.fullNamePlaceholder'),
           ),
         ),
       ],
@@ -82,24 +58,14 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime now = DateTime.now();
+    // The picker inherits the app theme, so it follows light and dark mode.
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate:
           _selectedDate ?? now.subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: now,
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      helpText: context.tr('auth.signup.dateOfBirth'),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -114,50 +80,32 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          LocalizationService.t(context, 'auth.signup.dateOfBirth'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
+          context.tr('auth.signup.dateOfBirth'),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextField(
           controller: widget.controller,
           readOnly: true,
           onTap: () => _selectDate(context),
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText: LocalizationService.t(
-              context,
-              'auth.signup.dateOfBirthPlaceholder',
-            ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
+          autofillHints: const <String>[AutofillHints.birthday],
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontFeatures: AppTypography.tabularFigures,
+          ),
+          decoration: authFieldDecoration(
+            context,
+            hintText: context.tr('auth.signup.dateOfBirthPlaceholder'),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today, color: Colors.grey),
+              tooltip: context.tr('auth.signup.pickDate'),
+              icon: Icon(
+                Icons.calendar_today_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               onPressed: () => _selectDate(context),
             ),
           ),
@@ -167,8 +115,12 @@ class _DateOfBirthInputFieldState extends State<DateOfBirthInputField> {
   }
 }
 
-/// Terms and Privacy Policy text widget with clickable links
-class TermsAndPolicyText extends StatelessWidget {
+/// Terms and Privacy Policy text widget with clickable links.
+///
+/// The sentence is one translatable template (`auth.signup.termsAgreement`)
+/// with `{terms}`, `{privacy}` and `{refund}` slots, so each language can
+/// order the links naturally.
+class TermsAndPolicyText extends StatefulWidget {
   const TermsAndPolicyText({
     super.key,
     this.onTermsTap,
@@ -181,55 +133,70 @@ class TermsAndPolicyText extends StatelessWidget {
   final VoidCallback? onPolicyTap;
 
   @override
+  State<TermsAndPolicyText> createState() => _TermsAndPolicyTextState();
+}
+
+class _TermsAndPolicyTextState extends State<TermsAndPolicyText> {
+  final TapGestureRecognizer _terms = TapGestureRecognizer();
+  final TapGestureRecognizer _privacy = TapGestureRecognizer();
+  final TapGestureRecognizer _refund = TapGestureRecognizer();
+
+  @override
+  void dispose() {
+    _terms.dispose();
+    _privacy.dispose();
+    _refund.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-        children: <TextSpan>[
-          TextSpan(
-            text: '${LocalizationService.t(context, 'auth.signup.termsText')} ',
-          ),
-          TextSpan(
-            text: LocalizationService.t(context, 'auth.signup.terms'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap =
-                  onTermsTap ??
-                  () => context.push(AppRoutes.termsConditions),
-          ),
-          const TextSpan(text: ' '),
-          TextSpan(
-            text: LocalizationService.t(context, 'auth.signup.privacy'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap =
-                  onPrivacyTap ??
-                  () => context.push(AppRoutes.termsConditions),
-          ),
-          const TextSpan(text: ' '),
-          TextSpan(
-            text: LocalizationService.t(context, 'auth.signup.policy'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap =
-                  onPolicyTap ??
-                  () => context.push(AppRoutes.refundPolicy),
-          ),
-        ],
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    _terms.onTap = widget.onTermsTap ??
+        () => context.push(AppRoutes.termsConditions);
+    _privacy.onTap = widget.onPrivacyTap ??
+        () => context.push(AppRoutes.termsConditions);
+    _refund.onTap =
+        widget.onPolicyTap ?? () => context.push(AppRoutes.refundPolicy);
+
+    final TextStyle? linkStyle = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.primary,
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+      decorationColor: scheme.primary,
+    );
+    final Map<String, (String, TapGestureRecognizer)> links =
+        <String, (String, TapGestureRecognizer)>{
+      'terms': (context.tr('auth.signup.termsLink'), _terms),
+      'privacy': (context.tr('auth.signup.privacyLink'), _privacy),
+      'refund': (context.tr('auth.signup.refundLink'), _refund),
+    };
+
+    final String template = context.tr('auth.signup.termsAgreement');
+    final List<InlineSpan> spans = <InlineSpan>[];
+    int cursor = 0;
+    for (final RegExpMatch m
+        in RegExp(r'\{(terms|privacy|refund)\}').allMatches(template)) {
+      if (m.start > cursor) {
+        spans.add(TextSpan(text: template.substring(cursor, m.start)));
+      }
+      final (String label, TapGestureRecognizer recognizer) = links[m[1]]!;
+      spans.add(
+        TextSpan(text: label, style: linkStyle, recognizer: recognizer),
+      );
+      cursor = m.end;
+    }
+    if (cursor < template.length) {
+      spans.add(TextSpan(text: template.substring(cursor)));
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        children: spans,
       ),
     );
   }
@@ -248,44 +215,20 @@ class SignupEmailInputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          LocalizationService.t(context, 'auth.signup.email'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
+          context.tr('auth.signup.email'),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextField(
           controller: controller,
           onChanged: onChanged,
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          autofillHints: const <String>[AutofillHints.email],
           style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText: LocalizationService.t(
-              context,
-              'auth.signup.emailPlaceholder',
-            ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
+          decoration: authFieldDecoration(
+            context,
+            hintText: context.tr('auth.signup.emailPlaceholder'),
           ),
         ),
       ],
@@ -324,12 +267,8 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          widget.label ??
-              LocalizationService.t(context, 'auth.signup.password'),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
+          widget.label ?? context.tr('auth.signup.password'),
+          style: authFieldLabelStyle(context),
         ),
         const SizedBox(height: Spacing.xs),
         TextFormField(
@@ -337,47 +276,21 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
           onChanged: widget.onChanged,
           validator: widget.validator,
           obscureText: _obscureText,
+          enableSuggestions: false,
+          autocorrect: false,
+          autofillHints: const <String>[AutofillHints.newPassword],
           style: Theme.of(context).textTheme.bodyLarge,
-          decoration: InputDecoration(
-            hintText:
-                widget.hint ??
-                LocalizationService.t(
-                  context,
-                  'auth.signup.passwordPlaceholder',
-                ),
-            hintStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Spacing.md,
-              vertical: Spacing.md,
-            ),
+          decoration: authFieldDecoration(
+            context,
+            hintText: widget.hint ?? context.tr('auth.signup.passwordPlaceholder'),
             suffixIcon: IconButton(
+              tooltip: context.tr(
+                _obscureText ? 'auth.showPassword' : 'auth.hidePassword',
+              ),
               icon: Icon(
-                _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey[600],
+                _obscureText
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
               ),
               onPressed: () {
                 setState(() {
@@ -392,7 +305,7 @@ class _SignupPasswordInputFieldState extends State<SignupPasswordInputField> {
   }
 }
 
-/// Login link widget for existing users
+/// "Already have an account? Log in" row.
 class LoginLink extends StatelessWidget {
   const LoginLink({super.key, this.onTap});
 
@@ -400,30 +313,24 @@ class LoginLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     return Center(
-      child: GestureDetector(
-        onTap: onTap,
-        child: RichText(
-          text: TextSpan(
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            children: <TextSpan>[
-              TextSpan(
-                text:
-                    '${LocalizationService.t(context, 'auth.signup.alreadyHaveAccount')} ',
-              ),
-              TextSpan(
-                text: LocalizationService.t(context, 'auth.signup.logIn'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ],
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: <Widget>[
+          Text(
+            context.tr('auth.signup.alreadyHaveAccount'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
+          AppButton.text(
+            label: context.tr('auth.signup.logIn'),
+            size: AppButtonSize.small,
+            onPressed: onTap,
+          ),
+        ],
       ),
     );
   }

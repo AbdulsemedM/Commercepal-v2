@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/features/auth/login/presentation/widgets/login_widgets.dart';
 import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
@@ -65,14 +64,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (_formKey.currentState?.validate() != true) return;
     if (_emailOrPhone.isEmpty ||
         !RegExp(r'^\d{6}$').hasMatch(_verificationCode)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            LocalizationService.t(context, 'auth.otp.sessionExpired'),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackbars.error(context, context.tr('auth.otp.sessionExpired'));
       context.go(AppRoutes.forgotPassword);
       return;
     }
@@ -89,10 +81,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return BlocProvider(
       create: (context) => ResetPasswordBloc(),
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocListener<ResetPasswordBloc, ResetPasswordState>(
             listener: (context, state) {
@@ -106,12 +99,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ).toString(),
                 );
               } else if (state is ResetPasswordFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                AppSnackbars.error(context, state.message);
               }
             },
             child: BlocBuilder<ResetPasswordBloc, ResetPasswordState>(
@@ -119,155 +107,166 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 final bool isLoading = state is ResetPasswordLoading;
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const SizedBox(height: Spacing.md),
-                        AuthBackButton(
-                          onPressed: () {
-                            if (context.canPop()) {
-                              context.pop();
-                            } else {
-                              context.go(AppRoutes.login);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: Spacing.sm),
-                        Text(
-                          LocalizationService.t(
-                            context,
-                            'auth.reset.title',
-                          ),
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 26,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: AutofillGroup(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              const SizedBox(height: Spacing.md),
+                              AuthBackButton(
+                                onPressed: () {
+                                  if (context.canPop()) {
+                                    context.pop();
+                                  } else {
+                                    context.go(AppRoutes.login);
+                                  }
+                                },
                               ),
-                        ),
-                        const SizedBox(height: Spacing.xs),
-                        Text(
-                          LocalizationService.t(
-                            context,
-                            'auth.reset.subtitle',
-                          ),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                        if (_emailOrPhone.isNotEmpty) ...[
-                          const SizedBox(height: Spacing.md),
-                          Text(
-                            LocalizationService.t(
-                              context,
-                              'auth.reset.codeSentTo',
-                            ).replaceAll('{target}', _emailOrPhone),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.navy,
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(height: Spacing.sm),
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  context.tr('auth.reset.title'),
+                                  style: theme.textTheme.headlineMedium,
                                 ),
-                          ),
-                        ],
-                        const SizedBox(height: Spacing.lg),
-                        PasswordInputField(
-                          controller: _newPasswordController,
-                          label: LocalizationService.t(
-                            context,
-                            'auth.reset.newPassword',
-                          ),
-                          hintText: LocalizationService.t(
-                            context,
-                            'auth.reset.newPasswordHint',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.newPasswordRequired',
-                              );
-                            }
-                            if (value.length < 8) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.passwordTooShort',
-                              );
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        PasswordInputField(
-                          controller: _confirmPasswordController,
-                          label: LocalizationService.t(
-                            context,
-                            'auth.reset.confirmPassword',
-                          ),
-                          hintText: LocalizationService.t(
-                            context,
-                            'auth.reset.confirmPasswordHint',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.confirmPasswordRequired',
-                              );
-                            }
-                            if (value != _newPasswordController.text) {
-                              return LocalizationService.t(
-                                context,
-                                'auth.reset.passwordsDoNotMatch',
-                              );
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: Spacing.lg),
-                        AuthPrimaryButton(
-                          label: LocalizationService.t(
-                            context,
-                            'auth.reset.submit',
-                          ),
-                          isLoading: isLoading,
-                          onPressed: _canSubmit && !isLoading
-                              ? () => _submit(context)
-                              : null,
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () => context.go(AppRoutes.login),
-                            child: Text(
-                              LocalizationService.t(
-                                context,
-                                'auth.reset.backToLogin',
                               ),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: AppColors.pink,
-                                    fontWeight: FontWeight.w700,
+                              const SizedBox(height: Spacing.xs),
+                              Text(
+                                context.tr('auth.reset.subtitle'),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              if (_emailOrPhone.isNotEmpty) ...[
+                                const SizedBox(height: Spacing.md),
+                                _TargetChip(
+                                  label: context.tr(
+                                    'auth.reset.codeSentTo',
+                                    <String, Object?>{'target': _emailOrPhone},
                                   ),
-                            ),
+                                ),
+                              ],
+                              const SizedBox(height: Spacing.xl),
+                              PasswordInputField(
+                                controller: _newPasswordController,
+                                isNewPassword: true,
+                                textInputAction: TextInputAction.next,
+                                label: context.tr('auth.reset.newPassword'),
+                                hintText: context.tr('auth.reset.newPasswordHint'),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return context
+                                        .tr('auth.reset.newPasswordRequired');
+                                  }
+                                  if (value.length < 8) {
+                                    return context
+                                        .tr('auth.reset.passwordTooShort');
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: Spacing.md),
+                              PasswordInputField(
+                                controller: _confirmPasswordController,
+                                isNewPassword: true,
+                                label: context.tr('auth.reset.confirmPassword'),
+                                hintText:
+                                    context.tr('auth.reset.confirmPasswordHint'),
+                                onSubmitted: (_) {
+                                  if (_canSubmit && !isLoading) {
+                                    _submit(context);
+                                  }
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return context.tr(
+                                      'auth.reset.confirmPasswordRequired',
+                                    );
+                                  }
+                                  if (value != _newPasswordController.text) {
+                                    return context
+                                        .tr('auth.reset.passwordsDoNotMatch');
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: Spacing.xl),
+                              AuthPrimaryButton(
+                                label: context.tr('auth.reset.submit'),
+                                isLoading: isLoading,
+                                onPressed: _canSubmit && !isLoading
+                                    ? () => _submit(context)
+                                    : null,
+                              ),
+                              const SizedBox(height: Spacing.md),
+                              Center(
+                                child: AppButton.text(
+                                  label: context.tr('auth.reset.backToLogin'),
+                                  onPressed: () => context.go(AppRoutes.login),
+                                ),
+                              ),
+                              const SizedBox(height: Spacing.xl),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: Spacing.xl),
-                      ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Quiet pill naming the account whose password is being reset.
+class _TargetChip extends StatelessWidget {
+  const _TargetChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: AppRadius.mdAll,
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              Icons.lock_reset_rounded,
+              size: AppSizes.iconMd,
+              color: scheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: Spacing.xs),
+            Flexible(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

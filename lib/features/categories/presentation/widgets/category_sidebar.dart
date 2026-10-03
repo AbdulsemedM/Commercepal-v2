@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/features/categories/data/models/category.dart';
-import 'package:commercepal/core/utils/category_image_assets.dart';
+import 'package:flutter/services.dart';
 
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/core/utils/category_image_assets.dart';
+import 'package:commercepal/features/categories/data/models/category.dart';
+
+/// Left rail of top-level categories. The selected item sits on the content
+/// surface with a brand marker, so it reads as connected to the right pane.
 class CategorySidebar extends StatelessWidget {
   const CategorySidebar({
     super.key,
@@ -17,95 +19,75 @@ class CategorySidebar extends StatelessWidget {
   final Category? selectedCategory;
   final ValueChanged<Category> onCategorySelected;
 
+  static const double width = 96;
+
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
     return Container(
-      width: 118,
-      color: Theme.of(context).scaffoldBackgroundColor,
+      width: width,
+      color: scheme.surfaceContainerHigh,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+        padding: EdgeInsets.zero,
         itemCount: categories.length,
         itemBuilder: (BuildContext context, int index) {
           final Category category = categories[index];
-          final bool isSelected = selectedCategory?.slug == category.slug;
-          final hasNetworkImage =
-              category.imageUrl != null && category.imageUrl!.isNotEmpty;
-          final assetPath = CategoryImageAssets.assetPathForName(category.name);
-          final fallbackIcon = CategoryImageAssets.iconForName(category.name);
-          final gradient = AppDecorations.accentGradientAt(index);
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.sm,
-              vertical: Spacing.xs,
-            ),
-            child: InkWell(
-              onTap: () => onCategorySelected(category),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.sm,
-                  vertical: Spacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+          final bool selected = selectedCategory?.slug == category.slug;
+          return Semantics(
+            button: true,
+            selected: selected,
+            child: Material(
+              color: selected ? scheme.surface : Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (!selected) HapticFeedback.selectionClick();
+                  onCategorySelected(category);
+                },
+                child: Stack(
+                  alignment: Alignment.topCenter,
                   children: <Widget>[
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: (hasNetworkImage || assetPath != null)
-                            ? null
-                            : (isSelected
-                                ? const LinearGradient(
-                                    colors: <Color>[
-                                      AppColors.pink,
-                                      AppColors.primary,
-                                    ],
-                                  )
-                                : gradient),
-                        color: (hasNetworkImage || assetPath != null)
-                            ? Colors.white
-                            : null,
-                      ),
-                      child: ClipOval(
-                        child: hasNetworkImage
-                            ? Image.network(
-                                category.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => assetPath != null
-                                    ? Image.asset(assetPath, fit: BoxFit.cover)
-                                    : _iconFallback(fallbackIcon),
-                              )
-                            : (assetPath != null
-                                ? Image.asset(
-                                    assetPath,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        _iconFallback(fallbackIcon),
-                                  )
-                                : _iconFallback(fallbackIcon)),
+                    PositionedDirectional(
+                      start: 0,
+                      top: Spacing.sm,
+                      bottom: Spacing.sm,
+                      child: AnimatedContainer(
+                        duration: AppMotion.fast,
+                        width: selected ? 4 : 0,
+                        decoration: BoxDecoration(
+                          color: scheme.primary,
+                          borderRadius: const BorderRadiusDirectional.horizontal(
+                            end: Radius.circular(3),
+                          ).resolve(Directionality.of(context)),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: Spacing.xs),
-                    Text(
-                      category.name,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isSelected ? Colors.white : AppColors.navy,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                            fontSize: 13,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.xs,
+                        vertical: Spacing.sm,
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          _CategoryThumb(category: category),
+                          const SizedBox(height: 6),
+                          Text(
+                            category.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: selected
+                                  ? scheme.onSurface
+                                  : scheme.onSurfaceVariant,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
+                              height: 1.2,
+                            ),
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -116,10 +98,48 @@ class CategorySidebar extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _iconFallback(IconData icon) {
-    return Center(
-      child: Icon(icon, color: Colors.white, size: 20),
+class _CategoryThumb extends StatelessWidget {
+  const _CategoryThumb({required this.category});
+
+  final Category category;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool hasNetworkImage =
+        category.imageUrl != null && category.imageUrl!.isNotEmpty;
+    final String? assetPath =
+        CategoryImageAssets.assetPathForName(category.name);
+    final Widget fallback = ColoredBox(
+      color: scheme.surface,
+      child: Icon(
+        CategoryImageAssets.iconForName(category.name),
+        color: scheme.onSurfaceVariant,
+        size: 20,
+      ),
     );
+    const double size = 44;
+
+    final Widget image = hasNetworkImage
+        ? AppNetworkImage(
+            url: category.imageUrl!,
+            width: size,
+            height: size,
+            memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
+            errorWidget: assetPath != null
+                ? Image.asset(assetPath, fit: BoxFit.cover)
+                : fallback,
+          )
+        : assetPath != null
+            ? Image.asset(
+                assetPath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => fallback,
+              )
+            : fallback;
+
+    return ClipOval(child: SizedBox.square(dimension: size, child: image));
   }
 }

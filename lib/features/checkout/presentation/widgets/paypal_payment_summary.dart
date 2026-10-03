@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/checkout/data/models/exchange_rates_response.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -26,71 +25,102 @@ class PayPalPaymentSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     final String currency = cartCurrency.toUpperCase();
     final bool isUsdCart = currency == 'USD';
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(Spacing.md, Spacing.sm, Spacing.md, 0),
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    final Widget content;
+    if (isLoading) {
+      content = Semantics(
+        label: context.tr('checkout.paypal.loadingAmounts'),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: Spacing.xs),
+          child: Center(
+            child: SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: Spacing.sm),
-                child: SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else if (errorMessage != null && errorMessage!.isNotEmpty) {
+      content = Semantics(
+        liveRegion: true,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              Icons.error_outline_rounded,
+              color: scheme.error,
+              size: AppSizes.iconMd,
+            ),
+            const SizedBox(width: Spacing.xs),
+            Expanded(
+              child: Text(
+                errorMessage!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.error,
                 ),
               ),
-            )
-          else if (errorMessage != null && errorMessage!.isNotEmpty)
-            Text(
-              errorMessage!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.error,
-                  ),
-            )
-          else if (isUsdCart) ...[
-            _AmountRow(
-              label: LocalizationService.t(context, 'checkout.paypalTotalUsd'),
-              value: MoneyFormatter.format(orderTotal, 'USD'),
-              emphasize: true,
-            ),
-          ] else ...[
-            _AmountRow(
-              label: LocalizationService.t(context, 'checkout.paypalTotalInCurrency')
-                  .replaceAll('{currency}', currency),
-              value: MoneyFormatter.format(orderTotal, currency),
-            ),
-            const SizedBox(height: Spacing.sm),
-            _AmountRow(
-              label: LocalizationService.t(context, 'checkout.paypalTotalUsd'),
-              value: MoneyFormatter.format(
-                exchangeRates?.toUsd(orderTotal, currency) ?? 0,
-                'USD',
-              ),
-              emphasize: true,
             ),
           ],
+        ),
+      );
+    } else if (isUsdCart) {
+      content = _AmountRow(
+        label: context.tr('checkout.paypalTotalUsd'),
+        amount: orderTotal,
+        currency: 'USD',
+        emphasize: true,
+      );
+    } else {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _AmountRow(
+            label: context.tr(
+              'checkout.paypalTotalInCurrency',
+              <String, Object?>{'currency': currency},
+            ),
+            amount: orderTotal,
+            currency: currency,
+          ),
+          const SizedBox(height: Spacing.xs),
+          _AmountRow(
+            label: context.tr('checkout.paypalTotalUsd'),
+            amount: exchangeRates?.toUsd(orderTotal, currency) ?? 0,
+            currency: 'USD',
+            emphasize: true,
+          ),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            context.tr('checkout.paypal.conversionNote'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
         ],
+      );
+    }
+
+    return Card(
+      margin: const EdgeInsetsDirectional.fromSTEB(
+        Spacing.gutter,
+        Spacing.sm,
+        Spacing.gutter,
+        0,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: AnimatedSize(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : AppMotion.fast,
+          curve: AppMotion.standard,
+          alignment: AlignmentDirectional.topStart,
+          child: content,
+        ),
       ),
     );
   }
@@ -99,34 +129,38 @@ class PayPalPaymentSummary extends StatelessWidget {
 class _AmountRow extends StatelessWidget {
   const _AmountRow({
     required this.label,
-    required this.value,
+    required this.amount,
+    required this.currency,
     this.emphasize = false,
   });
 
   final String label;
-  final String value;
+  final num amount;
+  final String currency;
   final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         Expanded(
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[700],
-                  fontWeight: emphasize ? FontWeight.w600 : FontWeight.normal,
-                ),
+            style: emphasize
+                ? theme.textTheme.titleSmall
+                : theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
           ),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: emphasize ? AppColors.primary : AppColors.navy,
-              ),
+        const SizedBox(width: Spacing.sm),
+        PriceTag(
+          amount: amount,
+          currency: CountryCurrencyConstants.getCurrencySymbol(currency),
+          size: emphasize ? PriceTagSize.medium : PriceTagSize.small,
+          color: emphasize ? null : scheme.onSurface,
         ),
       ],
     );

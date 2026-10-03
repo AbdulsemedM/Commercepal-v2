@@ -1,11 +1,11 @@
+import 'package:commercepal/core/constants/country_currency_constants.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../app/router/app_router.dart';
-import '../../../../core/constants/spacing.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/utils/money_formatter.dart';
 import '../../../../services/localization_service.dart';
 import '../../data/models/checkout_response.dart';
 
@@ -18,9 +18,6 @@ class CashOnDeliverySuccessScreen extends StatelessWidget {
 
   final CheckoutResponse response;
 
-  static const Color _successTint = Color(0xFFE8F5E9);
-  static const Color _successBorder = Color(0xFFA5D6A7);
-
   static String? _formatOrderedAt(String? orderedAt) {
     if (orderedAt == null || orderedAt.isEmpty) return null;
     final dt = DateTime.tryParse(orderedAt);
@@ -30,8 +27,9 @@ class CashOnDeliverySuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
     final orderNumber = response.resolvedOrderNumber ?? '';
     final summary = response.pricingSummary;
     final currency =
@@ -41,123 +39,145 @@ class CashOnDeliverySuccessScreen extends StatelessWidget {
     final orderedAt = _formatOrderedAt(response.orderedAt);
 
     return Scaffold(
-      backgroundColor: scheme.surface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.xl,
-            vertical: Spacing.lg,
-          ),
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: Spacing.md),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: _successTint,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _successBorder, width: 2),
+        bottom: false,
+        child: Column(
+          children: <Widget>[
+            CheckoutScreenHeader(
+              title: context.tr('checkout.orderPlaced.confirmationTitle'),
+              showBack: false,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  Spacing.gutter,
+                  Spacing.xs,
+                  Spacing.gutter,
+                  Spacing.xl,
                 ),
-                child: Icon(
-                  Icons.check_circle_outline,
-                  size: 48,
-                  color: AppColors.success.withValues(alpha: 0.95),
-                ),
-              ),
-              const SizedBox(height: Spacing.lg),
-              Text(
-                LocalizationService.t(context, 'checkout.codSuccessTitle'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Spacing.sm),
-              Text(
-                LocalizationService.t(context, 'checkout.codSuccessSubtitle'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Spacing.xl),
-              _CodInfoBanner(theme: theme, scheme: scheme),
-              const SizedBox(height: Spacing.lg),
-              _OrderDetailsCard(
-                theme: theme,
-                scheme: scheme,
-                orderNumber: orderNumber,
-                summary: summary,
-                currency: currency,
-                orderedAt: orderedAt,
-              ),
-              const SizedBox(height: Spacing.xxl),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => context.go(AppRoutes.dashboard),
-                  icon: const Icon(Icons.home_outlined, size: 20),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: scheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSizes.maxContentWidth,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const SizedBox(height: Spacing.md),
+                        Center(
+                          child: ExcludeSemantics(
+                            child: Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                color: commerce.successContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: 44,
+                                color: commerce.success,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.lg),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            context.tr('checkout.codSuccessTitle'),
+                            style: theme.textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.xs),
+                        Text(
+                          context.tr('checkout.codSuccessSubtitle'),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: Spacing.xl),
+                        const _CodInfoBanner(),
+                        const SizedBox(height: Spacing.md),
+                        _OrderDetailsCard(
+                          orderNumber: orderNumber,
+                          summary: summary,
+                          currency: currency,
+                          orderedAt: orderedAt,
+                        ),
+                        const SizedBox(height: Spacing.lg),
+                        Text.rich(
+                          TextSpan(
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            children: <InlineSpan>[
+                              TextSpan(
+                                text: context
+                                    .tr('checkout.orderConfirmedHelpPrefix'),
+                              ),
+                              TextSpan(
+                                text: orderNumber,
+                                style: TextStyle(
+                                  color: scheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: AppTypography.tabularFigures,
+                                ),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
-                  label: Text(
-                    LocalizationService.t(context, 'checkout.goToHome'),
-                  ),
                 ),
               ),
-              const SizedBox(height: Spacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.go(AppRoutes.orderHistory),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.secondary,
-                    side: const BorderSide(color: AppColors.secondary),
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                border: Border(top: BorderSide(color: commerce.border)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSizes.maxContentWidth,
                     ),
-                  ),
-                  child: Text(
-                    LocalizationService.t(context, 'checkout.myOrders'),
-                  ),
-                ),
-              ),
-              const SizedBox(height: Spacing.lg),
-              Text.rich(
-                TextSpan(
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  children: <InlineSpan>[
-                    TextSpan(
-                      text: LocalizationService.t(
-                        context,
-                        'checkout.orderConfirmedHelpPrefix',
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        Spacing.gutter,
+                        Spacing.sm,
+                        Spacing.gutter,
+                        Spacing.sm,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          AppButton.primary(
+                            label: context.tr('checkout.goToHome'),
+                            icon: Icons.home_outlined,
+                            onPressed: () => context.go(AppRoutes.dashboard),
+                          ),
+                          const SizedBox(height: Spacing.xs),
+                          AppButton.secondary(
+                            label: context.tr('checkout.myOrders'),
+                            icon: Icons.receipt_long_outlined,
+                            size: AppButtonSize.medium,
+                            onPressed: () => context.go(AppRoutes.orderHistory),
+                          ),
+                        ],
                       ),
                     ),
-                    TextSpan(
-                      text: orderNumber,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: Spacing.md),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -165,32 +185,28 @@ class CashOnDeliverySuccessScreen extends StatelessWidget {
 }
 
 class _CodInfoBanner extends StatelessWidget {
-  const _CodInfoBanner({required this.theme, required this.scheme});
-
-  final ThemeData theme;
-  final ColorScheme scheme;
+  const _CodInfoBanner();
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final CommerceColors commerce = context.commerce;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: scheme.brightness == Brightness.dark
-            ? AppColors.success.withValues(alpha: 0.18)
-            : CashOnDeliverySuccessScreen._successTint,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: CashOnDeliverySuccessScreen._successBorder,
-        ),
+        color: commerce.infoContainer,
+        borderRadius: AppRadius.mdAll,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(
-            Icons.shopping_bag_outlined,
-            color: AppColors.success,
-            size: 22,
+          ExcludeSemantics(
+            child: Icon(
+              Icons.payments_outlined,
+              color: commerce.onInfoContainer,
+              size: AppSizes.iconLg,
+            ),
           ),
           const SizedBox(width: Spacing.sm),
           Expanded(
@@ -198,24 +214,16 @@ class _CodInfoBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  LocalizationService.t(
-                    context,
-                    'checkout.codPayOnDeliveryTitle',
-                  ),
+                  context.tr('checkout.codPayOnDeliveryTitle'),
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.onSurface,
+                    color: commerce.onInfoContainer,
                   ),
                 ),
-                const SizedBox(height: Spacing.xs),
+                const SizedBox(height: Spacing.xxs),
                 Text(
-                  LocalizationService.t(
-                    context,
-                    'checkout.codPayOnDeliveryBody',
-                  ),
+                  context.tr('checkout.codPayOnDeliveryBody'),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface,
-                    height: 1.35,
+                    color: commerce.onInfoContainer,
                   ),
                 ),
               ],
@@ -229,16 +237,12 @@ class _CodInfoBanner extends StatelessWidget {
 
 class _OrderDetailsCard extends StatelessWidget {
   const _OrderDetailsCard({
-    required this.theme,
-    required this.scheme,
     required this.orderNumber,
     required this.summary,
     required this.currency,
     required this.orderedAt,
   });
 
-  final ThemeData theme;
-  final ColorScheme scheme;
   final String orderNumber;
   final PricingSummary? summary;
   final String currency;
@@ -246,103 +250,126 @@ class _OrderDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocalizationService.t(context, 'checkout.orderNumberLabel'),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 0.6,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
-          Text(
-            orderNumber.isEmpty ? '—' : orderNumber,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: scheme.onSurface,
-            ),
-          ),
-          if (orderedAt != null) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(
-              orderedAt!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const Divider(height: Spacing.xl),
-          _detailRow(
-            context,
-            LocalizationService.t(context, 'checkout.payment'),
-            LocalizationService.t(context, 'checkout.codPaymentMethod'),
-          ),
-          if (summary?.subtotal != null) ...[
-            const SizedBox(height: Spacing.sm),
-            _detailRow(
-              context,
-              LocalizationService.t(context, 'checkout.subtotal'),
-              MoneyFormatter.format(summary!.subtotal!, currency),
-            ),
-          ],
-          if (summary?.deliveryFee != null &&
-              (summary!.deliveryFee ?? 0) > 0) ...[
-            const SizedBox(height: Spacing.sm),
-            _detailRow(
-              context,
-              LocalizationService.t(context, 'checkout.delivery'),
-              MoneyFormatter.format(summary!.deliveryFee!, currency),
-            ),
-          ],
-          if (summary?.discountAmount != null &&
-              (summary!.discountAmount ?? 0) > 0) ...[
-            const SizedBox(height: Spacing.sm),
-            _detailRow(
-              context,
-              LocalizationService.t(context, 'checkout.discount'),
-              '-${MoneyFormatter.format(summary!.discountAmount!, currency)}',
-            ),
-          ],
-          const Divider(height: Spacing.lg),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                LocalizationService.t(context, 'checkout.totalDue'),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        context.tr('checkout.orderPlaced.orderNumber'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.xxs),
+                      SelectableText(
+                        orderNumber.isEmpty ? '—' : orderNumber,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontFeatures: AppTypography.tabularFigures,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                summary?.totalAmount != null
-                    ? MoneyFormatter.format(summary!.totalAmount!, currency)
-                    : '—',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                const SizedBox(width: Spacing.xs),
+                AppBadge(
+                  label: context.tr('checkout.orderPlaced.statusConfirmed'),
+                  tone: AppBadgeTone.success,
+                  size: AppBadgeSize.medium,
                 ),
+              ],
+            ),
+            const Divider(height: Spacing.xl),
+            if (orderedAt != null) ...<Widget>[
+              _detailRow(
+                context,
+                context.tr('checkout.orderPlaced.orderedOn'),
+                orderedAt!,
+              ),
+              const SizedBox(height: Spacing.xs),
+            ],
+            _detailRow(
+              context,
+              context.tr('checkout.orderPlaced.paymentMethod'),
+              context.tr('checkout.codPaymentMethod'),
+            ),
+            if (summary?.subtotal != null) ...<Widget>[
+              const SizedBox(height: Spacing.xs),
+              _detailRow(
+                context,
+                context.tr('checkout.subtotal'),
+                MoneyFormatter.format(summary!.subtotal!, currency),
+                tabular: true,
               ),
             ],
-          ),
-        ],
+            if (summary?.deliveryFee != null &&
+                (summary!.deliveryFee ?? 0) > 0) ...<Widget>[
+              const SizedBox(height: Spacing.xs),
+              _detailRow(
+                context,
+                context.tr('checkout.delivery'),
+                MoneyFormatter.format(summary!.deliveryFee!, currency),
+                tabular: true,
+              ),
+            ],
+            if (summary?.discountAmount != null &&
+                (summary!.discountAmount ?? 0) > 0) ...<Widget>[
+              const SizedBox(height: Spacing.xs),
+              _detailRow(
+                context,
+                context.tr('checkout.discount'),
+                '-${MoneyFormatter.format(summary!.discountAmount!, currency)}',
+                tabular: true,
+                valueColor: commerce.success,
+              ),
+            ],
+            const Divider(height: Spacing.lg),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    context.tr('checkout.totalDue'),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                if (summary?.totalAmount != null)
+                  PriceTag(
+                    amount: summary!.totalAmount!,
+                    currency:
+                        CountryCurrencyConstants.getCurrencySymbol(currency),
+                  )
+                else
+                  Text('—', style: theme.textTheme.titleSmall),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _detailRow(BuildContext context, String label, String value) {
+  Widget _detailRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool tabular = false,
+    Color? valueColor,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
@@ -354,12 +381,16 @@ class _OrderDetailsCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: Spacing.sm),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: valueColor ?? scheme.onSurface,
+              fontFeatures: tabular ? AppTypography.tabularFigures : null,
+            ),
+            textAlign: TextAlign.end,
           ),
-          textAlign: TextAlign.end,
         ),
       ],
     );

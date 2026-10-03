@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../addresses/bloc/address_bloc.dart';
 import '../../../addresses/data/models/address.dart';
@@ -39,58 +38,28 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
           context.read<AddressBloc>().add(AddressLoadRequested());
         }
         if (state is AddressError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          AppSnackbars.error(context, state.message);
         }
       },
       builder: (context, state) {
-        final ColorScheme scheme = Theme.of(context).colorScheme;
         if (state is AddressLoading) {
-          return const Padding(
-            padding: EdgeInsets.all(Spacing.md),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            ),
+          return const Column(
+            children: <Widget>[
+              ListTileShimmer(leadingSize: 24),
+              ListTileShimmer(leadingSize: 24),
+            ],
           );
         }
 
         if (state is AddressError) {
-          return Padding(
-            padding: const EdgeInsets.all(Spacing.md),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: Spacing.sm),
-                  Text(
-                    state.message,
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: Spacing.md),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<AddressBloc>().add(AddressLoadRequested());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(LocalizationService.t(context, 'cart.retry')),
-                  ),
-                ],
-              ),
-            ),
+          return AppEmptyState(
+            compact: true,
+            isError: true,
+            icon: Icons.location_off_outlined,
+            title: state.message,
+            primaryLabel: context.tr('common.retry'),
+            onPrimary: () =>
+                context.read<AddressBloc>().add(AddressLoadRequested()),
           );
         }
 
@@ -122,97 +91,51 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.sm,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      LocalizationService.t(context, 'checkout.deliveryAddress'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        AddEditAddressDialog.show(context);
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.pink,
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        '+ ${LocalizationService.t(context, 'checkout.addNew')}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              SectionHeader(
+                title: context.tr('checkout.deliveryAddress'),
+                actionLabel: context.tr('checkout.addNew'),
+                onAction: () => AddEditAddressDialog.show(context),
               ),
+              const SizedBox(height: Spacing.xs),
               if (addresses.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.all(Spacing.md),
-                  child: Container(
-                    padding: const EdgeInsets.all(Spacing.lg),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: scheme.outline),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 48,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: Spacing.sm),
-                        Text(
-                          LocalizationService.t(context, 'checkout.noAddressesFound'),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: Spacing.xs),
-                        Text(
-                          LocalizationService.t(context, 'checkout.addAddressToContinue'),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: Spacing.md),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            AddEditAddressDialog.show(context);
-                          },
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(LocalizationService.t(context, 'checkout.addAddress')),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.gutter,
+                  ),
+                  child: Card(
+                    child: AppEmptyState(
+                      compact: true,
+                      icon: Icons.add_location_alt_outlined,
+                      title: context.tr('checkout.noAddressesFound'),
+                      subtitle: context.tr('checkout.addAddressToContinue'),
+                      primaryLabel: context.tr('checkout.addAddress'),
+                      onPrimary: () => AddEditAddressDialog.show(context),
                     ),
                   ),
                 )
               else
-                ...addresses.map((address) => _buildAddressCard(
-                      context,
-                      address,
-                      _selectedAddressId == address.id,
-                    )),
+                RadioGroup<int>(
+                  groupValue: _selectedAddressId,
+                  onChanged: (int? id) {
+                    if (id == null) return;
+                    final Address picked =
+                        addresses.firstWhere((Address a) => a.id == id);
+                    setState(() {
+                      _selectedAddressId = id;
+                      widget.onAddressSelected(picked);
+                    });
+                  },
+                  child: Column(
+                    children: <Widget>[
+                      for (final Address address in addresses)
+                        _buildAddressCard(
+                          context,
+                          address,
+                          _selectedAddressId == address.id,
+                        ),
+                    ],
+                  ),
+                ),
             ],
           );
         }
@@ -227,142 +150,75 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
     Address address,
     bool isSelected,
   ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: Spacing.md,
-        vertical: Spacing.xs,
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final TextStyle? meta = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.gutter,
+        vertical: Spacing.xxs,
       ),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppColors.cream
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? AppColors.primary : Colors.grey.shade300,
-          width: isSelected ? 1.5 : 1,
+      child: Material(
+        color: isSelected ? scheme.primaryContainer : scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdAll,
+          side: BorderSide(
+            color: isSelected ? scheme.primary : context.commerce.border,
+            width: isSelected ? 1.5 : 1,
+          ),
         ),
-        boxShadow: isSelected
-            ? null
-            : <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedAddressId = address.id;
+              widget.onAddressSelected(address);
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.xxs,
+              Spacing.sm,
+              Spacing.md,
+              Spacing.sm,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Radio<int>(value: address.id),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: Spacing.sm),
+                        child: Wrap(
+                          spacing: Spacing.xs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              address.receiverName,
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            if (address.isDefault)
+                              AppBadge(
+                                label: context.tr('checkout.defaultLabel'),
+                                tone: AppBadgeTone.brand,
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(_formatAddress(context, address), style: meta),
+                      const SizedBox(height: 2),
+                      Text(address.phoneNumber, style: meta),
+                    ],
+                  ),
                 ),
               ],
-      ),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedAddressId = address.id;
-            widget.onAddressSelected(address);
-          });
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.md),
-          child: Row(
-            children: [
-              Radio<int>(
-                value: address.id,
-                groupValue: _selectedAddressId,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedAddressId = value;
-                      widget.onAddressSelected(address);
-                    });
-                  }
-                },
-                activeColor: AppColors.primary,
-              ),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        if (address.isDefault)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              LocalizationService.t(
-                                context,
-                                'checkout.defaultLabel',
-                              ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ),
-                        if (address.isDefault) const SizedBox(width: Spacing.xs),
-                        Expanded(
-                          child: Text(
-                            address.receiverName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.navy,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.xs),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.phone_outlined,
-                          size: 14,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          address.phoneNumber,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.xs),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            _formatAddress(context, address),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,6 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:commercepal/services/localization_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/spacing.dart';
@@ -46,19 +48,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
         listener: (context, state) {
           if (state is ChangePasswordSuccess) {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, state.message);
           } else if (state is ChangePasswordFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           }
         },
         child: Dialog(
@@ -92,7 +84,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                           controller: _currentPasswordController,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter current password';
+                              return context.tr('validation.currentPasswordRequired');
                             }
                             return null;
                           },
@@ -102,16 +94,16 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                             labelText: 'Current Password',
                             hintText: 'Enter your current password',
                             hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
+                                ?.copyWith(color: Theme.of(context).colorScheme.outline),
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -143,7 +135,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                                 _obscureCurrentPassword
                                     ? Icons.visibility_off
                                     : Icons.visibility,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -160,10 +152,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                           controller: _newPasswordController,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter new password';
+                              return context.tr('validation.newPasswordRequired');
                             }
                             if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
+                              return context.tr('validation.passwordMin', {'min': 6});
                             }
                             return null;
                           },
@@ -173,16 +165,16 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                             labelText: 'New Password',
                             hintText: 'Enter your new password',
                             hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
+                                ?.copyWith(color: Theme.of(context).colorScheme.outline),
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -214,7 +206,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                                 _obscureNewPassword
                                     ? Icons.visibility_off
                                     : Icons.visibility,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -243,16 +235,16 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                             labelText: 'Confirm Password',
                             hintText: 'Confirm your new password',
                             hintStyle: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[400]),
+                                ?.copyWith(color: Theme.of(context).colorScheme.outline),
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -284,7 +276,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                                 _obscureConfirmPassword
                                     ? Icons.visibility_off
                                     : Icons.visibility,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -329,7 +321,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                                       },
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  disabledBackgroundColor: Colors.grey[300],
+                                  disabledBackgroundColor: Theme.of(context).colorScheme.outlineVariant,
                                 ),
                                 child: isLoading
                                     ? const SizedBox(

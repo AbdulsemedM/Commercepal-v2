@@ -1,13 +1,11 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/services/localization_service.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/theme/app_decorations.dart';
-import '../../../../core/constants/spacing.dart';
+import '../../../../core/constants/country_currency_constants.dart';
+import '../../../../core/design_system.dart';
 import '../../../../core/widgets/checkout_screen_header.dart';
-import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_retry_request.dart';
 import '../../data/models/payment_method_variant.dart';
 import '../../data/models/payment_constants.dart';
@@ -21,7 +19,6 @@ import '../utils/checkout_payment_navigation.dart';
 import '../widgets/payment_account_phone_field.dart';
 import '../widgets/paypal_payment_summary.dart';
 import '../widgets/payment_method_card.dart';
-import 'ussd_payment_success_screen.dart';
 
 /// Helper to represent a selectable payment method for retry
 class _SelectablePaymentMethod {
@@ -226,13 +223,12 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = LocalizationService.t(context, 'checkout.failedToLoadPaymentMethods');
+          _errorMessage = LocalizationService.t(
+              context, 'checkout.failedToLoadPaymentMethods');
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'checkout.failedToLoadPaymentMethods')),
-            backgroundColor: AppColors.error,
-          ),
+        AppSnackbars.error(
+          context,
+          context.tr('checkout.failedToLoadPaymentMethods'),
         );
       }
     }
@@ -242,8 +238,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     if (_selectedPaymentMethodId == null) return null;
     for (final cat in _categories) {
       try {
-        return cat.methods
-            .firstWhere((m) => m.id == _selectedPaymentMethodId);
+        return cat.methods.firstWhere((m) => m.id == _selectedPaymentMethodId);
       } catch (_) {}
     }
     return null;
@@ -284,27 +279,38 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     }
   }
 
+  /// Guards against double taps sending the retry twice.
+  bool _isSubmitting = false;
+
+  Future<void> _onPayPressed() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await _payWithSelectedMethod();
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   Future<void> _payWithSelectedMethod() async {
     final method = _getSelectedMethod();
     if (method == null) return;
 
-    final variantCode = method.hasVariants
-        ? (_selectedVariantCode ?? '')
-        : method.variantCode;
+    final variantCode =
+        method.hasVariants ? (_selectedVariantCode ?? '') : method.variantCode;
     if (method.hasVariants && (variantCode.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocalizationService.t(context, 'checkout.pleaseSelectPaymentOption')),
-          backgroundColor: AppColors.warning,
-        ),
+      AppSnackbars.info(
+        context,
+        context.tr('checkout.pleaseSelectPaymentOption'),
       );
       return;
     }
 
     // Selected option's item code (for request; no variant code field)
-    final paymentProviderCode = method.hasVariants && _selectedVariantCode != null
-        ? _selectedVariantCode!
-        : method.id;
+    final paymentProviderCode =
+        method.hasVariants && _selectedVariantCode != null
+            ? _selectedVariantCode!
+            : method.id;
 
     final bool needsPaymentAccount =
         PaymentConstants.shouldCollectPaymentAccount(
@@ -319,11 +325,9 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       paymentAccount = null;
     } else {
       if (!isValidPaymentAccount(_paymentPhoneNumber)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocalizationService.t(context, 'checkout.pleaseEnterValidPhone')),
-            backgroundColor: AppColors.warning,
-          ),
+        AppSnackbars.info(
+          context,
+          context.tr('checkout.pleaseEnterValidPhone'),
         );
         return;
       }
@@ -333,16 +337,14 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
     // Sahay: customer lookup, show customer name and confirm before retrying payment
     if (PaymentConstants.isSahay(paymentProviderCode)) {
       try {
-        final lookup = await _checkoutRepository.verifySahayAccount(paymentAccount!);
+        final lookup =
+            await _checkoutRepository.verifySahayAccount(paymentAccount!);
         if (!mounted) return;
         if (!lookup.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                lookup.message ?? LocalizationService.t(context, 'checkout.phoneNumberCouldNotBeVerified'),
-              ),
-              backgroundColor: AppColors.error,
-            ),
+          AppSnackbars.error(
+            context,
+            lookup.message ??
+                context.tr('checkout.phoneNumberCouldNotBeVerified'),
           );
           return;
         }
@@ -351,7 +353,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: Text(LocalizationService.t(ctx, 'checkout.sahayConfirmTitle')),
+            title:
+                Text(LocalizationService.t(ctx, 'checkout.sahayConfirmTitle')),
             content: Text(
               LocalizationService.t(ctx, 'checkout.sahayConfirmMessage')
                   .replaceAll('{name}', customerName ?? ''),
@@ -363,7 +366,8 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
               ),
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text(LocalizationService.t(ctx, 'checkout.sahayConfirm')),
+                child:
+                    Text(LocalizationService.t(ctx, 'checkout.sahayConfirm')),
               ),
             ],
           ),
@@ -372,15 +376,14 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
         if (confirmed != true) return;
       } catch (e) {
         if (mounted) {
-          String msg = LocalizationService.t(context, 'checkout.verificationFailed');
+          String msg =
+              LocalizationService.t(context, 'checkout.verificationFailed');
           if (e is DioException && e.response?.data is Map<String, dynamic>) {
             final data = e.response!.data as Map<String, dynamic>;
             final apiMessage = data['message'] as String?;
             if (apiMessage != null && apiMessage.isNotEmpty) msg = apiMessage;
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: AppColors.error),
-          );
+          AppSnackbars.error(context, msg);
         }
         return;
       }
@@ -414,15 +417,14 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       if (mounted) context.pop(updated);
     } catch (e) {
       if (mounted) {
-        String msg = LocalizationService.t(context, 'checkout.failedToRetryPayment');
+        String msg =
+            LocalizationService.t(context, 'checkout.failedToRetryPayment');
         if (e is DioException && e.response?.data is Map<String, dynamic>) {
           final data = e.response!.data as Map<String, dynamic>;
           final apiMessage = data['message'] as String?;
           if (apiMessage != null && apiMessage.isNotEmpty) msg = apiMessage;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: AppColors.error),
-        );
+        AppSnackbars.error(context, msg);
       }
     }
   }
@@ -462,9 +464,11 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.orderNumber != null
-        ? '${LocalizationService.t(context, 'checkout.payOrder')} ${widget.orderNumber}'
-        : LocalizationService.t(context, 'checkout.selectPaymentMethod');
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    // orderNumber is non-nullable, so the title always names the order.
+    final String title =
+        '${context.tr('checkout.payOrder')} ${widget.orderNumber}';
 
     final bool canPay = _getSelectedMethod() != null &&
         (_isPayPalSelected
@@ -472,174 +476,152 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
             : !_requiresPaymentPhone ||
                 isValidPaymentAccount(_paymentPhoneNumber));
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CheckoutScreenHeader(title: title),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _categories.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(Spacing.lg),
-                            child: Text(
-                              _errorMessage ??
-                                  LocalizationService.t(
-                                    context,
-                                    'checkout.noPaymentMethodsAvailableRetry',
-                                  ),
-                              textAlign: TextAlign.center,
+    final Widget body;
+    if (_isLoading) {
+      body = Semantics(
+        label: context.tr('checkout.retry.loadingMethods'),
+        child: ListView(
+          physics: const NeverScrollableScrollPhysics(),
+          children: List<Widget>.generate(
+            5,
+            (_) => const ListTileShimmer(leadingSize: 48),
+          ),
+        ),
+      );
+    } else if (_categories.isEmpty) {
+      body = AppEmptyState(
+        isError: _errorMessage != null,
+        icon: Icons.credit_card_off_outlined,
+        title: _errorMessage ??
+            context.tr('checkout.noPaymentMethodsAvailableRetry'),
+      );
+    } else {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.gutter,
+                Spacing.sm,
+                Spacing.gutter,
+                Spacing.gutter,
+              ),
+              itemCount: _allSelectableMethods.length + 1,
+              separatorBuilder: (_, int index) => SizedBox(
+                height: index == 0 ? Spacing.sm : Spacing.xs,
+              ),
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Text(
+                    context.tr('checkout.selectPaymentMethodToRetry'),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  );
+                }
+                final method = _allSelectableMethods[index - 1];
+                return PaymentMethodCard(
+                  paymentMethodId: method.id,
+                  paymentMethodName: method.displayName,
+                  iconUrl: method.iconUrl,
+                  isSelected: _selectedPaymentMethodId == method.id,
+                  glow: PaymentConstants.isQPay(
+                    method.id,
+                    displayName: method.displayName,
+                  ),
+                  onTap: () {
+                    if (method.hasVariants) {
+                      _showVariantDialog(method);
+                    } else {
+                      setState(() {
+                        _selectedPaymentMethodId = method.id;
+                        _selectedVariantCode = null;
+                      });
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          if (_isPayPalSelected && widget.orderTotal != null)
+            PayPalPaymentSummary(
+              cartCurrency: widget.currency,
+              orderTotal: widget.orderTotal!,
+              exchangeRates: _exchangeRates,
+              isLoading: _isLoadingExchangeRates &&
+                  widget.currency.toUpperCase() != 'USD',
+              errorMessage: widget.currency.toUpperCase() != 'USD'
+                  ? _exchangeRatesError
+                  : null,
+            )
+          else if (_requiresPaymentPhone)
+            PaymentAccountPhoneField(
+              controller: _paymentPhoneController,
+              initialCountryCode: _initialCountryCode,
+              onChanged: (value) {
+                setState(() {
+                  _paymentPhoneNumber = value;
+                });
+              },
+            ),
+          const SizedBox(height: Spacing.sm),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              border: Border(top: BorderSide(color: context.commerce.border)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.gutter,
+                Spacing.sm,
+                Spacing.gutter,
+                Spacing.sm,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (widget.orderTotal != null) ...[
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            context.tr('checkout.totalDue'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
-                        )
-                      : Column(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      Spacing.md,
-                                      Spacing.md,
-                                      Spacing.md,
-                                      Spacing.sm,
-                                    ),
-                                    child: Text(
-                                      LocalizationService.t(
-                                        context,
-                                        'checkout.selectPaymentMethodToRetry',
-                                      ),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(color: Colors.black54),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: GridView.builder(
-                                      padding:
-                                          const EdgeInsets.all(Spacing.md),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        crossAxisSpacing: Spacing.sm,
-                                        mainAxisSpacing: Spacing.sm,
-                                        childAspectRatio: 0.85,
-                                      ),
-                                      itemCount: _allSelectableMethods.length,
-                                      itemBuilder: (context, index) {
-                                        final method =
-                                            _allSelectableMethods[index];
-                                        return PaymentMethodCard(
-                                          paymentMethodId: method.id,
-                                          paymentMethodName:
-                                              method.displayName,
-                                          iconUrl: method.iconUrl,
-                                          isSelected:
-                                              _selectedPaymentMethodId ==
-                                                  method.id,
-                                          glow: PaymentConstants.isQPay(
-                                            method.id,
-                                            displayName: method.displayName,
-                                          ),
-                                          onTap: () {
-                                            if (method.hasVariants) {
-                                              _showVariantDialog(method);
-                                            } else {
-                                              setState(() {
-                                                _selectedPaymentMethodId =
-                                                    method.id;
-                                                _selectedVariantCode = null;
-                                              });
-                                            }
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (_isPayPalSelected && widget.orderTotal != null)
-                              PayPalPaymentSummary(
-                                cartCurrency: widget.currency,
-                                orderTotal: widget.orderTotal!,
-                                exchangeRates: _exchangeRates,
-                                isLoading: _isLoadingExchangeRates &&
-                                    widget.currency.toUpperCase() != 'USD',
-                                errorMessage:
-                                    widget.currency.toUpperCase() != 'USD'
-                                        ? _exchangeRatesError
-                                        : null,
-                              )
-                            else if (_requiresPaymentPhone)
-                              PaymentAccountPhoneField(
-                                controller: _paymentPhoneController,
-                                initialCountryCode: _initialCountryCode,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _paymentPhoneNumber = value;
-                                  });
-                                },
-                              ),
-                            Padding(
-                              padding: const EdgeInsets.all(Spacing.md),
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: canPay
-                                      ? AppDecorations.primaryCtaGradient
-                                      : null,
-                                  color: canPay ? null : Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(28),
-                                  boxShadow: canPay
-                                      ? <BoxShadow>[
-                                          BoxShadow(
-                                            color: AppColors.pink
-                                                .withOpacity(0.35),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: canPay
-                                        ? _payWithSelectedMethod
-                                        : null,
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: Spacing.md + 2,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          LocalizationService.t(
-                                            context,
-                                            'checkout.payWithThisMethod',
-                                          ),
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                            color: canPay
-                                                ? Colors.white
-                                                : Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
+                        PriceTag(
+                          amount: widget.orderTotal!,
+                          currency: CountryCurrencyConstants.getCurrencySymbol(
+                            widget.currency,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.sm),
+                  ],
+                  AppButton.primary(
+                    label: context.tr('checkout.payWithThisMethod'),
+                    icon: Icons.lock_outline_rounded,
+                    loading: _isSubmitting,
+                    onPressed: canPay ? _onPayPressed : null,
+                  ),
+                ],
+              ),
             ),
+          ),
+        ],
+      );
+    }
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: <Widget>[
+            CheckoutScreenHeader(title: title),
+            Expanded(child: body),
           ],
         ),
       ),

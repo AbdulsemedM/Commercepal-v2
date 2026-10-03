@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 /// Coordinates the payment hint icon + banner that expands from / collapses
 /// into the header info button.
@@ -88,34 +89,20 @@ class PaymentHintController extends ChangeNotifier {
     return ListenableBuilder(
       listenable: this,
       builder: (BuildContext context, Widget? child) {
+        final ColorScheme scheme = Theme.of(context).colorScheme;
         final bool active = isExpanded;
-        return Material(
-          color: active
-              ? AppColors.pink.withValues(alpha: 0.12)
-              : AppColors.cream,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: toggle,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: active
-                      ? AppColors.pink.withValues(alpha: 0.45)
-                      : const Color(0xFFF0E6D8),
-                ),
-              ),
-              child: Icon(
-                Icons.info_outline_rounded,
-                color: active ? AppColors.pink : AppColors.navy,
-                size: 24,
-              ),
-            ),
+        return IconButton(
+          tooltip: context.tr('checkout.hint.tooltip'),
+          isSelected: active,
+          onPressed: toggle,
+          style: IconButton.styleFrom(
+            minimumSize: const Size.square(AppSizes.minTouchTarget),
+            foregroundColor: scheme.onSurfaceVariant,
+            backgroundColor:
+                active ? scheme.primaryContainer : Colors.transparent,
           ),
+          icon: const Icon(Icons.info_outline_rounded),
+          selectedIcon: Icon(Icons.info_rounded, color: scheme.primary),
         );
       },
     );
@@ -125,65 +112,64 @@ class PaymentHintController extends ChangeNotifier {
     return AnimatedBuilder(
       animation: _curved,
       builder: (BuildContext context, Widget? child) {
-        final double t = _curved.value;
+        // Reduced motion: jump straight to the end state.
+        final double t = MediaQuery.disableAnimationsOf(context)
+            ? (isExpanded ? 1.0 : 0.0)
+            : _curved.value;
         if (t <= 0.001) {
           return const SizedBox.shrink();
         }
         return ClipRect(
           child: Align(
-            alignment: Alignment.topRight,
+            alignment: AlignmentDirectional.topEnd,
             heightFactor: t,
             child: Opacity(
               opacity: t.clamp(0.0, 1.0),
-              child: Transform.scale(
-                alignment: Alignment.topRight,
-                scale: 0.88 + (0.12 * t),
-                child: child,
-              ),
+              child: child,
             ),
           ),
         );
       },
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Spacing.md,
-          Spacing.md,
-          Spacing.md,
-          Spacing.sm,
-        ),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(Spacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.pink.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.pink.withValues(alpha: 0.28),
+      child: Builder(
+        builder: (BuildContext context) {
+          final ThemeData theme = Theme.of(context);
+          final CommerceColors commerce = context.commerce;
+          return Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              Spacing.gutter,
+              Spacing.sm,
+              Spacing.gutter,
+              Spacing.xs,
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.pink,
-                size: 22,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(Spacing.sm),
+              decoration: BoxDecoration(
+                color: commerce.infoContainer,
+                borderRadius: AppRadius.mdAll,
               ),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    height: 1.4,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: commerce.info,
+                    size: AppSizes.iconMd,
                   ),
-                ),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Text(
+                      message,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: commerce.onInfoContainer,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-// import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
 
+import '../constants/spacing.dart';
+import '../theme/commerce_colors.dart';
+import '../theme/tokens.dart';
+
+/// Skeleton block with a sweeping highlight. Theme-aware (light/dark).
 class ShimmerLoading extends StatefulWidget {
   const ShimmerLoading({
     super.key,
@@ -20,20 +23,10 @@ class ShimmerLoading extends StatefulWidget {
 
 class _ShimmerLoadingState extends State<ShimmerLoading>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
+  late final AnimationController _controller = AnimationController(
+    duration: const Duration(milliseconds: 1300),
+    vsync: this,
+  )..repeat();
 
   @override
   void dispose() {
@@ -43,83 +36,124 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: <Color>[
-                Colors.grey[300]!,
-                Colors.grey[100]!,
-                Colors.grey[300]!,
-              ],
-              stops: <double>[
-                _animation.value - 0.3,
-                _animation.value,
-                _animation.value + 0.3,
-              ].map((stop) => stop.clamp(0.0, 1.0)).toList(),
+    final CommerceColors c = context.commerce;
+    // Respect the OS "reduce motion" setting with a static placeholder.
+    final bool reduceMotion =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final BorderRadius radius = widget.borderRadius ?? AppRadius.smAll;
+
+    if (reduceMotion) {
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(color: c.skeletonBase, borderRadius: radius),
+      );
+    }
+
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (BuildContext context, Widget? child) {
+          final double t = _controller.value * 2 - 0.5;
+          return Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: <Color>[
+                  c.skeletonBase,
+                  c.skeletonHighlight,
+                  c.skeletonBase,
+                ],
+                stops: <double>[t - 0.35, t, t + 0.35]
+                    .map((double s) => s.clamp(0.0, 1.0))
+                    .toList(),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
 
+/// Placeholder shaped like a product tile.
 class ProductCardShimmer extends StatelessWidget {
   const ProductCardShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: scheme.surface,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: context.commerce.border),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Image shimmer
-          ShimmerLoading(
-            height: 120,
-            width: double.infinity,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
+          const AspectRatio(
+            aspectRatio: 1,
+            child: ShimmerLoading(borderRadius: BorderRadius.zero),
           ),
           Padding(
-            padding: const EdgeInsets.all(Spacing.sm),
+            padding: const EdgeInsets.all(Spacing.xs + 2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                // Title shimmer
+                const ShimmerLoading(height: 12, width: double.infinity),
+                const SizedBox(height: 6),
+                const ShimmerLoading(height: 12, width: 96),
+                const SizedBox(height: Spacing.xs + 2),
                 ShimmerLoading(
-                  height: 14,
-                  width: double.infinity,
-                  borderRadius: BorderRadius.circular(4),
+                  height: 18,
+                  width: 72,
+                  borderRadius: AppRadius.xsAll,
                 ),
-                const SizedBox(height: Spacing.xs),
-                ShimmerLoading(
-                  height: 14,
-                  width: 100,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: Spacing.xs),
-                // Price shimmer
-                ShimmerLoading(
-                  height: 16,
-                  width: 80,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Placeholder shaped like a list row (orders, addresses, notifications).
+class ListTileShimmer extends StatelessWidget {
+  const ListTileShimmer({super.key, this.leadingSize = 56});
+
+  final double leadingSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.gutter,
+        vertical: Spacing.sm,
+      ),
+      child: Row(
+        children: <Widget>[
+          ShimmerLoading(
+            width: leadingSize,
+            height: leadingSize,
+            borderRadius: AppRadius.smAll,
+          ),
+          const SizedBox(width: Spacing.sm),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ShimmerLoading(height: 13, width: double.infinity),
+                SizedBox(height: 8),
+                ShimmerLoading(height: 12, width: 140),
               ],
             ),
           ),

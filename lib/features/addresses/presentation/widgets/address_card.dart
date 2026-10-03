@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../data/models/address.dart';
 
@@ -21,149 +19,132 @@ class AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: Spacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-        border: Border.all(
-          color: address.isDefault ? AppColors.primary : Colors.grey.shade300,
-          width: address.isDefault ? 2 : 1,
-        ),
-        boxShadow: AppDecorations.softCardShadow(),
-      ),
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final String formatted = _formatAddress(address);
+    final bool hasActions =
+        !address.isDefault || address.canEdit || address.canDelete;
+
+    return Card(
+      shape: address.isDefault
+          ? RoundedRectangleBorder(
+              borderRadius: AppRadius.mdAll,
+              side: BorderSide(color: scheme.primary, width: 1.5),
+            )
+          : null,
       child: Padding(
-        padding: const EdgeInsets.all(Spacing.md),
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          Spacing.md,
+          Spacing.md,
+          Spacing.md,
+          Spacing.xs,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(top: 2),
+                  child: Icon(
+                    Icons.location_on_outlined,
+                    size: AppSizes.iconMd,
+                    color: address.isDefault
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: Spacing.sm),
                 Expanded(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (address.isDefault)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.sm,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            LocalizationService.t(context, 'addresses.defaultLabel'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                      Wrap(
+                        spacing: Spacing.xs,
+                        runSpacing: Spacing.xxs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            address.receiverName,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: scheme.onSurface,
                             ),
                           ),
-                        ),
-                      if (address.isDefault) const SizedBox(width: Spacing.sm),
-                      Expanded(
-                        child: Text(
-                          address.receiverName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.navy,
+                          if (address.isDefault)
+                            AppBadge(
+                              label: context.tr('addresses.card.defaultBadge'),
+                              tone: AppBadgeTone.brand,
+                              icon: Icons.check_rounded,
+                            ),
+                        ],
+                      ),
+                      if (formatted.isNotEmpty) ...[
+                        const SizedBox(height: Spacing.xxs),
+                        Text(
+                          formatted,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            height: 1.4,
                           ),
                         ),
-                      ),
+                      ],
+                      if (address.phoneNumber.isNotEmpty) ...[
+                        const SizedBox(height: Spacing.xxs),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.phone_outlined,
+                              size: AppSizes.iconSm,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: Spacing.xxs),
+                            Flexible(
+                              child: Text(
+                                address.phoneNumber,
+                                textDirection: TextDirection.ltr,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  fontFeatures: AppTypography.tabularFigures,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      onEdit();
-                    } else if (value == 'delete') {
-                      onDelete();
-                    } else if (value == 'set_default') {
-                      onSetDefault();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    if (!address.isDefault)
-                      PopupMenuItem(
-                        value: 'set_default',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.star_outline, size: 18),
-                            const SizedBox(width: Spacing.sm),
-                            Text(LocalizationService.t(context, 'addresses.setAsDefault')),
-                          ],
-                        ),
-                      ),
-                    if (address.canEdit)
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_outlined, size: 18),
-                            const SizedBox(width: Spacing.sm),
-                            Text(LocalizationService.t(context, 'addresses.edit')),
-                          ],
-                        ),
-                      ),
-                    if (address.canDelete)
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                            const SizedBox(width: Spacing.sm),
-                            Text(LocalizationService.t(context, 'addresses.delete'), style: const TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
               ],
             ),
-            const SizedBox(height: Spacing.sm),
-            Row(
-              children: [
-                Icon(
-                  Icons.phone_outlined,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: Spacing.xs),
-                Text(
-                  address.phoneNumber,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Spacing.sm),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: Spacing.xs),
-                Expanded(
-                  child: Text(
-                    _formatAddress(address),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                      height: 1.4,
+            if (hasActions) ...[
+              const SizedBox(height: Spacing.xs),
+              Divider(height: 1, color: context.commerce.border),
+              Wrap(
+                spacing: Spacing.xxs,
+                children: [
+                  if (address.canEdit)
+                    _ActionButton(
+                      label: context.tr('addresses.edit'),
+                      icon: Icons.edit_outlined,
+                      onPressed: onEdit,
                     ),
-                  ),
-                ),
-              ],
-            ),
+                  if (address.canDelete)
+                    _ActionButton(
+                      label: context.tr('addresses.delete'),
+                      icon: Icons.delete_outline_rounded,
+                      color: scheme.error,
+                      onPressed: onDelete,
+                    ),
+                  if (!address.isDefault)
+                    _ActionButton(
+                      label: context.tr('addresses.card.setDefault'),
+                      icon: Icons.star_outline_rounded,
+                      onPressed: onSetDefault,
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -172,7 +153,7 @@ class AddressCard extends StatelessWidget {
 
   String _formatAddress(Address address) {
     final parts = <String>[];
-    
+
     if (address.street.isNotEmpty) {
       parts.add(address.street);
     }
@@ -191,7 +172,35 @@ class AddressCard extends StatelessWidget {
     if (address.country.isNotEmpty) {
       parts.add(address.country);
     }
-    
+
     return parts.join(', ');
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        minimumSize: const Size(AppSizes.minTouchTarget, AppSizes.minTouchTarget),
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+      ),
+      icon: Icon(icon, size: AppSizes.iconSm + 2),
+      label: Text(label),
+    );
   }
 }

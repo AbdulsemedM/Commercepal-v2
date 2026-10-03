@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -102,20 +103,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: BlocListener<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state is ProfileLoaded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(LocalizationService.t(context, 'profile.profileUpdatedSuccessfully')),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, LocalizationService.t(context, 'profile.profileUpdatedSuccessfully'));
             context.pop();
           } else if (state is ProfileError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           }
         },
         child: Builder(
@@ -131,13 +122,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(Spacing.xs),
                 decoration: BoxDecoration(
-                  color: AppDecorations.softCream,
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new,
                   size: 18,
-                  color: AppColors.navy,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               onPressed: () => context.pop(),
@@ -146,7 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               LocalizationService.t(context, 'profile.editProfile'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.navy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -413,7 +404,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: AppDecorations.softCream,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: scheme.outlineVariant),
@@ -475,7 +466,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: AppDecorations.softCream,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: scheme.outlineVariant),
