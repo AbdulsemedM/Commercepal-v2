@@ -51,7 +51,7 @@ class ShareSection extends StatelessWidget {
           const SizedBox(width: Spacing.sm),
           // Email icon
           IconButton(
-            icon: const Icon(Icons.email, color: Colors.grey),
+            icon: Icon(Icons.email, color: Theme.of(context).colorScheme.onSurfaceVariant),
             onPressed: () {
               // TODO: Handle Email share
             },

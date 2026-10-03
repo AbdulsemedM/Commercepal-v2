@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/locale/locale_controller.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -11,11 +10,12 @@ class _LangOption {
   final String label;
 }
 
+/// Endonyms: each language is shown in its own script.
 const List<_LangOption> _options = [
   _LangOption(code: 'en', label: 'English'),
   _LangOption(code: 'ar', label: 'العربية'),
   _LangOption(code: 'am', label: 'አማርኛ'),
-  _LangOption(code: 'so', label: 'Afaan Soomaali'),
+  _LangOption(code: 'so', label: 'Af-Soomaali'),
 ];
 
 class LanguageSelectionBottomSheet {
@@ -25,35 +25,45 @@ class LanguageSelectionBottomSheet {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      showDragHandle: true,
       builder: (BuildContext sheetContext) {
+        final ThemeData theme = Theme.of(sheetContext);
+        final ColorScheme scheme = theme.colorScheme;
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: Spacing.md),
+            padding: const EdgeInsets.only(bottom: Spacing.sm),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
-                  child: Text(
-                    LocalizationService.t(sheetContext, 'profile.language'),
-                    style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
-                        ),
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.gutter,
+                    0,
+                    Spacing.gutter,
+                    Spacing.xs,
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      sheetContext.tr('profile.language'),
+                      style: theme.textTheme.titleLarge,
+                    ),
                   ),
                 ),
-                const SizedBox(height: Spacing.sm),
                 ..._options.map((_LangOption option) {
                   final isSelected = currentCode == option.code;
                   return ListTile(
-                    title: Text(option.label),
+                    selected: isSelected,
+                    title: Text(
+                      option.label,
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
                     trailing: isSelected
-                        ? Icon(Icons.check, color: AppColors.primary, size: 22)
+                        ? Icon(Icons.check_rounded, color: scheme.primary)
                         : null,
                     onTap: () async {
                       await localeController.setLocale(option.code);

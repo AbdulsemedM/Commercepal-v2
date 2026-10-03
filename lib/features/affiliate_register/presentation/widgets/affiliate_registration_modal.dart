@@ -102,7 +102,7 @@ class _AffiliateRegistrationModalState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -120,13 +120,13 @@ class _AffiliateRegistrationModalState
               LocalizationService.t(context, 'affiliate.modalSubtitle'),
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: Spacing.lg),
             Text(
               LocalizationService.t(context, 'affiliate.commissionType'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -148,7 +148,7 @@ class _AffiliateRegistrationModalState
             Text(
               LocalizationService.t(context, 'affiliate.referralCode'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -164,11 +164,11 @@ class _AffiliateRegistrationModalState
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -196,7 +196,7 @@ class _AffiliateRegistrationModalState
                   backgroundColor: AppColors.primary,
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                  disabledBackgroundColor: Colors.grey[300],
+                  disabledBackgroundColor: Theme.of(context).colorScheme.outlineVariant,
                 ),
                 child: _isLoading
                     ? const SizedBox(
@@ -244,10 +244,10 @@ class _AffiliateRegistrationModalState
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary.withOpacity(0.1)
-                : Colors.grey[100],
+                : Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.outlineVariant,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -256,7 +256,7 @@ class _AffiliateRegistrationModalState
               displayLabel,
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : Colors.grey[700],
+                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),

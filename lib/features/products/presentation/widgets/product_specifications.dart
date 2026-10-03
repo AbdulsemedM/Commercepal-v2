@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
 
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
+
+/// Key/value specification table, collapsed to [collapsedCount] rows.
 class ProductSpecifications extends StatefulWidget {
   const ProductSpecifications({
     super.key,
@@ -22,10 +23,10 @@ class _ProductSpecificationsState extends State<ProductSpecifications> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.specifications.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (widget.specifications.isEmpty) return const SizedBox.shrink();
 
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     final List<MapEntry<String, String>> entries =
         widget.specifications.entries.toList();
     final bool canExpand = entries.length > widget.collapsedCount;
@@ -34,90 +35,78 @@ class _ProductSpecificationsState extends State<ProductSpecifications> {
         : entries.take(widget.collapsedCount).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(Spacing.md),
-        decoration: AppDecorations.elevatedCard(background: Colors.white),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Specifications',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.navy,
-                  ),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Semantics(
+            header: true,
+            child: Text(
+              context.tr('product.specifications'),
+              style: theme.textTheme.titleLarge,
             ),
-            const SizedBox(height: Spacing.sm),
-            ...List<Widget>.generate(visible.length, (int index) {
-              final MapEntry<String, String> entry = visible[index];
-              return Column(
+          ),
+          const SizedBox(height: Spacing.sm),
+          Card(
+            child: AnimatedSize(
+              duration: AppMotion.medium,
+              alignment: Alignment.topCenter,
+              child: Column(
                 children: <Widget>[
-                  if (index > 0)
-                    Divider(height: 1, color: Colors.grey[200]),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 5,
-                          child: Text(
-                            entry.key,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: Colors.grey[600]),
+                  for (int i = 0; i < visible.length; i++)
+                    Container(
+                      color: i.isEven
+                          ? scheme.surfaceContainerLow
+                          : scheme.surface,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.md,
+                        vertical: Spacing.sm,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Expanded(
+                            flex: 4,
+                            child: Text(
+                              visible[i].key,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: Spacing.sm),
-                        Expanded(
-                          flex: 6,
-                          child: Text(
-                            entry.value,
-                            textAlign: TextAlign.right,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.navy,
-                                ),
+                          const SizedBox(width: Spacing.sm),
+                          Expanded(
+                            flex: 6,
+                            child: Text(
+                              visible[i].value,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
-              );
-            }),
-            if (canExpand) ...[
-              const SizedBox(height: Spacing.xs),
-              Center(
-                child: TextButton(
-                  onPressed: () => setState(() => _expanded = !_expanded),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.pink,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.md,
-                      vertical: Spacing.xs,
-                    ),
-                  ),
-                  child: Text(
-                    _expanded
-                        ? 'Show less'
-                        : 'Show all ${entries.length} specifications',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
               ),
-            ],
-          ],
-        ),
+            ),
+          ),
+          if (canExpand)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppButton.text(
+                label: _expanded
+                    ? context.tr('product.showLess')
+                    : context.tr('product.showAllSpecs', <String, Object?>{
+                        'count': entries.length,
+                      }),
+                trailingIcon: _expanded
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                onPressed: () => setState(() => _expanded = !_expanded),
+              ),
+            ),
+        ],
       ),
     );
   }

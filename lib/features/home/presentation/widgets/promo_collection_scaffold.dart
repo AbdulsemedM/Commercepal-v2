@@ -52,7 +52,7 @@ class PromoCollectionScaffold extends StatelessWidget {
     }
 
     final Widget body = Scaffold(
-      backgroundColor: AppColors.cream,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
@@ -80,7 +80,7 @@ class PromoCollectionScaffold extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: Spacing.md,
                       mainAxisSpacing: Spacing.md,
-                      childAspectRatio: 0.52,
+                      childAspectRatio: kProductGridAspectRatio,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (BuildContext context, int index) =>
@@ -131,7 +131,7 @@ class PromoCollectionScaffold extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: Spacing.md,
                       mainAxisSpacing: Spacing.md,
-                      childAspectRatio: 0.52,
+                      childAspectRatio: kProductGridAspectRatio,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (BuildContext context, int index) {

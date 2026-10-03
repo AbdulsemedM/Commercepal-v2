@@ -1,211 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 
+/// Sticky purchase bar on the product page.
+///
+/// Not in cart: [wishlist] · Buy now · Add to cart.
+/// In cart: "In your cart" confirmation · View cart.
 class AddToCartSection extends StatelessWidget {
   const AddToCartSection({
     super.key,
     required this.isInCart,
-    required this.quantity,
-    required this.unitPrice,
     required this.onAddToCart,
-    required this.onQuantityChanged,
-    required this.onToggleFavorite,
+    this.onToggleFavorite,
+    this.onBuyNow,
+    this.onViewCart,
     this.isInWishlist = false,
     this.isAddingToCart = false,
     this.canAddToCart = true,
     this.total,
+    this.quantity = 1,
   });
 
   final bool isInCart;
-  final int quantity;
-  final String unitPrice;
   final VoidCallback onAddToCart;
-  final ValueChanged<int> onQuantityChanged;
-  final VoidCallback onToggleFavorite;
+  final VoidCallback? onBuyNow;
+  final VoidCallback? onViewCart;
+  /// Optional wishlist toggle; hidden when null (e.g. shown on the gallery).
+  final VoidCallback? onToggleFavorite;
   final bool isInWishlist;
   final bool isAddingToCart;
 
   /// False when the catalog record is unsellable or has no usable price.
   final bool canAddToCart;
 
-  /// Preformatted line total. Falls back to [unitPrice] when the caller cannot
-  /// resolve a numeric price.
+  /// Pre-formatted total for the current selection, shown above the buttons
+  /// when more than one unit is selected.
   final String? total;
+  final int quantity;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors c = context.commerce;
+
+    final Widget wishlist = IconButton.outlined(
+      tooltip: context.tr(
+        isInWishlist ? 'product.removeFromWishlist' : 'product.addToWishlist',
+      ),
+      isSelected: isInWishlist,
+      onPressed: onToggleFavorite,
+      style: IconButton.styleFrom(
+        minimumSize: const Size.square(AppSizes.buttonLg),
+        side: BorderSide(color: scheme.outline),
+      ),
+      icon: const Icon(Icons.favorite_border_rounded),
+      selectedIcon: Icon(Icons.favorite_rounded, color: scheme.primary),
+    );
+
+    final Widget content;
     if (isInCart) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: scheme.shadow.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      content = Row(
+        children: <Widget>[
+          Icon(Icons.check_circle_rounded, color: c.success),
+          const SizedBox(width: Spacing.xs),
+          Expanded(
+            child: Text(
+              context.tr('product.inYourCart'),
+              style: theme.textTheme.titleSmall?.copyWith(color: c.success),
             ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: <Widget>[
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: scheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18),
-                      onPressed: quantity > 1
-                          ? () => onQuantityChanged(quantity - 1)
-                          : null,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
+          ),
+          AppButton.primary(
+            label: context.tr('product.viewCart'),
+            trailingIcon: Icons.arrow_forward_rounded,
+            fullWidth: false,
+            onPressed: onViewCart,
+          ),
+        ],
+      );
+    } else {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (canAddToCart && total != null && quantity > 1)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.xs),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    context.tr('product.itemsSelected', <String, Object?>{
+                      'count': quantity,
+                    }),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    Container(
-                      width: 40,
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$quantity',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                      ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    total!,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontFeatures: AppTypography.tabularFigures,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 18),
-                      onPressed: () => onQuantityChanged(quantity + 1),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: Spacing.sm),
+            ),
+          Row(
+            children: <Widget>[
+              if (onToggleFavorite != null) ...<Widget>[
+                wishlist,
+                const SizedBox(width: Spacing.xs),
+              ],
+              if (canAddToCart && onBuyNow != null) ...<Widget>[
+                Expanded(
+                  child: AppButton.secondary(
+                    label: context.tr('product.buyNow'),
+                    onPressed: isAddingToCart ? null : onBuyNow,
+                  ),
+                ),
+                const SizedBox(width: Spacing.xs),
+              ],
               Expanded(
-                child: Text(
-                  '${LocalizationService.t(context, 'productDetail.total')} ${total ?? unitPrice}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                  textAlign: TextAlign.right,
+                child: AppButton.primary(
+                  label: canAddToCart
+                      ? context.tr('productDetail.addToCart')
+                      : context.tr('productDetail.unavailable'),
+                  loading: isAddingToCart,
+                  onPressed: canAddToCart ? onAddToCart : null,
                 ),
               ),
             ],
           ),
-        ),
+        ],
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        Spacing.md,
-        Spacing.sm,
-        Spacing.md,
-        Spacing.sm,
-      ),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: scheme.surface,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        border: Border(top: BorderSide(color: c.border)),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: (isAddingToCart || !canAddToCart) ? null : onAddToCart,
-                  borderRadius: BorderRadius.circular(999),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      gradient: canAddToCart && !isAddingToCart
-                          ? AppDecorations.primaryCtaGradient
-                          : null,
-                      color: canAddToCart && !isAddingToCart
-                          ? null
-                          : scheme.surfaceContainerHighest,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      alignment: Alignment.center,
-                      child: isAddingToCart
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              canAddToCart
-                                  ? LocalizationService.t(
-                                      context,
-                                      'productDetail.addToCart',
-                                    )
-                                  : LocalizationService.t(
-                                      context,
-                                      'productDetail.unavailable',
-                                    ),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: canAddToCart
-                                    ? Colors.white
-                                    : scheme.onSurfaceVariant,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.gutter,
+            Spacing.sm,
+            Spacing.gutter,
+            Spacing.sm,
+          ),
+          child: AnimatedSwitcher(
+            duration: AppMotion.medium,
+            child: KeyedSubtree(
+              key: ValueKey<bool>(isInCart),
+              child: content,
             ),
-            const SizedBox(width: Spacing.sm),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.primary, width: 1.5),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  isInWishlist ? Icons.favorite : Icons.favorite_border,
-                  color: AppColors.primary,
-                ),
-                onPressed: onToggleFavorite,
-                padding: const EdgeInsets.all(Spacing.sm),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

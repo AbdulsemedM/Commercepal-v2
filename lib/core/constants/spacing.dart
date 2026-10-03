@@ -1,3 +1,4 @@
+/// 4-pt spacing scale. Use these instead of literal paddings.
 class Spacing {
   Spacing._();
 
@@ -8,4 +9,8 @@ class Spacing {
   static const double lg = 20;
   static const double xl = 24;
   static const double xxl = 32;
+  static const double xxxl = 48;
+
+  /// Horizontal page gutter used by every screen.
+  static const double gutter = md;
 }

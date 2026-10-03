@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/core/widgets/checkout_screen_header.dart';
 import 'package:commercepal/services/localization_service.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../cart/bloc/cart_bloc.dart';
 import '../../bloc/payment_status_cubit.dart';
-import '../../data/models/payment_constants.dart';
 import '../widgets/payment_status_polling_banner.dart';
 
 /// Allowed hosts for payment WebView (exact host or subdomain).
@@ -130,6 +127,9 @@ class _PaymentWebViewBodyState extends State<_PaymentWebViewBody>
           },
           onWebResourceError: (WebResourceError error) {
             if (!mounted) return;
+            // A failing image/script/tracker on the provider's page must not
+            // replace the whole payment page with an error.
+            if (error.isForMainFrame == false) return;
             setState(() {
               _isLoading = false;
               _loadError = error.description.isNotEmpty
@@ -164,33 +164,98 @@ class _PaymentWebViewBodyState extends State<_PaymentWebViewBody>
   @override
   Widget build(BuildContext context) {
     final String? orderNumber = widget.orderNumber?.trim();
+    final ThemeData theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(LocalizationService.t(context, 'checkout.completePayment')),
-      ),
-      body: Column(
-        children: <Widget>[
-          if (orderNumber != null && orderNumber.isNotEmpty)
-            PaymentStatusPollingBanner(
-              orderNumber: orderNumber,
-              onSuccess: () => navigateOnPaymentStatusSuccess(
-                context,
-                clearCart: true,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: <Widget>[
+            CheckoutScreenHeader(
+              title: context.tr('checkout.completePayment'),
+              trailing: Padding(
+                padding: const EdgeInsetsDirectional.only(end: Spacing.sm),
+                child: Tooltip(
+                  message: context.tr('checkout.webview.secure'),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    size: AppSizes.iconMd,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    semanticLabel: context.tr('checkout.webview.secure'),
+                  ),
+                ),
               ),
             ),
-          Expanded(
-            child: _loadError != null
-                ? Center(child: Text(_loadError!))
-                : Stack(
-                    children: <Widget>[
-                      WebViewWidget(controller: _controller),
-                      if (_isLoading)
-                        const Center(child: CircularProgressIndicator()),
-                    ],
+            if (orderNumber != null && orderNumber.isNotEmpty)
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  Spacing.gutter,
+                  0,
+                  Spacing.gutter,
+                  Spacing.sm,
+                ),
+                child: PaymentStatusPollingBanner(
+                  orderNumber: orderNumber,
+                  onSuccess: () => navigateOnPaymentStatusSuccess(
+                    context,
+                    clearCart: true,
                   ),
-          ),
-        ],
+                ),
+              ),
+            Divider(height: 1, thickness: 1, color: context.commerce.border),
+            Expanded(
+              child: _loadError != null
+                  ? _buildError(context)
+                  : Stack(
+                      children: <Widget>[
+                        WebViewWidget(controller: _controller),
+                        if (_isLoading) ...<Widget>[
+                          PositionedDirectional(
+                            top: 0,
+                            start: 0,
+                            end: 0,
+                            child: LinearProgressIndicator(
+                              minHeight: 2,
+                              color: theme.colorScheme.primary,
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                          Center(
+                            child: Semantics(
+                              liveRegion: true,
+                              label: context.tr('checkout.webview.loading'),
+                              child: const CircularProgressIndicator(),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(BuildContext context) {
+    final bool blocked = !_isPaymentUrlAllowed(widget.paymentUrl);
+    return SafeArea(
+      top: false,
+      child: AppEmptyState(
+        isError: true,
+        icon: blocked ? Icons.gpp_bad_outlined : Icons.cloud_off_outlined,
+        title: context.tr(
+          blocked
+              ? 'checkout.webview.blockedTitle'
+              : 'checkout.webview.errorTitle',
+        ),
+        subtitle: context.tr(
+          blocked
+              ? 'checkout.webview.blockedBody'
+              : 'checkout.webview.errorBody',
+        ),
+        primaryLabel: context.tr('common.goBack'),
+        onPrimary: () => Navigator.of(context).maybePop(),
       ),
     );
   }

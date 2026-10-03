@@ -5,9 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/router/app_router.dart';
-import '../../../../core/constants/spacing.dart';
-import '../../../../core/theme/colors.dart';
-import '../../../../core/utils/money_formatter.dart';
+import '../../../../core/constants/country_currency_constants.dart';
+import '../../../../core/design_system.dart';
 import '../../../../services/localization_service.dart';
 import '../../bloc/payment_status_cubit.dart';
 import '../../data/models/checkout_response.dart';
@@ -26,9 +25,6 @@ class OrderConfirmedPaymentPendingScreen extends StatelessWidget {
   final CheckoutResponse response;
   final PaymentInitiateResult? initiateResult;
   final String? paymentProviderCode;
-
-  static const Color _pendingTint = Color(0xFFFFF8E1);
-  static const Color _pendingBorder = Color(0xFFFFE082);
 
   @override
   Widget build(BuildContext context) {
@@ -89,15 +85,15 @@ class _OrderConfirmedPaymentPendingBodyState
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
     final summary = widget.response.pricingSummary;
     final currency =
         (summary?.currency ?? widget.response.currency ?? '').trim().isNotEmpty
             ? (summary?.currency ?? widget.response.currency)!.trim()
             : 'ETB';
     final subtotal = summary?.subtotal;
-    final total = widget.response.resolvedTotalAmount ??
-        summary?.totalAmount ??
-        subtotal;
+    final total =
+        widget.response.resolvedTotalAmount ?? summary?.totalAmount ?? subtotal;
     final checkoutInstructions =
         widget.response.paymentInitiation?.resolvedInstructions ?? '';
     final initiateInstructions =
@@ -110,6 +106,11 @@ class _OrderConfirmedPaymentPendingBodyState
     final paymentRef = widget.initiateResult?.resolvedReference ??
         widget.response.paymentInitiation?.paymentReference?.trim() ??
         '';
+    final bool hasUssd = (widget.initiateResult?.ussdCode != null &&
+            widget.initiateResult!.ussdCode!.isNotEmpty) ||
+        (widget.response.ussdCode != null &&
+            widget.response.ussdCode!.trim().isNotEmpty);
+    final String method = widget.paymentProviderCode?.trim() ?? '';
 
     return PopScope(
       canPop: false,
@@ -118,181 +119,212 @@ class _OrderConfirmedPaymentPendingBodyState
         context.go(AppRoutes.dashboard);
       },
       child: Scaffold(
-        backgroundColor: scheme.surface,
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.xl,
-              vertical: Spacing.lg,
-            ),
-            child: Column(
-              children: <Widget>[
-                const SizedBox(height: Spacing.md),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: OrderConfirmedPaymentPendingScreen._pendingTint,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: OrderConfirmedPaymentPendingScreen._pendingBorder,
-                      width: 2,
-                    ),
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.gutter,
+                    Spacing.xl,
+                    Spacing.gutter,
+                    Spacing.lg,
                   ),
-                  child: Icon(
-                    Icons.hourglass_top_rounded,
-                    size: 40,
-                    color: AppColors.warning.withValues(alpha: 0.95),
-                  ),
-                ),
-              const SizedBox(height: Spacing.lg),
-              Text(
-                LocalizationService.t(context, 'checkout.paymentPendingTitle'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Spacing.sm),
-              Text(
-                LocalizationService.t(
-                  context,
-                  'checkout.paymentPendingSubtitle',
-                ),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurface,
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Spacing.xl),
-              if (widget.orderNumber.isNotEmpty) ...[
-                PaymentStatusPollingBanner(
-                  orderNumber: widget.orderNumber,
-                  clearCartOnSuccess: true,
-                  onSuccess: () => navigateOnPaymentStatusSuccess(context),
-                ),
-                const SizedBox(height: Spacing.lg),
-              ],
-              if (pending) _PaymentPendingBanner(theme: theme, scheme: scheme),
-              if (pending) const SizedBox(height: Spacing.lg),
-              if ((widget.initiateResult?.ussdCode != null &&
-                      widget.initiateResult!.ussdCode!.isNotEmpty) ||
-                  (widget.response.ussdCode != null &&
-                      widget.response.ussdCode!.trim().isNotEmpty)) ...[
-                _UssdCard(
-                  theme: theme,
-                  scheme: scheme,
-                  ussdCode: widget.initiateResult?.ussdCode?.trim().isNotEmpty ==
-                          true
-                      ? widget.initiateResult!.ussdCode!
-                      : widget.response.ussdCode!.trim(),
-                  reference: widget.initiateResult?.resolvedReference,
-                ),
-                const SizedBox(height: Spacing.lg),
-              ],
-              _OrderSummaryCard(
-                theme: theme,
-                scheme: scheme,
-                orderNumber: widget.orderNumber,
-                subtotal: subtotal,
-                total: total,
-                currency: currency,
-                showInitiatedBadge: pending,
-                paymentReference: paymentRef,
-              ),
-              if (widget.initiateResult?.message != null &&
-                  widget.initiateResult!.message!.isNotEmpty) ...[
-                const SizedBox(height: Spacing.lg),
-                _InstructionsCard(
-                  theme: theme,
-                  scheme: scheme,
-                  instructions: widget.initiateResult!.message!,
-                  titleKey: 'checkout.edahabInitiateTitle',
-                ),
-              ],
-              if (instructions.isNotEmpty) ...[
-                const SizedBox(height: Spacing.lg),
-                _InstructionsCard(
-                  theme: theme,
-                  scheme: scheme,
-                  instructions: instructions,
-                  titleKey: 'checkout.howToCompletePayment',
-                ),
-              ],
-              const SizedBox(height: Spacing.xxl),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => context.go(AppRoutes.orderHistory),
-                  icon: const Icon(Icons.receipt_long_outlined, size: 20),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: scheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  label: Text(
-                    LocalizationService.t(
-                      context,
-                      'checkout.viewOrderHistory',
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: Spacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.go(AppRoutes.dashboard),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.secondary,
-                    side: const BorderSide(color: AppColors.secondary),
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    LocalizationService.t(
-                      context,
-                      'checkout.continueShopping',
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: Spacing.lg),
-              Text.rich(
-                TextSpan(
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  children: <InlineSpan>[
-                    TextSpan(
-                      text: LocalizationService.t(
-                        context,
-                        'checkout.orderConfirmedHelpPrefix',
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppSizes.maxContentWidth,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Center(
+                            child: ExcludeSemantics(
+                              child: Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(
+                                  color: commerce.warningContainer,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.hourglass_top_rounded,
+                                  size: 44,
+                                  color: commerce.warning,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.lg),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              context.tr('checkout.paymentPendingTitle'),
+                              style: theme.textTheme.headlineSmall,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.xs),
+                          Text(
+                            context.tr('checkout.paymentPendingSubtitle'),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: Spacing.xl),
+                          if (widget.orderNumber.isNotEmpty) ...[
+                            PaymentStatusPollingBanner(
+                              orderNumber: widget.orderNumber,
+                              clearCartOnSuccess: true,
+                              onSuccess: () =>
+                                  navigateOnPaymentStatusSuccess(context),
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                          ],
+                          if (pending) ...[
+                            const _PaymentPendingBanner(),
+                            const SizedBox(height: Spacing.md),
+                          ],
+                          if (hasUssd) ...[
+                            _UssdCard(
+                              ussdCode: widget.initiateResult?.ussdCode
+                                          ?.trim()
+                                          .isNotEmpty ==
+                                      true
+                                  ? widget.initiateResult!.ussdCode!
+                                  : widget.response.ussdCode!.trim(),
+                              reference:
+                                  widget.initiateResult?.resolvedReference,
+                            ),
+                            const SizedBox(height: Spacing.md),
+                          ],
+                          _OrderSummaryCard(
+                            orderNumber: widget.orderNumber,
+                            subtotal: subtotal,
+                            total: total,
+                            currency: currency,
+                            showInitiatedBadge: pending,
+                            paymentReference: paymentRef,
+                            paymentMethod: method,
+                          ),
+                          if (widget.initiateResult?.message != null &&
+                              widget.initiateResult!.message!.isNotEmpty) ...[
+                            const SizedBox(height: Spacing.md),
+                            _InstructionsCard(
+                              instructions: widget.initiateResult!.message!,
+                              titleKey: 'checkout.edahabInitiateTitle',
+                            ),
+                          ],
+                          if (instructions.isNotEmpty) ...[
+                            const SizedBox(height: Spacing.md),
+                            _InstructionsCard(
+                              instructions: instructions,
+                              titleKey: 'checkout.pending.howToPay',
+                            ),
+                          ],
+                          const SizedBox(height: Spacing.lg),
+                          Text.rich(
+                            TextSpan(
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                              children: <InlineSpan>[
+                                TextSpan(
+                                  text: context.tr(
+                                    'checkout.orderConfirmedHelpPrefix',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: widget.orderNumber,
+                                  style: TextStyle(
+                                    color: scheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                    TextSpan(
-                      text: widget.orderNumber,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: Spacing.md),
+              _BottomActions(
+                children: <Widget>[
+                  AppButton.primary(
+                    label: context.tr('checkout.viewOrderHistory'),
+                    icon: Icons.receipt_long_outlined,
+                    onPressed: () => context.go(AppRoutes.orderHistory),
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  AppButton.secondary(
+                    label: context.tr('checkout.continueShopping'),
+                    size: AppButtonSize.medium,
+                    onPressed: () => context.go(AppRoutes.dashboard),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Surface bar pinned to the bottom with a top hairline, matching the
+/// "Place order" bar on the payment step.
+class _BottomActions extends StatelessWidget {
+  const _BottomActions({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: context.commerce.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.gutter,
+          Spacing.sm,
+          Spacing.gutter,
+          Spacing.sm,
+        ),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints:
+                const BoxConstraints(maxWidth: AppSizes.maxContentWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: children,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Muted caption shown above a value inside the cards.
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Text(
+      text,
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -300,129 +332,107 @@ class _OrderConfirmedPaymentPendingBodyState
 
 class _UssdCard extends StatelessWidget {
   const _UssdCard({
-    required this.theme,
-    required this.scheme,
     required this.ussdCode,
     this.reference,
   });
 
-  final ThemeData theme;
-  final ColorScheme scheme;
   final String ussdCode;
   final String? reference;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocalizationService.t(context, 'checkout.telebirrUssdTitle'),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 0.6,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: Spacing.sm),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  ussdCode,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+    final ThemeData theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          Spacing.md,
+          Spacing.sm,
+          Spacing.xs,
+          Spacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _FieldLabel(context.tr('checkout.telebirrUssdTitle')),
+                      const SizedBox(height: Spacing.xxs),
+                      // USSD codes always read left-to-right.
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: SelectableText(
+                          ussdCode,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontFeatures: AppTypography.tabularFigures,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              IconButton(
-                tooltip: LocalizationService.t(context, 'checkout.copyUssd'),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: ussdCode));
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        LocalizationService.t(context, 'checkout.ussdCopied'),
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.copy_outlined),
-              ),
-              IconButton(
-                tooltip: 'Open dialer',
-                onPressed: () async {
-                  final Uri uri =
-                      Uri.parse('tel:${Uri.encodeComponent(ussdCode)}');
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri);
-                  }
-                },
-                icon: const Icon(Icons.phone_outlined),
-              ),
+                IconButton(
+                  tooltip: context.tr('checkout.copyUssd'),
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: ussdCode));
+                    if (!context.mounted) return;
+                    AppSnackbars.success(
+                      context,
+                      context.tr('checkout.ussdCopied'),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded),
+                ),
+                IconButton(
+                  tooltip: context.tr('checkout.pending.openDialer'),
+                  onPressed: () async {
+                    final Uri uri =
+                        Uri.parse('tel:${Uri.encodeComponent(ussdCode)}');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    }
+                  },
+                  icon: const Icon(Icons.phone_outlined),
+                ),
+              ],
+            ),
+            if (reference != null && reference!.isNotEmpty) ...[
+              const SizedBox(height: Spacing.sm),
+              _FieldLabel(context.tr('checkout.reference')),
+              const SizedBox(height: Spacing.xxs),
+              SelectableText(reference!, style: theme.textTheme.bodyMedium),
             ],
-          ),
-          if (reference != null && reference!.isNotEmpty) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(
-              LocalizationService.t(context, 'checkout.reference'),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              reference!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
 class _PaymentPendingBanner extends StatelessWidget {
-  const _PaymentPendingBanner({required this.theme, required this.scheme});
-
-  final ThemeData theme;
-  final ColorScheme scheme;
+  const _PaymentPendingBanner();
 
   @override
   Widget build(BuildContext context) {
-    final Color bannerBg = scheme.brightness == Brightness.dark
-        ? AppColors.warning.withValues(alpha: 0.18)
-        : OrderConfirmedPaymentPendingScreen._pendingTint;
+    final ThemeData theme = Theme.of(context);
+    final CommerceColors commerce = context.commerce;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
+      padding: const EdgeInsets.all(Spacing.sm),
       decoration: BoxDecoration(
-        color: bannerBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: OrderConfirmedPaymentPendingScreen._pendingBorder,
-        ),
+        color: commerce.warningContainer,
+        borderRadius: AppRadius.mdAll,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Icon(
             Icons.info_outline_rounded,
-            color: AppColors.warning,
-            size: 22,
+            color: commerce.warning,
+            size: AppSizes.iconMd,
           ),
           const SizedBox(width: Spacing.sm),
           Expanded(
@@ -430,24 +440,16 @@ class _PaymentPendingBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  LocalizationService.t(
-                    context,
-                    'checkout.paymentPendingBannerTitle',
-                  ),
+                  context.tr('checkout.paymentPendingBannerTitle'),
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.onSurface,
+                    color: commerce.onWarningContainer,
                   ),
                 ),
-                const SizedBox(height: Spacing.xs),
+                const SizedBox(height: Spacing.xxs),
                 Text(
-                  LocalizationService.t(
-                    context,
-                    'checkout.paymentPendingBannerBody',
-                  ),
+                  context.tr('checkout.paymentPendingBannerBody'),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface,
-                    height: 1.35,
+                    color: commerce.onWarningContainer,
                   ),
                 ),
               ],
@@ -461,191 +463,131 @@ class _PaymentPendingBanner extends StatelessWidget {
 
 class _OrderSummaryCard extends StatelessWidget {
   const _OrderSummaryCard({
-    required this.theme,
-    required this.scheme,
     required this.orderNumber,
     required this.subtotal,
     required this.total,
     required this.currency,
     required this.showInitiatedBadge,
     this.paymentReference = '',
+    this.paymentMethod = '',
   });
 
-  final ThemeData theme;
-  final ColorScheme scheme;
   final String orderNumber;
   final num? subtotal;
   final num? total;
   final String currency;
   final bool showInitiatedBadge;
   final String paymentReference;
+  final String paymentMethod;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      LocalizationService.t(context, 'checkout.orderNumberLabel'),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.xs),
-                    Row(
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            orderNumber.isEmpty ? '—' : orderNumber,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        if (orderNumber.isNotEmpty)
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            tooltip: LocalizationService.t(
-                              context,
-                              'checkout.copyOrderNumber',
-                            ),
-                            onPressed: () async {
-                              await Clipboard.setData(
-                                ClipboardData(text: orderNumber),
-                              );
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    LocalizationService.t(
-                                      context,
-                                      'checkout.orderNumberCopied',
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.copy_outlined, size: 20),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (showInitiatedBadge)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.sm,
-                    vertical: Spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.brightness == Brightness.dark
-                        ? AppColors.warning.withValues(alpha: 0.2)
-                        : OrderConfirmedPaymentPendingScreen._pendingTint,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final String currencyLabel =
+        CountryCurrencyConstants.getCurrencySymbol(currency);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          Spacing.md,
+          Spacing.sm,
+          Spacing.md,
+          Spacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 16,
-                        color: AppColors.warning,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        LocalizationService.t(
-                          context,
-                          'checkout.statusPending',
-                        ),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.warning,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      _FieldLabel(context.tr('checkout.pending.orderNumber')),
+                      const SizedBox(height: Spacing.xxs),
+                      SelectableText(
+                        orderNumber.isEmpty ? '—' : orderNumber,
+                        style: theme.textTheme.titleMedium,
                       ),
                     ],
                   ),
                 ),
-            ],
-          ),
-          if (paymentReference.isNotEmpty) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(
-              LocalizationService.t(context, 'checkout.reference'),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              paymentReference,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          Divider(height: Spacing.xl, color: scheme.outlineVariant),
-          if (subtotal != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  LocalizationService.t(context, 'checkout.subtotal'),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface,
+                if (showInitiatedBadge)
+                  AppBadge(
+                    label: context.tr('checkout.statusPending'),
+                    tone: AppBadgeTone.warning,
+                    icon: Icons.schedule_rounded,
                   ),
-                ),
-                Text(
-                  MoneyFormatter.format(subtotal!, currency),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
+                if (orderNumber.isNotEmpty)
+                  IconButton(
+                    tooltip: context.tr('checkout.copyOrderNumber'),
+                    onPressed: () async {
+                      await Clipboard.setData(
+                        ClipboardData(text: orderNumber),
+                      );
+                      if (!context.mounted) return;
+                      AppSnackbars.success(
+                        context,
+                        context.tr('checkout.orderNumberCopied'),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: AppSizes.iconMd),
                   ),
-                ),
               ],
             ),
-          if (subtotal != null) const SizedBox(height: Spacing.sm),
-          Divider(height: Spacing.lg, color: scheme.outlineVariant),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                LocalizationService.t(context, 'checkout.totalDue'),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-              ),
-              Text(
-                total != null
-                    ? MoneyFormatter.format(total!, currency)
-                    : '—',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+            if (paymentReference.isNotEmpty) ...[
+              const SizedBox(height: Spacing.sm),
+              _FieldLabel(context.tr('checkout.reference')),
+              const SizedBox(height: Spacing.xxs),
+              SelectableText(
+                paymentReference,
+                style: theme.textTheme.bodyMedium,
               ),
             ],
-          ),
-        ],
+            if (paymentMethod.isNotEmpty) ...[
+              const SizedBox(height: Spacing.sm),
+              _FieldLabel(context.tr('checkout.payment')),
+              const SizedBox(height: Spacing.xxs),
+              Text(paymentMethod, style: theme.textTheme.bodyMedium),
+            ],
+            const Divider(height: Spacing.xl),
+            if (subtotal != null) ...[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      context.tr('checkout.subtotal'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  PriceTag(
+                    amount: subtotal!,
+                    currency: currencyLabel,
+                    size: PriceTagSize.small,
+                    color: scheme.onSurface,
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.sm),
+            ],
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    context.tr('checkout.totalDue'),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                if (total != null)
+                  PriceTag(amount: total!, currency: currencyLabel)
+                else
+                  Text('—', style: theme.textTheme.titleMedium),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -653,47 +595,38 @@ class _OrderSummaryCard extends StatelessWidget {
 
 class _InstructionsCard extends StatelessWidget {
   const _InstructionsCard({
-    required this.theme,
-    required this.scheme,
     required this.instructions,
     required this.titleKey,
   });
 
-  final ThemeData theme;
-  final ColorScheme scheme;
   final String instructions;
   final String titleKey;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(Spacing.md),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocalizationService.t(context, titleKey),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 0.6,
-              fontWeight: FontWeight.w600,
+    final ThemeData theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Semantics(
+              header: true,
+              child: Text(
+                context.tr(titleKey),
+                style: theme.textTheme.titleSmall,
+              ),
             ),
-          ),
-          const SizedBox(height: Spacing.sm),
-          Text(
-            instructions,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurface,
-              height: 1.4,
+            const SizedBox(height: Spacing.xs),
+            Text(
+              instructions,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

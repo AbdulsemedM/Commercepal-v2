@@ -238,7 +238,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
           maxHeight: MediaQuery.of(context).size.height * 0.88,
         ),
         decoration: BoxDecoration(
-          color: AppColors.lightGrey,
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -544,7 +544,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: Colors.grey[700],
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 0.2,
         ),
       ),
@@ -606,7 +606,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -634,14 +634,14 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
       validator: validator,
       style: TextStyle(
         fontSize: 15,
-        color: Colors.grey[800],
+        color: Theme.of(context).colorScheme.onSurface,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
+        hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 14),
         prefixIcon: Container(
           margin: const EdgeInsets.only(right: Spacing.sm),
           padding: const EdgeInsets.all(10),
@@ -658,11 +658,11 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
         prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -673,7 +673,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
           borderSide: const BorderSide(color: AppColors.error),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         contentPadding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: 14),
       ),
     );
@@ -684,7 +684,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
       value: _selectedCountryCode,
       decoration: InputDecoration(
         labelText: LocalizationService.t(context, 'profile.country'),
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
         prefixIcon: Container(
           margin: const EdgeInsets.only(right: Spacing.sm),
           padding: const EdgeInsets.all(10),
@@ -701,18 +701,18 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
         prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         contentPadding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: 14),
       ),
       selectedItemBuilder: (BuildContext context) {
@@ -724,7 +724,7 @@ class _AddEditAddressDialogState extends State<AddEditAddressDialog> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[800],
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           );
         }).toList();

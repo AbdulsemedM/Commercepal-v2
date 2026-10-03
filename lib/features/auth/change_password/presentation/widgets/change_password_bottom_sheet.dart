@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/change_password_bloc.dart';
@@ -15,19 +13,23 @@ class ChangePasswordBottomSheet extends StatefulWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (BuildContext context) => const ChangePasswordBottomSheet(),
     );
   }
 
   @override
-  State<ChangePasswordBottomSheet> createState() => _ChangePasswordBottomSheetState();
+  State<ChangePasswordBottomSheet> createState() =>
+      _ChangePasswordBottomSheetState();
 }
 
 class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
@@ -41,21 +43,52 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     super.dispose();
   }
 
-  String _getPasswordStrength(BuildContext context, String password) {
-    if (password.isEmpty) return '';
-    if (password.length < 6) return LocalizationService.t(context, 'changePassword.weak');
-    if (password.length < 10) return LocalizationService.t(context, 'changePassword.medium');
-    return LocalizationService.t(context, 'changePassword.strong');
+  /// 0 = empty, 1 = weak, 2 = medium, 3 = strong.
+  int _strengthLevel(String password) {
+    if (password.isEmpty) return 0;
+    if (password.length < 6) return 1;
+    if (password.length < 10) return 2;
+    return 3;
   }
 
-  Color _getPasswordStrengthColor(BuildContext context, String strength) {
-    final weak = LocalizationService.t(context, 'changePassword.weak');
-    final medium = LocalizationService.t(context, 'changePassword.medium');
-    final strong = LocalizationService.t(context, 'changePassword.strong');
-    if (strength == weak) return Colors.red;
-    if (strength == medium) return Colors.orange;
-    if (strength == strong) return Colors.green;
-    return Colors.grey;
+  String _strengthLabel(BuildContext context, int level) {
+    switch (level) {
+      case 1:
+        return context.tr('changePassword.weak');
+      case 2:
+        return context.tr('changePassword.medium');
+      case 3:
+        return context.tr('changePassword.strong');
+      default:
+        return '';
+    }
+  }
+
+  Color _strengthColor(BuildContext context, int level) {
+    final CommerceColors c = context.commerce;
+    switch (level) {
+      case 1:
+        return Theme.of(context).colorScheme.error;
+      case 2:
+        return c.warning;
+      case 3:
+        return c.success;
+      default:
+        return Theme.of(context).colorScheme.onSurfaceVariant;
+    }
+  }
+
+  void _submit(BuildContext context) {
+    if (_formKey.currentState?.validate() ?? false) {
+      context.read<ChangePasswordBloc>().add(
+            ChangePasswordSubmitted(
+              currentPassword: _currentPasswordController.text,
+              newPassword: _newPasswordController.text,
+              confirmPassword: _confirmPasswordController.text,
+              channel: PlatformUtils.getChannel(),
+            ),
+          );
+    }
   }
 
   @override
@@ -67,349 +100,146 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
           if (state is ChangePasswordSuccess) {
             HapticFeedback.mediumImpact();
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppSnackbars.success(context, state.message);
           } else if (state is ChangePasswordFailure) {
             HapticFeedback.lightImpact();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            AppSnackbars.error(context, state.message);
           }
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
           ),
           child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: Spacing.md,
-                right: Spacing.md,
-                top: Spacing.md,
-                bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.md,
-              ),
-              child: BlocBuilder<ChangePasswordBloc, ChangePasswordState>(
-                builder: (context, state) {
-                  final isLoading = state is ChangePasswordLoading;
-                  
-                  return SingleChildScrollView(
+            top: false,
+            child: BlocBuilder<ChangePasswordBloc, ChangePasswordState>(
+              builder: (context, state) {
+                final isLoading = state is ChangePasswordLoading;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.gutter,
+                    0,
+                    Spacing.gutter,
+                    Spacing.md,
+                  ),
+                  child: AutofillGroup(
                     child: Form(
                       key: _formKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          // Drag indicator
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              margin: const EdgeInsets.only(bottom: Spacing.md),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          // Title
-                          Text(
-                            LocalizationService.t(context, 'changePassword.title'),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.navy,
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          // Subtitle
-                          Text(
-                            LocalizationService.t(context, 'changePassword.subtitle'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.lg),
-                          // Shield & Lock Illustration
-                          _buildShieldLockIllustration(),
+                          _buildHeader(context),
                           const SizedBox(height: Spacing.xl),
-                          // Current Password field
-                          Text(
-                            LocalizationService.t(context, 'changePassword.currentPassword'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
+                          _PasswordField(
+                            label: context.tr('changePassword.currentPassword'),
+                            hint: context.tr(
+                              'changePassword.currentPasswordHint',
                             ),
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextFormField(
-                              controller: _currentPasswordController,
-                              obscureText: _obscureCurrentPassword,
-                              enabled: !isLoading,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return LocalizationService.t(context, 'changePassword.pleaseEnterCurrent');
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                hintText: LocalizationService.t(context, 'changePassword.currentPasswordHint'),
-                                hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.all(Spacing.md),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureCurrentPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureCurrentPassword = !_obscureCurrentPassword;
-                                    });
-                                  },
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                            controller: _currentPasswordController,
+                            obscure: _obscureCurrentPassword,
+                            enabled: !isLoading,
+                            autofillHints: const <String>[
+                              AutofillHints.password,
+                            ],
+                            onToggle: () {
+                              setState(() {
+                                _obscureCurrentPassword =
+                                    !_obscureCurrentPassword;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return context.tr(
+                                  'changePassword.pleaseEnterCurrent',
+                                );
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: Spacing.md),
-                          // New Password field
-                          Text(
-                            LocalizationService.t(context, 'changePassword.newPassword'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
-                            ),
+                          _PasswordField(
+                            label: context.tr('changePassword.newPassword'),
+                            hint: context.tr('changePassword.newPasswordHint'),
+                            controller: _newPasswordController,
+                            obscure: _obscureNewPassword,
+                            enabled: !isLoading,
+                            autofillHints: const <String>[
+                              AutofillHints.newPassword,
+                            ],
+                            onToggle: () {
+                              setState(() {
+                                _obscureNewPassword = !_obscureNewPassword;
+                              });
+                            },
+                            onChanged: (value) {
+                              setState(() {}); // Update strength indicator
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return context.tr(
+                                  'changePassword.pleaseEnterNew',
+                                );
+                              }
+                              if (value.length < 6) {
+                                return context.tr(
+                                  'changePassword.passwordMinLength',
+                                );
+                              }
+                              return null;
+                            },
                           ),
-                          const SizedBox(height: Spacing.sm),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextFormField(
-                              controller: _newPasswordController,
-                              obscureText: _obscureNewPassword,
-                              enabled: !isLoading,
-                              onChanged: (value) {
-                                setState(() {}); // Rebuild to update strength indicator
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return LocalizationService.t(context, 'changePassword.pleaseEnterNew');
-                                }
-                                if (value.length < 6) {
-                                  return LocalizationService.t(context, 'changePassword.passwordMinLength');
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                hintText: LocalizationService.t(context, 'changePassword.newPasswordHint'),
-                                hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.all(Spacing.md),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureNewPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureNewPassword = !_obscureNewPassword;
-                                    });
-                                  },
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          // Password strength indicator
                           if (_newPasswordController.text.isNotEmpty) ...[
-                            const SizedBox(height: Spacing.sm),
-                            Row(
-                              children: [
-                                Text(
-                                  LocalizationService.t(context, 'changePassword.strengthLabel'),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                Text(
-                                  _getPasswordStrength(context, _newPasswordController.text),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: _getPasswordStrengthColor(
-                                      context,
-                                      _getPasswordStrength(context, _newPasswordController.text),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            const SizedBox(height: Spacing.xs),
+                            _buildStrengthMeter(context),
                           ],
                           const SizedBox(height: Spacing.md),
-                          // Confirm Password field
-                          Text(
-                            LocalizationService.t(context, 'changePassword.confirmPassword'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade800,
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppDecorations.softCream,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextFormField(
-                              controller: _confirmPasswordController,
-                              obscureText: _obscureConfirmPassword,
-                              enabled: !isLoading,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return LocalizationService.t(context, 'changePassword.pleaseConfirm');
-                                }
-                                if (value != _newPasswordController.text) {
-                                  return LocalizationService.t(context, 'changePassword.passwordsDoNotMatch');
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                hintText: LocalizationService.t(context, 'changePassword.confirmHint'),
-                                hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.all(Spacing.md),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                                    });
-                                  },
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                          _PasswordField(
+                            label: context.tr('changePassword.confirmPassword'),
+                            hint: context.tr('changePassword.confirmHint'),
+                            controller: _confirmPasswordController,
+                            obscure: _obscureConfirmPassword,
+                            enabled: !isLoading,
+                            autofillHints: const <String>[
+                              AutofillHints.newPassword,
+                            ],
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) {
+                              if (!isLoading) _submit(context);
+                            },
+                            onToggle: () {
+                              setState(() {
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return context.tr(
+                                  'changePassword.pleaseConfirm',
+                                );
+                              }
+                              if (value != _newPasswordController.text) {
+                                return context.tr(
+                                  'changePassword.passwordsDoNotMatch',
+                                );
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: Spacing.xl),
-                          // Update Password button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: isLoading
-                                    ? null
-                                    : AppDecorations.primaryCtaGradient,
-                                color: isLoading ? Colors.grey.shade300 : null,
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: isLoading
-                                      ? null
-                                      : () {
-                                          if (_formKey.currentState
-                                                  ?.validate() ??
-                                              false) {
-                                            context
-                                                .read<ChangePasswordBloc>()
-                                                .add(
-                                              ChangePasswordSubmitted(
-                                                currentPassword:
-                                                    _currentPasswordController
-                                                        .text,
-                                                newPassword:
-                                                    _newPasswordController
-                                                        .text,
-                                                confirmPassword:
-                                                    _confirmPasswordController
-                                                        .text,
-                                                channel:
-                                                    PlatformUtils.getChannel(),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                  borderRadius: BorderRadius.circular(28),
-                                  child: Center(
-                                    child: isLoading
-                                        ? const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<
-                                                      Color>(
-                                                Colors.white,
-                                              ),
-                                            ),
-                                          )
-                                        : Text(
-                                            LocalizationService.t(
-                                              context,
-                                              'changePassword.updateButton',
-                                            ),
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                          AppButton.primary(
+                            label: context.tr('changePassword.updateButton'),
+                            loading: isLoading,
+                            onPressed: () => _submit(context),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -417,124 +247,88 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
     );
   }
 
-  Widget _buildShieldLockIllustration() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppDecorations.softCream,
-            AppColors.cream,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildHeader(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return Row(
+      children: <Widget>[
+        ExcludeSemantics(
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.lock_outline_rounded,
+              color: scheme.onPrimaryContainer,
+            ),
+          ),
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Stack(
+        const SizedBox(width: Spacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Semantics(
+                header: true,
+                child: Text(
+                  context.tr('changePassword.title'),
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              const SizedBox(height: Spacing.xxs / 2),
+              Text(
+                context.tr('changePassword.subtitle'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStrengthMeter(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final int level = _strengthLevel(_newPasswordController.text);
+    final Color color = _strengthColor(context, level);
+    final String label = _strengthLabel(context, level);
+
+    return Semantics(
+      liveRegion: true,
+      label: context.tr('changePassword.strengthValue', <String, Object?>{
+        'level': label,
+      }),
+      excludeSemantics: true,
+      child: Row(
         children: <Widget>[
-          // Background decorative circles
-          Positioned(
-            top: 20,
-            right: 30,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppColors.pink.withOpacity(0.15),
-                shape: BoxShape.circle,
+          for (int i = 1; i <= 3; i++) ...<Widget>[
+            Expanded(
+              child: AnimatedContainer(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : AppMotion.fast,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: i <= level ? color : scheme.surfaceContainerHighest,
+                  borderRadius: AppRadius.pillAll,
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 30,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          // Main Shield
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Shield body
-                    CustomPaint(
-                      size: const Size(100, 110),
-                      painter: _ShieldPainter(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    // Lock icon on shield
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.lock_rounded,
-                        size: 40,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Key beside shield
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.vpn_key_rounded,
-                      size: 32,
-                      color: AppColors.secondary,
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.check_circle,
-                      size: 32,
-                      color: Colors.green.shade400,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Sparkles/stars
-          Positioned(
-            top: 40,
-            left: 60,
-            child: Icon(
-              Icons.star,
-              size: 16,
-              color: Colors.amber.shade300,
-            ),
-          ),
-          Positioned(
-            top: 60,
-            right: 80,
-            child: Icon(
-              Icons.star,
-              size: 12,
-              color: Colors.amber.shade400,
-            ),
-          ),
-          Positioned(
-            bottom: 50,
-            right: 60,
-            child: Icon(
-              Icons.star,
-              size: 14,
-              color: Colors.amber.shade300,
+            const SizedBox(width: Spacing.xxs),
+          ],
+          const SizedBox(width: Spacing.xxs),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -543,37 +337,73 @@ class _ChangePasswordBottomSheetState extends State<ChangePasswordBottomSheet> {
   }
 }
 
-class _ShieldPainter extends CustomPainter {
-  final Color color;
+class _PasswordField extends StatelessWidget {
+  const _PasswordField({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.obscure,
+    required this.enabled,
+    required this.onToggle,
+    required this.validator,
+    required this.autofillHints,
+    this.onChanged,
+    this.onSubmitted,
+    this.textInputAction = TextInputAction.next,
+  });
 
-  _ShieldPainter({required this.color});
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final bool obscure;
+  final bool enabled;
+  final VoidCallback onToggle;
+  final FormFieldValidator<String> validator;
+  final Iterable<String> autofillHints;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextInputAction textInputAction;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    
-    // Shield shape
-    path.moveTo(size.width * 0.5, 0);
-    path.lineTo(size.width, size.height * 0.3);
-    path.lineTo(size.width, size.height * 0.6);
-    path.quadraticBezierTo(
-      size.width * 0.8, size.height * 0.9,
-      size.width * 0.5, size.height,
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          label,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        TextFormField(
+          controller: controller,
+          obscureText: obscure,
+          enabled: enabled,
+          validator: validator,
+          onChanged: onChanged,
+          onFieldSubmitted: onSubmitted,
+          textInputAction: textInputAction,
+          autofillHints: autofillHints,
+          enableSuggestions: false,
+          autocorrect: false,
+          decoration: InputDecoration(
+            hintText: hint,
+            suffixIcon: IconButton(
+              tooltip: context.tr(
+                obscure ? 'auth.showPassword' : 'auth.hidePassword',
+              ),
+              icon: Icon(
+                obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
+              onPressed: onToggle,
+            ),
+          ),
+        ),
+      ],
     );
-    path.quadraticBezierTo(
-      size.width * 0.2, size.height * 0.9,
-      0, size.height * 0.6,
-    );
-    path.lineTo(0, size.height * 0.3);
-    path.close();
-
-    canvas.drawPath(path, paint);
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

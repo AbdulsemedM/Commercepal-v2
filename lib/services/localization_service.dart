@@ -13,7 +13,13 @@ class LocalizationService {
     final bundle = rootBundle;
     for (final code in _supportedLocales) {
       try {
-        final json = await bundle.loadString('assets/locales/$code.json');
+        // Decode directly: loadString() hands >50 KB assets to an isolate,
+        // which is slower at startup and never completes in widget tests.
+        final ByteData bytes = await bundle.load('assets/locales/$code.json');
+        final String json = utf8.decode(bytes.buffer.asUint8List(
+          bytes.offsetInBytes,
+          bytes.lengthInBytes,
+        ));
         final map = Map<String, String>.from(
           (jsonDecode(json) as Map).map(
             (k, v) => MapEntry(k as String, v as String),
@@ -48,4 +54,25 @@ class LocalizationService {
   }
 
   static List<String> get supportedLocaleCodes => List.unmodifiable(_supportedLocales);
+
+  /// [t] with `{placeholder}` substitution, e.g.
+  /// `tf(context, 'price.percentOff', {'percent': '20'})`.
+  static String tf(
+    BuildContext context,
+    String key,
+    Map<String, Object?> args,
+  ) {
+    String out = t(context, key);
+    args.forEach((String k, Object? v) {
+      out = out.replaceAll('{$k}', '${v ?? ''}');
+    });
+    return out;
+  }
+}
+
+extension LocalizationX on BuildContext {
+  /// Translated string for [key], with optional `{placeholder}` [args].
+  String tr(String key, [Map<String, Object?>? args]) => args == null
+      ? LocalizationService.t(this, key)
+      : LocalizationService.tf(this, key, args);
 }

@@ -1,3 +1,4 @@
+import 'package:commercepal/core/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -57,12 +58,7 @@ class SocialMediaLink extends StatelessWidget {
               }
 
               if (!launched && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url'),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
+                AppSnackbars.error(context, '${LocalizationService.t(context, 'contactUs.couldNotLaunch')} $url');
               }
             } catch (e) {
               if (context.mounted) {
@@ -105,7 +101,7 @@ class SocialMediaLink extends StatelessWidget {
                         text,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontSize: 14,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.4,
                         ),
                       ),
@@ -115,7 +111,7 @@ class SocialMediaLink extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: Colors.grey[400],
+                  color: Theme.of(context).colorScheme.outline,
                 ),
               ],
             ),

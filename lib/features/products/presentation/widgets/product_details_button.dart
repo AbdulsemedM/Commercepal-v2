@@ -34,7 +34,7 @@ class ProductDetailsButton extends StatelessWidget {
             vertical: Spacing.sm,
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.outlineVariant,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(

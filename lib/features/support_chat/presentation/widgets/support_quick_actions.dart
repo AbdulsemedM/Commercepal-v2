@@ -41,10 +41,10 @@ class SupportQuickActions extends StatelessWidget {
             onPressed: enabled ? () => onSelected(text) : null,
             backgroundColor: Colors.white,
             side: BorderSide(color: AppColors.primary.withValues(alpha: 0.35)),
-            labelStyle: const TextStyle(
+            labelStyle: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),

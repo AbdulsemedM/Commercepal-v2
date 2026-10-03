@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
 
-/// Side-by-side pill CTAs for Company Profile and Customer Feedback.
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
+
+/// "About the seller" and "Customer reviews" navigation rows.
 class ProductDetailActionPills extends StatelessWidget {
   const ProductDetailActionPills({
     super.key,
@@ -15,76 +16,25 @@ class ProductDetailActionPills extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: _PillButton(
-              label: 'Company Profile',
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
+      child: Card(
+        child: Column(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.storefront_outlined),
+              title: Text(context.tr('product.aboutSeller')),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: onCompanyProfile,
-              borderColor: scheme.outlineVariant,
-              textColor: scheme.onSurface,
             ),
-          ),
-          const SizedBox(width: Spacing.sm),
-          Expanded(
-            child: _PillButton(
-              label: 'Customer Feedback',
+            const Divider(indent: Spacing.md, endIndent: Spacing.md),
+            ListTile(
+              leading: const Icon(Icons.reviews_outlined),
+              title: Text(context.tr('product.customerReviews')),
+              trailing: const Icon(Icons.chevron_right_rounded),
               onTap: onCustomerFeedback,
-              borderColor: scheme.outlineVariant,
-              textColor: scheme.onSurface,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.label,
-    required this.onTap,
-    required this.borderColor,
-    required this.textColor,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final Color borderColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Spacing.md,
-            vertical: Spacing.sm + 2,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: borderColor),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                  fontSize: 13,
-                ),
-          ),
+          ],
         ),
       ),
     );
@@ -99,26 +49,21 @@ Future<void> showCompanyProfileSheet(
   required String provider,
 }) {
   final List<(String, String)> rows = <(String, String)>[
-    if (vendorName.isNotEmpty) ('Vendor', vendorName),
-    if (brandName.isNotEmpty) ('Brand', brandName),
-    if (provider.isNotEmpty) ('Provider', provider),
+    if (vendorName.isNotEmpty) (context.tr('product.vendor'), vendorName),
+    if (brandName.isNotEmpty) (context.tr('product.brand'), brandName),
+    if (provider.isNotEmpty) (context.tr('product.provider'), provider),
   ];
 
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(AppDecorations.radiusLg),
-      ),
-    ),
     builder: (BuildContext sheetContext) {
+      final ThemeData theme = Theme.of(sheetContext);
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             Spacing.lg,
-            Spacing.sm,
+            0,
             Spacing.lg,
             Spacing.lg,
           ),
@@ -127,55 +72,44 @@ Future<void> showCompanyProfileSheet(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                'Company Profile',
-                style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                sheetContext.tr('product.aboutSeller'),
+                style: theme.textTheme.titleLarge,
               ),
               const SizedBox(height: Spacing.md),
               if (rows.isEmpty)
                 Text(
-                  'No company details available for this product.',
-                  style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(sheetContext)
-                            .colorScheme
-                            .onSurfaceVariant,
-                      ),
+                  sheetContext.tr('product.noSellerDetails'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 )
               else
-                ...rows.map(
-                  ((String, String) row) => Padding(
+                for (final (String label, String value) in rows)
+                  Padding(
                     padding: const EdgeInsets.only(bottom: Spacing.sm),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         SizedBox(
-                          width: 88,
+                          width: 96,
                           child: Text(
-                            row.$1,
-                            style: Theme.of(sheetContext)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(sheetContext)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
+                            label,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                         Expanded(
                           child: Text(
-                            row.$2,
-                            style: Theme.of(sheetContext)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            value,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
             ],
           ),
         ),

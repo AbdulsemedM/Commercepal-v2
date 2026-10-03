@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/constants/spacing.dart';
+import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
+import 'package:flutter/material.dart';
 
-/// Beautiful popup shown after successful checkout for USSD-style payments
+/// Popup shown after successful checkout for USSD-style payments
 /// (Telebirr, eBirr Coopay/Kaffi, Sahay Pay, Pesapal).
 class UssdPaymentSuccessDialog extends StatelessWidget {
   const UssdPaymentSuccessDialog({
@@ -27,93 +26,134 @@ class UssdPaymentSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final CommerceColors commerce = context.commerce;
+    final bool hasOrderNumber = orderNumber != null && orderNumber!.isNotEmpty;
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_rounded,
-                size: 48,
-                color: AppColors.success,
-              ),
-            ),
-            const SizedBox(height: Spacing.lg),
-            Text(
-              LocalizationService.t(context, 'checkout.ussdSuccessTitle'),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: Spacing.sm),
-            Text(
-              LocalizationService.t(context, 'checkout.ussdSuccessMessage'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.black54,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              LocalizationService.t(context, 'checkout.ussdSuccessOrderPlaced'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.success,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (orderNumber != null && orderNumber!.isNotEmpty) ...[
-              const SizedBox(height: Spacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.md,
-                  vertical: Spacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  orderNumber!,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    letterSpacing: 0.5,
-                    fontWeight: FontWeight.w500,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: Spacing.xl,
+        vertical: Spacing.xl,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(Spacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Center(
+                child: ExcludeSemantics(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: commerce.successContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.phone_iphone_rounded,
+                      size: 36,
+                      color: commerce.success,
+                    ),
                   ),
                 ),
+              ),
+              const SizedBox(height: Spacing.md),
+              Semantics(
+                header: true,
+                child: Text(
+                  context.tr('checkout.ussdSuccessTitle'),
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: Spacing.xs),
+              Text(
+                context.tr('checkout.ussdSuccessMessage'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: Spacing.md),
+              Semantics(
+                liveRegion: true,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.sm,
+                    vertical: Spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: commerce.successContainer,
+                    borderRadius: AppRadius.mdAll,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: AppSizes.iconMd,
+                        color: commerce.onSuccessContainer,
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Expanded(
+                        child: Text(
+                          context.tr('checkout.ussdSuccessOrderPlaced'),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: commerce.onSuccessContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (hasOrderNumber) ...<Widget>[
+                const SizedBox(height: Spacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.sm,
+                    vertical: Spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: AppRadius.mdAll,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          context.tr('checkout.orderPlaced.orderNumber'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Flexible(
+                        flex: 2,
+                        child: SelectableText(
+                          orderNumber!,
+                          textAlign: TextAlign.end,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontFeatures: AppTypography.tabularFigures,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: Spacing.xl),
+              AppButton.primary(
+                label: context.tr('checkout.ussdSuccessContinue'),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
-            const SizedBox(height: Spacing.xl),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  LocalizationService.t(context, 'checkout.ussdSuccessContinue'),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

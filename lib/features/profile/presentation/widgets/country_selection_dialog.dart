@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class CountrySelectionDialog extends StatefulWidget {
   const CountrySelectionDialog({super.key});
@@ -46,7 +46,7 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select Country'),
+      title: Text(context.tr('profile.selectCountry')),
       content: _isLoading
           ? const SizedBox(
               height: 200,
@@ -64,22 +64,23 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
                   return ListTile(
                     leading: Text(
                       country.flagEmoji,
-                      style: const TextStyle(fontSize: 32),
+                      style: const TextStyle(fontSize: 28),
                     ),
                     title: Text(
                       country.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
+                    selected: isSelected,
                     trailing: isSelected
                         ? Icon(
-                            Icons.check_circle,
-                            color: AppColors.primary,
+                            Icons.check_circle_rounded,
+                            color: Theme.of(context).colorScheme.primary,
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.circle_outlined,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     onTap: () {
                       setState(() {
@@ -93,14 +94,11 @@ class _CountrySelectionDialogState extends State<CountrySelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.tr('profile.cancel')),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _saveSelection,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-          ),
-          child: const Text('Confirm'),
+          child: Text(context.tr('profile.confirm')),
         ),
       ],
     );

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:commercepal/core/logging/app_logger.dart';
 import 'package:commercepal/core/storage/storage.dart';
-import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/api_service.dart';
 import '../models/checkout_request.dart';
 import '../models/checkout_response.dart';

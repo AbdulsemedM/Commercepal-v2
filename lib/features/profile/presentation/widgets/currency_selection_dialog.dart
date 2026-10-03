@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/storage/storage.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 class CurrencySelectionDialog extends StatefulWidget {
   const CurrencySelectionDialog({super.key});
@@ -46,7 +47,7 @@ class _CurrencySelectionDialogState extends State<CurrencySelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select Currency'),
+      title: Text(context.tr('profile.selectCurrency')),
       content: _isLoading
           ? const SizedBox(
               height: 200,
@@ -66,41 +67,46 @@ class _CurrencySelectionDialogState extends State<CurrencySelectionDialog> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: AppRadius.smAll,
                       ),
                       child: Center(
                         child: Text(
                           currency.symbol,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
                         ),
                       ),
                     ),
                     title: Text(
                       currency.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                     subtitle: Text(
                       currency.code,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
+                    selected: isSelected,
                     trailing: isSelected
                         ? Icon(
-                            Icons.check_circle,
-                            color: AppColors.primary,
+                            Icons.check_circle_rounded,
+                            color: Theme.of(context).colorScheme.primary,
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.circle_outlined,
-                            color: Colors.grey,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     onTap: () {
                       setState(() {
@@ -114,14 +120,11 @@ class _CurrencySelectionDialogState extends State<CurrencySelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.tr('profile.cancel')),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _saveSelection,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primary,
-          ),
-          child: const Text('Confirm'),
+          child: Text(context.tr('profile.confirm')),
         ),
       ],
     );

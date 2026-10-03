@@ -161,13 +161,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -176,7 +176,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           LocalizationService.t(context, 'wishlist.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.navy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
         ),
       ),
@@ -226,7 +226,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 22,
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -237,7 +237,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w400,
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               height: 1.5,
                             ),
                           ),
@@ -256,7 +256,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             Icon(
                               Icons.favorite_border,
                               size: 80,
-                              color: Colors.grey[400],
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                             const SizedBox(height: Spacing.lg),
                             Text(
@@ -264,7 +264,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
-                                  ?.copyWith(color: Colors.grey[600]),
+                                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ),
                             const SizedBox(height: Spacing.xs),
                             Text(
@@ -273,7 +273,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
-                                  ?.copyWith(color: Colors.grey[500]),
+                                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ),
                           ],
                         ),
@@ -362,10 +362,10 @@ class _WishlistCard extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Container(
                       width: 80,
                       height: 80,
-                      color: AppDecorations.softCream,
-                      child: const Icon(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      child: Icon(
                         Icons.image_not_supported_outlined,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 32,
                       ),
                     ),
@@ -378,16 +378,16 @@ class _WishlistCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: AppColors.navy,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.favorite,
-                    color: AppColors.pink,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24,
                   ),
                   onPressed: onRemove,

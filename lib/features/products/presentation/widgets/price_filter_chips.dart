@@ -1,8 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:commercepal/core/theme/colors.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/utils/money_formatter.dart';
+
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 
 /// Preset or custom price range. null min/max means no bound.
 class PriceRange {
@@ -19,113 +20,120 @@ class PriceRange {
     return true;
   }
 
-  String label(String currencySymbol) {
-    if (isAny) return 'Any';
-    if (min != null && max != null) return '$currencySymbol${MoneyFormatter.formatWhole(min!)} – $currencySymbol${MoneyFormatter.formatWhole(max!)}';
-    if (max != null) return 'Under $currencySymbol${MoneyFormatter.formatWhole(max!)}';
-    return '$currencySymbol${MoneyFormatter.formatWhole(min!)}+';
+  @override
+  bool operator ==(Object other) =>
+      other is PriceRange && other.min == min && other.max == max;
+
+  @override
+  int get hashCode => Object.hash(min, max);
+
+  String label(BuildContext context, String currencySymbol) {
+    String f(double v) => '$currencySymbol${MoneyFormatter.formatWhole(v)}';
+    if (isAny) return context.tr('priceFilter.any');
+    if (min != null && max != null) return '${f(min!)} – ${f(max!)}';
+    if (max != null) {
+      return context.tr('priceFilter.under', <String, Object?>{
+        'amount': f(max!),
+      });
+    }
+    return '${f(min!)}+';
   }
 }
 
-/// Horizontal chips for price presets + Custom that opens a range slider.
+/// Rounds to 1.5 significant figures (…, 100, 150, 200, 250, … 1000, 1500).
+@visibleForTesting
+double nicePriceStep(double v) {
+  if (v <= 0) return 0;
+  final double mag =
+      math.pow(10, (math.log(v) / math.ln10).floor()).toDouble();
+  final double half = mag / 2;
+  return math.max(half, (v / half).round() * half);
+}
+
+/// Price buckets from the quartiles of [prices], rounded to nice numbers so
+/// presets make sense in any currency (ETB thousands, USD tens, …).
+@visibleForTesting
+List<PriceRange> pricePresetsFor(List<double> prices) {
+  final List<double> sorted =
+      prices.where((double p) => p > 0).toList()..sort();
+  if (sorted.length < 4) return const <PriceRange>[];
+  double q(double f) => sorted[((sorted.length - 1) * f).round()];
+  final List<double> cuts = <double>{
+    nicePriceStep(q(0.25)),
+    nicePriceStep(q(0.5)),
+    nicePriceStep(q(0.75)),
+  }.where((double c) => c > 0).toList()
+    ..sort();
+  if (cuts.isEmpty) return const <PriceRange>[];
+  return <PriceRange>[
+    PriceRange(max: cuts.first),
+    for (int i = 0; i < cuts.length - 1; i++)
+      PriceRange(min: cuts[i], max: cuts[i + 1]),
+    PriceRange(min: cuts.last),
+  ];
+}
+
+/// Horizontal price chips derived from the current results, plus Custom.
 class PriceFilterChips extends StatelessWidget {
   const PriceFilterChips({
     super.key,
     required this.currentRange,
     required this.onRangeChanged,
+    required this.prices,
     this.currencySymbol = '\$',
-    this.maxPriceInList = 500,
+    this.leading = const <Widget>[],
   });
 
   final PriceRange currentRange;
   final ValueChanged<PriceRange> onRangeChanged;
+
+  /// Prices in the unfiltered result set, used to build presets.
+  final List<double> prices;
   final String currencySymbol;
-  final double maxPriceInList;
 
-  static List<PriceRange> get presets => const <PriceRange>[
-        PriceRange(min: null, max: null),
-        PriceRange(min: null, max: 25),
-        PriceRange(min: 25, max: 50),
-        PriceRange(min: 50, max: 100),
-        PriceRange(min: 100, max: null),
-      ];
-
-  bool _sameRange(PriceRange a, PriceRange b) {
-    return a.min == b.min && a.max == b.max;
-  }
+  /// Chips shown before the price chips (e.g. Sort).
+  final List<Widget> leading;
 
   @override
   Widget build(BuildContext context) {
+    final List<PriceRange> presets = pricePresetsFor(prices);
+    final bool isCustom =
+        !currentRange.isAny && !presets.contains(currentRange);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
       child: Row(
         children: <Widget>[
-          ...presets.map((PriceRange range) {
-            final selected = _sameRange(currentRange, range);
-            return Padding(
-              padding: const EdgeInsets.only(right: Spacing.sm),
+          for (final Widget w in leading)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: Spacing.xs),
+              child: w,
+            ),
+          for (final PriceRange range in presets)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: Spacing.xs),
               child: FilterChip(
-                label: Text(
-                  range.label(currencySymbol),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected ? Colors.white : AppColors.navy,
-                  ),
-                ),
-                selected: selected,
-                onSelected: (_) => onRangeChanged(range),
-                backgroundColor: const Color(0xFFFFF4FA),
-                selectedColor: AppColors.primary,
-                checkmarkColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppDecorations.chipBorderRadius,
-                ),
-                side: BorderSide(
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.primary.withValues(alpha: 0.18),
-                  width: selected ? 2 : 1,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.sm,
-                  vertical: Spacing.xs,
-                ),
-              ),
-            );
-          }),
-          Padding(
-            padding: const EdgeInsets.only(right: Spacing.md),
-            child: FilterChip(
-              avatar: Icon(
-                Icons.tune,
-                size: 18,
-                color: _sameRange(currentRange, const PriceRange(min: null, max: null))
-                    ? AppColors.navy.withValues(alpha: 0.55)
-                    : AppColors.primary,
-              ),
-              label: const Text('Custom'),
-              selected: !currentRange.isAny &&
-                  !presets.any((p) => _sameRange(p, currentRange)),
-              onSelected: (_) => _openCustomRange(context),
-              backgroundColor: const Color(0xFFFFF4FA),
-              selectedColor: AppColors.primary.withValues(alpha: 0.18),
-              shape: RoundedRectangleBorder(
-                borderRadius: AppDecorations.chipBorderRadius,
-              ),
-              side: BorderSide(
-                color: !currentRange.isAny &&
-                        !presets.any((p) => _sameRange(p, currentRange))
-                    ? AppColors.primary
-                    : AppColors.primary.withValues(alpha: 0.18),
-                width: 1,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: Spacing.sm,
-                vertical: Spacing.xs,
+                label: Text(range.label(context, currencySymbol)),
+                selected: currentRange == range,
+                onSelected: (bool on) =>
+                    onRangeChanged(on ? range : const PriceRange()),
               ),
             ),
+          FilterChip(
+            avatar: Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: isCustom ? scheme.onPrimaryContainer : scheme.onSurface,
+            ),
+            label: Text(
+              isCustom
+                  ? currentRange.label(context, currencySymbol)
+                  : context.tr('priceFilter.custom'),
+            ),
+            selected: isCustom,
+            onSelected: (_) => _openCustomRange(context),
           ),
         ],
       ),
@@ -133,7 +141,8 @@ class PriceFilterChips extends StatelessWidget {
   }
 
   void _openCustomRange(BuildContext context) {
-    final maxVal = (maxPriceInList.clamp(50, 10000) / 50).ceil() * 50.0;
+    final double top = prices.isEmpty ? 0 : prices.reduce(math.max);
+    final double maxVal = math.max(nicePriceStep(top * 1.05), 50);
     double initialLow = currentRange.min ?? 0;
     double initialHigh = currentRange.max ?? maxVal;
     if (initialHigh > maxVal) initialHigh = maxVal;
@@ -142,7 +151,7 @@ class PriceFilterChips extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (BuildContext context) {
         return _CustomPriceRangeSheet(
           currencySymbol: currencySymbol,
@@ -152,9 +161,7 @@ class PriceFilterChips extends StatelessWidget {
           onApply: (double low, double high) {
             onRangeChanged(PriceRange(min: low, max: high));
           },
-          onClear: () {
-            onRangeChanged(const PriceRange(min: null, max: null));
-          },
+          onClear: () => onRangeChanged(const PriceRange()),
         );
       },
     );
@@ -183,93 +190,76 @@ class _CustomPriceRangeSheet extends StatefulWidget {
 }
 
 class _CustomPriceRangeSheetState extends State<_CustomPriceRangeSheet> {
-  late double _low;
-  late double _high;
-
-  @override
-  void initState() {
-    super.initState();
-    _low = widget.initialLow;
-    _high = widget.initialHigh;
-  }
+  late double _low = widget.initialLow;
+  late double _high = widget.initialHigh;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    final ThemeData theme = Theme.of(context);
+    String f(double v) =>
+        '${widget.currencySymbol}${MoneyFormatter.formatWhole(v)}';
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.lg,
+          0,
+          Spacing.lg,
+          Spacing.lg,
         ),
-      ),
-      padding: EdgeInsets.only(
-        left: Spacing.lg,
-        right: Spacing.lg,
-        top: Spacing.lg,
-        bottom: MediaQuery.of(context).padding.bottom + Spacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                'Price range',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              TextButton(
-                onPressed: () {
-                  widget.onClear();
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Clear'),
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.lg),
-          Text(
-            '${widget.currencySymbol}${MoneyFormatter.formatWhole(_low)} – ${widget.currencySymbol}${MoneyFormatter.formatWhole(_high)}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    context.tr('priceFilter.title'),
+                    style: theme.textTheme.titleLarge,
+                  ),
                 ),
-          ),
-          const SizedBox(height: Spacing.sm),
-          RangeSlider(
-            values: RangeValues(_low, _high),
-            min: 0,
-            max: widget.maxVal,
-            divisions: (widget.maxVal / 25).clamp(4, 40).toInt(),
-            activeColor: AppColors.primary,
-            onChanged: (RangeValues values) {
-              setState(() {
-                _low = values.start;
-                _high = values.end;
-              });
-            },
-          ),
-          const SizedBox(height: Spacing.md),
-          FilledButton(
-            onPressed: () {
-              widget.onApply(_low, _high);
-              Navigator.of(context).pop();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: Spacing.md),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                AppButton.text(
+                  label: context.tr('priceFilter.clear'),
+                  onPressed: () {
+                    widget.onClear();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.md),
+            Text(
+              '${f(_low)} – ${f(_high)}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontFeatures: AppTypography.tabularFigures,
               ),
             ),
-            child: const Text('Apply'),
-          ),
-        ],
+            const SizedBox(height: Spacing.xs),
+            RangeSlider(
+              values: RangeValues(_low, _high),
+              min: 0,
+              max: widget.maxVal,
+              divisions: 40,
+              labels: RangeLabels(f(_low), f(_high)),
+              onChanged: (RangeValues values) {
+                setState(() {
+                  _low = values.start;
+                  _high = values.end;
+                });
+              },
+            ),
+            const SizedBox(height: Spacing.md),
+            AppButton.primary(
+              label: context.tr('priceFilter.apply'),
+              onPressed: () {
+                widget.onApply(_low, _high);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

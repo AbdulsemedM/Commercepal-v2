@@ -112,14 +112,14 @@ Widget _videoUnavailablePlaceholder(BuildContext context, [String? message]) {
   return AspectRatio(
     aspectRatio: 16 / 9,
     child: ColoredBox(
-      color: Colors.grey.shade200,
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.videocam_off_outlined, color: Colors.grey.shade600),
+              Icon(Icons.videocam_off_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(height: 8),
               Text(
                 message ?? 'Video unavailable',
@@ -138,7 +138,7 @@ Widget _tapToPlayPlaceholder(BuildContext context, {required VoidCallback onPlay
   return AspectRatio(
     aspectRatio: 16 / 9,
     child: Material(
-      color: Colors.black87,
+      color: Theme.of(context).colorScheme.onSurface,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

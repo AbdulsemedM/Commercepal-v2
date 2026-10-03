@@ -85,13 +85,13 @@ class _FaqsScreenState extends State<FaqsScreen> {
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(
-              color: AppDecorations.softCream,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           onPressed: () => context.pop(),
@@ -100,7 +100,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
           'Frequently Asked Questions',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppColors.navy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
         ),
       ),
@@ -141,13 +141,13 @@ class _FaqsScreenState extends State<FaqsScreen> {
                     ),
                   ),
                   const SizedBox(height: Spacing.lg),
-                  const Text(
+                  Text(
                     'Frequently Asked Questions',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 22,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -158,7 +158,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w400,
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -173,7 +173,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppDecorations.softCream,
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: AppDecorations.softCardShadow(),
                 ),
@@ -182,7 +182,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search FAQs...',
                     hintStyle: TextStyle(
-                      color: Colors.grey[500],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 15,
                       fontWeight: FontWeight.w400,
                     ),
@@ -190,7 +190,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
                       padding: const EdgeInsets.all(12),
                       child: Icon(
                         Icons.search,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 22,
                       ),
                     ),
@@ -227,7 +227,7 @@ class _FaqsScreenState extends State<FaqsScreen> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyLarge
-                              ?.copyWith(color: Colors.grey[600]),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                     )
@@ -306,7 +306,7 @@ class _FaqCard extends StatelessWidget {
                             ?.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),
                     ),
@@ -333,7 +333,7 @@ class _FaqCard extends StatelessWidget {
                       faq.answer,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontSize: 14,
-                            color: Colors.grey[700],
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             height: 1.55,
                           ),
                     ),

@@ -5,7 +5,7 @@ import 'package:commercepal/core/storage/storage.dart';
 /// Controls ThemeMode and persists preference to secure storage.
 class ThemeController extends ChangeNotifier {
   ThemeController({ThemeMode initialMode = ThemeMode.light})
-    : _mode = initialMode;
+      : _mode = initialMode;
 
   ThemeMode _mode;
   ThemeMode get themeMode => _mode;
@@ -16,6 +16,8 @@ class ThemeController extends ChangeNotifier {
         return ThemeMode.light;
       case 'dark':
         return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
       default:
         return ThemeMode.light;
     }

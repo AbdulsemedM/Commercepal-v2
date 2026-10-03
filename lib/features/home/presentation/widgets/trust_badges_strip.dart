@@ -1,127 +1,79 @@
 import 'package:flutter/material.dart';
 
-import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/app_decorations.dart';
-import 'package:commercepal/core/theme/colors.dart';
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
 
-/// Compact trust badges strip mirroring commercepal.com footer highlights.
+/// Shopping guarantees (shipping, cash back, support) as a quiet info row.
 class TrustBadgesStrip extends StatelessWidget {
   const TrustBadgesStrip({super.key});
 
-  static const List<_TrustItem> _items = <_TrustItem>[
-    _TrustItem(
-      icon: Icons.local_shipping_outlined,
-      title: 'Free Shipping',
-      subtitle: 'Invoices over 5000 ETB',
+  static const List<(IconData, String, String)> _items =
+      <(IconData, String, String)>[
+    (
+      Icons.local_shipping_outlined,
+      'home.trust.shippingTitle',
+      'home.trust.shippingSubtitle',
     ),
-    _TrustItem(
-      icon: Icons.account_balance_wallet_outlined,
-      title: 'Cash Back',
-      subtitle: 'Pay with Owallet',
+    (
+      Icons.account_balance_wallet_outlined,
+      'home.trust.cashbackTitle',
+      'home.trust.cashbackSubtitle',
     ),
-    _TrustItem(
-      icon: Icons.support_agent_outlined,
-      title: '24/7 Support',
-      subtitle: 'We\'re here to help',
+    (
+      Icons.support_agent_outlined,
+      'home.trust.supportTitle',
+      'home.trust.supportSubtitle',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.sm,
-          vertical: Spacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: isDark ? scheme.surfaceContainerLow : AppColors.cream,
-          borderRadius: AppDecorations.cardBorderRadius,
-          boxShadow: isDark ? null : AppDecorations.softCardShadow(),
-        ),
-        child: Row(
-          children: <Widget>[
-            for (int i = 0; i < _items.length; i++) ...[
-              if (i > 0)
-                Container(
-                  width: 1,
-                  height: 48,
-                  margin: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-              Expanded(child: _TrustBadgeTile(item: _items[i])),
-            ],
-          ],
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.gutter),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.xs,
+            vertical: Spacing.md,
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                for (int i = 0; i < _items.length; i++) ...<Widget>[
+                  if (i > 0) VerticalDivider(color: scheme.outlineVariant),
+                  Expanded(
+                    child: MergeSemantics(
+                      child: Column(
+                        children: <Widget>[
+                          Icon(_items[i].$1, size: 24, color: scheme.primary),
+                          const SizedBox(height: Spacing.xs),
+                          Text(
+                            context.tr(_items[i].$2),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            context.tr(_items[i].$3),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _TrustItem {
-  const _TrustItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-}
-
-class _TrustBadgeTile extends StatelessWidget {
-  const _TrustBadgeTile({required this.item});
-
-  final _TrustItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color titleColor =
-        isDark ? Theme.of(context).colorScheme.onSurface : AppColors.navy;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.secondary.withValues(alpha: 0.25),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(item.icon, size: 18, color: AppColors.primary),
-        ),
-        const SizedBox(height: Spacing.xs),
-        Text(
-          item.title,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: titleColor,
-                fontSize: 11,
-              ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          item.subtitle,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 9,
-                height: 1.2,
-              ),
-        ),
-      ],
     );
   }
 }

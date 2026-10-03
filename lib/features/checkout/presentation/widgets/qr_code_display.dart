@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:qr/qr.dart';
 
+import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/services/localization_service.dart';
+
 /// Renders a scannable QR code from raw payload data (e.g. EMVCo QPay string).
+///
+/// The code is always painted dark-on-white inside a white quiet zone, in
+/// both light and dark themes, so every banking-app scanner can read it.
 class QrCodeDisplay extends StatelessWidget {
   const QrCodeDisplay({
     super.key,
@@ -12,16 +18,19 @@ class QrCodeDisplay extends StatelessWidget {
   final String data;
   final double size;
 
+  /// Scanners need a light quiet zone; never theme this.
+  static const Color _quietZone = Colors.white;
+  static const Color _module = Colors.black;
+
   @override
   Widget build(BuildContext context) {
     if (data.trim().isEmpty) {
-      return SizedBox(
-        width: size,
-        height: size,
+      return _Placeholder(
+        size: size,
         child: Icon(
           Icons.qr_code_2_rounded,
           size: size * 0.4,
-          color: Colors.grey.shade400,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       );
     }
@@ -33,31 +42,69 @@ class QrCodeDisplay extends StatelessWidget {
       );
       final qrImage = QrImage(qrCode);
 
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: _QrPainter(qrImage),
-        ),
-      );
-    } catch (_) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: Center(
-          child: Text(
-            'QR unavailable',
-            style: TextStyle(color: Colors.grey.shade600),
-            textAlign: TextAlign.center,
+      return Semantics(
+        image: true,
+        label: context.tr('checkout.qpay.qrSemantics'),
+        child: Container(
+          padding: const EdgeInsets.all(Spacing.md),
+          decoration: BoxDecoration(
+            color: _quietZone,
+            borderRadius: AppRadius.mdAll,
+            border: Border.all(color: context.commerce.border),
+          ),
+          child: CustomPaint(
+            size: Size(size, size),
+            painter: _QrPainter(qrImage),
           ),
         ),
       );
+    } catch (_) {
+      final ThemeData theme = Theme.of(context);
+      return _Placeholder(
+        size: size,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              Icons.qr_code_2_rounded,
+              size: size * 0.25,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: Spacing.xs),
+            Text(
+              context.tr('checkout.qpay.qrUnavailable'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
     }
+  }
+}
+
+/// Same footprint as a rendered code so the layout does not jump.
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({required this.size, required this.child});
+
+  final double size;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size + Spacing.md * 2,
+      height: size + Spacing.md * 2,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: context.commerce.border),
+      ),
+      child: child,
+    );
   }
 }
 
@@ -68,7 +115,7 @@ class _QrPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black;
+    final paint = Paint()..color = QrCodeDisplay._module;
     final moduleCount = qrImage.moduleCount;
     if (moduleCount <= 0) return;
 
