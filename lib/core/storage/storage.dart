@@ -486,8 +486,6 @@ class Storage {
   static const String _keyCacheCategories = 'cache_categories';
   static const String _keyCacheRecentlyViewed = 'cache_recently_viewed';
   static const String _keyCacheHomeDiscover = 'cache_home_discover';
-  static const String _keyCacheHomeWholesale = 'cache_home_wholesale';
-  static const String _keyHomeCatalogMode = 'home_catalog_mode';
 
   Future<void> saveCachedCategories(String json) async {
     await _storage.write(key: _keyCacheCategories, value: json);
@@ -511,22 +509,6 @@ class Storage {
 
   Future<String?> getCachedHomeDiscover() async {
     return await _storage.read(key: _keyCacheHomeDiscover);
-  }
-
-  Future<void> saveCachedHomeWholesale(String json) async {
-    await _storage.write(key: _keyCacheHomeWholesale, value: json);
-  }
-
-  Future<String?> getCachedHomeWholesale() async {
-    return await _storage.read(key: _keyCacheHomeWholesale);
-  }
-
-  Future<void> saveHomeCatalogMode(String mode) async {
-    await _storage.write(key: _keyHomeCatalogMode, value: mode);
-  }
-
-  Future<String?> getHomeCatalogMode() async {
-    return await _storage.read(key: _keyHomeCatalogMode);
   }
 
   /// Returns true when app has never been marked as opened.

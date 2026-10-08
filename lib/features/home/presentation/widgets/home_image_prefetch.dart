@@ -39,7 +39,7 @@ void prefetchHomeSectionImages({
   );
 }
 
-/// Convenience for discover/wholesale maps keyed by section id in config order.
+/// Convenience for discover maps keyed by section id in config order.
 void prefetchHomeCatalogImages({
   required List<String> sectionIdsInOrder,
   required Map<String, List<Product>> sections,

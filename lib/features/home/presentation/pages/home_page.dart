@@ -6,16 +6,12 @@ import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/categories/bloc/categories_bloc.dart';
-import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/features/home/bloc/home_discover_bloc.dart';
-import 'package:commercepal/features/home/bloc/home_wholesale_bloc.dart';
 import 'package:commercepal/features/home/bloc/recently_viewed_bloc.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import '../widgets/banner_section.dart';
 import '../widgets/category_quad_cards.dart';
 import '../widgets/home_header.dart';
 import '../widgets/home_discover_section.dart';
-import '../widgets/home_wholesale_section.dart';
 import '../widgets/recently_viewed_section.dart';
 import '../widgets/trust_badges_strip.dart';
 
@@ -37,12 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _onPullToRefresh(BuildContext context) async {
     context.read<CategoriesBloc>().add(FetchCategories());
-    final mode = context.read<HomeCatalogModeCubit>().state;
-    if (mode == HomeCatalogMode.wholesale) {
-      context.read<HomeWholesaleBloc>().add(FetchHomeWholesale());
-    } else {
-      context.read<HomeDiscoverBloc>().add(FetchHomeDiscover());
-    }
+    context.read<HomeDiscoverBloc>().add(FetchHomeDiscover());
     context.read<RecentlyViewedBloc>().add(FetchRecentlyViewed());
     try {
       context.read<CartBloc>().add(CartLoadRequested());
@@ -62,97 +53,64 @@ class _HomePageState extends State<HomePage> {
     }
 
     Widget homeScaffold(BuildContext context, int cartCount) {
-      return BlocListener<HomeCatalogModeCubit, HomeCatalogMode>(
-        listenWhen: (previous, current) =>
-            current == HomeCatalogMode.wholesale &&
-            previous != HomeCatalogMode.wholesale,
-        listener: (context, mode) {
-          context.read<HomeWholesaleBloc>().add(FetchHomeWholesale());
-        },
-        child: Scaffold(
-          // Search bar + delivery line + quick links on one brand band.
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(
-              AppBarWidget.barHeight + HomeHeaderExtras.height,
-            ),
-            child: Column(
-              children: <Widget>[
-                AppBarWidget(
-                  cartCount: cartCount,
-                  onSearchTap: () {
-                    context.push(AppRoutes.productSearch);
-                  },
-                  onSearchSubmitted: (String query) {
-                    context.push(
-                      '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
-                    );
-                    return null;
-                  },
-                  onCartTap: () {
-                    _navigateToTab(context, 2);
-                  },
-                ),
-                const HomeHeaderExtras(),
-              ],
-            ),
+      return Scaffold(
+        // Search bar + delivery line + quick links on one brand band.
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(
+            AppBarWidget.barHeight + HomeHeaderExtras.height,
           ),
-          body: RefreshIndicator(
-            onRefresh: () => _onPullToRefresh(context),
-            child: CustomScrollView(
-              key: const PageStorageKey<String>('home_scroll_v1'),
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: <Widget>[
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      // Brand band fades into the page behind the hero, so
-                      // header and content read as one surface.
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: const <double>[0, 0.55, 1],
-                            colors: <Color>[
-                              context.commerce.header,
-                              context.commerce.header.withValues(alpha: 0.35),
-                              context.commerce.canvas,
-                            ],
-                          ),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.only(bottom: Spacing.md),
-                          child: BannerSection(),
-                        ),
-                      ),
-                      const SizedBox(height: Spacing.xs),
-                      const CategoryQuadCards(),
-                      const SizedBox(height: Spacing.xl),
-                      // "Keep shopping" — hidden until something was viewed.
-                      const RecentlyViewedSection(),
-                    ],
-                  ),
-                ),
-                BlocBuilder<HomeCatalogModeCubit, HomeCatalogMode>(
-                  builder: (context, mode) {
-                    if (mode == HomeCatalogMode.wholesale) {
-                      return const HomeWholesaleSection();
-                    }
-                    return const HomeDiscoverSection();
-                  },
-                ),
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: Spacing.xl,
-                      bottom: Spacing.xl,
+          child: Column(
+            children: <Widget>[
+              AppBarWidget(
+                cartCount: cartCount,
+                onSearchTap: () {
+                  context.push(AppRoutes.productSearch);
+                },
+                onSearchSubmitted: (String query) {
+                  context.push(
+                    '${AppRoutes.productSearch}?query=${Uri.encodeComponent(query)}',
+                  );
+                  return null;
+                },
+                onCartTap: () {
+                  _navigateToTab(context, 2);
+                },
+              ),
+              const HomeHeaderExtras(),
+            ],
+          ),
+        ),
+        body: RefreshIndicator(
+          onRefresh: () => _onPullToRefresh(context),
+          child: CustomScrollView(
+            key: const PageStorageKey<String>('home_scroll_v1'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Padding(
+                      padding: EdgeInsets.only(top: Spacing.md),
+                      child: CategoryQuadCards(),
                     ),
-                    child: TrustBadgesStrip(),
-                  ),
+                    const SizedBox(height: Spacing.xl),
+                    // "Keep shopping" — hidden until something was viewed.
+                    const RecentlyViewedSection(),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const HomeDiscoverSection(),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: Spacing.xl,
+                    bottom: Spacing.xl,
+                  ),
+                  child: TrustBadgesStrip(),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -163,14 +121,8 @@ class _HomePageState extends State<HomePage> {
         BlocProvider<CategoriesBloc>(
           create: (_) => CategoriesBloc()..add(FetchCategories()),
         ),
-        BlocProvider<HomeCatalogModeCubit>(
-          create: (_) => HomeCatalogModeCubit(),
-        ),
         BlocProvider<HomeDiscoverBloc>(
           create: (_) => HomeDiscoverBloc()..add(FetchHomeDiscover()),
-        ),
-        BlocProvider<HomeWholesaleBloc>(
-          create: (_) => HomeWholesaleBloc(),
         ),
         BlocProvider<RecentlyViewedBloc>(
           create: (_) => RecentlyViewedBloc()..add(FetchRecentlyViewed()),

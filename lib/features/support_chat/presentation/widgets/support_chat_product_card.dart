@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
-import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/widgets/app_network_image.dart';
 import 'package:commercepal/features/support_chat/data/models/support_chat_product.dart';
 

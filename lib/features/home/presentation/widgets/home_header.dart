@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:commercepal/app/router/app_router.dart';
@@ -8,12 +7,11 @@ import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
-import 'package:commercepal/features/home/bloc/home_catalog_mode_cubit.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 /// Header extension under the search bar on Home: "Deliver to …" line and a
-/// scrolling strip of quick links (catalogue mode, deals, promos).
+/// scrolling strip of quick links (deals, promos).
 ///
 /// Sits on the same brand band as [AppBarWidget], so the two read as one
 /// header, Amazon-style.
@@ -133,28 +131,7 @@ class _QuickLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HomeCatalogMode mode = context.watch<HomeCatalogModeCubit>().state;
-
-    void setMode(HomeCatalogMode next) {
-      if (next == mode) return;
-      HapticFeedback.selectionClick();
-      context.read<HomeCatalogModeCubit>().setMode(next);
-    }
-
     final List<Widget> links = <Widget>[
-      _HeaderPill(
-        icon: Icons.storefront_rounded,
-        label: context.tr('home.catalog.retail'),
-        selected: mode == HomeCatalogMode.retail,
-        onTap: () => setMode(HomeCatalogMode.retail),
-      ),
-      _HeaderPill(
-        icon: Icons.inventory_2_rounded,
-        label: context.tr('home.catalog.wholesale'),
-        selected: mode == HomeCatalogMode.wholesale,
-        onTap: () => setMode(HomeCatalogMode.wholesale),
-      ),
-      const _HeaderDivider(),
       _HeaderPill(
         icon: Icons.local_offer_outlined,
         label: context.tr('home.discover.todays_deals'),
@@ -196,50 +173,28 @@ class _QuickLinks extends StatelessWidget {
   }
 }
 
-class _HeaderDivider extends StatelessWidget {
-  const _HeaderDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 1,
-        height: 20,
-        color: context.commerce.onHeader.withValues(alpha: 0.3),
-      ),
-    );
-  }
-}
-
-/// Pill on the brand header: translucent white, solid white when selected.
+/// Pill on the brand header: translucent white background.
 class _HeaderPill extends StatelessWidget {
   const _HeaderPill({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.selected,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  /// Non-null for toggle pills (catalogue mode).
-  final bool? selected;
-
   @override
   Widget build(BuildContext context) {
     final CommerceColors c = context.commerce;
     final ThemeData theme = Theme.of(context);
-    final bool on = selected ?? false;
-    final Color fg = on ? c.header : c.onHeader;
+    final Color fg = c.onHeader;
 
     return Semantics(
       button: true,
-      selected: selected,
-      inMutuallyExclusiveGroup: selected != null,
       child: Material(
-        color: on ? c.onHeader : c.onHeader.withValues(alpha: 0.14),
+        color: c.onHeader.withValues(alpha: 0.14),
         shape: const StadiumBorder(),
         child: InkWell(
           customBorder: const StadiumBorder(),
@@ -255,7 +210,7 @@ class _HeaderPill extends StatelessWidget {
                   label,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: fg,
-                    fontWeight: on ? FontWeight.w700 : FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

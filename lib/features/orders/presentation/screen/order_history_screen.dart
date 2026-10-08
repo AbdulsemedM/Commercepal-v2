@@ -64,7 +64,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     // Aliases for common API variations
     switch (cat) {
       case 'DELIVERED':
-        return orderCat.contains('DELIVERED') || orderStage.contains('DELIVERED');
+        return orderCat.contains('DELIVERED') ||
+            orderStage.contains('DELIVERED');
       case 'ONGOING':
         return orderCat.contains('ONGOING') ||
             orderStage.contains('ONGOING') ||
@@ -237,8 +238,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<OrdersBloc>().add(
-          OrdersRefreshRequested(),
-        );
+              OrdersRefreshRequested(),
+            );
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: ListView.separated(
@@ -260,7 +261,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     // Get first item for display
     final firstItem = order.items.isNotEmpty ? order.items.first : null;
-    final productName = firstItem?.productName ?? context.tr('orderHistory.multipleItems');
+    final productName =
+        firstItem?.productName ?? context.tr('orderHistory.multipleItems');
 
     // Format date
     String formattedDate = '';
@@ -295,11 +297,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       <String>[order.currentStage, order.stageCategory],
     );
     final int itemCount = order.items.length;
-    final int hiddenCount = itemCount > _maxThumbnails
-        ? itemCount - (_maxThumbnails - 1)
-        : 0;
-    final int shownThumbs =
-        hiddenCount > 0 ? _maxThumbnails - 1 : itemCount;
+    final int hiddenCount =
+        itemCount > _maxThumbnails ? itemCount - (_maxThumbnails - 1) : 0;
+    final int shownThumbs = hiddenCount > 0 ? _maxThumbnails - 1 : itemCount;
 
     return Card(
       child: InkWell(
