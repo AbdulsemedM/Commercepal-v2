@@ -28,8 +28,10 @@ class AffiliateProfileData {
         referralCode: (json['affiliateReferralCode'] as String?) ??
             json['referralCode'] as String? ??
             '',
-        fullName: json['fullName'] as String? ?? '',
-        email: json['email'] as String? ?? '',
+        // my-profile sends firstName/lastName rather than fullName.
+        fullName: (json['fullName'] as String?) ??
+            '${json['firstName'] ?? ''} ${json['lastName'] ?? ''}'.trim(),
+        email: (json['email'] ?? json['emailAddress']) as String? ?? '',
         phoneNumber: json['phoneNumber'] as String? ?? '',
         commissionType: json['commissionType'] as String? ?? 'PERCENTAGE',
         commissionRate: (json['commissionRate'] as num?) ?? 0,
