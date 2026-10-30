@@ -23,7 +23,11 @@ class AffiliateProfileData {
 
   factory AffiliateProfileData.fromJson(Map<String, dynamic> json) =>
       AffiliateProfileData(
-        referralCode: json['referralCode'] as String? ?? '',
+        // my-profile returns `affiliateReferralCode`; older payloads used
+        // `referralCode`.
+        referralCode: (json['affiliateReferralCode'] as String?) ??
+            json['referralCode'] as String? ??
+            '',
         fullName: json['fullName'] as String? ?? '',
         email: json['email'] as String? ?? '',
         phoneNumber: json['phoneNumber'] as String? ?? '',

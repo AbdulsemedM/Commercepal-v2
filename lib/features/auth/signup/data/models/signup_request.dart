@@ -8,6 +8,9 @@ class SignupRequest {
   final String country;
   final String registrationChannel;
 
+  /// Affiliate code that referred the customer (sent as both fields, as web).
+  final String? referralCode;
+
   SignupRequest({
     required this.emailAddress,
     required this.phoneNumber,
@@ -17,6 +20,7 @@ class SignupRequest {
     required this.lastName,
     required this.country,
     required this.registrationChannel,
+    this.referralCode,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,5 +32,9 @@ class SignupRequest {
     'lastName': lastName,
     'country': country,
     'registrationChannel': registrationChannel,
+    if (referralCode != null && referralCode!.isNotEmpty) ...{
+      'referralCode': referralCode,
+      'affiliateReferralCode': referralCode,
+    },
   };
 }

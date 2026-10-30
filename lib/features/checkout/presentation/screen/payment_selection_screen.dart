@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/auth/session_error.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/theme/colors.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/design_system.dart';
@@ -563,6 +564,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         paymentAccount: needsPaymentAccount ? paymentAccount : null,
         idempotencyKey: 'checkout-${const Uuid().v4()}',
         promoCode: null,
+        affiliateReferralCode: await Storage().getAffiliateReferralCode(),
       );
 
       final response = await _checkoutRepository.checkout(checkoutRequest);

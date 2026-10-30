@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/signup/data/models/signup_request.dart';
 import 'package:commercepal/features/auth/signup/data/repository/signup_repository.dart';
@@ -37,9 +38,16 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
         registrationChannel:
             event.registrationChannel ??
             (PlatformUtils.isIOS ? 'MOBILE_APP_IOS' : 'MOBILE_APP_ANDROID'),
+        referralCode: event.referralCode,
       );
 
       final response = await _repository.signup(request);
+
+      // Keep the referrer so this customer's orders credit the affiliate.
+      final String? referralCode = event.referralCode;
+      if (referralCode != null && referralCode.isNotEmpty) {
+        await Storage().saveAffiliateReferralCode(referralCode);
+      }
 
       emit(
         SignupSuccess(

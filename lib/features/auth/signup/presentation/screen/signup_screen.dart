@@ -5,6 +5,7 @@ import 'package:intl_phone_field/country_picker_dialog.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
@@ -28,6 +29,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _referralCodeController =
+      TextEditingController();
   final _formKey = GlobalKey<FormState>();
   Country _selectedCountry = Country.parse('ET'); // Default to Ethiopia
   String _completePhoneNumber = ''; // Full phone number with country code
@@ -49,7 +52,19 @@ class _SignupScreenState extends State<SignupScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Prefill a referrer saved earlier on this device.
+    Storage().getAffiliateReferralCode().then((String? code) {
+      if (mounted && code != null && _referralCodeController.text.isEmpty) {
+        _referralCodeController.text = code;
+      }
+    });
   }
 
   void _submit(BuildContext context) {
@@ -73,6 +88,7 @@ class _SignupScreenState extends State<SignupScreen> {
               lastName: lastName,
               country: _selectedCountry.countryCode,
               registrationChannel: _registrationChannel(),
+              referralCode: _referralCodeController.text.trim(),
             ),
           );
     }
@@ -231,6 +247,24 @@ class _SignupScreenState extends State<SignupScreen> {
                                         .tr('auth.reset.passwordsDoNotMatch');
                                   }
                                   return null;
+                                },
+                              ),
+                              const SizedBox(height: Spacing.md),
+                              AuthTextField(
+                                controller: _referralCodeController,
+                                label: context.tr('auth.signup.referralCode'),
+                                hintText: context
+                                    .tr('auth.signup.referralCodePlaceholder'),
+                                textInputAction: TextInputAction.done,
+                                validator: (String? value) {
+                                  final String code = (value ?? '').trim();
+                                  return code.isEmpty ||
+                                          RegExp(r'^[a-zA-Z0-9_-]{2,80}$')
+                                              .hasMatch(code)
+                                      ? null
+                                      : context.tr(
+                                          'auth.signup.referralCodeInvalid',
+                                        );
                                 },
                               ),
                               const SizedBox(height: Spacing.lg),

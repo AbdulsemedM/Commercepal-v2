@@ -68,6 +68,7 @@ class Storage {
   static const String _keyRememberMeSecret = 'remember_me_secret';
   static const String _keyJustLoggedOut = 'just_logged_out';
   static const String _keyProfileCache = 'profile_cache_v1';
+  static const String _keyAffiliateReferralCode = 'affiliate_referral_code';
   static const String _keyShorebirdRolloutGroup = 'shorebird_rollout_group';
   static const String _keySupportChatToken = 'support_chat_token';
   static const String _keySupportChatStatus = 'support_chat_status';
@@ -270,6 +271,17 @@ class Storage {
 
   Future<void> clearProfileCache() async {
     await _storage.delete(key: _keyProfileCache);
+  }
+
+  /// Affiliate code that referred this device (sign-up field). Kept across
+  /// logout like the web's `referralCode` so later checkouts stay attributed.
+  Future<void> saveAffiliateReferralCode(String code) async {
+    await _storage.write(key: _keyAffiliateReferralCode, value: code.trim());
+  }
+
+  Future<String?> getAffiliateReferralCode() async {
+    final String? value = await _storage.read(key: _keyAffiliateReferralCode);
+    return (value == null || value.trim().isEmpty) ? null : value.trim();
   }
 
   // Wishlist management

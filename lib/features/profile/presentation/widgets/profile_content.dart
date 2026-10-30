@@ -20,7 +20,6 @@ import 'package:commercepal/features/profile/bloc/profile_bloc.dart';
 import 'package:commercepal/features/profile/data/models/profile_data.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/features/affiliate_register/presentation/widgets/affiliate_registration_modal.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Native names for the app languages (shown as the current value).
@@ -57,6 +56,11 @@ class ProfileContent extends StatelessWidget {
               final profile = state is ProfileLoaded ? state.profile : null;
               final bool isAffiliate =
                   state is ProfileLoaded && state.affiliateProfile != null;
+              // Affiliates share their affiliate code; others their own.
+              final String referralCode = (isAffiliate &&
+                      state.affiliateProfile!.referralCode.isNotEmpty)
+                  ? state.affiliateProfile!.referralCode
+                  : profile?.referralCode ?? '';
 
               return LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
@@ -94,18 +98,14 @@ class ProfileContent extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
-                              if (profile != null &&
-                                  (profile.referralCode ?? '').isNotEmpty) ...[
+                              if (referralCode.isNotEmpty) ...[
                                 const SizedBox(height: Spacing.sm),
-                                _buildReferralCodeCard(
-                                  context,
-                                  profile.referralCode!,
-                                ),
+                                _buildReferralCodeCard(context, referralCode),
                               ],
                               const SizedBox(height: Spacing.sm),
                               _MenuGroup(
                                 title: context.tr('profile.sectionAccount'),
-                                items: _accountItems(context, isAffiliate),
+                                items: _accountItems(context, isAffiliate, profile),
                               ),
                               const SizedBox(height: Spacing.xl),
                               _GroupHeader(
@@ -286,7 +286,11 @@ class ProfileContent extends StatelessWidget {
     );
   }
 
-  List<_MenuItem> _accountItems(BuildContext context, bool isAffiliate) {
+  List<_MenuItem> _accountItems(
+    BuildContext context,
+    bool isAffiliate,
+    ProfileData? profile,
+  ) {
     return <_MenuItem>[
       _MenuItem(
         icon: Icons.person_outline,
@@ -297,15 +301,8 @@ class ProfileContent extends StatelessWidget {
         _MenuItem(
           icon: Icons.dashboard_outlined,
           title: context.tr('affiliate.affiliateDashboard'),
-          trailingIcon: Icons.open_in_new,
-          onTap: () async {
-            final uri = Uri.parse(
-              'https://affiliate.commercepal.com/auth/login',
-            );
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            }
-          },
+          subtitle: context.tr('affiliate.dashboardMenuSubtitle'),
+          onTap: () => context.push(AppRoutes.affiliateDashboard),
         )
       else
         _MenuItem(
@@ -315,6 +312,10 @@ class ProfileContent extends StatelessWidget {
           onTap: () {
             AffiliateRegistrationModal.show(
               context,
+              initialName: profile == null
+                  ? ''
+                  : '${profile.firstName} ${profile.lastName}'.trim(),
+              initialPhone: profile?.phoneNumber ?? '',
               onRegistrationComplete: () {
                 context.read<ProfileBloc>().add(ProfileRefreshRequested());
               },

@@ -31,6 +31,9 @@ class CheckoutRequest {
   final String idempotencyKey;
   final String? promoCode;
 
+  /// Affiliate that referred this customer (web: `referralCode` storage).
+  final String? affiliateReferralCode;
+
   CheckoutRequest({
     required this.channel,
     required this.currency,
@@ -40,6 +43,7 @@ class CheckoutRequest {
     required this.idempotencyKey,
     this.paymentAccount,
     this.promoCode,
+    this.affiliateReferralCode,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -52,6 +56,8 @@ class CheckoutRequest {
           'paymentAccount': paymentAccount!,
         'idempotencyKey': idempotencyKey,
         'promoCode': promoCode,
+        if (affiliateReferralCode != null && affiliateReferralCode!.isNotEmpty)
+          'affiliateReferralCode': affiliateReferralCode!,
       };
 }
 

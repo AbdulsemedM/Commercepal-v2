@@ -43,6 +43,7 @@ import '../../features/checkout/presentation/screen/qpay_qr_payment_screen.dart'
 import '../../features/checkout/presentation/screen/retry_payment_method_screen.dart';
 import '../../features/checkout/data/models/checkout_response.dart';
 import '../../features/checkout/data/models/payment_initiate_result.dart';
+import '../../features/affiliate/presentation/screen/affiliate_dashboard_screen.dart';
 import '../../features/affiliate_register/presentation/screen/affiliate_register_screen.dart';
 import '../../features/faqs/presentation/screen/faqs_screen.dart';
 import '../../features/wishlist/presentation/screen/wishlist_screen.dart';
@@ -84,6 +85,7 @@ class AppRoutes {
   static const String qpayQrPayment = '/qpay-qr-payment';
   static const String retryPaymentMethod = '/retry-payment-method';
   static const String affiliateRegister = '/affiliate-register';
+  static const String affiliateDashboard = '/affiliate';
   static const String faqs = '/faqs';
   static const String wishlist = '/wishlist';
   static const String productCompare = '/product-compare';
@@ -422,6 +424,12 @@ final GoRouter appRouter = GoRouter(
         final onSuccess = state.extra as VoidCallback?;
         return AffiliateRegisterScreen(onRegistrationSuccess: onSuccess);
       },
+    ),
+    GoRoute(
+      path: AppRoutes.affiliateDashboard,
+      name: 'affiliateDashboard',
+      builder: (BuildContext context, GoRouterState state) =>
+          const AffiliateDashboardScreen(),
     ),
     GoRoute(
       path: AppRoutes.faqs,

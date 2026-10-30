@@ -12,6 +12,7 @@ final class SignupSubmitted extends SignupEvent {
   final String lastName;
   final String country;
   final String? registrationChannel;
+  final String? referralCode;
 
   SignupSubmitted({
     required this.emailAddress,
@@ -22,6 +23,7 @@ final class SignupSubmitted extends SignupEvent {
     required this.lastName,
     required this.country,
     this.registrationChannel,
+    this.referralCode,
   });
 }
 
