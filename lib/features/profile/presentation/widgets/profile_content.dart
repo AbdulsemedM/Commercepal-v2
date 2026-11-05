@@ -384,6 +384,13 @@ class ProfileContent extends StatelessWidget {
           context.push('/refund-policy');
         },
       ),
+      _MenuItem(
+        icon: Icons.block_outlined,
+        title: context.tr('profile.prohibitedProducts'),
+        onTap: () {
+          context.push(AppRoutes.prohibitedProducts);
+        },
+      ),
     ];
   }
 
@@ -1222,6 +1229,12 @@ class GuestProfileContent extends StatelessWidget {
                           icon: Icons.assignment_return_outlined,
                           title: context.tr('profile.refundPolicy'),
                           onTap: () => context.push('/refund-policy'),
+                        ),
+                        _MenuItem(
+                          icon: Icons.block_outlined,
+                          title: context.tr('profile.prohibitedProducts'),
+                          onTap: () =>
+                              context.push(AppRoutes.prohibitedProducts),
                         ),
                       ],
                     ),

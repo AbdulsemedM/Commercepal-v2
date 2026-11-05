@@ -22,6 +22,7 @@ import '../../features/home/presentation/screen/mega_sale_screen.dart';
 import '../../features/home/presentation/screen/sale_promotion_screen.dart';
 import '../../features/profile/presentation/screen/terms_conditions_screen.dart';
 import '../../features/profile/presentation/screen/refund_policy_screen.dart';
+import '../../features/profile/presentation/screen/prohibited_products_screen.dart';
 import '../../features/profile/presentation/screen/edit_profile_screen.dart';
 import '../../features/profile/presentation/screen/account_deletion_request_screen.dart';
 import '../../features/profile/data/models/profile_data.dart';
@@ -69,6 +70,7 @@ class AppRoutes {
   static const String salePromotion = '/sale-promotion';
   static const String termsConditions = '/terms-conditions';
   static const String refundPolicy = '/refund-policy';
+  static const String prohibitedProducts = '/prohibited-products';
   static const String editProfile = '/edit-profile';
   static const String orderHistory = '/order-history';
   static const String orderSummary = '/order-summary';
@@ -238,6 +240,12 @@ final GoRouter appRouter = GoRouter(
       name: 'refundPolicy',
       builder: (BuildContext context, GoRouterState state) =>
           const RefundPolicyScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.prohibitedProducts,
+      name: 'prohibitedProducts',
+      builder: (BuildContext context, GoRouterState state) =>
+          const ProhibitedProductsScreen(),
     ),
     GoRoute(
       path: AppRoutes.editProfile,
