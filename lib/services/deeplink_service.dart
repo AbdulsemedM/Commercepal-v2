@@ -9,7 +9,8 @@ import '../core/logging/app_logger.dart';
 /// Routes CommercePal push-notification / deep-link payloads into the app.
 ///
 /// Expected data payload:
-/// `{ "type": "order" | "cart" | "coupon", "id": "...", "url": "..." }`
+/// `{ "type": "order" | "cart" | "coupon" | "product", "id": "...", "url": "..." }`
+/// Order pushes may also carry `orderId` / `orderNumber` instead of `id`.
 class DeeplinkService {
   DeeplinkService._();
 
@@ -24,7 +25,9 @@ class DeeplinkService {
     }
 
     final type = (data['type'] ?? '').toString().toLowerCase().trim();
-    final id = (data['id'] ?? '').toString().trim();
+    final id = (data['id'] ?? data['orderId'] ?? data['orderNumber'] ?? data['productId'] ?? '')
+        .toString()
+        .trim();
     final url = (data['url'] ?? '').toString().trim();
 
     switch (type) {
@@ -40,6 +43,18 @@ class DeeplinkService {
         }
         appRouter.push(AppRoutes.orderHistory);
         return;
+      case 'product':
+        if (id.isNotEmpty) {
+          appRouter.push(
+            Uri(
+              path: AppRoutes.productDetail,
+              queryParameters: <String, String>{'id': id},
+            ).toString(),
+          );
+          return;
+        }
+        appRouter.go(AppRoutes.dashboard);
+        return;
       case 'cart':
         appRouter.go('${AppRoutes.dashboard}?tab=2');
         return;
@@ -52,6 +67,11 @@ class DeeplinkService {
         appRouter.go(AppRoutes.dashboard);
         return;
       default:
+        // Older pushes sent type=ORDER_CONFIRMED with only an orderId.
+        if (type.startsWith('order') && id.isNotEmpty) {
+          handleNotificationData(<String, dynamic>{'type': 'order', 'id': id});
+          return;
+        }
         if (url.isNotEmpty) {
           _openExternalUrl(url);
         }
