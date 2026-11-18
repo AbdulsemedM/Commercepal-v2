@@ -1,20 +1,35 @@
 name: Shorebird Release
 
-# Builds store-ready artifacts with Shorebird so they can receive later patches.
-# Requires repository secret: SHOREBIRD_TOKEN
-# Android signing secrets (optional but needed for signed release):
-#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Every push to main creates a new Shorebird release for Android.
+# iOS releases can be started manually from the Actions tab (workflow_dispatch).
+#
+# Required repository secrets:
+#   SHOREBIRD_TOKEN            - from `shorebird login:ci`
+#   ANDROID_KEYSTORE_BASE64    - base64 of android/app/release.keystore
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+#   GOOGLE_SERVICES_JSON       - contents of android/app/google-services.json (gitignored)
+#   DOT_ENV                    - contents of the root .env file (gitignored, bundled as an asset)
+#
+# Versioning: the version name comes from pubspec.yaml; the build number is
+# (pubspec build number + GitHub run number), so every push produces a unique,
+# increasing release version (e.g. 6.3.2+161 -> 6.3.2+175) without manual bumps.
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       platforms:
         description: 'Comma-separated platforms (android,ios)'
         required: false
-        default: 'android,ios'
+        default: 'android'
+
+concurrency:
+  group: shorebird-release
+  cancel-in-progress: false
 
 jobs:
   release-android:
@@ -23,15 +38,24 @@ jobs:
       contains(github.event.inputs.platforms, 'android')
     runs-on: ubuntu-latest
     env:
-      # secrets cannot be referenced in if:; map them to env first
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      DOT_ENV: ${{ secrets.DOT_ENV }}
       SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          missing=0
+          for s in SHOREBIRD_TOKEN ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD GOOGLE_SERVICES_JSON DOT_ENV; do
+            if [ -z "${!s}" ]; then echo "::error::Missing repository secret: $s"; missing=1; fi
+          done
+          exit $missing
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -44,11 +68,7 @@ jobs:
         with:
           cache: true
 
-      - name: Shorebird doctor
-        run: shorebird doctor
-
-      - name: Decode Android keystore
-        if: env.ANDROID_KEYSTORE_BASE64 != ''
+      - name: Restore signing & config files
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
           {
@@ -57,14 +77,37 @@ jobs:
             echo "keyAlias=${ANDROID_KEY_ALIAS}"
             echo "keyPassword=${ANDROID_KEY_PASSWORD}"
           } > android/keystore.properties
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          printf '%s\n' "$DOT_ENV" > .env
+
+      - name: Compute version
+        id: version
+        run: |
+          LINE=$(grep -E '^version:' pubspec.yaml | head -1 | sed -E 's/^version:[[:space:]]*//')
+          NAME="${LINE%%+*}"
+          BASE_BUILD="${LINE#*+}"
+          BUILD=$((BASE_BUILD + GITHUB_RUN_NUMBER))
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${NAME}+${BUILD}"
 
       - name: Shorebird release Android
         # Pin to the project's Flutter stable (see .metadata); avoid "latest" SDK skew.
-        run: shorebird release android --flutter-version=3.35.7
+        run: |
+          shorebird release android --flutter-version=3.35.7 -- \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ steps.version.outputs.build }}
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.version.outputs.name }}+${{ steps.version.outputs.build }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
 
   release-ios:
     if: >-
-      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' &&
       contains(github.event.inputs.platforms, 'ios')
     runs-on: macos-latest
     steps:
@@ -75,9 +118,6 @@ jobs:
         uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
-
-      - name: Shorebird doctor
-        run: shorebird doctor
 
       - name: Shorebird release iOS
         env:
