@@ -16,6 +16,7 @@ class ProductGrid extends StatelessWidget {
   const ProductGrid({
     super.key,
     required this.categoryName,
+    this.categoryProviderId = '',
     required this.subCategories,
     this.isLoading = false,
     this.errorMessage,
@@ -23,6 +24,9 @@ class ProductGrid extends StatelessWidget {
   });
 
   final String categoryName;
+
+  /// CJ category ID; when set, "Shop all" browses the whole category.
+  final String categoryProviderId;
   final List<SubCategory> subCategories;
   final bool isLoading;
   final String? errorMessage;
@@ -34,6 +38,25 @@ class ProductGrid extends StatelessWidget {
     HapticFeedback.selectionClick();
     context.push(
       '${AppRoutes.productSearch}?query=${Uri.encodeComponent(term.trim())}',
+    );
+  }
+
+  /// Browses a CJ category by ID (thousands of products). A keyword such as
+  /// "Consumer Electronics" had to appear word-for-word in titles and found very little.
+  static void _browse(BuildContext context, String providerId, String title) {
+    if (providerId.trim().isEmpty) {
+      _search(context, title);
+      return;
+    }
+    HapticFeedback.selectionClick();
+    context.push(
+      Uri(
+        path: AppRoutes.productSearch,
+        queryParameters: <String, String>{
+          'categoryId': providerId.trim(),
+          'title': title.trim(),
+        },
+      ).toString(),
     );
   }
 
@@ -68,7 +91,8 @@ class ProductGrid extends StatelessWidget {
                 name: categoryName,
                 imageUrl: imageUrl,
                 count: subCategories.length,
-                onShopAll: () => _search(context, categoryName),
+                onShopAll: () =>
+                    _browse(context, categoryProviderId, categoryName),
               ),
             ),
           ),
@@ -104,7 +128,11 @@ class ProductGrid extends StatelessWidget {
                 itemCount: subCategories.length,
                 itemBuilder: (BuildContext context, int i) => _SubCategoryTile(
                   subCategory: subCategories[i],
-                  onTap: () => _search(context, subCategories[i].name),
+                  onTap: () => _browse(
+                    context,
+                    subCategories[i].providerId,
+                    subCategories[i].name,
+                  ),
                 ),
               ),
             ),

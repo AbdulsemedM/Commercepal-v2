@@ -134,6 +134,22 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     }
   }
 
+  /// Stop auto-paging after this many pages in a row add no new products.
+  static const int maxEmptyPagesInARow = 3;
+
+  /// Adds products not already shown; returns how many were new.
+  int _appendUnique(List<Product> products) {
+    final Set<String> seen = _allProducts.map((Product p) => p.id).toSet();
+    int added = 0;
+    for (final Product product in products) {
+      if (product.id.isEmpty || seen.add(product.id)) {
+        _allProducts.add(product);
+        added++;
+      }
+    }
+    return added;
+  }
+
   Future<void> _onLoadMoreProducts(
     LoadMoreProducts event,
     Emitter<ProductSearchState> emit,
@@ -158,15 +174,25 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
     );
 
     try {
-      final int nextPage = _currentPage + 1;
-      final ProductSearchRequest request =
-          _currentRequest!.copyWith(page: nextPage);
+      // A page can add nothing new (filtered or repeated cards) while the server still has
+      // more. Fetch onward a few pages instead of stopping with an unfinished list.
+      var response = await _repository.searchProducts(
+        _currentRequest!.copyWith(page: _currentPage + 1),
+      );
+      int added = _appendUnique(response.products);
+      int emptyPagesInARow = added == 0 ? 1 : 0;
+      while (added == 0 &&
+          response.hasNext &&
+          emptyPagesInARow < maxEmptyPagesInARow) {
+        response = await _repository.searchProducts(
+          _currentRequest!.copyWith(page: response.currentPage + 1),
+        );
+        added = _appendUnique(response.products);
+        emptyPagesInARow = added == 0 ? emptyPagesInARow + 1 : 0;
+      }
 
-      final response = await _repository.searchProducts(request);
-
-      _allProducts.addAll(response.products);
       _currentPage = response.currentPage;
-      _hasMore = response.hasNext;
+      _hasMore = response.hasNext && emptyPagesInARow < maxEmptyPagesInARow;
 
       emit(
         ProductSearchLoaded(
@@ -174,7 +200,7 @@ class ProductSearchBloc extends Bloc<ProductSearchEvent, ProductSearchState> {
           totalElements: response.totalElements,
           totalPages: response.totalPages,
           currentPage: response.currentPage,
-          hasMore: response.hasNext,
+          hasMore: _hasMore,
         ),
       );
     } catch (e) {
