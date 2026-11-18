@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'package:commercepal/core/auth/remember_me_crypto.dart';
 import 'package:commercepal/core/auth/session_error.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'package:commercepal/features/products/data/models/product.dart';
 import '../data/repository/recently_viewed_repository.dart';
