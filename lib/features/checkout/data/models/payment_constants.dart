@@ -139,6 +139,20 @@ class PaymentConstants {
         hiddenPaymentProviderCodes.contains(code.toUpperCase());
   }
 
+  /// M-Pesa Kenya through KasaPay (KES only).
+  static bool isKasaPayMpesa(String? code, {String? displayName}) {
+    return _normalizedHaystack(code, displayName).contains('KASAPAY');
+  }
+
+  /// Kenyan shoppers (KES) see only M-Pesa (KasaPay) and PayPal — same as web.
+  static bool isAllowedForCurrency(String? code, String? cartCurrency,
+      {String? displayName}) {
+    final bool kenya = (cartCurrency ?? '').toUpperCase() == 'KES';
+    final bool kasapay = isKasaPayMpesa(code, displayName: displayName);
+    if (kenya) return kasapay || isPayPal(code);
+    return !kasapay;
+  }
+
   static bool isTelebirr(String? code, {String? displayName}) {
     return _normalizedHaystack(code, displayName).contains('TELEBIRR');
   }
@@ -228,6 +242,7 @@ class PaymentConstants {
     if (haystack.isEmpty) return false;
 
     if (haystack.contains('TELEBIRR')) return true;
+    if (haystack.contains('KASAPAY')) return true;
     if (haystack.contains('EDAHAB')) return true;
     if (haystack.contains('SAHAY')) return true;
     if (haystack.contains('AMOLE')) return true;

@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:commercepal/core/locale/market_auto_detect.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -63,4 +65,6 @@ void main() async {
   }
 
   runApp(const MyApp());
+  // Kenya → KES + M-Pesa on first launch, like the website (non-blocking).
+  unawaited(MarketAutoDetect.runOnce());
 }

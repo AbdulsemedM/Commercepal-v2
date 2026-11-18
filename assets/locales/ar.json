@@ -903,5 +903,12 @@
   "auth.otpLogin.changeNumber": "تغيير الرقم أو البريد",
   "auth.otpLogin.resend": "إعادة إرسال الرمز",
   "auth.otpLogin.nameLabel": "اسمك",
-  "auth.otpLogin.nameRequired": "أدخل اسمك لإنشاء حسابك"
+  "auth.otpLogin.nameRequired": "أدخل اسمك لإنشاء حسابك",
+  "expressCheckout.title": "اشترِ برقم هاتفك",
+  "expressCheckout.subtitle": "لا حاجة لحساب أو رمز. نستخدم هاتفك لتحديثات التوصيل والدفع.",
+  "expressCheckout.name": "اسمك",
+  "expressCheckout.phone": "رقم الجوال",
+  "expressCheckout.continue": "المتابعة إلى التوصيل",
+  "expressCheckout.signInInstead": "تسجيل الدخول بدلاً من ذلك",
+  "expressCheckout.failed": "تعذّر المتابعة. تحقق من رقمك وحاول مرة أخرى."
 }

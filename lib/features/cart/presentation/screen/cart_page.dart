@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:commercepal/core/auth/express_checkout.dart';
+import 'package:commercepal/features/checkout/express/express_checkout_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -108,10 +110,21 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _checkout(Cart cart) async {
     if (!_authService.isLoggedIn) {
-      // Phone/email + one-time code (no password); the login screen pops
-      // back with `true` so the purchase continues right away.
-      final bool? signedIn = await context.push<bool>(AppRoutes.login);
-      if (!mounted || signedIn != true || !_authService.isLoggedIn) return;
+      // Guests check out with name + phone — no password and no code; the
+      // mobile-money PIN confirms the payment. Signing in stays available.
+      await ExpressCheckout.instance.ensureLoaded();
+      if (!mounted) return;
+      if (!ExpressCheckout.instance.isActive) {
+        final Object? result =
+            await showExpressCheckoutSheet(context, currency: cart.currency);
+        if (!mounted) return;
+        if (result == 'signIn') {
+          final bool? signedIn = await context.push<bool>(AppRoutes.login);
+          if (!mounted || signedIn != true || !_authService.isLoggedIn) return;
+        } else if (result != true) {
+          return;
+        }
+      }
     }
     context.push(AppRoutes.checkoutSummary, extra: cart);
   }

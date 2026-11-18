@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import 'package:commercepal/core/auth/express_checkout.dart';
 import 'package:commercepal/core/network/auth_request_options.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/single_flight.dart';
@@ -129,7 +130,18 @@ class AuthInterceptor extends Interceptor {
       final tokenType = await _storage.getTokenType() ?? 'Bearer';
       options.headers['Authorization'] = '$tokenType $accessToken';
     } else {
-      options.headers.remove('Authorization');
+      // Phone checkout without a code: attach the checkout-only token to the
+      // few requests it may make. The shopper is still treated as signed out.
+      final ExpressCheckout express = ExpressCheckout.instance;
+      await express.ensureLoaded();
+      final String? expressToken = express.token;
+      if (expressToken != null &&
+          ExpressCheckout.isAllowedRequest(options.method, options.path)) {
+        options.headers['Authorization'] = 'Bearer $expressToken';
+        options.extra[ExpressCheckout.requestExtraKey] = true;
+      } else {
+        options.headers.remove('Authorization');
+      }
     }
 
     super.onRequest(options, handler);
@@ -137,6 +149,14 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Express (phone checkout) tokens never refresh and never log anyone out:
+    // an expired one just ends the express session.
+    if (err.requestOptions.extra[ExpressCheckout.requestExtraKey] == true) {
+      if (err.response?.statusCode == 401) {
+        await ExpressCheckout.instance.clear();
+      }
+      return super.onError(err, handler);
+    }
     if (err.response?.statusCode != 401) {
       return super.onError(err, handler);
     }

@@ -903,5 +903,12 @@
   "auth.otpLogin.changeNumber": "Beddel lambarka ama iimaylka",
   "auth.otpLogin.resend": "Dib u dir koodhka",
   "auth.otpLogin.nameLabel": "Magacaaga",
-  "auth.otpLogin.nameRequired": "Geli magacaaga si aad u abuurto akoon"
+  "auth.otpLogin.nameRequired": "Geli magacaaga si aad u abuurto akoon",
+  "expressCheckout.title": "Ku iibso telefoonkaaga",
+  "expressCheckout.subtitle": "Looma baahna akoon ama koodh. Telefoonkaaga waxaan u isticmaalnaa gaarsiinta iyo lacag bixinta.",
+  "expressCheckout.name": "Magacaaga",
+  "expressCheckout.phone": "Lambarka mobilka",
+  "expressCheckout.continue": "U gudub gaarsiinta",
+  "expressCheckout.signInInstead": "Gal halkii",
+  "expressCheckout.failed": "Ma sii wadi karno. Hubi lambarkaaga oo isku day mar kale."
 }

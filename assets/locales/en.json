@@ -903,5 +903,12 @@
   "auth.otpLogin.changeNumber": "Change number or email",
   "auth.otpLogin.resend": "Resend code",
   "auth.otpLogin.nameLabel": "Your name",
-  "auth.otpLogin.nameRequired": "Enter your name to create your account"
+  "auth.otpLogin.nameRequired": "Enter your name to create your account",
+  "expressCheckout.title": "Checkout with your phone",
+  "expressCheckout.subtitle": "No account or code needed. We use your phone for delivery updates and payment.",
+  "expressCheckout.name": "Your name",
+  "expressCheckout.phone": "Mobile number",
+  "expressCheckout.continue": "Continue to delivery",
+  "expressCheckout.signInInstead": "Sign in instead",
+  "expressCheckout.failed": "We couldn't continue. Check your number and try again."
 }

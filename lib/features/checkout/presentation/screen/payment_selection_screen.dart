@@ -129,6 +129,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
     if (!mounted || raw == null || raw.isEmpty) return;
 
     final parsed = parseProfilePhoneForField(raw);
+    // Don't prefill an Ethiopian number into a Kenyan (M-Pesa) checkout.
+    if ((_cartCurrency ?? '').toUpperCase() == 'KES' &&
+        parsed.initialCountryCode != 'KE') {
+      return;
+    }
     setState(() {
       _paymentPhonePrefilled = true;
       _initialCountryCode = parsed.initialCountryCode;
@@ -155,6 +160,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         final cart = extra['cart'];
         if (cart is Cart) {
           _cartCurrency = cart.currency;
+          // Kenyan shoppers pay with M-Pesa: start the phone field at +254.
+          if (cart.currency.toUpperCase() == 'KES') {
+            _initialCountryCode = 'KE';
+          }
         }
       }
     }
@@ -200,6 +209,24 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
 
   bool get _isPayPalSelected =>
       PaymentConstants.isPayPal(_selectedPaymentProviderCode);
+
+  /// M-Pesa Kenya (KasaPay) needs a Kenyan Safaricom number, not +251.
+  bool get _isKasaPaySelected {
+    final _SelectablePaymentMethod? method = _getSelectedMethod();
+    return PaymentConstants.isKasaPayMpesa(
+      _selectedPaymentProviderCode,
+      displayName: method?.displayName,
+    );
+  }
+
+  bool _isPaymentPhoneValid(String? raw) => _isKasaPaySelected
+      ? isValidKenyanMpesaNumber(raw)
+      : isValidPaymentAccount(raw);
+
+  String _normalizedPaymentPhone(String raw) => normalizePaymentAccount(
+        raw,
+        countryCode: _isKasaPaySelected ? 'KE' : null,
+      );
 
   bool get _requiresPaymentPhone {
     final String? providerCode = _selectedPaymentProviderCode;
@@ -477,10 +504,10 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         paymentAccount = null;
       } else {
         paymentAccount = phoneNumber != null && phoneNumber.isNotEmpty
-            ? normalizePaymentAccount(phoneNumber)
+            ? _normalizedPaymentPhone(phoneNumber)
             : null;
 
-        if (paymentAccount == null || !isValidPaymentAccount(phoneNumber)) {
+        if (paymentAccount == null || !_isPaymentPhoneValid(phoneNumber)) {
           if (mounted) {
             setState(() => _isPlacingOrder = false);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -673,7 +700,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
         !_isPlacingOrder &&
         (_isPayPalSelected
             ? _paypalReadyForCheckout(cart.currency)
-            : !_requiresPaymentPhone || isValidPaymentAccount(_paymentPhoneNumber));
+            : !_requiresPaymentPhone || _isPaymentPhoneValid(_paymentPhoneNumber));
 
     return Scaffold(
       body: SafeArea(
@@ -842,7 +869,7 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
                             if (_isPayPalSelected || !_requiresPaymentPhone) {
                               _placeOrder(cart, address, null);
                             } else {
-                              final phone = normalizePaymentAccount(
+                              final phone = _normalizedPaymentPhone(
                                 _paymentPhoneNumber!,
                               );
                               _placeOrder(cart, address, phone);
