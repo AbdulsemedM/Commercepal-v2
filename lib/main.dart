@@ -38,9 +38,11 @@ void main() async {
     unawaited(NotificationService.initialize());
 
     // Initialize Crashlytics
-    // FlutterError.onError = (errorDetails) {
-    //   FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    // };
+    // Report widget/build errors too (previously only async errors were sent).
+    FlutterError.onError = (FlutterErrorDetails errorDetails) {
+      FlutterError.presentError(errorDetails);
+      FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
+    };
     // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

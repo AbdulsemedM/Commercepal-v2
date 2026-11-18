@@ -157,7 +157,7 @@ class PaymentMethodsRepository {
               PublicPaymentMethod(
                 providerCode: variant.variantCode,
                 displayName: variant.displayName,
-                iconUrl: variant.iconUrl ?? item.iconUrl,
+                iconUrl: variant.iconUrl.isNotEmpty ? variant.iconUrl : item.iconUrl,
                 requiresAccount: item.requireAccountNumberOnInitiation ?? false,
               ),
             );

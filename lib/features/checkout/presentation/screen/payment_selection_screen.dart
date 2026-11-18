@@ -297,6 +297,8 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen>
       final providers = await _paymentMethodsRepository.getSelectableProviders(
         cartCurrency: _cartCurrency,
       );
+      // The screen may have been closed while methods were loading.
+      if (!mounted) return;
 
       final List<_SelectablePaymentMethod> selectable = providers
           .where((p) => _methodVisibleForCart(p.providerCode, _cartCurrency))

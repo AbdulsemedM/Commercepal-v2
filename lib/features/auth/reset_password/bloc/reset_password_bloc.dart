@@ -1,6 +1,6 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/features/auth/reset_password/data/models/reset_password_request.dart';

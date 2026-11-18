@@ -185,6 +185,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       final providers = await _paymentMethodsRepository.getSelectableProviders(
         cartCurrency: widget.currency,
       );
+      if (!mounted) return;
       final List<_SelectablePaymentMethod> selectable = providers
           .where((p) => _methodVisibleForCart(p.providerCode, widget.currency))
           .map(
