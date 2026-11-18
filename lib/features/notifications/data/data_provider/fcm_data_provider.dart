@@ -5,16 +5,17 @@ import 'package:commercepal/services/api_service.dart';
 import '../models/fcm_register_request.dart';
 import '../models/fcm_unregister_request.dart';
 
-/// Registers the device token with both notification backends: the existing
-/// `/api/fcm/token/*` endpoints and the FCM v1 notification service on
+/// Registers the device token with the FCM v1 notification service on
 /// api.commercepal.com (order confirmations, campaigns, cart reminders).
+///
+/// The old `/api/fcm/token/*` endpoints do not exist on the backend; calling
+/// them made every registration "fail", so the token was never cached and was
+/// re-sent on every launch.
 class FcmDataProvider {
   FcmDataProvider({ApiService? apiService})
       : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
-  static const String _registerEndpoint = '/api/fcm/token/register';
-  static const String _unregisterEndpoint = '/api/fcm/token/unregister';
   static const String _v1RegisterUrl =
       'https://api.commercepal.com/api/v1/notifications/fcm/register';
   static const String _v1UnregisterUrl =
@@ -25,7 +26,6 @@ class FcmDataProvider {
   Future<void> register(FcmRegisterRequest request) {
     final Map<String, dynamic> body = request.toJson();
     return _sendToAll('register', <Future<void> Function()>[
-      () => _apiService.post<dynamic>(_registerEndpoint, data: body),
       () => _apiService.post<dynamic>(_v1RegisterUrl, data: body),
     ]);
   }
@@ -33,7 +33,6 @@ class FcmDataProvider {
   Future<void> unregister(FcmUnregisterRequest request) {
     final Map<String, dynamic> body = request.toJson();
     return _sendToAll('unregister', <Future<void> Function()>[
-      () => _apiService.delete<dynamic>(_unregisterEndpoint, data: body),
       () => _apiService.delete<dynamic>(_v1UnregisterUrl, data: body),
     ]);
   }
