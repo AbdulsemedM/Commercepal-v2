@@ -6,14 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/core/utils/phone_utils.dart';
-import 'package:commercepal/core/auth/remember_me_crypto.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/services/localization_service.dart';
 import 'package:commercepal/services/biometric_service.dart';
 import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/app/router/app_router.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:commercepal/features/auth/presentation/widgets/auth_form_widgets.dart';
+import 'package:commercepal/features/auth/presentation/widgets/otp_pin_input.dart';
 import '../../bloc/login_bloc.dart';
 import '../widgets/login_widgets.dart';
 
@@ -29,7 +28,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   LoginMethod _loginMethod = LoginMethod.email;
   String _completePhoneNumber = '';
@@ -37,8 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final Storage _storage = Storage();
   final BiometricService _biometricService = BiometricService();
   bool _showBiometricLogin = false;
-  bool _needsBiometricToRevealSavedLogin = false;
-  bool _showUnlockSavedLoginButton = false;
+
+  // Passwordless login: identifier -> code sent -> verify.
+  final TextEditingController _nameController = TextEditingController();
+  String? _otpSentTo;
+  String? _otpIdentifier;
+  bool _needsName = false;
+  String _otpCode = '';
 
   @override
   void initState() {
@@ -58,49 +61,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Only the phone/email is remembered — login uses a one-time code now.
   Future<void> _prefillFromRememberMe() async {
-    final String? email = await _storage.getRememberedEmail();
-    final String? savedCipher = await _storage.getRememberedPasswordCipher();
-    final bool biometricOn = await _storage.getBiometricEnabled();
-    final bool enrolled = await _biometricService.hasEnrolledBiometrics;
-    final bool gateSavedLoginWithBio = savedCipher != null &&
-        savedCipher.isNotEmpty &&
-        biometricOn &&
-        enrolled;
-
-    if (gateSavedLoginWithBio) {
-      if (!mounted) return;
-      setState(() {
-        _emailController.clear();
-        _phoneController.clear();
-        _completePhoneNumber = '';
-        _passwordController.clear();
-        _needsBiometricToRevealSavedLogin = true;
-        _showUnlockSavedLoginButton = false;
-      });
-      return;
-    }
-
-    String? password;
-    if (savedCipher != null && savedCipher.isNotEmpty) {
-      password = await RememberMeCrypto.tryDecryptPassword(
-        _storage,
-        savedCipher,
-      );
-    }
-    if (!mounted) return;
+    final String? identifier = await _storage.getRememberedEmail();
+    if (!mounted || identifier == null || identifier.isEmpty) return;
     setState(() {
-      _needsBiometricToRevealSavedLogin = false;
-      _showUnlockSavedLoginButton = false;
-      if (email != null && email.isNotEmpty) {
-        _applySavedIdentifier(email);
-      }
-      if (password != null && password.isNotEmpty) {
-        _passwordController.text = password;
-        _rememberMe = true;
-      } else if (email != null && email.isNotEmpty) {
-        _rememberMe = true;
-      }
+      _applySavedIdentifier(identifier);
+      _rememberMe = true;
     });
   }
 
@@ -120,58 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailController.text = identifier;
       _phoneController.clear();
       _completePhoneNumber = '';
-    }
-  }
-
-  Future<void> _applyDecryptedSavedCredentials() async {
-    final String? email = await _storage.getRememberedEmail();
-    final String? cipher = await _storage.getRememberedPasswordCipher();
-    if (cipher == null || cipher.isEmpty) return;
-    final String? password = await RememberMeCrypto.tryDecryptPassword(
-      _storage,
-      cipher,
-    );
-    if (!mounted) return;
-    if (password == null || password.isEmpty) {
-      AppSnackbars.error(context, LocalizationService.t(context, 'auth.biometric.signInFailed'));
-      setState(() {
-        _needsBiometricToRevealSavedLogin = false;
-        _showUnlockSavedLoginButton = false;
-      });
-      return;
-    }
-    setState(() {
-      if (email != null && email.isNotEmpty) {
-        _applySavedIdentifier(email);
-      }
-      _passwordController.text = password;
-      _rememberMe = true;
-      _needsBiometricToRevealSavedLogin = false;
-      _showUnlockSavedLoginButton = false;
-    });
-  }
-
-  Future<void> _presentBiometricAndApplySavedCredentials() async {
-    if (!mounted) return;
-    final BiometricAuthResult result = await _biometricService.authenticate(
-      reason: LocalizationService.t(
-        context,
-        'auth.biometric.unlockSavedLoginReason',
-      ),
-    );
-    if (!mounted) return;
-    switch (result) {
-      case BiometricAuthResult.success:
-        await _applyDecryptedSavedCredentials();
-        break;
-      case BiometricAuthResult.failure:
-      case BiometricAuthResult.unavailable:
-        AppSnackbars.error(context, LocalizationService.t(context, 'auth.biometric.signInFailed'));
-        setState(() => _showUnlockSavedLoginButton = true);
-        break;
-      case BiometricAuthResult.cancel:
-        setState(() => _showUnlockSavedLoginButton = true);
-        break;
     }
   }
 
@@ -229,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() {
           _rememberMe = false;
-          _passwordController.clear();
           _emailController.clear();
           _phoneController.clear();
           _completePhoneNumber = '';
@@ -249,7 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return PhoneUtils.normalizeLoginIdentifier(raw);
   }
 
-  void _submitLogin(BuildContext context) {
+  /// Step 1: send a one-time code to the phone/email (no password).
+  void _sendCode(BuildContext context) {
     if (_formKey.currentState?.validate() != true) return;
 
     final String loginIdentifier = _resolveLoginIdentifier();
@@ -258,23 +173,46 @@ class _LoginScreenState extends State<LoginScreen> {
       AppSnackbars.error(context, LocalizationService.t(context, 'auth.login.phoneInvalid'));
       return;
     }
+    if (_needsName && _nameController.text.trim().isEmpty) {
+      AppSnackbars.error(context, LocalizationService.t(context, 'auth.otpLogin.nameRequired'));
+      return;
+    }
 
     context.read<LoginBloc>().add(
-          LoginSubmitted(
-            loginIdentifier: loginIdentifier,
-            password: _passwordController.text,
-            channel: PlatformUtils.getAuthChannel(),
-            rememberMe: _rememberMe,
+          OtpCodeRequested(
+            identifier: loginIdentifier,
             usedPhoneLogin: _loginMethod == LoginMethod.phone,
+            firstName: _needsName ? _nameController.text.trim() : null,
           ),
         );
+  }
+
+  /// Step 2: verify the code and sign in.
+  void _verifyCode(BuildContext context, String code) {
+    final String? identifier = _otpIdentifier;
+    if (identifier == null || code.length < 6) return;
+    context.read<LoginBloc>().add(
+          OtpVerifySubmitted(
+            identifier: identifier,
+            code: code,
+            usedPhoneLogin: _loginMethod == LoginMethod.phone,
+            rememberMe: _rememberMe,
+            channel: PlatformUtils.getAuthChannel(),
+          ),
+        );
+  }
+
+  void _resetOtp() {
+    _otpSentTo = null;
+    _otpIdentifier = null;
+    _otpCode = '';
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _phoneController.dispose();
-    _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -364,10 +302,23 @@ class _LoginScreenState extends State<LoginScreen> {
               listener: (context, state) {
                 if (state is LoginSuccess) {
                   _maybeShowEnableBiometricDialog().then((_) {
-                    if (context.mounted) {
+                    if (!context.mounted) return;
+                    // Opened from checkout/cart: go back so the purchase continues.
+                    if (!widget.hideBackButton && context.canPop()) {
+                      context.pop(true);
+                    } else {
                       context.go(AppRoutes.dashboard);
                     }
                   });
+                } else if (state is OtpCodeSent) {
+                  setState(() {
+                    _otpSentTo = state.sentTo;
+                    _otpIdentifier = state.identifier;
+                    _otpCode = '';
+                  });
+                } else if (state is OtpNameRequired) {
+                  setState(() => _needsName = true);
+                  AppSnackbars.info(context, state.message);
                 } else if (state is LoginFailure) {
                   String message = state.message;
                   if (state.isInvalidCredentials) {
@@ -433,6 +384,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onChanged: (LoginMethod method) {
                                     setState(() {
                                       _loginMethod = method;
+                                      _needsName = false;
+                                      _resetOtp();
                                     });
                                   },
                                 ),
@@ -462,17 +415,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const _OrDivider(),
                                   const SizedBox(height: Spacing.lg),
                                 ],
-                                if (_needsBiometricToRevealSavedLogin ||
-                                    _showUnlockSavedLoginButton) ...[
-                                  _StoredCredentialsBiometricCard(
-                                    isLoading: isLoading,
-                                    onTap:
-                                        _presentBiometricAndApplySavedCredentials,
-                                  ),
-                                  const SizedBox(height: Spacing.lg),
-                                  const _OrDivider(),
-                                  const SizedBox(height: Spacing.lg),
-                                ],
                                 if (_loginMethod == LoginMethod.email)
                                   EmailInputField(controller: _emailController)
                                 else
@@ -484,67 +426,114 @@ class _LoginScreenState extends State<LoginScreen> {
                                       });
                                     },
                                   ),
-                                const SizedBox(height: Spacing.md),
-                                // Password field
-                                PasswordInputField(
-                                  controller: _passwordController,
-                                  onSubmitted: (_) {
-                                    if (!isLoading) _submitLogin(context);
-                                  },
-                                ),
-                                const SizedBox(height: Spacing.xs),
-                                // Remember me (whole label tappable) + forgot
-                                // password on one row.
-                                Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: MergeSemantics(
-                                        child: InkWell(
-                                          borderRadius: AppRadius.smAll,
-                                          onTap: () => setState(
-                                            () => _rememberMe = !_rememberMe,
-                                          ),
-                                          child: Row(
-                                            children: <Widget>[
-                                              Checkbox(
-                                                value: _rememberMe,
-                                                onChanged: (bool? value) =>
-                                                    setState(
-                                                  () => _rememberMe =
-                                                      value ?? false,
-                                                ),
-                                              ),
-                                              Flexible(
-                                                child: Text(
-                                                  LocalizationService.t(
-                                                    context,
-                                                    'auth.login.rememberMe',
-                                                  ),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                if (_needsName && _otpSentTo == null) ...[
+                                  const SizedBox(height: Spacing.md),
+                                  TextFormField(
+                                    controller: _nameController,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    autofillHints: const <String>[
+                                      AutofillHints.givenName,
+                                    ],
+                                    decoration: InputDecoration(
+                                      labelText: LocalizationService.t(
+                                        context,
+                                        'auth.otpLogin.nameLabel',
                                       ),
                                     ),
-                                    ForgotPasswordLink(
-                                      onTap: () {
-                                        context.push(AppRoutes.forgotPassword);
+                                  ),
+                                ],
+                                if (_otpSentTo != null) ...[
+                                  const SizedBox(height: Spacing.lg),
+                                  Text(
+                                    LocalizationService.tf(
+                                      context,
+                                      'auth.otpLogin.codeSentTo',
+                                      <String, Object?>{
+                                        'destination': _otpSentTo,
                                       },
                                     ),
-                                  ],
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                  OtpPinInput(
+                                    enabled: !isLoading,
+                                    onChanged: (String code) =>
+                                        _otpCode = code,
+                                    onCompleted: (String code) {
+                                      _otpCode = code;
+                                      _verifyCode(context, code);
+                                    },
+                                  ),
+                                  const SizedBox(height: Spacing.sm),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      TextButton(
+                                        onPressed: isLoading
+                                            ? null
+                                            : () => setState(_resetOtp),
+                                        child: Text(LocalizationService.t(
+                                          context,
+                                          'auth.otpLogin.changeNumber',
+                                        )),
+                                      ),
+                                      TextButton(
+                                        onPressed: isLoading
+                                            ? null
+                                            : () => _sendCode(context),
+                                        child: Text(LocalizationService.t(
+                                          context,
+                                          'auth.otpLogin.resend',
+                                        )),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                const SizedBox(height: Spacing.xs),
+                                MergeSemantics(
+                                  child: InkWell(
+                                    borderRadius: AppRadius.smAll,
+                                    onTap: () => setState(
+                                      () => _rememberMe = !_rememberMe,
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Checkbox(
+                                          value: _rememberMe,
+                                          onChanged: (bool? value) => setState(
+                                            () => _rememberMe = value ?? false,
+                                          ),
+                                        ),
+                                        Flexible(
+                                          child: Text(
+                                            LocalizationService.t(
+                                              context,
+                                              'auth.login.rememberMe',
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: Spacing.lg),
                                 AuthPrimaryButton(
                                   label: LocalizationService.t(
                                     context,
-                                    'auth.login.loginButton',
+                                    _otpSentTo == null
+                                        ? 'auth.otpLogin.sendCode'
+                                        : 'auth.otpLogin.verify',
                                   ),
                                   isLoading: isLoading,
-                                  onPressed: () => _submitLogin(context),
+                                  onPressed: () => _otpSentTo == null
+                                      ? _sendCode(context)
+                                      : _verifyCode(context, _otpCode),
                                 ),
                                 if (PlatformUtils
                                     .shouldShowGoogleSignInButton) ...[
@@ -654,78 +643,6 @@ class _OrDivider extends StatelessWidget {
         ),
         const Expanded(child: Divider()),
       ],
-    );
-  }
-}
-
-class _StoredCredentialsBiometricCard extends StatelessWidget {
-  const _StoredCredentialsBiometricCard({
-    required this.isLoading,
-    required this.onTap,
-  });
-
-  final bool isLoading;
-  final Future<void> Function() onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Card(
-      color: scheme.primaryContainer,
-      child: InkWell(
-        onTap: isLoading ? null : () => onTap(),
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.md),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: context.commerce.cta,
-                ),
-                alignment: Alignment.center,
-                child: FaIcon(
-                  FontAwesomeIcons.fingerprint,
-                  size: 26,
-                  color: context.commerce.onCta,
-                ),
-              ),
-              const SizedBox(width: Spacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      LocalizationService.t(
-                        context,
-                        'auth.biometric.unlockSavedLogin',
-                      ),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: scheme.onPrimaryContainer,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      LocalizationService.t(
-                        context,
-                        'auth.biometric.unlockSavedLoginHint',
-                      ),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded,
-                  color: scheme.onPrimaryContainer),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

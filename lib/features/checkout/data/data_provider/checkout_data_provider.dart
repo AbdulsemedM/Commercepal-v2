@@ -61,12 +61,14 @@ class CheckoutDataProvider {
     required String orderNumber,
     required PaymentRetryRequest request,
   }) async {
-    final String path =
-        '/api/orders/${Uri.encodeComponent(orderNumber)}/retry-payment';
+    // Backend contract: POST /api/v1/payments/retry {paymentReference,
+    // paymentProviderCode}; the payment reference is the order number.
+    // (The old /orders/{n}/retry-payment path does not exist → every retry 404'd.)
+    const String path = '/api/payments/retry';
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         path,
-        data: request.toJson(),
+        data: request.toBackendJson(orderNumber),
       );
 
       if (response.data == null) {

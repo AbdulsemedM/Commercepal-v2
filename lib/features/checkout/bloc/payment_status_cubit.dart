@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../data/models/payment_status_result.dart';
 import '../data/repository/payment_status_repository.dart';

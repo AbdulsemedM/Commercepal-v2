@@ -18,6 +18,7 @@ const Set<String> _allowedPaymentHostSuffixes = {
   'cbe.com.et',
   'commercepal.com',
   'ziina.com',
+  'kasapay.com',
 };
 
 /// In-app WebView screen for completing payment at [paymentUrl].
@@ -112,6 +113,10 @@ class _PaymentWebViewBodyState extends State<_PaymentWebViewBody>
               return NavigationDecision.prevent;
             }
             if (url.contains('commercepal.com/checkout/cancel')) {
+              return NavigationDecision.prevent;
+            }
+            // KasaPay (M-Pesa Kenya) returns here; the app polls the status.
+            if (url.contains('commercepal.com/checkout/payment-waiting')) {
               return NavigationDecision.prevent;
             }
             if (!_isPaymentUrlAllowed(url)) {

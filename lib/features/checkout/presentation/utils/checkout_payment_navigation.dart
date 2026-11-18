@@ -128,6 +128,7 @@ Future<void> navigateAfterCheckout(
       if (!context.mounted) return;
       if (ussdCode != null && ussdCode.isNotEmpty) {
         await _showUssdDialog(context, ussdCode);
+        if (!context.mounted) return;
       }
       navigateToPaymentPending(
         context,

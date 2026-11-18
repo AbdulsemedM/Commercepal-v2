@@ -1,0 +1,28 @@
+name: PR check (analyze + test)
+# Runs on pull requests only. Builds nothing and publishes nothing — the Shorebird
+# release/patch workflows are unchanged.
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      # .env is gitignored but declared as an asset; tests only need it to exist.
+      - name: Placeholder .env
+        run: printf 'BASE_URL=https://example.invalid\n' > .env
+      - run: flutter pub get
+      # The codebase has existing warnings; fail on errors, report the rest.
+      - name: Analyze (errors fail; warnings and infos reported)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Tests
+        run: flutter test

@@ -108,7 +108,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 AppSnackbars.success(context, state.message);
                 // Navigate to login after showing success message
                 Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) {
+                  // The listener's context, not just the State, must still be alive.
+                  if (mounted && context.mounted) {
                     if (Navigator.of(context).canPop()) {
                       Navigator.of(context).pop();
                     } else {

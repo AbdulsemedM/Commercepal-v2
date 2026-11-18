@@ -78,7 +78,12 @@ class DeeplinkService {
 
   Future<void> _openExternalUrl(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri == null) return;
+    // Push payloads may only open web pages — never tel:, sms:, intent:,
+    // file: or other app schemes.
+    if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty) {
+      AppLogger.w('Blocked non-https notification URL');
+      return;
+    }
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e, st) {

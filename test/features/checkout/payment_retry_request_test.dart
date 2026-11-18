@@ -13,4 +13,16 @@ void main() {
       'paymentAccount': '+251911234567',
     });
   });
+
+  test('PaymentRetryRequest builds the backend /payments/retry body', () {
+    final request = PaymentRetryRequest(
+      paymentProviderCode: 'TELE_BIRR',
+      paymentAccount: '251912345678',
+    );
+
+    expect(request.toBackendJson('CPA1118YH9YN2EE'), <String, dynamic>{
+      'paymentReference': 'CPA1118YH9YN2EE',
+      'paymentProviderCode': 'TELE_BIRR',
+    });
+  });
 }

@@ -1,5 +1,5 @@
-import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'package:commercepal/core/auth/session_error.dart';
 import 'package:commercepal/features/orders/data/models/orders_response.dart';
