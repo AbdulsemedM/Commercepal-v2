@@ -896,5 +896,12 @@
   "affiliate.financeNote": "ملاحظة المالية: {note}",
   "auth.signup.referralCode": "رمز الإحالة (اختياري)",
   "auth.signup.referralCodePlaceholder": "من دعاك؟",
-  "auth.signup.referralCodeInvalid": "أدخل رمز إحالة صالحاً"
+  "auth.signup.referralCodeInvalid": "أدخل رمز إحالة صالحاً",
+  "auth.otpLogin.sendCode": "أرسل الرمز",
+  "auth.otpLogin.verify": "تحقق وسجّل الدخول",
+  "auth.otpLogin.codeSentTo": "أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى {destination}",
+  "auth.otpLogin.changeNumber": "تغيير الرقم أو البريد",
+  "auth.otpLogin.resend": "إعادة إرسال الرمز",
+  "auth.otpLogin.nameLabel": "اسمك",
+  "auth.otpLogin.nameRequired": "أدخل اسمك لإنشاء حسابك"
 }

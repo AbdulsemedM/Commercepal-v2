@@ -896,5 +896,12 @@
   "affiliate.financeNote": "Qoraalka maaliyadda: {note}",
   "auth.signup.referralCode": "Koodhka gudbinta (ikhtiyaari)",
   "auth.signup.referralCodePlaceholder": "Yaa ku casuumay?",
-  "auth.signup.referralCodeInvalid": "Geli koodh gudbin sax ah"
+  "auth.signup.referralCodeInvalid": "Geli koodh gudbin sax ah",
+  "auth.otpLogin.sendCode": "Dir koodhka",
+  "auth.otpLogin.verify": "Xaqiiji oo gal",
+  "auth.otpLogin.codeSentTo": "Geli koodhka 6-da god ah ee aan u dirnay {destination}",
+  "auth.otpLogin.changeNumber": "Beddel lambarka ama iimaylka",
+  "auth.otpLogin.resend": "Dib u dir koodhka",
+  "auth.otpLogin.nameLabel": "Magacaaga",
+  "auth.otpLogin.nameRequired": "Geli magacaaga si aad u abuurto akoon"
 }

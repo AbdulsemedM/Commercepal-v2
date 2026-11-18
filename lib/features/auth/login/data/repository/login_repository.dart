@@ -37,6 +37,41 @@ class LoginRepository {
     return response;
   }
 
+  Future<String> requestOtp({
+    required String identifier,
+    String? firstName,
+    String? countryCode,
+  }) {
+    return _dataProvider.requestOtp(
+      identifier: identifier,
+      firstName: firstName,
+      countryCode: countryCode,
+    );
+  }
+
+  /// Passwordless sign-in: verify the code, then store the session exactly
+  /// like a password login.
+  Future<LoginResponse> verifyOtp({
+    required String identifier,
+    required String code,
+    required String channel,
+  }) async {
+    final response = await _dataProvider.verifyOtp(
+      identifier: identifier,
+      code: code,
+    );
+    await _storage.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      tokenType: response.tokenType,
+      expiresIn: response.expiresIn,
+      userEmail: identifier,
+    );
+    await _storage.saveAuthChannel(channel);
+    await NotificationService().registerTokenWithBackend();
+    return response;
+  }
+
   Future<Map<String, dynamic>> signInWithGoogle({String? channel, String? deviceId}) async {
     final String resolvedChannel = channel ?? PlatformUtils.getGoogleSignInChannel();
     final response = await _googleSignInDataProvider.signInWithGoogle(

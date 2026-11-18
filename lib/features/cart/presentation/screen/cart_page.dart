@@ -106,10 +106,12 @@ class _CartPageState extends State<CartPage> {
     _cartBloc.add(CartUpdateItemRequested(itemId: item.id, quantity: quantity));
   }
 
-  void _checkout(Cart cart) {
+  Future<void> _checkout(Cart cart) async {
     if (!_authService.isLoggedIn) {
-      context.push(AppRoutes.login);
-      return;
+      // Phone/email + one-time code (no password); the login screen pops
+      // back with `true` so the purchase continues right away.
+      final bool? signedIn = await context.push<bool>(AppRoutes.login);
+      if (!mounted || signedIn != true || !_authService.isLoggedIn) return;
     }
     context.push(AppRoutes.checkoutSummary, extra: cart);
   }
