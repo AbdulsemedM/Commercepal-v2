@@ -40,7 +40,8 @@ class ProductSearchScreen extends StatefulWidget {
 }
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
-  static const double _loadMoreScrollThreshold = 400;
+  // Start the next page about two screens before the end so fast scrolling rarely waits.
+  static const double _loadMoreScrollThreshold = 1200;
 
   /// (locale key, English query sent to the catalogue API).
   static const List<(String, String)> _suggestions = <(String, String)>[
