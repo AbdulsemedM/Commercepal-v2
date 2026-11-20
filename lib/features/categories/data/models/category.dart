@@ -26,7 +26,9 @@ class Category {
   factory Category.fromJson(Map<String, dynamic> json) {
     final subCategoriesJson = json['subCategories'] as List<dynamic>? ?? [];
     final subCategories = subCategoriesJson
-        .map((item) => SubCategory.fromJson(item as Map<String, dynamic>))
+        .whereType<Map<String, dynamic>>()
+        .map(SubCategory.fromJson)
+        .where((SubCategory sub) => sub.name.isNotEmpty)
         .toList();
 
     // Handle id field - can be string, number, or in _id format
@@ -37,15 +39,17 @@ class Category {
       categoryId = json['_id'].toString();
     }
 
+    // Every field is read defensively: one category with a missing value used to throw
+    // here and take down the whole categories screen.
     return Category(
       id: categoryId,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
-      code: json['code'] as String,
-      description: json['description'] as String?,
-      imageUrl: json['imageUrl'] as String?,
-      displayOrder: json['displayOrder'] as int? ?? 0,
-      providerId: json['providerId'] as String,
+      name: json['name']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+      code: json['code']?.toString() ?? '',
+      description: json['description']?.toString(),
+      imageUrl: json['imageUrl']?.toString(),
+      displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+      providerId: json['providerId']?.toString() ?? '',
       subCategories: subCategories,
     );
   }

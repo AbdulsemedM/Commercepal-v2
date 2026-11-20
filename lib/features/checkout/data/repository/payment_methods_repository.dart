@@ -36,6 +36,13 @@ class PaymentMethodsRepository {
     final List<PublicPaymentMethod> filtered = methods
         .where((PublicPaymentMethod m) {
           if (!m.isEnabled) return false;
+          if (!PaymentConstants.isAllowedForCurrency(
+            m.providerCode,
+            cartCurrency,
+            displayName: m.displayName,
+          )) {
+            return false;
+          }
           if (PaymentConstants.isHiddenPaymentProvider(
             m.providerCode,
             displayName: m.displayName,
@@ -150,7 +157,7 @@ class PaymentMethodsRepository {
               PublicPaymentMethod(
                 providerCode: variant.variantCode,
                 displayName: variant.displayName,
-                iconUrl: variant.iconUrl ?? item.iconUrl,
+                iconUrl: variant.iconUrl.isNotEmpty ? variant.iconUrl : item.iconUrl,
                 requiresAccount: item.requireAccountNumberOnInitiation ?? false,
               ),
             );

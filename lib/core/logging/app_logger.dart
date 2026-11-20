@@ -24,8 +24,9 @@ class AppLogger {
     StackTrace? stack,
     Object? data,
   }) {
-    // Commented out for release / MobSF — uncomment for local debugging.
-    // _log('ERROR', message, data, error: error, stack: stack);
+    // Debug builds only: release builds stay silent (MobSF), but errors must be
+    // visible while developing.
+    if (kDebugMode) _log('ERROR', message, data, error: error, stack: stack);
   }
 
   static void _log(

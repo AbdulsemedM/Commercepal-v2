@@ -22,17 +22,26 @@ class ProductSearchScreen extends StatefulWidget {
     super.key,
     this.initialQuery,
     this.initialAccountType,
+    this.initialCategoryId,
+    this.initialCategoryName,
   });
 
   final String? initialQuery;
   final String? initialAccountType;
+
+  /// Browse a whole CJ category (thousands of products) instead of a keyword.
+  final String? initialCategoryId;
+
+  /// Shown in the search field while browsing a category.
+  final String? initialCategoryName;
 
   @override
   State<ProductSearchScreen> createState() => _ProductSearchScreenState();
 }
 
 class _ProductSearchScreenState extends State<ProductSearchScreen> {
-  static const double _loadMoreScrollThreshold = 400;
+  // Start the next page about two screens before the end so fast scrolling rarely waits.
+  static const double _loadMoreScrollThreshold = 1200;
 
   /// (locale key, English query sent to the catalogue API).
   static const List<(String, String)> _suggestions = <(String, String)>[
@@ -55,7 +64,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialQuery ?? '');
+    _searchController = TextEditingController(
+      text: widget.initialQuery ?? widget.initialCategoryName ?? '',
+    );
     _searchFocusNode = FocusNode();
     _scrollController = ScrollController();
     _scrollController.addListener(_onProductListScroll);
@@ -63,7 +74,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadRecentSearches();
       if (!mounted) return;
-      if (_hasInitialQuery()) {
+      if (_hasInitialCategory()) {
+        _browseCategory();
+      } else if (_hasInitialQuery()) {
         await _performSearch();
       }
     });
@@ -131,6 +144,25 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     }
   }
 
+  bool _hasInitialCategory() =>
+      (widget.initialCategoryId ?? '').trim().isNotEmpty;
+
+  /// Category browse: no keyword, the backend pages through the CJ category.
+  void _browseCategory() {
+    _searchFocusNode.unfocus();
+    setState(() => _priceRange = const PriceRange());
+    context.read<ProductSearchBloc>().add(
+          SearchProducts(
+            request: ProductSearchRequest(
+              categoryId: widget.initialCategoryId!.trim(),
+              page: 0,
+              size: 60,
+              accountType: widget.initialAccountType,
+            ),
+          ),
+        );
+  }
+
   void _runSuggestion(String query) {
     _searchController.text = query;
     _performSearch();
@@ -148,6 +180,20 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
     if (blocState is ProductSearchLoaded && blocState.hasMore) {
       bloc.add(LoadMoreProducts());
     }
+  }
+
+  /// A short first page never scrolls, so the scroll trigger would never ask for page two.
+  void _loadMoreIfScreenNotFilled() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final ScrollPosition position = _scrollController.position;
+      if (position.maxScrollExtent > _loadMoreScrollThreshold) return;
+      final ProductSearchBloc bloc = context.read<ProductSearchBloc>();
+      final ProductSearchState state = bloc.state;
+      if (state is ProductSearchLoaded && state.hasMore) {
+        bloc.add(LoadMoreProducts());
+      }
+    });
   }
 
   /// Opened with a prefilled query (e.g. subcategory tap).
@@ -559,6 +605,9 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
     return BlocListener<ProductSearchBloc, ProductSearchState>(
       listenWhen: (ProductSearchState previous, ProductSearchState current) {
+        if (current is ProductSearchLoaded && current.hasMore) {
+          _loadMoreIfScreenNotFilled();
+        }
         if (current is! ProductSearchLoaded || current.noticeKey == null) {
           return false;
         }
@@ -576,7 +625,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
           cartCount: cartCount,
           controller: _searchController,
           focusNode: _searchFocusNode,
-          autofocus: !_hasInitialQuery(),
+          autofocus: !_hasInitialQuery() && !_hasInitialCategory(),
           searchPlaceholder: context.tr('productSearch.fieldHint'),
           onSearchSubmitted: (String _) {
             _performSearch();

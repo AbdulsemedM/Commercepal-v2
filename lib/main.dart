@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:commercepal/core/locale/market_auto_detect.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -36,9 +38,11 @@ void main() async {
     unawaited(NotificationService.initialize());
 
     // Initialize Crashlytics
-    // FlutterError.onError = (errorDetails) {
-    //   FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    // };
+    // Report widget/build errors too (previously only async errors were sent).
+    FlutterError.onError = (FlutterErrorDetails errorDetails) {
+      FlutterError.presentError(errorDetails);
+      FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
+    };
     // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
@@ -63,4 +67,6 @@ void main() async {
   }
 
   runApp(const MyApp());
+  // Kenya → KES + M-Pesa on first launch, like the website (non-blocking).
+  unawaited(MarketAutoDetect.runOnce());
 }

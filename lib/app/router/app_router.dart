@@ -202,6 +202,8 @@ final GoRouter appRouter = GoRouter(
           child: ProductSearchScreen(
             initialQuery: params['query'],
             initialAccountType: params['accountType'],
+            initialCategoryId: params['categoryId'],
+            initialCategoryName: params['title'],
           ),
         );
       },

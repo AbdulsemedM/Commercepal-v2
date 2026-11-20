@@ -896,5 +896,19 @@
   "affiliate.financeNote": "የፋይናንስ ማስታወሻ፦ {note}",
   "auth.signup.referralCode": "የሪፈራል ኮድ (አማራጭ)",
   "auth.signup.referralCodePlaceholder": "ማን ጋበዘዎት?",
-  "auth.signup.referralCodeInvalid": "ትክክለኛ የሪፈራል ኮድ ያስገቡ"
+  "auth.signup.referralCodeInvalid": "ትክክለኛ የሪፈራል ኮድ ያስገቡ",
+  "auth.otpLogin.sendCode": "ኮድ ላክ",
+  "auth.otpLogin.verify": "አረጋግጥና ግባ",
+  "auth.otpLogin.codeSentTo": "ወደ {destination} የላክነውን ባለ 6 አሃዝ ኮድ ያስገቡ",
+  "auth.otpLogin.changeNumber": "ስልክ ወይም ኢሜይል ቀይር",
+  "auth.otpLogin.resend": "ኮድ እንደገና ላክ",
+  "auth.otpLogin.nameLabel": "ስምዎ",
+  "auth.otpLogin.nameRequired": "መለያ ለመፍጠር ስምዎን ያስገቡ",
+  "expressCheckout.title": "በስልክዎ ይግዙ",
+  "expressCheckout.subtitle": "መለያ ወይም ኮድ አያስፈልግም። ስልክዎን ለማድረሻ መረጃና ለክፍያ እንጠቀማለን።",
+  "expressCheckout.name": "ስምዎ",
+  "expressCheckout.phone": "የሞባይል ቁጥር",
+  "expressCheckout.continue": "ወደ ማድረሻ ይቀጥሉ",
+  "expressCheckout.signInInstead": "በምትኩ ይግቡ",
+  "expressCheckout.failed": "መቀጠል አልተቻለም። ቁጥርዎን አረጋግጠው እንደገና ይሞክሩ።"
 }

@@ -15,7 +15,6 @@ class CheckoutDataProvider {
   final ApiService _apiService;
   final Storage _storage;
   static const String _checkoutEndpoint = '/api/orders/checkout';
-  static const String _sahayCheckEndpoint = '/api/payments/sahay/check';
   static const String _sahayCustomerLookupEndpoint =
       '/api/payments/sahaypay/customer-lookup';
 
@@ -61,12 +60,14 @@ class CheckoutDataProvider {
     required String orderNumber,
     required PaymentRetryRequest request,
   }) async {
-    final String path =
-        '/api/orders/${Uri.encodeComponent(orderNumber)}/retry-payment';
+    // Backend contract: POST /api/v1/payments/retry {paymentReference,
+    // paymentProviderCode}; the payment reference is the order number.
+    // (The old /orders/{n}/retry-payment path does not exist → every retry 404'd.)
+    const String path = '/api/payments/retry';
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         path,
-        data: request.toJson(),
+        data: request.toBackendJson(orderNumber),
       );
 
       if (response.data == null) {
@@ -99,26 +100,9 @@ class CheckoutDataProvider {
     }
   }
 
-  /// SahayPay registration check (guide path) with fallback to customer lookup.
-  Future<SahayVerificationResult> verifySahayAccount(String phoneNumber) async {
-    final normalized = _normalizeSahayPhone(phoneNumber);
-    try {
-      final response = await _apiService.get<Map<String, dynamic>>(
-        _sahayCheckEndpoint,
-        query: <String, dynamic>{'phone': '+$normalized'},
-      );
-      if (response.data != null) {
-        return SahayVerificationResult.fromJson(
-          Map<String, dynamic>.from(response.data!),
-        );
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode != 404) {
-        AppLogger.w('Sahay check endpoint failed, trying customer lookup');
-      }
-    }
-
-    return _verifySahayCustomerLookup(normalized);
+  /// SahayPay registration check via the backend customer lookup.
+  Future<SahayVerificationResult> verifySahayAccount(String phoneNumber) {
+    return _verifySahayCustomerLookup(_normalizeSahayPhone(phoneNumber));
   }
 
   Future<SahayVerificationResult> _verifySahayCustomerLookup(

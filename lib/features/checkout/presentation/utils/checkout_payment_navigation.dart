@@ -7,7 +7,6 @@ import '../../data/models/checkout_response.dart';
 import '../../data/models/payment_constants.dart';
 import '../../data/models/payment_flow_constants.dart';
 import '../../data/models/payment_initiate_result.dart';
-import '../../data/repository/payment_status_repository.dart';
 
 void _scheduleAfterNavigate(VoidCallback? onAfterNavigate) {
   if (onAfterNavigate == null) return;
@@ -118,16 +117,12 @@ Future<void> navigateAfterCheckout(
 
     case NextAction.ussdCode:
     case CheckoutResponse.nextActionOpenAdditionalInput:
-      if (ussdCode == null || ussdCode.isEmpty) {
-        ussdCode = await _fallbackInitiateUssd(
-          paymentProviderCode: paymentProviderCode,
-          orderNumber: orderNumber,
-          phone: paymentAccount,
-        );
-      }
+      // The checkout response is the only source of the USSD prompt; the
+      // backend sends the push to the customer's phone itself.
       if (!context.mounted) return;
       if (ussdCode != null && ussdCode.isNotEmpty) {
         await _showUssdDialog(context, ussdCode);
+        if (!context.mounted) return;
       }
       navigateToPaymentPending(
         context,
@@ -140,12 +135,6 @@ Future<void> navigateAfterCheckout(
       return;
 
     case NextAction.redirectToPaymentUrl:
-      if (paymentUrl == null || paymentUrl.isEmpty) {
-        paymentUrl = await _fallbackInitiateRedirect(
-          paymentProviderCode: paymentProviderCode,
-          orderNumber: orderNumber,
-        );
-      }
       if (!context.mounted) return;
       if (paymentUrl != null && paymentUrl.isNotEmpty) {
         await _openPaymentUrl(
@@ -182,51 +171,6 @@ Future<void> navigateAfterCheckout(
         paymentProviderCode: paymentProviderCode,
       );
       return;
-  }
-}
-
-Future<String?> _fallbackInitiateUssd({
-  required String paymentProviderCode,
-  required String orderNumber,
-  String? phone,
-}) async {
-  if (phone == null || phone.isEmpty) return null;
-  if (!PaymentConstants.usesDocsInitiateFlow(paymentProviderCode)) {
-    return null;
-  }
-  try {
-    final PaymentStatusRepository repository = PaymentStatusRepository();
-    final PaymentInitiateResult result;
-    if (PaymentConstants.isTelebirr(paymentProviderCode)) {
-      result = await repository.initiateTelebirr(
-        orderNumber: orderNumber,
-        phone: phone,
-      );
-    } else {
-      result = await repository.initiateEdahab(
-        orderNumber: orderNumber,
-        phone: phone,
-      );
-    }
-    return result.ussdCode;
-  } catch (_) {
-    return null;
-  }
-}
-
-Future<String?> _fallbackInitiateRedirect({
-  required String paymentProviderCode,
-  required String orderNumber,
-}) async {
-  if (!PaymentConstants.isCbeBirr(paymentProviderCode)) return null;
-  try {
-    final PaymentStatusRepository repository = PaymentStatusRepository();
-    final PaymentInitiateResult result = await repository.initiateCbeBirr(
-      orderNumber: orderNumber,
-    );
-    return result.paymentUrl;
-  } catch (_) {
-    return null;
   }
 }
 

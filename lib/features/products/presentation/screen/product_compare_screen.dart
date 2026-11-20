@@ -120,7 +120,7 @@ class _ProductCompareScreenState extends State<ProductCompareScreen> {
           TextButton(
             onPressed: () async {
               await Storage().setProductCompareIds(<String>[]);
-              if (mounted) context.pop();
+              if (context.mounted) context.pop();
             },
             child: Text(LocalizationService.t(context, 'compare.clear')),
           ),

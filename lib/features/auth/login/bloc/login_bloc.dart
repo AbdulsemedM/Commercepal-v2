@@ -1,7 +1,7 @@
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import 'package:commercepal/core/auth/remember_me_crypto.dart';
 import 'package:commercepal/core/auth/session_error.dart';
@@ -26,6 +26,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<LoginSubmitted>(_onLoginSubmitted);
     on<GoogleSignInRequested>(_onGoogleSignInRequested);
     on<LoginReset>(_onLoginReset);
+    on<OtpCodeRequested>(_onOtpCodeRequested);
+    on<OtpVerifySubmitted>(_onOtpVerifySubmitted);
   }
 
   final LoginRepository _repository;
@@ -181,6 +183,80 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       }
     }
     return null;
+  }
+
+  Future<void> _onOtpCodeRequested(
+    OtpCodeRequested event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+    try {
+      final sentTo = await _repository.requestOtp(
+        identifier: event.identifier,
+        firstName: event.firstName,
+        countryCode: event.countryCode,
+      );
+      emit(OtpCodeSent(identifier: event.identifier, sentTo: sentTo));
+    } catch (e) {
+      if (e is DioException && e.response?.statusCode == 404) {
+        final message = _extractServerMessage(e.response?.data) ??
+            'New here? Enter your name to create your account.';
+        // Email with no account can't be auto-created; phone can (with a name).
+        if (event.usedPhoneLogin) {
+          emit(OtpNameRequired(message));
+        } else {
+          emit(LoginFailure(message, usedPhoneLogin: false));
+        }
+        return;
+      }
+      emit(LoginFailure(
+        _otpErrorMessage(e, 'Could not send the code. Please try again.'),
+        usedPhoneLogin: event.usedPhoneLogin,
+      ));
+    }
+  }
+
+  Future<void> _onOtpVerifySubmitted(
+    OtpVerifySubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+    try {
+      final response = await _repository.verifyOtp(
+        identifier: event.identifier,
+        code: event.code,
+        channel: event.channel ?? PlatformUtils.getAuthChannel(),
+      );
+      _authService.login(userEmail: event.identifier);
+      // Only the identifier is remembered — there is no password any more.
+      await _storage.clearRememberMeCredentials();
+      if (event.rememberMe) {
+        await _storage.saveRememberedEmail(event.identifier);
+      } else {
+        await _storage.clearRememberedEmail();
+      }
+      emit(LoginSuccess(
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      ));
+    } catch (e) {
+      emit(LoginFailure(
+        _otpErrorMessage(e, 'Wrong or expired code. Please try again.'),
+        usedPhoneLogin: event.usedPhoneLogin,
+      ));
+    }
+  }
+
+  String _otpErrorMessage(Object error, String fallback) {
+    if (error is DioException) {
+      final message = _extractServerMessage(error.response?.data);
+      if (message != null) return message;
+      if (error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout) {
+        return 'Network error. Please check your connection.';
+      }
+    }
+    return fallback;
   }
 
   void _onLoginReset(LoginReset event, Emitter<LoginState> emit) {

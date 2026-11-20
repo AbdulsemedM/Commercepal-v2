@@ -1,3 +1,4 @@
+import 'package:commercepal/core/auth/express_checkout.dart';
 import 'package:commercepal/core/storage/storage.dart';
 import 'package:commercepal/core/utils/platform_utils.dart';
 import 'package:commercepal/services/notification_service.dart';
@@ -32,8 +33,45 @@ class LoginRepository {
     );
     await _storage.saveAuthChannel(request.channel);
 
+    await ExpressCheckout.instance.clear();
     await NotificationService().registerTokenWithBackend();
 
+    return response;
+  }
+
+  Future<String> requestOtp({
+    required String identifier,
+    String? firstName,
+    String? countryCode,
+  }) {
+    return _dataProvider.requestOtp(
+      identifier: identifier,
+      firstName: firstName,
+      countryCode: countryCode,
+    );
+  }
+
+  /// Passwordless sign-in: verify the code, then store the session exactly
+  /// like a password login.
+  Future<LoginResponse> verifyOtp({
+    required String identifier,
+    required String code,
+    required String channel,
+  }) async {
+    final response = await _dataProvider.verifyOtp(
+      identifier: identifier,
+      code: code,
+    );
+    await _storage.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      tokenType: response.tokenType,
+      expiresIn: response.expiresIn,
+      userEmail: identifier,
+    );
+    await _storage.saveAuthChannel(channel);
+    await ExpressCheckout.instance.clear();
+    await NotificationService().registerTokenWithBackend();
     return response;
   }
 
@@ -57,6 +95,7 @@ class LoginRepository {
     );
     await _storage.saveAuthChannel(resolvedChannel);
 
+    await ExpressCheckout.instance.clear();
     await NotificationService().registerTokenWithBackend();
 
     // Return response with user info

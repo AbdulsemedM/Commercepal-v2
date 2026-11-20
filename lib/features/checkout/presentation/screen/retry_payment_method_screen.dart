@@ -58,7 +58,7 @@ class _PaymentMethodCategory {
 }
 
 /// Screen to choose another payment method when retrying a failed payment.
-/// Calls POST /api/orders/{orderNumber}/retry-payment with selected method.
+/// Calls POST /api/payments/retry with the selected method.
 class RetryPaymentMethodScreen extends StatefulWidget {
   const RetryPaymentMethodScreen({
     super.key,
@@ -185,6 +185,7 @@ class _RetryPaymentMethodScreenState extends State<RetryPaymentMethodScreen> {
       final providers = await _paymentMethodsRepository.getSelectableProviders(
         cartCurrency: widget.currency,
       );
+      if (!mounted) return;
       final List<_SelectablePaymentMethod> selectable = providers
           .where((p) => _methodVisibleForCart(p.providerCode, widget.currency))
           .map(
