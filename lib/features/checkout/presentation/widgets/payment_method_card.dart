@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:commercepal/core/design_system.dart';
+import 'package:commercepal/features/checkout/data/models/payment_constants.dart';
 import 'package:commercepal/features/checkout/data/models/payment_method_assets.dart';
 import 'package:commercepal/services/localization_service.dart';
 
@@ -56,12 +57,23 @@ class PaymentMethodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    // Customers don't know the name "QPay": show what it does instead.
+    final bool isAllBanks = PaymentConstants.isQPay(
+      paymentMethodId,
+      displayName: paymentMethodName,
+    );
+    final String label = isAllBanks
+        ? context.tr('checkout.allBanksWallets')
+        : paymentMethodName;
+    final String? subtitle = (description != null && description!.isNotEmpty)
+        ? description
+        : (isAllBanks ? context.tr('checkout.allBanksWalletsDesc') : null);
 
     return Semantics(
       inMutuallyExclusiveGroup: true,
       selected: isSelected,
       button: true,
-      label: paymentMethodName,
+      label: label,
       excludeSemantics: true,
       child: Material(
         color: isSelected ? scheme.primaryContainer : scheme.surface,
@@ -119,7 +131,7 @@ class PaymentMethodCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: <Widget>[
                           Text(
-                            paymentMethodName,
+                            label,
                             style: theme.textTheme.titleSmall,
                           ),
                           if (glow)
@@ -130,9 +142,9 @@ class PaymentMethodCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      if (description != null && description!.isNotEmpty)
+                      if (subtitle != null)
                         Text(
-                          description!,
+                          subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
