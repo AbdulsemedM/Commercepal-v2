@@ -912,5 +912,15 @@
   "expressCheckout.signInInstead": "በምትኩ ይግቡ",
   "expressCheckout.failed": "መቀጠል አልተቻለም። ቁጥርዎን አረጋግጠው እንደገና ይሞክሩ።",
   "checkout.allBanksWallets": "ሁሉም የኢትዮጵያ ባንኮች እና ዋሌቶች",
-  "checkout.allBanksWalletsDesc": "ቴሌብር፣ CBE፣ አዋሽ፣ አቢሲኒያ እና ከ30 በላይ ሌሎች ባንኮች"
+  "checkout.allBanksWalletsDesc": "ቴሌብር፣ CBE፣ አዋሽ፣ አቢሲኒያ እና ከ30 በላይ ሌሎች ባንኮች",
+  "orderHistory.signInTitle": "ትዕዛዞችዎን ለማየት ይግቡ",
+  "orderHistory.signInSubtitle": "የትዕዛዝ ታሪክዎ ከመለያዎ ጋር ይቀመጣል። ለማየት በስልክ ቁጥርዎ ይግቡ።",
+  "orderHistory.signInButton": "ግባ",
+  "orderHistory.guestBanner": "በዚህ ስልክ የተደረጉ ትዕዛዞች እየታዩ ነው። ሁሉንም ትዕዛዞችዎን ለማየት ይግቡ።",
+  "checkout.autoAddress.locating": "የማድረሻ ቦታዎን በማግኘት ላይ…",
+  "checkout.autoAddress.useMyLocation": "አሁን ያለሁበትን ቦታ ተጠቀም",
+  "checkout.autoAddress.serviceOff": "አድራሻዎን በራስ-ሰር ለመሙላት ቦታን (Location) ያብሩ፣ ወይም ከታች ያስገቡ።",
+  "checkout.autoAddress.denied": "የቦታ ፈቃድ አልተሰጠም። እባክዎ የማድረሻ አድራሻዎን ያስገቡ።",
+  "checkout.autoAddress.noPosition": "ቦታዎን ማግኘት አልቻልንም። እባክዎ የማድረሻ አድራሻዎን ያስገቡ።",
+  "checkout.autoAddress.enterManually": "እባክዎ የማድረሻ አድራሻዎን ያስገቡ።"
 }

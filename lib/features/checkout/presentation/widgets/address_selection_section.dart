@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../../addresses/bloc/address_bloc.dart';
+import '../../../addresses/data/location_address_service.dart';
 import '../../../addresses/data/models/address.dart';
 import '../../../addresses/presentation/widgets/add_edit_address_dialog.dart';
 
@@ -21,6 +22,33 @@ class AddressSelectionSection extends StatefulWidget {
 class _AddressSelectionSectionState extends State<AddressSelectionSection> {
   int? _selectedAddressId;
   bool _hasTriggeredAutoAddressCreation = false;
+
+  /// True while the phone's location is being turned into a delivery address.
+  bool _locating = false;
+
+  /// No form for the first address: use the phone's location and the shopper's
+  /// own name/number, then go straight on. The form is only the fallback.
+  Future<void> _createAddressFromLocation() async {
+    setState(() => _locating = true);
+    final AutoAddressResult result =
+        await LocationAddressService().buildFromCurrentLocation();
+    if (!mounted) return;
+    setState(() => _locating = false);
+    if (result.request != null) {
+      context
+          .read<AddressBloc>()
+          .add(AddressAddRequested(request: result.request!));
+      return;
+    }
+    final String messageKey = switch (result.failure) {
+      AutoAddressFailure.serviceOff => 'checkout.autoAddress.serviceOff',
+      AutoAddressFailure.permissionDenied => 'checkout.autoAddress.denied',
+      AutoAddressFailure.noPosition => 'checkout.autoAddress.noPosition',
+      _ => 'checkout.autoAddress.enterManually',
+    };
+    AppSnackbars.info(context, context.tr(messageKey));
+    AddEditAddressDialog.show(context);
+  }
 
   @override
   void initState() {
@@ -70,7 +98,7 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
             _hasTriggeredAutoAddressCreation = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
-              AddEditAddressDialog.show(context);
+              _createAddressFromLocation();
             });
           }
 
@@ -97,7 +125,33 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                 onAction: () => AddEditAddressDialog.show(context),
               ),
               const SizedBox(height: Spacing.xs),
-              if (addresses.isEmpty)
+              if (addresses.isEmpty && _locating)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.gutter,
+                  ),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(Spacing.md),
+                      child: Row(
+                        children: <Widget>[
+                          const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                          const SizedBox(width: Spacing.sm),
+                          Expanded(
+                            child: Text(
+                              context.tr('checkout.autoAddress.locating'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else if (addresses.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: Spacing.gutter,
@@ -108,8 +162,8 @@ class _AddressSelectionSectionState extends State<AddressSelectionSection> {
                       icon: Icons.add_location_alt_outlined,
                       title: context.tr('checkout.noAddressesFound'),
                       subtitle: context.tr('checkout.addAddressToContinue'),
-                      primaryLabel: context.tr('checkout.addAddress'),
-                      onPrimary: () => AddEditAddressDialog.show(context),
+                      primaryLabel: context.tr('checkout.autoAddress.useMyLocation'),
+                      onPrimary: _createAddressFromLocation,
                     ),
                   ),
                 )

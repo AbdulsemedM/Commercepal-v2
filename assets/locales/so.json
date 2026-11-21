@@ -912,5 +912,15 @@
   "expressCheckout.signInInstead": "Gal halkii",
   "expressCheckout.failed": "Ma sii wadi karno. Hubi lambarkaaga oo isku day mar kale.",
   "checkout.allBanksWallets": "Dhammaan Bangiyada & Boorsooyinka Itoobiya",
-  "checkout.allBanksWalletsDesc": "Telebirr, CBE, Awash, Abyssinia iyo in ka badan 30 bangi oo kale"
+  "checkout.allBanksWalletsDesc": "Telebirr, CBE, Awash, Abyssinia iyo in ka badan 30 bangi oo kale",
+  "orderHistory.signInTitle": "Gal si aad u aragto dalabyadaada",
+  "orderHistory.signInSubtitle": "Taariikhda dalabyadaada waxay la jirtaa akoonkaaga. Ku gal lambarka taleefankaaga si aad u aragto.",
+  "orderHistory.signInButton": "Gal",
+  "orderHistory.guestBanner": "Waxaa la muujinayaa dalabyada laga sameeyay taleefankan. Gal si aad u aragto dhammaan dalabyadaada.",
+  "checkout.autoAddress.locating": "Waxaan raadinaynaa goobta lagu keenayo…",
+  "checkout.autoAddress.useMyLocation": "Isticmaal goobta aan hadda joogo",
+  "checkout.autoAddress.serviceOff": "Shid goobta (location) si cinwaankaaga si toos ah loo buuxiyo, ama hoos ku qor.",
+  "checkout.autoAddress.denied": "Oggolaanshaha goobta lama bixin. Fadlan geli cinwaanka lagu keenayo.",
+  "checkout.autoAddress.noPosition": "Ma helin goobtaada. Fadlan geli cinwaanka lagu keenayo.",
+  "checkout.autoAddress.enterManually": "Fadlan geli cinwaanka lagu keenayo."
 }

@@ -32,6 +32,10 @@ class ExpressCheckout {
   /// addresses are never listed for an express shopper).
   final List<Map<String, dynamic>> _sessionAddresses = <Map<String, dynamic>>[];
 
+  /// Orders placed during this session, newest first. An express token may read
+  /// these (and only these), so My Orders can show them instead of an error.
+  final List<String> _orderNumbers = <String>[];
+
   String? get phoneNumber => _phoneNumber;
   String? get firstName => _firstName;
 
@@ -63,6 +67,12 @@ class ExpressCheckout {
           ..clear()
           ..addAll(addresses.whereType<Map<String, dynamic>>());
       }
+      final Object? orders = json['orders'];
+      if (orders is List) {
+        _orderNumbers
+          ..clear()
+          ..addAll(orders.whereType<String>());
+      }
       if (!isActive) await clear();
     } catch (_) {
       await clear();
@@ -80,7 +90,19 @@ class ExpressCheckout {
     _phoneNumber = phoneNumber;
     _firstName = firstName;
     _sessionAddresses.clear();
+    _orderNumbers.clear();
     _loaded = true;
+    await _persist();
+  }
+
+  List<String> get orderNumbers => List<String>.unmodifiable(_orderNumbers);
+
+  Future<void> rememberOrder(String orderNumber) async {
+    final String n = orderNumber.trim();
+    if (n.isEmpty) return;
+    _orderNumbers
+      ..remove(n)
+      ..insert(0, n);
     await _persist();
   }
 
@@ -104,6 +126,7 @@ class ExpressCheckout {
     _phoneNumber = null;
     _firstName = null;
     _sessionAddresses.clear();
+    _orderNumbers.clear();
     try {
       await Storage().deleteData(_storageKey);
     } catch (_) {
@@ -120,6 +143,7 @@ class ExpressCheckout {
         'phoneNumber': _phoneNumber,
         'firstName': _firstName,
         'addresses': _sessionAddresses,
+        'orders': _orderNumbers,
       }),
     );
   }

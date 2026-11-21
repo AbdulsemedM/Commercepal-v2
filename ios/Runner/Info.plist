@@ -89,7 +89,7 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location when in the background to show you nearby stores and delivery options.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open to show you nearby stores and delivery options.</string>
+	<string>CommercePal uses your location to fill in your delivery address, so the courier can find you.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>CommercePal needs permission to save your QPay QR code to your photo gallery so you can complete payment in your banking app.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

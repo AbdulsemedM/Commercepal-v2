@@ -45,6 +45,9 @@ dependencies:
   intl_phone_field: ^3.2.0
   country_picker: ^2.0.24
   url_launcher: ^6.2.5
+  # Checkout: use the phone's location as the delivery address (no form).
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
   webview_flutter: ^4.4.2
   video_player: ^2.9.2
   font_awesome_flutter: ^11.0.0

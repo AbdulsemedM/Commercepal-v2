@@ -1,7 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
+import 'package:commercepal/core/auth/express_checkout.dart';
 import 'package:commercepal/core/auth/session_error.dart';
+import 'package:commercepal/features/orders/data/models/order.dart';
+import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/features/orders/data/models/orders_response.dart';
 import 'package:commercepal/features/orders/data/repository/orders_repository.dart';
 import 'package:commercepal/services/navigation_service.dart';
@@ -28,6 +31,15 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     AppLogger.i('OrdersLoadRequested event received');
     emit(OrdersLoading());
     // print('🟢 OrdersBloc: Emitted OrdersLoading state');
+
+    // Signed out: order history needs an account. Phone-checkout (express)
+    // shoppers can still see the orders they placed in this session — the
+    // backend refuses the history list to an express token by design, which
+    // used to surface here as "Session expired".
+    if (!AuthService().isLoggedIn) {
+      await _loadGuestOrders(emit);
+      return;
+    }
 
     try {
       AppLogger.i('Fetching orders with customerId: ${event.customerId}, stageCategory: ${event.stageCategory}');
@@ -68,10 +80,52 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     }
   }
 
+  Future<void> _loadGuestOrders(Emitter<OrdersState> emit) async {
+    final ExpressCheckout express = ExpressCheckout.instance;
+    await express.ensureLoaded();
+    final List<String> numbers = express.isActive ? express.orderNumbers : <String>[];
+    if (numbers.isEmpty) {
+      emit(OrdersSignInRequired());
+      return;
+    }
+    final List<Order> orders = <Order>[];
+    for (final String n in numbers) {
+      try {
+        orders.add(await _repository.getOrderByOrderNumber(n));
+      } catch (e) {
+        AppLogger.w('Could not load express order $n: $e');
+      }
+    }
+    if (orders.isEmpty) {
+      emit(OrdersSignInRequired());
+      return;
+    }
+    emit(OrdersLoaded(
+      OrdersResponse(
+        totalPages: 1,
+        totalElements: orders.length,
+        first: true,
+        last: true,
+        size: orders.length,
+        content: orders,
+        number: 0,
+        sort: SortInfo.fromJson(const <String, dynamic>{}),
+        numberOfElements: orders.length,
+        pageable: Pageable.fromJson(const <String, dynamic>{}),
+        empty: false,
+      ),
+      guestOnly: true,
+    ));
+  }
+
   Future<void> _onOrdersRefreshRequested(
     OrdersRefreshRequested event,
     Emitter<OrdersState> emit,
   ) async {
+    if (!AuthService().isLoggedIn) {
+      await _loadGuestOrders(emit);
+      return;
+    }
     try {
       final response = await _repository.getOrders(
         customerId: event.customerId,
