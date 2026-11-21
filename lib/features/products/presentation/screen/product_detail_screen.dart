@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:commercepal/features/cart/presentation/widgets/added_to_cart_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -461,11 +462,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               _navigateToTab(context, 2);
               return;
             }
-            AppSnackbars.success(
+            // Slide-in cart that stays open (item, subtotal, savings,
+            // Checkout / Keep shopping) instead of a passing snackbar.
+            showAddedToCartSheet(
               context,
-              context.tr('product.addedToCart'),
-              actionLabel: context.tr('product.viewCart'),
-              onAction: () => _navigateToTab(context, 2),
+              productId: widget.productId ?? '',
             );
           } else if (state is CartError) {
             setState(() {

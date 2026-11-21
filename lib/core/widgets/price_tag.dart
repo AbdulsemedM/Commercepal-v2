@@ -23,7 +23,12 @@ class PriceTag extends StatelessWidget {
     this.showDiscountBadge = true,
     this.inline = true,
     this.color,
+    this.showSavingsAmount = false,
   });
+
+  /// Badge says how much is saved ("Save ETB 6,260") instead of "-52%".
+  /// Used on the product page, where the amount is more convincing.
+  final bool showSavingsAmount;
 
   final num amount;
   final String currency;
@@ -121,9 +126,13 @@ class PriceTag extends StatelessWidget {
         : null;
     final Widget? badge = (showDiscountBadge && pct != null)
         ? AppBadge(
-            label: context.tr('price.percentOff', <String, Object?>{
-              'percent': pct,
-            }),
+            label: showSavingsAmount
+                ? context.tr('price.saveAmount', <String, Object?>{
+                    'amount': MoneyFormatter.format(originalAmount! - amount, code),
+                  })
+                : context.tr('price.percentOff', <String, Object?>{
+                    'percent': pct,
+                  }),
             tone: AppBadgeTone.deal,
             size: size == PriceTagSize.large
                 ? AppBadgeSize.medium

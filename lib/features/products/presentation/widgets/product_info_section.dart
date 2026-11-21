@@ -169,6 +169,7 @@ class _ProductInfoSectionState extends State<ProductInfoSection> {
               currency: symbol,
               originalAmount: widget.originalPrice,
               size: PriceTagSize.large,
+              showSavingsAmount: true,
             )
           else if (widget.priceText.isNotEmpty)
             Text(widget.priceText, style: theme.textTheme.headlineSmall),

@@ -922,5 +922,16 @@
   "checkout.autoAddress.serviceOff": "شغّل خدمة الموقع لملء عنوانك تلقائيًا، أو أدخله أدناه.",
   "checkout.autoAddress.denied": "لم يُسمح بالوصول إلى الموقع. يرجى إدخال عنوان التوصيل.",
   "checkout.autoAddress.noPosition": "تعذّر تحديد موقعك. يرجى إدخال عنوان التوصيل.",
-  "checkout.autoAddress.enterManually": "يرجى إدخال عنوان التوصيل."
+  "checkout.autoAddress.enterManually": "يرجى إدخال عنوان التوصيل.",
+  "checkout.paymentSuccessful": "تم الدفع بنجاح",
+  "checkout.paymentSuccessfulBody": "شكرًا لك! تم تأكيد الطلب {order}. سنبقيك على اطلاع.",
+  "price.saveAmount": "وفّر {amount}",
+  "nav.shop": "تسوّق",
+  "nav.orders": "الطلبات",
+  "nav.saved": "المحفوظات",
+  "nav.account": "الحساب",
+  "cart.sheet.added": "تمت الإضافة إلى السلة",
+  "cart.sheet.subtotal": "المجموع الفرعي ({count} منتجات)",
+  "cart.sheet.youSave": "توفّر {amount}",
+  "cart.sheet.keepShopping": "متابعة التسوق"
 }

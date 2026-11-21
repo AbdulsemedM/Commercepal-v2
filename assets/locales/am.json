@@ -922,5 +922,16 @@
   "checkout.autoAddress.serviceOff": "አድራሻዎን በራስ-ሰር ለመሙላት ቦታን (Location) ያብሩ፣ ወይም ከታች ያስገቡ።",
   "checkout.autoAddress.denied": "የቦታ ፈቃድ አልተሰጠም። እባክዎ የማድረሻ አድራሻዎን ያስገቡ።",
   "checkout.autoAddress.noPosition": "ቦታዎን ማግኘት አልቻልንም። እባክዎ የማድረሻ አድራሻዎን ያስገቡ።",
-  "checkout.autoAddress.enterManually": "እባክዎ የማድረሻ አድራሻዎን ያስገቡ።"
+  "checkout.autoAddress.enterManually": "እባክዎ የማድረሻ አድራሻዎን ያስገቡ።",
+  "checkout.paymentSuccessful": "ክፍያው ተሳክቷል",
+  "checkout.paymentSuccessfulBody": "እናመሰግናለን! ትዕዛዝ {order} ተረጋግጧል። ሁኔታውን እናሳውቅዎታለን።",
+  "price.saveAmount": "{amount} ይቆጥቡ",
+  "nav.shop": "ሱቅ",
+  "nav.orders": "ትዕዛዞች",
+  "nav.saved": "የተቀመጡ",
+  "nav.account": "መለያ",
+  "cart.sheet.added": "ወደ ጋሪ ታክሏል",
+  "cart.sheet.subtotal": "ንዑስ ድምር ({count} እቃዎች)",
+  "cart.sheet.youSave": "{amount} ይቆጥባሉ",
+  "cart.sheet.keepShopping": "ግዢ ይቀጥሉ"
 }

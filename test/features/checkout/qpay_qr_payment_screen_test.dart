@@ -64,5 +64,13 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('shows the green tick instead of the QR once paid', (tester) async {
+      await _pumpQpayScreen(tester, paymentConfirmed: true);
+
+      expect(find.byKey(const Key('qpay_payment_success')), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(find.text('Payment successful'), findsOneWidget);
+    });
   });
 }
