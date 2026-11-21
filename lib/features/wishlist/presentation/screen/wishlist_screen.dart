@@ -9,7 +9,10 @@ import 'package:commercepal/features/wishlist/data/wishlist_item.dart';
 import 'package:commercepal/features/wishlist/data/repository/wishlist_repository.dart';
 
 class WishlistScreen extends StatefulWidget {
-  const WishlistScreen({super.key});
+  const WishlistScreen({super.key, this.embedded = false});
+
+  /// Shown as the Saved tab of the dashboard (no back button).
+  final bool embedded;
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -157,7 +160,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        leading: IconButton(
+        automaticallyImplyLeading: !widget.embedded,
+        leading: widget.embedded ? null : IconButton(
           icon: Container(
             padding: const EdgeInsets.all(Spacing.xs),
             decoration: BoxDecoration(

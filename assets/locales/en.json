@@ -922,5 +922,16 @@
   "checkout.autoAddress.serviceOff": "Turn on location to fill in your address automatically, or enter it below.",
   "checkout.autoAddress.denied": "Location access was not allowed. Please enter your delivery address.",
   "checkout.autoAddress.noPosition": "We couldn't find your location. Please enter your delivery address.",
-  "checkout.autoAddress.enterManually": "Please enter your delivery address."
+  "checkout.autoAddress.enterManually": "Please enter your delivery address.",
+  "checkout.paymentSuccessful": "Payment successful",
+  "checkout.paymentSuccessfulBody": "Thank you! Order {order} is confirmed. We will keep you updated.",
+  "price.saveAmount": "Save {amount}",
+  "nav.shop": "Shop",
+  "nav.orders": "Orders",
+  "nav.saved": "Saved",
+  "nav.account": "Account",
+  "cart.sheet.added": "Added to cart",
+  "cart.sheet.subtotal": "Subtotal ({count} items)",
+  "cart.sheet.youSave": "You save {amount}",
+  "cart.sheet.keepShopping": "Keep shopping"
 }

@@ -46,6 +46,16 @@ jobs:
       DOT_ENV: ${{ secrets.DOT_ENV }}
       SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
     steps:
+      - name: Free disk space
+        # The Android build plus the Shorebird cache filled the runner ("No space left on
+        # device" while saving the cache after a successful release). Remove toolchains
+        # this job never uses.
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost \
+            /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL "$AGENT_TOOLSDIRECTORY/PyPy" || true
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          df -h /
+
       - name: Checkout
         uses: actions/checkout@v4
 
