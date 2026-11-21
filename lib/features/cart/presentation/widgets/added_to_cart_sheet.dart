@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:commercepal/core/design_system.dart';
-import 'package:commercepal/core/widgets/app_network_image.dart';
 import 'package:commercepal/services/localization_service.dart';
 
 import '../../bloc/cart_bloc.dart';
