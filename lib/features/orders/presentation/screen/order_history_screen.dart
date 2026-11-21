@@ -13,7 +13,10 @@ import 'package:commercepal/features/orders/presentation/widgets/order_item_thum
 import 'package:commercepal/features/orders/presentation/widgets/order_status_badge.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
-  const OrderHistoryScreen({super.key});
+  const OrderHistoryScreen({super.key, this.embedded = false});
+
+  /// Shown as the Orders tab of the dashboard (no back button).
+  final bool embedded;
 
   @override
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
@@ -127,7 +130,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
+        automaticallyImplyLeading: !widget.embedded,
+        leading: widget.embedded ? null : IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: context.tr('common.goBack'),
           onPressed: () {

@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:commercepal/core/theme/commerce_colors.dart';
+import 'package:commercepal/core/constants/spacing.dart';
 import 'package:commercepal/core/theme/tokens.dart';
 import 'package:commercepal/core/widgets/app_badge.dart';
 import 'package:commercepal/services/localization_service.dart';
 
-/// Main tab bar: flat surface, hairline top border and an animated indicator
-/// above the selected tab.
+/// Dashboard page indexes. Kept stable because many screens switch tabs by
+/// number (cart is 2, profile is 3); Orders and Saved were added after them.
+class DashboardTab {
+  DashboardTab._();
+
+  static const int home = 0;
+  static const int shop = 1;
+  static const int cart = 2;
+  static const int account = 3;
+  static const int orders = 4;
+  static const int saved = 5;
+
+  static const int count = 6;
+}
+
+/// Main tab bar: a floating dark pill with five always-labelled tabs
+/// (Home, Shop, Orders, Saved, Account). The cart opens from the header bag
+/// icon and the slide-in cart, so it is not a tab.
 class PillBottomNavBar extends StatelessWidget {
   const PillBottomNavBar({
     super.key,
@@ -17,106 +33,95 @@ class PillBottomNavBar extends StatelessWidget {
     this.activeColor,
   });
 
+  /// The dashboard page index (see [DashboardTab]).
   final int currentIndex;
+
+  /// Called with a dashboard page index (see [DashboardTab]).
   final ValueChanged<int> onTap;
+
+  /// Badge per dashboard page index.
   final List<int>? badgeCounts;
   final Color? activeColor;
 
-  static const double _barHeight = 60;
+  static const double _barHeight = 64;
+  static const Color _pill = Color(0xFF141416);
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final Color selectedColor = activeColor ?? scheme.primary;
-    final Color inactiveColor = scheme.onSurfaceVariant;
-
     final List<_NavItemData> items = <_NavItemData>[
       _NavItemData(
+        page: DashboardTab.home,
         icon: Icons.home_outlined,
         selectedIcon: Icons.home_rounded,
         label: LocalizationService.t(context, 'nav.home'),
       ),
       _NavItemData(
+        page: DashboardTab.shop,
         icon: Icons.grid_view_outlined,
         selectedIcon: Icons.grid_view_rounded,
-        label: LocalizationService.t(context, 'nav.categories'),
+        label: LocalizationService.t(context, 'nav.shop'),
       ),
       _NavItemData(
-        icon: Icons.shopping_cart_outlined,
-        selectedIcon: Icons.shopping_cart_rounded,
-        label: LocalizationService.t(context, 'nav.cart'),
+        page: DashboardTab.orders,
+        icon: Icons.inventory_2_outlined,
+        selectedIcon: Icons.inventory_2_rounded,
+        label: LocalizationService.t(context, 'nav.orders'),
       ),
       _NavItemData(
+        page: DashboardTab.saved,
+        icon: Icons.favorite_border_rounded,
+        selectedIcon: Icons.favorite_rounded,
+        label: LocalizationService.t(context, 'nav.saved'),
+      ),
+      _NavItemData(
+        page: DashboardTab.account,
         icon: Icons.person_outline_rounded,
         selectedIcon: Icons.person_rounded,
-        label: LocalizationService.t(context, 'nav.profile'),
+        label: LocalizationService.t(context, 'nav.account'),
       ),
     ];
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(top: BorderSide(color: context.commerce.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
+    final Color selectedColor = activeColor ?? Colors.white;
+    final Color inactiveColor = Colors.white.withValues(alpha: 0.55);
+
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.only(bottom: Spacing.xs),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Spacing.sm, Spacing.xxs, Spacing.sm, Spacing.xxs),
+        child: Container(
           height: _barHeight,
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final double slot = constraints.maxWidth / items.length;
-              const double indicatorWidth = 32;
-              final bool rtl = Directionality.of(context) == TextDirection.rtl;
-              final int visualIndex =
-                  rtl ? items.length - 1 - currentIndex : currentIndex;
-              return Stack(
-                children: <Widget>[
-                  AnimatedPositioned(
-                    duration: AppMotion.medium,
-                    curve: AppMotion.emphasized,
-                    top: 0,
-                    left: slot * visualIndex + (slot - indicatorWidth) / 2,
-                    child: Container(
-                      width: indicatorWidth,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: selectedColor,
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(3),
-                        ),
-                      ),
-                    ),
+          decoration: BoxDecoration(
+            color: _pill,
+            borderRadius: BorderRadius.circular(_barHeight / 2),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6)),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+          child: Row(
+            children: <Widget>[
+              for (int i = 0; i < items.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    data: items[i],
+                    index: i,
+                    total: items.length,
+                    isSelected: items[i].page == currentIndex,
+                    selectedColor: selectedColor,
+                    inactiveColor: inactiveColor,
+                    badgeCount: (badgeCounts != null && items[i].page < badgeCounts!.length)
+                        ? badgeCounts![items[i].page]
+                        : 0,
+                    onTap: () {
+                      if (items[i].page != currentIndex) {
+                        HapticFeedback.selectionClick();
+                      }
+                      onTap(items[i].page);
+                    },
                   ),
-                  Row(
-                    children: List<Widget>.generate(items.length, (int i) {
-                      final _NavItemData item = items[i];
-                      final int count =
-                          (badgeCounts != null && i < badgeCounts!.length)
-                              ? badgeCounts![i]
-                              : 0;
-                      return Expanded(
-                        child: _NavItem(
-                          data: item,
-                          index: i,
-                          total: items.length,
-                          isSelected: i == currentIndex,
-                          selectedColor: selectedColor,
-                          inactiveColor: inactiveColor,
-                          badgeCount: count,
-                          onTap: () {
-                            if (i != currentIndex) {
-                              HapticFeedback.selectionClick();
-                            }
-                            onTap(i);
-                          },
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              );
-            },
+                ),
+            ],
           ),
         ),
       ),
@@ -126,10 +131,12 @@ class PillBottomNavBar extends StatelessWidget {
 
 class _NavItemData {
   const _NavItemData({
+    required this.page,
     required this.icon,
     required this.selectedIcon,
     required this.label,
   });
+  final int page;
   final IconData icon;
   final IconData selectedIcon;
   final String label;
@@ -159,12 +166,11 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color color = isSelected ? selectedColor : inactiveColor;
-    final TextStyle? labelStyle =
-        Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            );
+    final TextStyle? labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: color,
+          fontSize: 11,
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        );
 
     return Semantics(
       selected: isSelected,
@@ -174,8 +180,9 @@ class _NavItem extends StatelessWidget {
       excludeSemantics: true,
       child: InkResponse(
         onTap: onTap,
-        containedInkWell: true,
-        highlightShape: BoxShape.rectangle,
+        radius: 32,
+        highlightColor: Colors.white10,
+        splashColor: Colors.white12,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -187,11 +194,11 @@ class _NavItem extends StatelessWidget {
                   isSelected ? data.selectedIcon : data.icon,
                   key: ValueKey<bool>(isSelected),
                   color: color,
-                  size: 24,
+                  size: 23,
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               data.label,
               maxLines: 1,

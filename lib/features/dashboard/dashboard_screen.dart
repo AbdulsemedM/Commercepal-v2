@@ -11,6 +11,9 @@ import 'package:commercepal/features/categories/presentation/pages/categories_pa
 import 'package:commercepal/features/cart/presentation/screen/cart_page.dart';
 import 'package:commercepal/features/cart/bloc/cart_bloc.dart';
 import 'package:commercepal/features/profile/presentation/screen/profile_page.dart';
+import 'package:commercepal/features/orders/bloc/orders_bloc.dart';
+import 'package:commercepal/features/orders/presentation/screen/order_history_screen.dart';
+import 'package:commercepal/features/wishlist/presentation/screen/wishlist_screen.dart';
 import 'package:commercepal/features/onboarding/dashboard_coach_overlay.dart';
 import 'package:commercepal/features/support_chat/presentation/widgets/draggable_support_chat_fab.dart';
 import 'package:commercepal/services/auth_service.dart';
@@ -25,9 +28,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class DashboardScreenState extends State<DashboardScreen> {
-  static const int _tabCount = 4;
+  static const int _tabCount = DashboardTab.count;
 
   late int _currentIndex;
+
+  /// Pages are built the first time they are opened, so Orders and Saved do
+  /// not load (or ask the shopper to sign in) at app start.
+  final Set<int> _visited = <int>{};
 
   @override
   void initState() {
@@ -36,6 +43,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     if (_currentIndex < 0 || _currentIndex >= _tabCount) {
       _currentIndex = 0;
     }
+    _visited.add(_currentIndex);
     AuthService().addListener(_onAuthServiceChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initQuickActions();
@@ -107,9 +115,13 @@ class DashboardScreenState extends State<DashboardScreen> {
     if (index >= 0 && index < _tabCount) {
       setState(() {
         _currentIndex = index;
+        _visited.add(index);
       });
     }
   }
+
+  Widget _lazy(int index, Widget Function() build) =>
+      _visited.contains(index) ? build() : const SizedBox.shrink();
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +131,8 @@ class DashboardScreenState extends State<DashboardScreen> {
           // Calculate badge counts
           final int cartCount = context.read<CartBloc>().itemCount;
 
-          final List<int> badges = <int>[0, 0, cartCount, 0];
+          final List<int> badges = List<int>.filled(DashboardTab.count, 0)
+            ..[DashboardTab.cart] = cartCount;
 
           final ColorScheme scheme = Theme.of(context).colorScheme;
           return Scaffold(
@@ -130,9 +143,20 @@ class DashboardScreenState extends State<DashboardScreen> {
                   index: _currentIndex,
                   children: <Widget>[
                     const HomePage(),
-                    const CategoriesPage(),
-                    const CartPage(),
-                    ProfilePage(isActive: _currentIndex == 3),
+                    _lazy(DashboardTab.shop, () => const CategoriesPage()),
+                    _lazy(DashboardTab.cart, () => const CartPage()),
+                    ProfilePage(isActive: _currentIndex == DashboardTab.account),
+                    _lazy(
+                      DashboardTab.orders,
+                      () => BlocProvider<OrdersBloc>(
+                        create: (_) => OrdersBloc(),
+                        child: const OrderHistoryScreen(embedded: true),
+                      ),
+                    ),
+                    _lazy(
+                      DashboardTab.saved,
+                      () => const WishlistScreen(embedded: true),
+                    ),
                   ],
                 ),
                 const DraggableSupportChatFab(),
@@ -142,7 +166,7 @@ class DashboardScreenState extends State<DashboardScreen> {
               // activeColor: Theme.of(context).colorScheme.primary,
               currentIndex: _currentIndex,
               badgeCounts: badges,
-              onTap: (int i) => setState(() => _currentIndex = i),
+              onTap: changeTab,
             ),
           );
         },

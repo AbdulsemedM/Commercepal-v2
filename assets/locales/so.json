@@ -922,5 +922,16 @@
   "checkout.autoAddress.serviceOff": "Shid goobta (location) si cinwaankaaga si toos ah loo buuxiyo, ama hoos ku qor.",
   "checkout.autoAddress.denied": "Oggolaanshaha goobta lama bixin. Fadlan geli cinwaanka lagu keenayo.",
   "checkout.autoAddress.noPosition": "Ma helin goobtaada. Fadlan geli cinwaanka lagu keenayo.",
-  "checkout.autoAddress.enterManually": "Fadlan geli cinwaanka lagu keenayo."
+  "checkout.autoAddress.enterManually": "Fadlan geli cinwaanka lagu keenayo.",
+  "checkout.paymentSuccessful": "Lacag bixintu way guulaysatay",
+  "checkout.paymentSuccessfulBody": "Mahadsanid! Dalabka {order} waa la xaqiijiyay. Waan kula socodsiin doonaa.",
+  "price.saveAmount": "Keydi {amount}",
+  "nav.shop": "Dukaan",
+  "nav.orders": "Dalabyo",
+  "nav.saved": "Kaydsan",
+  "nav.account": "Akoon",
+  "cart.sheet.added": "Waxaa lagu daray gaadhiga",
+  "cart.sheet.subtotal": "Wadarta hoose ({count} shay)",
+  "cart.sheet.youSave": "Waxaad keydisaa {amount}",
+  "cart.sheet.keepShopping": "Sii wad iibsiga"
 }
