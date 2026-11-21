@@ -912,5 +912,15 @@
   "expressCheckout.signInInstead": "تسجيل الدخول بدلاً من ذلك",
   "expressCheckout.failed": "تعذّر المتابعة. تحقق من رقمك وحاول مرة أخرى.",
   "checkout.allBanksWallets": "جميع البنوك والمحافظ الإثيوبية",
-  "checkout.allBanksWalletsDesc": "تليبِر وCBE وأواش وأبيسينيا وأكثر من 30 بنكًا آخر"
+  "checkout.allBanksWalletsDesc": "تليبِر وCBE وأواش وأبيسينيا وأكثر من 30 بنكًا آخر",
+  "orderHistory.signInTitle": "سجّل الدخول لعرض طلباتك",
+  "orderHistory.signInSubtitle": "يُحفظ سجل طلباتك في حسابك. سجّل الدخول برقم هاتفك لعرضه.",
+  "orderHistory.signInButton": "تسجيل الدخول",
+  "orderHistory.guestBanner": "تُعرض الطلبات المقدّمة من هذا الهاتف. سجّل الدخول لعرض جميع طلباتك.",
+  "checkout.autoAddress.locating": "جارٍ تحديد موقع التوصيل…",
+  "checkout.autoAddress.useMyLocation": "استخدم موقعي الحالي",
+  "checkout.autoAddress.serviceOff": "شغّل خدمة الموقع لملء عنوانك تلقائيًا، أو أدخله أدناه.",
+  "checkout.autoAddress.denied": "لم يُسمح بالوصول إلى الموقع. يرجى إدخال عنوان التوصيل.",
+  "checkout.autoAddress.noPosition": "تعذّر تحديد موقعك. يرجى إدخال عنوان التوصيل.",
+  "checkout.autoAddress.enterManually": "يرجى إدخال عنوان التوصيل."
 }

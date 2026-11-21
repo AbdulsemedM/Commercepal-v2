@@ -184,14 +184,15 @@ class PaymentConstants {
     return haystack.contains('EBIRR') || haystack.contains('EBIR');
   }
 
-  /// Checkout list order: QPay, eBirr, CBE Birr, Amole, COD, Telebirr, then everything else.
+  /// Checkout list order: All Ethiopian Banks & Wallets (QPay), Telebirr, eBirr,
+  /// CBE Birr, Amole, COD, then everything else.
   static int checkoutDisplaySortRank(String? code, {String? displayName}) {
     if (isQPay(code, displayName: displayName)) return 0;
-    if (isEbirr(code, displayName: displayName)) return 1;
-    if (isCbeBirr(code, displayName: displayName)) return 2;
-    if (isAmole(code, displayName: displayName)) return 3;
-    if (isCashOnDelivery(code)) return 4;
-    if (isTelebirr(code, displayName: displayName)) return 5;
+    if (isTelebirr(code, displayName: displayName)) return 1;
+    if (isEbirr(code, displayName: displayName)) return 2;
+    if (isCbeBirr(code, displayName: displayName)) return 3;
+    if (isAmole(code, displayName: displayName)) return 4;
+    if (isCashOnDelivery(code)) return 5;
     return 6;
   }
 

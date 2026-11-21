@@ -1,3 +1,6 @@
+import 'package:commercepal/core/auth/express_checkout.dart';
+import 'package:commercepal/services/auth_service.dart';
+
 import '../data_provider/checkout_data_provider.dart';
 import '../models/checkout_request.dart';
 import '../models/checkout_response.dart';
@@ -11,7 +14,15 @@ class CheckoutRepository {
   final CheckoutDataProvider _dataProvider;
 
   Future<CheckoutResponse> checkout(CheckoutRequest request) async {
-    return await _dataProvider.checkout(request);
+    final CheckoutResponse response = await _dataProvider.checkout(request);
+    final String? orderNumber = response.orderNumber;
+    if (orderNumber != null &&
+        !AuthService().isLoggedIn &&
+        ExpressCheckout.instance.isActive) {
+      // Lets My Orders show this order to a phone-checkout shopper.
+      await ExpressCheckout.instance.rememberOrder(orderNumber);
+    }
+    return response;
   }
 
   Future<CheckoutResponse> retryPayment({

@@ -166,12 +166,52 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             );
           }
 
+          if (state is OrdersSignInRequired) {
+            return AppEmptyState(
+              icon: Icons.receipt_long_outlined,
+              title: context.tr('orderHistory.signInTitle'),
+              subtitle: context.tr('orderHistory.signInSubtitle'),
+              primaryLabel: context.tr('orderHistory.signInButton'),
+              onPrimary: () => context.push(AppRoutes.login),
+            );
+          }
+
           if (state is OrdersLoaded) {
             final category = _getStageCategoryForTab(_selectedTabIndex);
             final filtered = state.response.content
                 .where((Order o) => _orderMatchesTab(o, category))
                 .toList();
-            return _buildOrderList(filtered);
+            if (!state.guestOnly) return _buildOrderList(filtered);
+            return Column(
+              children: <Widget>[
+                Material(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  child: InkWell(
+                    onTap: () => context.push(AppRoutes.login),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.gutter,
+                        vertical: Spacing.sm,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(Icons.info_outline_rounded, size: 20),
+                          const SizedBox(width: Spacing.xs),
+                          Expanded(
+                            child: Text(
+                              context.tr('orderHistory.guestBanner'),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(child: _buildOrderList(filtered)),
+              ],
+            );
           }
 
           return _buildLoading();

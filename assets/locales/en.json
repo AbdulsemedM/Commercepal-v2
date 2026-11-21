@@ -912,5 +912,15 @@
   "expressCheckout.signInInstead": "Sign in instead",
   "expressCheckout.failed": "We couldn't continue. Check your number and try again.",
   "checkout.allBanksWallets": "All Ethiopian Banks & Wallets",
-  "checkout.allBanksWalletsDesc": "Telebirr, CBE, Awash, Abyssinia and 30+ other banks"
+  "checkout.allBanksWalletsDesc": "Telebirr, CBE, Awash, Abyssinia and 30+ other banks",
+  "orderHistory.signInTitle": "Sign in to see your orders",
+  "orderHistory.signInSubtitle": "Your order history is kept with your account. Sign in with your phone number to see it.",
+  "orderHistory.signInButton": "Sign in",
+  "orderHistory.guestBanner": "Showing orders placed on this phone. Sign in to see all your orders.",
+  "checkout.autoAddress.locating": "Finding your delivery location…",
+  "checkout.autoAddress.useMyLocation": "Use my current location",
+  "checkout.autoAddress.serviceOff": "Turn on location to fill in your address automatically, or enter it below.",
+  "checkout.autoAddress.denied": "Location access was not allowed. Please enter your delivery address.",
+  "checkout.autoAddress.noPosition": "We couldn't find your location. Please enter your delivery address.",
+  "checkout.autoAddress.enterManually": "Please enter your delivery address."
 }
