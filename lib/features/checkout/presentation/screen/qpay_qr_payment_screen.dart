@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
@@ -9,6 +10,8 @@ import '../../../../core/design_system.dart';
 import '../../../../core/widgets/checkout_screen_header.dart';
 import '../../../../services/localization_service.dart';
 import '../../../orders/data/repository/orders_repository.dart';
+import '../../data/data_provider/payment_status_data_provider.dart';
+import '../../data/models/payment_status_result.dart';
 import '../../data/models/checkout_response.dart';
 import '../utils/qr_image_capture.dart';
 import '../widgets/qr_code_display.dart';
@@ -38,12 +41,15 @@ class QpayQrPaymentScreen extends StatefulWidget {
 }
 
 class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
-  static const int _pollMaxAttempts = 40;
-  static const Duration _pollInterval = Duration(seconds: 15);
+  // Check every 5 s for up to 30 min: the QPay callback marks the order paid on the
+  // server within seconds, and the shopper is watching this screen.
+  static const int _pollMaxAttempts = 360;
+  static const Duration _pollInterval = Duration(seconds: 5);
   static const Duration _qrExpiry = Duration(minutes: 5);
   static const double _qrDisplaySize = 260;
 
   OrdersRepository? _ordersRepository;
+  PaymentStatusDataProvider? _paymentStatusProvider;
   final GlobalKey _qrCaptureKey = GlobalKey();
   Timer? _countdownTimer;
   Timer? _pollTimer;
@@ -100,21 +106,31 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
       setState(() => _pollAttempt++);
 
       try {
-        final order = await (_ordersRepository ??= OrdersRepository())
-            .getOrderByOrderNumber(orderNumber);
-        if (!mounted) return;
-
-        final status = order.paymentStatus.toUpperCase();
-        if (status != 'PENDING' && status != 'UNPAID') {
-          setState(() {
-            _paymentConfirmed = true;
-            _pollStatusMessage = order.paymentStatusLabel.isNotEmpty
-                ? order.paymentStatusLabel
-                : status;
-          });
-          _pollTimer?.cancel();
-          _countdownTimer?.cancel();
+        // Light status endpoint first (also accepted for phone checkout); it reports
+        // SUCCESS as soon as the QPay callback has marked the order paid.
+        bool paid = false;
+        try {
+          final PaymentStatusResult result =
+              await (_paymentStatusProvider ??= PaymentStatusDataProvider())
+                  .getPaymentStatus(orderNumber);
+          paid = result.isSuccess;
+        } catch (_) {
+          // Fall back to the order below.
         }
+        if (!paid && _pollAttempt % 3 == 0) {
+          final order = await (_ordersRepository ??= OrdersRepository())
+              .getOrderByOrderNumber(orderNumber);
+          final String status = order.paymentStatus.toUpperCase();
+          paid = status == 'SUCCESS' || status == 'PAID' || status == 'COMPLETED';
+        }
+        if (!mounted || !paid) return;
+        HapticFeedback.mediumImpact();
+        setState(() {
+          _paymentConfirmed = true;
+          _pollStatusMessage = context.tr('checkout.paymentConfirmed');
+        });
+        _pollTimer?.cancel();
+        _countdownTimer?.cancel();
       } catch (_) {
         // Keep polling — transient network errors are expected.
       }
@@ -193,6 +209,13 @@ class _QpayQrPaymentScreenState extends State<QpayQrPaymentScreen> {
                           providerCode: providerCode,
                         ),
                         const SizedBox(height: Spacing.md),
+                        if (_paymentConfirmed)
+                          _PaymentSuccessCard(
+                            total: total,
+                            currency: currency,
+                            orderNumber: orderNumber,
+                          )
+                        else
                         Card(
                           child: Padding(
                             padding: const EdgeInsets.all(Spacing.md),
@@ -376,7 +399,8 @@ class _AmountHeader extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            AppBadge(label: providerCode, tone: AppBadgeTone.neutral),
+            if (providerCode.isNotEmpty && providerCode != 'QPAY' && providerCode != 'Q_PAY')
+              AppBadge(label: providerCode, tone: AppBadgeTone.neutral),
           ],
         ),
       ],
@@ -579,6 +603,78 @@ class _InstructionSteps extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Shown in place of the QR once the payment is confirmed: big green tick.
+class _PaymentSuccessCard extends StatelessWidget {
+  const _PaymentSuccessCard({
+    required this.total,
+    required this.currency,
+    required this.orderNumber,
+  });
+
+  final num? total;
+  final String currency;
+  final String orderNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    const Color green = Color(0xFF16A34A);
+    return Card(
+      key: const Key('qpay_payment_success'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.xl,
+        ),
+        child: Column(
+          children: <Widget>[
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.4, end: 1),
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeOutBack,
+              builder: (BuildContext context, double scale, Widget? child) =>
+                  Transform.scale(scale: scale, child: child),
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: const BoxDecoration(
+                  color: green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 64),
+              ),
+            ),
+            const SizedBox(height: Spacing.md),
+            Text(
+              context.tr('checkout.paymentSuccessful'),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (total != null) ...<Widget>[
+              const SizedBox(height: Spacing.xs),
+              Text(
+                '$currency ${total!.toStringAsFixed(2)}',
+                style: theme.textTheme.titleMedium?.copyWith(color: green),
+              ),
+            ],
+            const SizedBox(height: Spacing.xs),
+            Text(
+              context.tr('checkout.paymentSuccessfulBody', <String, Object?>{
+                'order': orderNumber,
+              }),
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

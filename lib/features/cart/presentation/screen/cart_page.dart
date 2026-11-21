@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:commercepal/core/auth/express_checkout.dart';
-import 'package:commercepal/features/checkout/express/express_checkout_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,11 +8,11 @@ import 'package:commercepal/app/router/app_router.dart';
 import 'package:commercepal/core/constants/country_currency_constants.dart';
 import 'package:commercepal/core/design_system.dart';
 import 'package:commercepal/features/dashboard/dashboard_screen.dart';
-import 'package:commercepal/services/auth_service.dart';
 import 'package:commercepal/services/localization_service.dart';
 import '../../bloc/cart_bloc.dart';
 import '../../data/models/cart.dart';
 import '../../data/models/cart_item.dart';
+import '../cart_checkout_launcher.dart';
 import '../widgets/cart_empty_view.dart';
 import '../widgets/cart_item_widget.dart';
 
@@ -30,7 +28,6 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   static const Duration _removeUndoWindow = Duration(seconds: 4);
 
-  final AuthService _authService = AuthService();
   late CartBloc _cartBloc;
 
   Timer? _pendingRemoveTimer;
@@ -108,26 +105,7 @@ class _CartPageState extends State<CartPage> {
     _cartBloc.add(CartUpdateItemRequested(itemId: item.id, quantity: quantity));
   }
 
-  Future<void> _checkout(Cart cart) async {
-    if (!_authService.isLoggedIn) {
-      // Guests check out with name + phone — no password and no code; the
-      // mobile-money PIN confirms the payment. Signing in stays available.
-      await ExpressCheckout.instance.ensureLoaded();
-      if (!mounted) return;
-      if (!ExpressCheckout.instance.isActive) {
-        final Object? result =
-            await showExpressCheckoutSheet(context, currency: cart.currency);
-        if (!mounted) return;
-        if (result == 'signIn') {
-          final bool? signedIn = await context.push<bool>(AppRoutes.login);
-          if (!mounted || signedIn != true || !_authService.isLoggedIn) return;
-        } else if (result != true) {
-          return;
-        }
-      }
-    }
-    context.push(AppRoutes.checkoutSummary, extra: cart);
-  }
+  Future<void> _checkout(Cart cart) => startCartCheckout(context, cart);
 
   void _showClearCartDialog() {
     AppDialog.show<void>(
